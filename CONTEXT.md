@@ -27,6 +27,13 @@ The Student in a Match who learns, and the one who submits the Review. Held for 
 Match only.
 _Avoid_: Learner, apprentice
 
+**Presence**:
+Whether a Student currently holds a live connection to the platform, shown to their
+friends as online status. Live state, never a record: Presence does not survive a restart
+of the platform, and a Student reads as offline until they next connect. That gap is
+accepted, not a defect.
+_Avoid_: Activity status, availability, last seen
+
 ### The matching cycle
 
 **Round**:
