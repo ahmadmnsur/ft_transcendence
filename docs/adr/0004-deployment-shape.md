@@ -1,5 +1,9 @@
 # Deployment: three containers behind one nginx proxy, localhost-only, self-signed TLS
 
+> **Amended 2026-09-19 — read the section at the end before implementing `.env.example`.**
+> The module-claim decision claimed OAuth 2.0, which falsifies one sentence of **decision 9**
+> and adds two variables. Decision 9's text below stands as originally written.
+
 The subject's entire requirement for deployment is `document/en.subject.md:314` — a
 containerisation solution (Docker, Podman, or equivalent) that runs with **a single
 command** — plus HTTPS for every browser-to-backend connection (`:383`), credentials in a
@@ -140,3 +144,63 @@ six weeks and three developers.
   rejection (`:336`).
 - **What fixture data makes every claimed module demonstrable.** Decision 11 settles the
   mechanism and the bootstrap Admin only; the demo strategy is still open.
+
+## Amended by the module-claim decision (2026-09-19)
+
+[Lock the claimed module list](https://github.com/ahmadmnsur/ft_transcendence/issues/7)
+claimed **OAuth 2.0** (`document/en.subject.md:620`) as a module. **Decisions 1-8, 10 and 11
+stand exactly as written**; this section records only what changed, following ADR-0002's
+precedent of extending a record rather than rewriting it.
+
+### What changed in decision 9
+
+**Its closing sentence — "This project has no third-party secrets to hold" — is no longer
+true.** The 42 intranet OAuth application's credentials are the project's first third-party
+secret, and the only one so far.
+
+`.env.example` gains two entries:
+
+- `FT_OAUTH_CLIENT_ID`
+- `FT_OAUTH_CLIENT_SECRET`
+
+**The 42 intranet labels these `UID` and `SECRET`** on the application page. The mapping is
+recorded here because a name mismatch between a dashboard and an env file is exactly where a
+transcription error happens, and the resulting failure — a valid-looking credential that is
+silently rejected — is expensive to debug.
+
+**No callback variable is added.** The redirect URI is derived from `PUBLIC_ORIGIN`, per this
+ADR's own consequence that nothing in the product may assume a fixed origin string. The
+route's path is not settled here; whatever it becomes, **the URI registered on the 42 intranet
+must match the derived value exactly**, or the flow fails at its last hop.
+
+### The tension with decision 8, and the rule that resolves it
+
+Decision 8 requires `.env.example` to carry **working development defaults**, so a clean clone
+runs with a single command and an evaluator never hand-writes a file. **OAuth credentials
+cannot have working defaults**: they belong to an application someone registered under their
+own 42 account, and they are secret.
+
+The two entries therefore ship **empty**, and the tension resolves as a rule on the product
+rather than on the file: **the platform must boot and be fully usable with OAuth
+unconfigured.** Email-and-password is the mandatory baseline (`document/en.subject.md:377`);
+OAuth is additive on top of it. An absent `FT_OAUTH_CLIENT_ID` hides or disables the 42
+sign-in control and **must never be a boot failure or a runtime error**. Without this rule, an
+evaluator running the single command from a clean clone meets a broken application — precisely
+the outcome decision 8 exists to prevent.
+
+### ADR-0003 is unaffected
+
+Decision 1 of ADR-0003 — "No JWT anywhere in the product" — still holds, and a future reader
+should not read OAuth as contradicting it. The token returned by 42 is used **once**,
+server-side, to read the Student's identity, and is then discarded. What the browser receives
+is the same opaque session id in the same httpOnly cookie, backed by the same session row.
+**OAuth adds a second way to *establish* a session, never a second credential to *carry* one**,
+so the single authorization path ADR-0003 defends survives intact.
+
+### Not settled by this amendment
+
+- **How a 42 identity maps to a Student**, and what happens when a 42 login arrives for an
+  email that already holds a password account — link, reject, or create a duplicate.
+- **Whether email-and-password signup stays open** to new Students once 42 OAuth exists.
+- **Who registers the application**, and whether one shared app serves all three developers or
+  each registers their own against their own `PUBLIC_ORIGIN`.
