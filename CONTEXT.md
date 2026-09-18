@@ -101,6 +101,12 @@ The single pool of points fed by both the Match loop and the Reflection Prompt l
 Awarded only for completed, confirmed activity.
 _Avoid_: Points, score, credits
 
+**Level**:
+The band a Student's XP places them in, expressing continued participation and
+contribution. Derived from XP alone: a Level is read from the pool, never accumulated
+alongside it as a second counter.
+_Avoid_: Rank, tier, grade
+
 **Streak**:
 The single participation counter, measured in consecutive Rounds containing any
 qualifying activity.
@@ -110,3 +116,13 @@ _Avoid_: Weekly streak, chain, run
 The single score derived from Private Feedback, expressing how useful a Student is as
 a Mentor.
 _Avoid_: Karma, stars, rating
+
+**Badge**:
+A named award a Student earns once for a specific accomplishment, and never loses.
+Distinct from XP, which accumulates continuously: a Badge is a discrete, permanent mark.
+_Avoid_: Achievement, trophy, award
+
+**Leaderboard**:
+A ranking of Students by one named measure, such as XP or Mentor Reputation. Always
+scoped to a stated measure; there is no single overall ranking of Students.
+_Avoid_: Ranking, top list, chart
