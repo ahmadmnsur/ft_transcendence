@@ -30,7 +30,8 @@ _Avoid_: Learner, apprentice
 ### The matching cycle
 
 **Round**:
-One matching cycle, opened and closed by an Admin. Not bound to a calendar week.
+One matching cycle, opened and closed by an Admin. Not bound to a calendar week. Closing
+is terminal for the Round and for every Match in it.
 _Avoid_: Week, cycle, session, sprint
 
 **Match**:
