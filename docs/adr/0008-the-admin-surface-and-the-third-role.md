@@ -1,0 +1,193 @@
+# The admin surface: a third role, three sanctions, and soft-deleted Students and Posts
+
+The claimed **advanced permissions** module asks for three things: user CRUD, roles
+management, and different views per role. Only the third was paid for. ADR-0003 decision 5
+makes a role change *propagate* immediately, but propagating a role change is not the same
+as building the surface that changes it, and ADR-0002 decision 1 refused a second
+privileged role outright — leaving "roles management" as a single Student↔Admin boolean
+against a bullet whose own examples name four kinds.
+
+The shape we chose: **a third role that already had a job, one Users table that is also the
+roles surface, and a soft delete on Student and Post so that nothing in the model ever needs to
+revoke XP.**
+
+## What this ADR changes in earlier records
+
+- **ADR-0002 decision 1.** Its operative rule — *only an Admin may open or close a Round* —
+  stands **verbatim**: a Peer Moderator never gains Round control. Only its supporting
+  clause ("`CONTEXT.md` defines exactly one privileged role; we are not leaving a seam for a
+  second one") is revised. ADR-0002 wrote its own escape hatch — "Peer Moderator stays
+  Future work and gets its own decision if it ever arrives" — and this is that decision.
+- **ADR-0002 decision 4.** Its candidate-pool rule is **narrowed**: a **Skill** listed is no
+  longer the whole test, since it silently readmits a promoted Admin and a suspended Student.
+- **ADR-0003 decision 5.** **Widened** from "the Admin role" to *the* role, now one of three,
+  and the same query gains the Suspension and Removal check.
+- **ADR-0003 decision 6.** Its "moderation block" is renamed **Suspension**. The mechanism
+  is untouched; the word was wrong, because ADR-0006 later gave **Block** to the
+  peer-to-peer act and a peer Block must never delete anyone's sessions.
+- **ADR-0004.** The seed gains a bootstrap **Peer Moderator** alongside the bootstrap Admin.
+- **ADR-0007.** Its open choice — "either the delete is soft, or XP becomes a ledger" — is
+  resolved to **soft**. XP never becomes a ledger.
+
+## The decisions
+
+1. **Three roles on one entity, exactly one role each.** A `Student` row carries a `role`
+   enum of `STUDENT`, `PEER_MODERATOR`, `ADMIN`. Not a set: ADR-0003 decision 5 reads *the*
+   role, singular, in the same query that resolves the session, and the three form a
+   capability ladder where multiplicity buys nothing. This was already implicit in decision
+   5; it is stated here because the entity-set work depends on it.
+
+2. **A Peer Moderator is a participating Student; an Admin is not, by an explicit rule.** The
+   Peer Moderator is matched, earns XP and appears on Leaderboards — "trusted student" is the
+   entire point. **An Admin is excluded from the candidate pool by a rule, not by
+   circumstance.** ADR-0002 decision 4 admits every Student with at least one **Skill**
+   listed, and a Student *promoted* to Admin already has Skills — so "a staff Admin lists no
+   Skills" holds only for a seeded one and fails the moment anyone is promoted. The pool test
+   is therefore **Skill listed _and_ role is not `ADMIN`**. **Matches** already open when a
+   Student is promoted stand — they finish what they started — but they are not a candidate in
+   any later **Round** while they hold the role, and demotion restores candidacy with no
+   further rule.
+
+3. **The Peer Moderator's authority is the report queue and Remove Post, and nothing else.**
+   Suspend Student, Remove Student, Round control, Prompt publication and roles management
+   all stay Admin-only. This is verbatim the proposal's own Future item at
+   `42_PeerConnect_Concept_Proposal-6.md:279` — "help review flagged content without full
+   admin access" — which is what distinguishes it from a role invented to be counted.
+
+4. **All privileged-role assignment is manual, by an Admin, always.** No OAuth claim grants
+   a role; no XP, **Level** or **Mentor Reputation** threshold auto-promotes. An
+   auto-promotion rule would be a second, invisible roles-management path competing with the
+   surface this module is claimed on, and deriving a privileged role from XP would make XP a
+   security boundary — reopening exactly the farming pressure ADR-0007 worked to close.
+
+5. **Exactly three sanctions: Remove a Post, Suspend a Student, Remove a Student.** Posts are
+   immutable and Prompts are never deleted (ADR-0007), so removing a **Post** is the only
+   mutation moderation has against Prompt-loop content. **Suspension is reversible** and that
+   is what makes it a distinct act rather than a slow Removal: it deletes every session and
+   force-disconnects live sockets through ADR-0003 decisions 6 and 8 unchanged, blocks login,
+   drops the Student from the candidate pool, and terminates open **Matches** through
+   ADR-0002 decision 8's termination machinery — **but a Suspension is not a decline.** It
+   reuses the *mechanism* (the Match ends, both Students drop back to unmatched, only an Admin
+   repairs it) and not the *label*: the other Student did not decline and must not be recorded
+   as having done so, and the suspended Student did not either. The Match status flow therefore
+   needs a distinct administrative-termination cause alongside decline. Posts stay; XP and
+   **Streak** freeze rather than revert. **Removal does all of the same at the session layer**
+   — every session deleted, every live socket dropped. **Suspension and Removal are
+   indistinguishable to the authentication layer**; they diverge only at login, where a
+   Suspension can be lifted and a Removal never is. Without this stated, a Student removed
+   while signed in would keep a valid cookie for up to the thirty days ADR-0003 decision 4
+   allows.
+
+6. **Soft delete on Student and Post — those two entities only.** A `removed_at` on `Student`
+   and a `removed_at` on `Post`. **No other entity gets one**: **Match**, **Review**, **Round**
+   and **Reflection Prompt** are untouched, because a Prompt is never deleted and a Post is
+   immutable (ADR-0007), and the other three are records of things that happened. Read this
+   literally when modelling the schema; "soft delete" is not a policy applied to the whole
+   model. The
+   row and every relation survive, so the other Student's Match history, a Mentor's
+   **Private Feedback** and the unique `(Prompt, Student)` answer slot all hold. That last
+   one is the point: a hard delete would free the slot and let answer → delete → answer award
+   XP twice, and nothing in this model revokes XP. A removed Student renders as a tombstone
+   everywhere, leaves every **Leaderboard** and the candidate pool, and cannot log in. The
+   subject's "delete users" is satisfied — the account is gone from the platform — and
+   nothing in `en.subject.md` demands a dropped row. **"Leaves every Leaderboard" means
+   filtered from the result, never erased from the measure**: a suspended or removed Student
+   keeps their XP and **Mentor Reputation**, those values are simply never displayed, and the
+   Students beneath them close up the ranks. No score is recomputed or revised — it is the
+   same read-time filter every other path applies, which is the whole point of the flag being
+   a flag.
+
+7. **Removal is final by policy, not by data loss, and the email burns.** The soft delete
+   exists for referential integrity, never as an undo buffer; there is no reinstate action
+   for a removed Student, because Suspension already covers every case where you would want
+   one back. The surviving row keeps its email under the unique constraint, so that address
+   can never register again — the right default where identity is institutional, and what
+   stops removal being a formality someone re-registers around an hour later.
+
+8. **An Admin may edit only what the Student themselves could edit, plus the role.** Display
+   name, email, avatar, **Learning Goal**, **Skills**. Never XP, Level, Streak, **Badges** or
+   Mentor Reputation — all derived, and derived values have no setter by construction. Never
+   any part of a **Review** or a Post: that is someone else's testimony, and `CONTEXT.md`
+   already says a Post is never edited once published. Against abusive free text the lever is
+   Suspension, not a silent rewrite.
+
+9. **Three guards against locking the platform out.** An Admin may not change their own role;
+   may not suspend or remove themselves; and the last remaining Admin may not be demoted or
+   removed. The first two alone are already sufficient, but the third costs three lines and
+   "try to remove the last admin" is exactly what an evaluator pokes at. Without these, one
+   click leaves a platform where no **Round** can open and no **Reflection Prompt** can be
+   published, with no in-app repair.
+
+10. **A Peer Moderator may not act on a report concerning their own Post, or one involving a
+    Student in a mutual Block with them.** Both escalate to an Admin. The report queue is the
+    one place a Peer Moderator holds power over a peer, and "the moderator deleted the
+    complaint about themselves" is the first hole anyone looks for. Admins need no such
+    guard: they sit outside the participation graph.
+
+11. **One Users table in the admin dashboard, and roles management is its role column.**
+    Search, plus name / email / role / status (active, suspended, removed), with row actions
+    for view, edit, change role, suspend or reinstate, and remove. **No separate Roles
+    screen** — decision 4 makes manual assignment the only path, so such a screen would hold
+    three hard-coded rows and no CRUD, reading worse than putting the control where the users
+    are. ADR-0003 decision 9 binds: all of it over HTTP, never the socket.
+
+12. **The seed creates one bootstrap Admin and one bootstrap Peer Moderator**, the latter a
+    fully participating Student with Skills. ADR-0004 seeded an Admin because without one
+    nothing is demoable; with three roles the same argument covers the Peer Moderator, since
+    creating one by hand costs minutes of a defense slot. **Its credentials come from `.env`
+    on exactly the pattern ADR-0004 decision 9 set** — `MODERATOR_EMAIL` and
+    `MODERATOR_PASSWORD` alongside the existing `ADMIN_EMAIL` and `ADMIN_PASSWORD`, shipping
+    with working development defaults in `.env.example`, because ADR-0004 decision 8 requires
+    a clean clone to run on one command with nothing hand-written. The warning ADR-0004
+    already attaches to `ADMIN_PASSWORD` extends to `MODERATOR_PASSWORD`: these are real
+    credentials for a throwaway database and must be changed anywhere others can reach.
+
+## Considered options
+
+**Two roles, arguing that Admin↔Student assignment *is* roles management** (rejected,
+decision 1). The default, and the cheaper path. Rejected because `en.subject.md:626` names
+"admin, user, guest, moderator, etc." and a checkbox labelled *is admin* offered as a Major
+module is the shortcut `:951` warns about — one that invites the evaluator to look harder at
+everything else on the list.
+
+**A cheap non-privileged third role purely to have three** (ruled out permanently by the
+module-claim decision, not by this ADR). A role that exists only to be counted is the same
+shortcut. Peer Moderator earns its place by having a job that already existed in the product
+and that 42 staff realistically will not do at volume.
+
+**Hard delete, with XP as a revocable ledger** (rejected, decision 6). The alternative
+ADR-0007 left open. A ledger is a second accounting system built solely so that one delete
+path stays honest, and it would have to be threaded through every XP award in both loops.
+Soft delete closes the same hole with one nullable column.
+
+**Anonymising in place — clearing the row's fields rather than flagging it** (rejected,
+decision 6). Tells a better "delete means delete" story, but frees the email for
+re-registration, destroys the Private Feedback a Mentor can still read, and costs a scrub
+routine per field. The tombstone render achieves the same visible outcome.
+
+**A guest role, for unauthenticated feed access** (not pursued). It would cover the fourth of
+`:626`'s named examples, but nothing in PeerConnect currently sits behind no login, so it is
+a product change — and a public feed of Students' **Public Takeaways** is a privacy decision
+this map never made.
+
+## Consequences
+
+- **The advanced permissions module converts from contingent to firm.** All three bullets at
+  `en.subject.md:622`-`:628` are met, so the claimed list is firm at 18 points against a
+  threshold of 14. The **Friday 2026-10-02** contingency checkpoint and the **Monday
+  2026-10-05** ruling are discharged early, and the matching-engine custom-Major fallback is
+  not needed.
+- **Suspension and Removal share one mechanism** — a flag on the Student row plus session
+  deletion — differing only in reversibility and finality. Moderation therefore invents no
+  second mechanism, which is what the map's moderation-depth question asked for.
+- **Every read path over Students and Posts must filter `removed_at`.** This is the standing
+  cost of decision 6, paid in every slice that touches those two entities, not once. No other
+  entity carries the flag, so no other read path pays it.
+- **The Match status flow gains a requirement**: an administrative termination must be
+  distinguishable from a decline (decision 5). Enumerating the statuses — including which
+  count as "live" for ADR-0002 decision 6's derived *unmatched* — remains the entity-set
+  ticket's work, not this ADR's.
+- **The three-dashboard split is what makes bullet 3 demonstrable**: Admin sees everything,
+  Peer Moderator sees only the report queue, Student sees no dashboard at all.
+- **The report queue itself is still unspecified.** What can be reported, what a report
+  record holds, and what the reporter sees afterwards are not settled here.

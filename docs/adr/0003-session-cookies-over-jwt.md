@@ -30,9 +30,21 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
 5. **The session row holds `id`, `student_id`, `expires_at` — and not the role.** The
    **Admin** role is read from the Student row in the same query that resolves the session.
 
+   > **Widened by ADR-0008.** There are now three roles, so what this query reads is **the
+   > role**, not "the Admin role" — `STUDENT`, `PEER_MODERATOR` or `ADMIN`. The same query
+   > also reads the **Suspension** and **Removal** flags, and **resolution fails if either is
+   > set**. In principle no such session exists, since both sanctions delete every session;
+   > the check costs one condition in a query already reading the Student row, and it is what
+   > makes "suspended and removed are indistinguishable at the authentication layer" a rule
+   > the code enforces rather than an intention.
+
 6. **What kills a session:** logout deletes that row; a password change or a moderation
    block deletes *every* row for that Student. A **role change deletes nothing** — decision 5
    means it takes effect on the next request.
+
+   > **Renamed by ADR-0008.** "Moderation block" here is now **Suspension**. ADR-0006 later
+   > gave **Block** to the peer-to-peer act, and a peer Block must never delete anyone's
+   > sessions. The mechanism is unchanged; only the word was wrong.
 
 7. **The socket authenticates by the same cookie**, which same-origin socket.io replays on
    every handshake, including every reconnect. There is no token to pass, refresh, or

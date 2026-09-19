@@ -16,6 +16,10 @@ that reacts to events over a Round's lifetime.
    privileged role; we are not leaving a seam for a second one. Peer Moderator stays
    Future work and gets its own decision if it ever arrives.
 
+   > **Amended by ADR-0008**, which is that decision arriving. The rule above stands
+   > **verbatim** — a **Peer Moderator** never gains Round control — but the reasoning no
+   > longer does: there are now three roles, and Peer Moderator is no longer Future work.
+
 2. **At most one Round is open at a time, and the platform may sit with none.** Closing a
    Round does not open the next. The invariant is one line: no Round may be opened while
    another is open. The idle period between Rounds is a real, expected state, not a fault.
@@ -30,6 +34,11 @@ that reacts to events over a Round's lifetime.
    list is a candidate, with no per-Round opt-in. Consent happens *after* pairing, through
    accept/decline, which is how the concept proposal describes it. Seeding a demo is
    therefore seeding Students, not Students plus enrolments.
+
+   > **Narrowed by ADR-0008.** The rule above is no longer the whole test. A candidate is a
+   > Student with a **Skill** listed **and** whose role is not `ADMIN` **and** who is neither
+   > **Suspended** nor **Removed**. Read the Skill clause alone and a promoted Admin or a
+   > suspended Student silently re-enters matching.
 
 5. **Closing a Round finalises every Match in it.** A Match without a submitted Review
    awards no XP and contributes nothing to Streak. This needs no new rule: the glossary

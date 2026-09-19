@@ -9,13 +9,21 @@ and the feed exist to serve that loop, not as ends in themselves.
 ### People
 
 **Student**:
-A 42 student using the platform to learn and to teach. The only kind of participant.
+A 42 student using the platform to learn and to teach. Every account is a Student; Admin
+and Peer Moderator are roles a Student holds, not separate kinds of person.
 _Avoid_: User, member, peer
 
 **Admin**:
-A 42 staff member with authority to open and close Rounds, publish Reflection Prompts,
-and act on reported content.
+The most privileged role, held by a 42 staff member: opening and closing Rounds, publishing
+Reflection Prompts, managing Students and their roles, and every sanction. Staff rather than
+a participant — an Admin never enters matching, whatever Skills they list.
 _Avoid_: Staff, moderator, superuser
+
+**Peer Moderator**:
+A trusted Student granted one further authority: reviewing reported content and removing a
+Post. Nothing else — never a Suspension, a Removal, a Round or a Reflection Prompt. Unlike
+an Admin, a Peer Moderator is a full participant, matched and earning XP like any Student.
+_Avoid_: Moderator, mod, trusted user
 
 **Mentor**:
 The Student in a Match who teaches. Held for the duration of one Match only, never a
@@ -36,8 +44,25 @@ _Avoid_: Activity status, availability, last seen
 
 **Block**:
 One Student's standing refusal of contact with another. Mutual in effect whichever Student
-set it: a blocked pair can never become a Match, in either direction.
+set it: a blocked pair can never become a Match, in either direction. Always a Student's own
+act, never an Admin's — the Admin equivalents are Suspension and Removal.
 _Avoid_: Mute, ban, ignore
+
+**Suspension**:
+An Admin's reversible withdrawal of a Student's access: they are signed out at once and
+cannot sign in again, and stand outside matching and every Leaderboard until it is lifted.
+Their Posts remain and their XP and Streak freeze rather than revert — standing outside a
+Leaderboard means not being shown on it, never losing what it measures. Not a Block: a Block
+withdraws nothing and is never an Admin's to set.
+_Avoid_: Ban, block, moderation block, deactivation
+
+**Removal**:
+An Admin's final withdrawal of a Student from the platform. Like a Suspension they are signed
+out at once; unlike a Suspension it is never lifted, and that Student's email can never be
+used again. What they contributed stays — their Posts, the Matches they were half of, the
+Private Feedback they wrote — shown as a former student rather than erased, because it forms
+part of other Students' records too.
+_Avoid_: Deletion, purge, account closure
 
 ### The matching cycle
 

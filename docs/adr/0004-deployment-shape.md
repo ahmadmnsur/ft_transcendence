@@ -87,7 +87,12 @@ and why there is no `SESSION_SECRET`.
 11. **Boot is: wait on the `db` healthcheck, run migrations, run an idempotent seed.** The
     seed creates exactly one bootstrap **Admin** from `.env`. Without it a fresh machine
     produces a platform where nobody can open a **Round**, so there is no **Match** and
-    nothing to demonstrate. Postgres uses a named volume; `make down` keeps data and a
+    nothing to demonstrate.
+
+    > **Extended by ADR-0008.** The seed also creates one bootstrap **Peer Moderator**, a
+    > fully participating Student with **Skills**. Same argument, applied to the third role:
+    > without it, demonstrating the per-role views costs minutes of a defense slot.
+ Postgres uses a named volume; `make down` keeps data and a
     separate target wipes it.
 
 12. **Kamel owns this slice in week 1, and it is a gate rather than parallel work.** Every
