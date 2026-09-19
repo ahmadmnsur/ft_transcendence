@@ -36,12 +36,18 @@ them deliberately and settles the rest.
 ## The decisions
 
 1. **A Match pays two line items, both inside the transaction that records the Review: 80 XP
-   for Match completion to each Student, and a further 40 to the Mentee for submitting the
+   for the completed Match to each Student, and a further 40 to the Mentee for submitting the
    Review.** A Mentee banks 120 per Match, a Mentor 80.
 
-   `:213` names three earning events, but **no action in this model completes a Match**.
-   ADR-0002 decision 5 makes an unreviewed Match award nothing, and Completed *means* the
-   Review landed — so "completing a weekly match" can never fire on its own. Reading the
+   **Submitting the Review is the trigger for both line items, and it is the only trigger.**
+   The first is named for what it pays *for* — the Match — never for a moment at which it
+   fires, because there is no such moment: **no action in this model completes a Match, and
+   none is to be added.** Anything downstream that reads this table as two events, or that
+   builds a "mark complete" action for the first one to hang off, has misread it.
+
+   `:213` names three earning events, but ADR-0002 decision 5 makes an unreviewed Match award
+   nothing, and Completed *means* the Review landed — so "completing a weekly match" can never
+   fire on its own. Reading the
    proposal's three events as three *line items* rather than three *moments* keeps all three
    literally true while collapsing them into one instant, which is the move ADR-0007 already
    made for a Prompt answer and its Post. This answers the ticket's question directly: a Review
@@ -73,20 +79,31 @@ them deliberately and settles the rest.
    above. At the table in decisions 1 and 2 a band costs just over two mentored Matches, and
    Level 10 sits at 2250 XP, roughly nineteen.
 
-4. **Three Badges, every one a threshold on a counter that only ever rises, all awarded inside
-   the same transaction that awards the XP.**
+4. **Three Badges, each a numeric threshold tested inside the same transaction that awards the
+   XP, and each awarded the first instant its test passes.**
 
-   - **First Mentor** — the first Match you complete as Mentor. It also gives teaching the only
+   - **First Mentor** — `Matches completed as Mentor >= 1`. It also gives teaching the only
      public mark it has, which matters because decision 1 permanently ranks a Mentee above a
      Mentor at equal participation and decision 6 keeps **Mentor Reputation** off the board.
-   - **Knowledge Sharer** — your third answered Reflection Prompt. Covers the second loop.
-   - **Consistent Learner** — Streak reaches 3 consecutive Rounds.
+   - **Knowledge Sharer** — `Reflection Prompts answered >= 3`. Covers the second loop.
+   - **Consistent Learner** — `Streak >= 3`.
 
-   Thresholds on monotonic counters are what make `CONTEXT.md`'s "earns once … and never
-   loses" **structural** rather than a rule someone has to enforce — the same preference for
-   structure over enforcement as ADR-0007's derived liveness and ADR-0009's storage choice.
-   Evaluating them on the two existing write paths keeps ADR-0001's promise not to turn any of
-   this into a scheduled-job problem, and they already have no setter under ADR-0008.
+   **What makes "earns once … and never loses" structural is that the test is run once and its
+   result is never re-examined — not that the quantity it reads can only rise.** The
+   distinction matters for exactly one of the three: the first two count events and are
+   genuinely monotonic, but **Streak is not.** It breaks when a Round passes without qualifying
+   activity and ADR-0008 freezes it on Suspension, so a Student can hold Consistent Learner at
+   a Streak of 0. That is correct and deliberate: the badge records that they *once* sustained
+   three consecutive Rounds, which stays true afterwards no matter what the counter does. Write
+   the condition as a threshold test at award time and the guarantee follows; write it as a
+   property the Student currently satisfies and the badge becomes revocable, which `CONTEXT.md`
+   forbids.
+
+   This is the same preference for structure over enforcement as ADR-0007's derived liveness
+   and ADR-0009's storage choice. Testing on the two existing write paths also keeps ADR-0001's
+   promise not to turn any of this into a scheduled-job problem — nothing ever sweeps the
+   Student table looking for conditions that have started or stopped holding — and Badges
+   already have no setter under ADR-0008.
 
    **Consistent Learner is the only thing anywhere on this map that reads Streak.** Every other
    mention defines it, freezes it on Suspension, or protects it; nothing consumes it. Without

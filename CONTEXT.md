@@ -164,7 +164,8 @@ A named award a Student earns once for a specific accomplishment, and never lose
 Distinct from XP, which accumulates continuously: a Badge is a discrete, permanent mark.
 Always a threshold reached, never a position held — a Badge cannot depend on what other
 Students do, because nothing that another person's actions can take away could be kept
-for good.
+for good. What is recorded is the reaching, so a Badge outlives the condition that earned
+it: a Streak that later breaks does not take back the Badge it won.
 _Avoid_: Achievement, trophy, award
 
 **Leaderboard**:
