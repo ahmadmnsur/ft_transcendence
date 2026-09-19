@@ -116,8 +116,12 @@ replace at any time — the Learning Outcome is testimony, the Evidence only an 
 _Avoid_: Attachment, upload, file, proof
 
 **Private Feedback**:
-The Mentee's assessment of the Mentor, visible only to that Mentor and to Admins.
-_Avoid_: Rating, review
+The Mentee's assessment of the Mentor: two written answers and one optional rating of 1 to
+5. Read by that Mentor, by Admins, and by the Mentee who wrote it — never by anyone else,
+and never edited once submitted. The rating is one part of the assessment, sitting beside
+the sentences that explain it; no score is ever derived from it.
+_Avoid_: Rating, review — the assessment is never called "the rating", though the part
+inside it is
 
 **Public Takeaway**:
 One short public line the Mentee confirms, distilled from their Learning Outcome.
@@ -166,9 +170,11 @@ The single participation counter, measured in consecutive Rounds containing any
 qualifying activity.
 _Avoid_: Weekly streak, chain, run
 
-**Mentor Reputation**:
+**Mentor Reputation** _(Version 2 — not part of the MVP model)_:
 The single score derived from Private Feedback, expressing how useful a Student is as
-a Mentor.
+a Mentor. Nothing computes or displays it: a Mentor reads the individual Private Feedback
+they have received, and no average is taken over it. Defined here because live rules still
+name it — an Admin may never edit it, and it is never a matching or ranking measure.
 _Avoid_: Karma, stars, rating
 
 **Badge**:
@@ -181,7 +187,8 @@ it: a Streak that later breaks does not take back the Badge it won.
 _Avoid_: Achievement, trophy, award
 
 **Leaderboard**:
-A ranking of Students by one named measure, such as XP or Mentor Reputation. Always
-scoped to a stated measure; there is no single overall ranking of Students. Only
+A ranking of Students by one named measure. The measure is XP, and it is the only one:
+there is no overall ranking of Students, and no ranking by any other measure. Only
 participants are ranked: an Admin is staff and never appears, however much XP they hold.
+Further measures, **Mentor Reputation** among them, are Version 2.
 _Avoid_: Ranking, top list, chart

@@ -206,6 +206,13 @@ features to six thin ones. The Mentee already gets the larger XP award and the p
 - **Mentor Reputation is now the only shipped glossary term with no rule behind it.** Pricing it
   as a Leaderboard measure found that nothing on this map says how it is computed, nor whether
   Private Feedback carries a rating in MVP at all. It has its own ticket.
+
+  > **Settled by ADR-0013: it is not a shipped term.** The rating ships — optional, 1 to 5, a
+  > component of Private Feedback — and the score does not, going to Version 2 with the per-skill
+  > endorsements `:205` calls "a more detailed view of the same number". **No aggregate is ever
+  > taken over the ratings**; a Mentor reads the individual feedback on a private route instead.
+  > Decision 6 above is strengthened rather than revisited: three of its four counts stand
+  > verbatim, and "no formula anywhere on this map" is now a deliberate absence, not a gap.
 - **The seed cannot produce Badges or Streaks by setting XP.** XP is a plain column under
   ADR-0008, so seeding Levels and a populated Leaderboard is one write — but Badges are awarded
   inside the two XP transactions and Streak is derived from Rounds containing activity. Seeded
