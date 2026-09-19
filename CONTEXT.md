@@ -211,6 +211,13 @@ for good. What is recorded is the reaching, so a Badge outlives the condition th
 it: a Streak that later breaks does not take back the Badge it won.
 _Avoid_: Achievement, trophy, award
 
+**Learning Analytics**:
+What the community as a whole is trying to learn and teach, and where its Matches stall: the
+Skills most wanted, the Skills most offered, the gap between them, and how often a Match reaches
+a Review. Always about the community, never about a named Student — that is what separates it
+from a Student's own record, and it is read by Admins alone.
+_Avoid_: Insights, reporting, statistics, metrics
+
 **Leaderboard**:
 A ranking of Students by one named measure. The measure is XP, and it is the only one:
 there is no overall ranking of Students, and no ranking by any other measure. Only
