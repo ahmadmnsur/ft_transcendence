@@ -207,12 +207,16 @@ features to six thin ones. The Mentee already gets the larger XP award and the p
   as a Leaderboard measure found that nothing on this map says how it is computed, nor whether
   Private Feedback carries a rating in MVP at all. It has its own ticket.
 
-  > **Settled by ADR-0013: it is not a shipped term.** The rating ships — optional, 1 to 5, a
-  > component of Private Feedback — and the score does not, going to Version 2 with the per-skill
-  > endorsements `:205` calls "a more detailed view of the same number". **No aggregate is ever
-  > taken over the ratings**; a Mentor reads the individual feedback on a private route instead.
-  > Decision 6 above is strengthened rather than revisited: three of its four counts stand
-  > verbatim, and "no formula anywhere on this map" is now a deliberate absence, not a gap.
+  > **Settled by ADR-0013, and the claim above no longer holds. Mentor Reputation remains
+  > defined in the glossary as a Version 2 concept; it has no shipped aggregate score or
+  > computation in MVP.** The rating ships — optional, 1 to 5, a component of Private Feedback —
+  > and the score does not, going to Version 2 with the per-skill endorsements `:205` calls "a
+  > more detailed view of the same number". **No aggregate is ever taken over the ratings**; a
+  > Mentor reads the individual feedback on a private route instead. **The glossary keeps the
+  > term rather than deleting it**, because three live ADR-0008 rules name it — so what changed
+  > is that the term has a stated scope, not that it acquired a formula. Decision 6 above is
+  > strengthened rather than revisited: three of its four counts stand verbatim, and "no formula
+  > anywhere on this map" is now a deliberate absence, not a gap.
 - **The seed cannot produce Badges or Streaks by setting XP.** XP is a plain column under
   ADR-0008, so seeding Levels and a populated Leaderboard is one write — but Badges are awarded
   inside the two XP transactions and Streak is derived from Rounds containing activity. Seeded
