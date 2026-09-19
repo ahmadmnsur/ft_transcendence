@@ -137,3 +137,8 @@ it leaves a live route to failing `:542` that no amount of care in the API can c
 - **Mission authorship is exposed as undecided.** Pricing the Mission-brief option found that
   nothing in the plan says who writes a Mission or when. It is not this decision's to make, but
   it can no longer be assumed away.
+
+  > **Answered by ADR-0012: nobody writes one.** A Mission is one of six fixed meeting modes,
+  > assigned by the machine at Match creation and frozen there. So the Mission-brief option was
+  > priced against an authorship that was never going to arrive, and **decision 1 stands** — the
+  > Learning Outcome remains Evidence's host on its own reasoning.

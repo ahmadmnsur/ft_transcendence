@@ -125,6 +125,12 @@ them deliberately and settles the rest.
    This is also the real reason the full badge set is Version 2: half of it is leaderboard
    language, and the rest waits on a decision that has not been taken.
 
+   > **Answered by ADR-0012**, which is that decision arriving: a Mission has no author and no
+   > outcome — it is one of six fixed meeting modes, assigned by the machine at Match creation
+   > and read by nothing. **Problem Solver is therefore permanently out of scope rather than
+   > pending.** All four unbuildable badges are now accounted for: three are superlatives with
+   > no history to evaluate, and the fourth waited on this.
+
 6. **One Leaderboard, by XP — global, all-time, top ten plus the viewer's own rank pinned when
    they fall outside it; ties break `XP DESC, Student id ASC`; Admins are filtered out.**
 

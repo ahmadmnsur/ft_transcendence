@@ -89,8 +89,12 @@ Never shown without its plain-language explanation.
 _Avoid_: Match score, fit, rating
 
 **Mission**:
-The concrete task attached to a Match, so the pair has something specific to do.
-_Avoid_: Task, assignment, challenge
+The shape of meeting suggested to a Match's pair, drawn from a small fixed set — a
+pair-programming session, a code review, a discussion. It says how to meet, never what
+about: the Compatibility Score's explanation already names the Skills. Attached when the
+Match is created and never changed afterwards, and nothing records whether the pair did
+it — a Mission is a suggestion the platform makes, not a task it tracks.
+_Avoid_: Task, assignment, challenge, brief
 
 ### What gets recorded
 
