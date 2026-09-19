@@ -63,6 +63,56 @@ npx prisma migrate dev --name <slice>_<change>
    `prisma/seed.ts` runs on every boot (ADR-0004 decision 11) and must stay **idempotent**. It is
    shared contention, so it goes through the same reviewer.
 
+## Testing
+
+**We test only what fails silently.** `document/en.subject.md` asks for no test suite anywhere, so
+the suite is thin on purpose and stays that way — see
+[ADR-0016](docs/adr/0016-a-thin-suite-over-what-fails-silently.md).
+
+**Vitest, one runner, one command.** Integration tests against a real Postgres in the container
+that already exists. No unit/integration/e2e pyramid, and no coverage target.
+
+**The closed list of what is covered:**
+
+1. **The matcher** — matching is atomic, so there is no correction window, and a regression shows
+   up as pairs quietly never forming. Asserts C3, C4, C6 and C7 from
+   `prototypes/compatibility-score/SUCCESS-CRITERIA.md`. **C1, C2 and C5 are not assertions** —
+   they failed and ADR-0006 resolved them by decision.
+2. **The six raw-SQL migration steps** — three `CHECK` constraints, three expression indexes. If a
+   migration stops creating one, the database accepts bad data and says nothing.
+3. **At most one standing Match per Student per Round** — the one invariant the schema cannot
+   hold, violable through an Admin's hand-made Match.
+4. **File access control** — signed out is 401, signed in as an unrelated Student is 403.
+
+**Adding a test outside that list needs an argument.** The rule is *does it fail silently?* —
+anything the compiler or a demo step would catch is not tested. Four categories, closed until
+someone argues a fifth.
+
+**CI is advisory and always will be.** Branch protection is unavailable on this plan, so the
+workflow cannot block a merge. Its job is evidence for `document/en.subject.md:243`-`:249`: a green
+check per PR is how an evaluator sees how work was divided without taking our word for it.
+
+## Done
+
+**A ticket is done when its PR is merged with every box in the template ticked.** There is no
+second definition — the template *is* the definition, so it cannot drift from the checklist beside
+it, and an agent can check it without asking anyone.
+
+That means, every time: the suite green, the ticket's acceptance criteria met, one review, and —
+if the PR touches `prisma/`, the Compose files or a Dockerfile — **a clean-clone boot verified**.
+
+### The clean-clone check
+
+Run it from a fresh clone, not your working tree:
+
+```bash
+docker compose up --build     # must work end-to-end, no Makefile
+```
+
+`document/en.subject.md:314` makes the single command mandatory, and a broken migration breaks
+**every other developer's database** (see the three rules above). Catching that at merge costs one
+command; catching it in the final fortnight costs the demo.
+
 ## Environment
 
 `.env` is gitignored; `.env.example` carries working development defaults. `make up` copies it

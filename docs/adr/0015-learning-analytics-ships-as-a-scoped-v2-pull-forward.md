@@ -264,6 +264,11 @@ being claimed.
   against the table there, not argued afresh.
 - **Recharts is added as the charting dependency**, and `CONTRIBUTING.md`'s schema gate is
   untouched, this being a frontend package rather than a schema change.
+
+  > **No longer the only addition since charting.** **ADR-0016 adds Vitest**, on the same footing
+  > and for the same reason: the locked stack carried no test runner, so it is a stack decision
+  > rather than a slice's choice. Two additions, both through the map — which is the rule worth
+  > preserving, not the count.
 - **The seed must span several Rounds, not merely contain history.** The demo-strategy fog already
   required fabricated Match, Review and Post history for Badges and Streak; a Round-indexed time
   series over a single Round is one point, so the same fixture now has a second reason to cover
