@@ -138,12 +138,32 @@ arms. Those three sentences are the whole shape.
 
    | Status | Meaning | |
    | --- | --- | --- |
-   | `PROPOSED` | Created; not yet accepted by both | standing |
+   | `MATCHED` | Created; not yet accepted by both | standing |
    | `ACCEPTED` | Both accepted | standing |
    | `COMPLETED` | Review submitted | standing |
    | `LAPSED` | Round closed with no Review | standing |
    | `DECLINED` | Either Student declined (ADR-0002 d8) | **repudiated** |
    | `TERMINATED_BY_ADMIN` | A Suspension or Removal ended it (ADR-0008 d5) | **repudiated** |
+
+   **The names are the proposal's, not new ones.** `42_PeerConnect_Concept_Proposal-6.md:127`
+   states a status flow outright — *"Matched → Accepted → Meeting Scheduled → Completed → Review
+   Submitted"* — and `:261` repeats it for the admin dashboard. `MATCHED`, `ACCEPTED` and
+   `COMPLETED` are taken from it verbatim rather than translated into a parallel vocabulary.
+
+   **Three of the proposal's five states are deliberately not here, and adopting its first word is
+   not adopting its flow.** *Meeting Scheduled* has nothing to record — there is no meeting entity,
+   ADR-0007 decision 3 refused scheduling outright, and ADR-0012 decision 7 confirmed nothing tracks
+   whether a pair did their **Mission**. *Completed* and *Review Submitted* collapse into one state
+   because ADR-0010 decision 1 makes submitting the Review the only trigger and **`COMPLETED` just
+   *means* the Review landed**: no action in this model completes a Match, and none is to be added.
+   What the six add that the five lack are the two ways a Match can end badly — `DECLINED` and
+   `TERMINATED_BY_ADMIN` — which the proposal's happy path never enumerated.
+
+   ⚠️ **`MATCHED` the status is narrower than "matched" the adjective, and ADR-0002 decision 6 means
+   the adjective.** A Student with an `ACCEPTED` Match is matched; they are not in status `MATCHED`.
+   The two nest rather than conflict, but the misreading to guard against is deriving *unmatched* as
+   "no Match in status `MATCHED`", which would report every Student who accepted their Match as
+   unmatched — the same class of error as the "live status" wording this ADR corrects above.
 
    **`LAPSED` is the terminal state ADR-0002 required** — "finalised by Round close without a
    Review", distinct from `COMPLETED` so that the XP and Streak queries can tell a real success from
