@@ -209,3 +209,10 @@ so the single authorization path ADR-0003 defends survives intact.
 - **Whether email-and-password signup stays open** to new Students once 42 OAuth exists.
 - **Who registers the application**, and whether one shared app serves all three developers or
   each registers their own against their own `PUBLIC_ORIGIN`.
+
+> **All three are now owned by
+> [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24)**,
+> opened by the ticket-to-record audit on 2026-09-19 after finding that no ticket had picked them up
+> — the same gap ADR-0010 decision 7 and ADR-0015 decision 1 each closed for their own module. One
+> of the three options is already foreclosed: `Student.email` is unique and survives a **Removal**
+> (ADR-0008 d7), so "create a duplicate" cannot happen, and the choice is link or reject.

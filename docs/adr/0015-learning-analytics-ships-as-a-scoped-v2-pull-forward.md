@@ -256,6 +256,13 @@ being claimed.
 - **`CONTEXT.md` gains Learning Analytics** — a read surface rather than an entity, on the precedent
   of **Leaderboard**, because the rule that it never reports on an individual Student is what keeps
   it distinct from Learning Progress and from the Users table.
-- **No ticket is unblocked and none is surfaced.** This was the last unmet module bullet on the
-  board; the remaining open tickets are the Privacy Policy and Terms of Service content, and write
-  access for the other two developers.
+- **No ticket is unblocked and none is surfaced by this decision.**
+
+  > **The "last unmet module bullet" claim originally written here was wrong, and a
+  > ticket-to-record audit on 2026-09-19 found it.** ADR-0004's module-claim amendment ends with a
+  > **"Not settled by this amendment"** section holding three open questions about **42 OAuth** —
+  > also a claimed module — that no ticket had ever picked up. They are now
+  > [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24).
+  > The lesson generalises past this ADR: **"no ticket owns it" is not visible from the module list,
+  > only from reading each record's own open-questions section**, which is why the audit found in one
+  > pass what three tickets had missed.
