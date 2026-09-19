@@ -51,6 +51,13 @@ that reacts to events over a Round's lifetime.
    never replaced is unmatched, even though a Match row exists. Nothing waits through the
    idle period; an unmatched Student is an ordinary candidate next Round, on equal footing.
 
+   > **Corrected by ADR-0014, and read this before implementing the rule above.** "In a **live**
+   > status" is the wrong word and implementing it literally is a bug: a `COMPLETED` Match is not
+   > live, so the Students who did exactly what the platform asked would derive as *unmatched* for
+   > that Round. The partition this rule needs is **standing** versus **repudiated** — standing being
+   > `MATCHED`, `ACCEPTED`, `COMPLETED` and `LAPSED`, repudiated being `DECLINED` and
+   > `TERMINATED_BY_ADMIN`. The intent above is untouched; only the word was wrong.
+
 7. **An Admin may create a Match by hand inside an open Round.** Without it, the proposal's
    "flag them for the admin to handle manually" is a dead end, and an odd-sized pool
    guarantees a leftover Student every single Round.

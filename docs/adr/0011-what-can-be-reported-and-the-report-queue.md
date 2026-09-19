@@ -217,6 +217,11 @@ replies under Posts the model went out of its way to make immutable.
 - **Likes are now in shipped scope and entirely unspecified** — revocable or not, count-only or
   who-liked, self-like permitted or not. Handed to the entity-set ticket, exactly as ADR-0003
   handed it `Friend`, rather than half-defined in the glossary now.
+
+  > **Settled by ADR-0014 decision 5: revocable by deleting the row, who-liked readable, and
+  > self-like permitted with no rule** — a Like awards no XP and is not reportable, so there is
+  > nothing to farm and nothing to moderate. `Friend` landed there too (decision 4), as a directed
+  > request with an acceptance. `CONTEXT.md` now defines both.
 - **Comments are out of scope** for this project, and the map records them as such.
 - **Reporting satisfies no claimed module bullet directly.** Worth stating plainly so nobody
   defends it as one: it is in scope because the proposal's MVP asks for it and because ADR-0008

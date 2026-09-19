@@ -68,6 +68,14 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
    `forward`, it can never apply to a pair that teaches nothing — so it cannot lift a
    zero-coverage pair over the floor.
 
+   > **Made implementable by ADR-0014.** As written the bonus tests membership of a **Learning
+   > Goal** in `forward`, a set of **Skills**, while `CONTEXT.md` defined a Learning Goal as
+   > free text *narrower than* the Skills wanted — which can never be an element of that set.
+   > ADR-0014 decision 3 makes **Skill** a catalogue entity and the Learning Goal a reference to
+   > one of the Student's own `LEARN` rows, with the displayed sentence beside it. **The rule
+   > above is unchanged and the prototype's calibration stands**; it now has a well-formed test
+   > rather than a string comparison.
+
 2. **There is no denominator.** The obvious rule — Skills covered ÷ Skills wanted — tells a
    Student who listed one Skill they have a *100% match* and a Student who listed five a *20%
    match*, for identical teaching, and the second falls below the floor and gets no Match at all.

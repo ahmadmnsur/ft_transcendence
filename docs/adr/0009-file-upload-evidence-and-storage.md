@@ -67,12 +67,21 @@ authorisation structural rather than enforced.
    Evidence item belongs to each Learning Outcome; the exact owning entity is settled by the
    entity map, not here.
 
+   > **Settled by ADR-0014.** The owning entity is **`Review`**, which carries the Learning
+   > Outcome (decision 1), and the bytes live in a dedicated `Evidence` table rather than a column
+   > on it (decision 12) — ADR-0009 decision 2 said "a `bytea` column" without saying in which
+   > table, and Prisma's default scalar selection makes a column on a hot table a silent footgun.
+
    **The Learning Outcome text is testimony; the Evidence is an aid.** That is what makes the
    file deletable while Posts, Prompt answers and Private Feedback are not: no one else's record
    depends on it the way the community depends on a Post or Mentor Reputation depends on Private
    Feedback. It also satisfies `:548` on the document surface instead of resting that bullet on
    "you can replace your avatar". Whether the Learning Outcome *text* is editable is a separate
    question and stays open.
+
+   > **No longer open — answered by ADR-0014 decision 11: the text is immutable**, matching the
+   > Public Takeaway and Private Feedback beside it. The sentence above is what decided it, so the
+   > rule states in one line: **a Review is immutable; its one attachment is not.**
 
    Accepting images as well as documents is what actually satisfies `:538`. Evidence from a
    pair-programming session is most naturally a screenshot, so a document-only attachment would

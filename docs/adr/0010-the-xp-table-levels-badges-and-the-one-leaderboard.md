@@ -105,6 +105,13 @@ them deliberately and settles the rest.
    Student table looking for conditions that have started or stopped holding — and Badges
    already have no setter under ADR-0008.
 
+   > **Widened by ADR-0014 to three write paths.** **Streak** can only change when a **Round**
+   > closes — that is the moment "this Round contained no activity" becomes knowable — so
+   > **Consistent Learner is tested in the Round-close transaction**, not on either XP path. The
+   > guarantee above is untouched: it is still a threshold tested once inside a real transaction
+   > and never re-examined, still no scheduled job, and still no sweep looking for conditions that
+   > have started holding. There are simply three such transactions rather than two.
+
    **Consistent Learner is the only thing anywhere on this map that reads Streak.** Every other
    mention defines it, freezes it on Suspension, or protects it; nothing consumes it. Without
    this badge, Streak is a counter the platform maintains and never uses.
@@ -234,3 +241,8 @@ features to six thin ones. The Mentee already gets the larger XP award and the p
 - **The entity map gains the XP table as an input.** XP is a column on Student, Badge is an
   awarded row per Student, and both Badge evaluation and the XP write sit on the Review-submit
   and Prompt-answer paths — which bears on the "one entity or three?" question still open there.
+
+  > **Answered by ADR-0014 decision 1: three parts, three homes**, one per readership — the
+  > Learning Outcome on `Review`, `PrivateFeedback` in its own table, and the Public Takeaway as
+  > the `body` of its `Post`. ADR-0014 decision 7 also made **Streak** a stored column recomputed
+  > at Round close, since a derived Streak cannot honour ADR-0008's freeze.
