@@ -398,8 +398,15 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   required a reported Post: the surfaces exist but demonstrate nothing empty.
 - **`#13`, the Privacy Policy and Terms of Service, is unblocked and now has its subject matter.**
   This ADR is the exhaustive list of what personal data the platform holds — including the two
-  `bytea` stores, the `last_seen_at` write, and the fact that a Removal keeps the row and burns the
-  email forever.
+  `bytea` stores, the retained `DirectMessage` bodies, and the fact that a Removal keeps the row and
+  burns the email forever.
+
+  > **A `last_seen_at` write was listed here and no such column exists**, found by the
+  > ticket-to-record audit on 2026-09-19. It contradicted this ADR's own entity table and the
+  > "no Presence column (ADR-0003)" line in its deliberate-absence list, in the same file.
+  > **ADR-0003 now rules the column out explicitly**, so `#13` must not describe the platform as
+  > recording when a Student was last online — it records only whether they are online now, and
+  > that is not stored at all.
 - **`document/en.subject.md:1280`-`:1284`'s documentation requirement is satisfied by this file**, or
   by a diagram generated from the schema it describes: tables, relationships, key fields and data
   types are all above.

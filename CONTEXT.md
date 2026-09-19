@@ -38,8 +38,10 @@ _Avoid_: Learner, apprentice
 
 **Presence**:
 Whether a Student currently holds a live connection to the platform, shown to their
-friends as online status. Live state, never a record: Presence does not survive a restart
-of the platform, and a Student reads as offline until they next connect. That gap is
+friends as online status. A Student has Presence while at least one of their connections is
+live, so several open tabs are one Presence rather than several. Live state, never a record:
+Presence does not survive a restart of the platform, a Student reads as offline until they
+next connect, and **nothing anywhere records when a Student was last online**. That gap is
 accepted, not a defect.
 _Avoid_: Activity status, availability, last seen
 

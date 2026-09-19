@@ -109,6 +109,25 @@ database read per chat message.
   offline until they reconnect. Recorded in `CONTEXT.md` as accepted, not a defect; a shared
   presence store would be the fix, and it is scope creep while there is exactly one backend
   container.
+
+  > **Completed 2026-09-19 by the ticket-to-record audit, and one thing ruled out.** Two details
+  > settled on [#5](https://github.com/ahmadmnsur/ft_transcendence/issues/5) never reached any
+  > record: a Student holds Presence **while at least one connection is live**, so multiple tabs
+  > are a connection count rather than a boolean; and **offline is broadcast after a 20-second
+  > grace window**, so a reload does not flicker a Student out to their friends. Both are
+  > engineering defaults in the sense decisions 3, 4 and 10 are — the shape is what matters, not
+  > the number. `CONTEXT.md` now carries the first.
+  >
+  > **There is no `last_seen_at`, deliberately.** Same shape as ADR-0004 decision 10's absent
+  > `SESSION_SECRET`, and recorded for the same reason: a reader who finds the column named
+  > elsewhere would assume it mattered. It was asserted by #5, #10 and #13 and by one clause of
+  > ADR-0014, every time citing *this* ADR, which has never mentioned it. It contradicts
+  > `CONTEXT.md`'s "live state, **never a record**" and its `_Avoid_: last seen`, and ADR-0014's
+  > own entity set excludes it by name ("no Presence column"). `document/en.subject.md:598` asks
+  > for **online status** and nothing else, so the column earns no module point, has no consumer
+  > anywhere in the model, and would put a timestamped record of every Student's habits into the
+  > Privacy Policy for a profile line neither source asks for. **Presence is whether a Student is
+  > online now; when they were last online is not recorded at all.**
 - **Whoever settles moderation depth inherits decision 6**, and should wire "block" into
   session deletion rather than inventing a second mechanism.
 - **Decision 9 is a rule to hold, not a fact to observe.** The pressure to put a privileged
