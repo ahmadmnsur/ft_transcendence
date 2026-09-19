@@ -25,3 +25,9 @@ reversing this later touches every progression feature in the product.
 - What state a Round is in between one closing and the next opening.
 - Whether Students left unmatched when a Round closes carry into the next Round or
   are dropped.
+
+> **All three settled by ADR-0002**, which extends this record rather than amending it. Admin
+> only, and still Admin only after ADR-0008 added a third role; at most one Round open and the
+> platform may sit with none; and nothing carries over, *unmatched* being derived rather than
+> stored. Noted here so a reader of ADR-0001 alone is not left with three open questions that
+> were closed the same week.

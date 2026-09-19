@@ -141,3 +141,10 @@ ADR extends that record rather than reopening it.
 - **XP amounts are still unspecified anywhere on this map.** Decision 6 settles *when* XP lands
   and says nothing about how much, and the same hole covers Level bands, the minimal Badge set
   and which single Leaderboard ships. It now has its own ticket.
+
+  > **Filled by ADR-0010**, which is that ticket resolving. **A Prompt answer pays 20 XP** in the
+  > transaction decision 6 defines, against 120 for a Mentee's Match and 80 for a Mentor's — and
+  > that **1:6 ratio is the only governor**, deliberately, because this ADR refused scheduling and
+  > set no publishing cap. `Level = min(10, 1 + floor(XP / 250))`, three Badges, and one
+  > Leaderboard by XP. **Knowledge Sharer** — three Prompts answered — is the Badge that reads
+  > this loop.

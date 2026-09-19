@@ -79,6 +79,16 @@ and why there is no `SESSION_SECRET`.
    admin password must be changed for any shared use. This project has no third-party
    secrets to hold.
 
+   > **Two later decisions add four entries, and this is the complete current list.** The
+   > module-claim amendment at the end of this ADR adds `FT_OAUTH_CLIENT_ID` and
+   > `FT_OAUTH_CLIENT_SECRET`, which ship **empty** and falsify the closing sentence above.
+   > **ADR-0008 decision 12 adds `MODERATOR_EMAIL` and `MODERATOR_PASSWORD`** for the bootstrap
+   > Peer Moderator, explicitly "on exactly the pattern decision 9 set" — so unlike the OAuth
+   > pair they **do** ship with working development defaults, decision 8's one-command clean
+   > clone still holds, and the warning this decision attaches to `ADMIN_PASSWORD` extends to
+   > them. Recorded here because decision 9 is what anyone writing `.env.example` reads, and
+   > until this note the moderator pair lived only in ADR-0008.
+
 10. **There is no `SESSION_SECRET`, deliberately.** ADR-0003 decision 1 makes the session id
     opaque with the database row as the authority, so there is nothing to sign. Recorded
     because "every app has one" is a reflex, and a variable that does nothing is worse than
@@ -92,8 +102,8 @@ and why there is no `SESSION_SECRET`.
     > **Extended by ADR-0008.** The seed also creates one bootstrap **Peer Moderator**, a
     > fully participating Student with **Skills**. Same argument, applied to the third role:
     > without it, demonstrating the per-role views costs minutes of a defense slot.
- Postgres uses a named volume; `make down` keeps data and a
-    separate target wipes it.
+
+    Postgres uses a named volume; `make down` keeps data and a separate target wipes it.
 
 12. **Kamel owns this slice in week 1, and it is a gate rather than parallel work.** Every
     vertical feature slice needs the single command working before it can start. The budget
@@ -146,7 +156,10 @@ six weeks and three developers.
 - **The content of the Privacy Policy and Terms of Service pages.** Their location is
   settled — SPA routes behind footer links, per `:320`-`:330` — but what they say and who
   writes them is a separate decision, and inadequate pages are grounds for project
-  rejection (`:336`).
+  rejection (`:336`). **Owned by
+  [Settle the Privacy Policy and Terms of Service content](https://github.com/ahmadmnsur/ft_transcendence/issues/13)**,
+  which ADR-0014 unblocked and supplied with its subject matter — that ADR is the exhaustive list
+  of personal data the platform holds.
 - **What fixture data makes every claimed module demonstrable.** Decision 11 settles the
   mechanism and the bootstrap Admin only; the demo strategy is still open.
 

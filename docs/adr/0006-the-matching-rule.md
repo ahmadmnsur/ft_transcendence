@@ -198,3 +198,11 @@ position came out flat.
   off the prototype run slightly lower than the rule specified here produces.
 - **`Block` becomes a domain term and a hard constraint**, so this rule now depends on the
   moderation depth the map still lists as unspecified.
+
+  > **No longer unspecified.** ADR-0008 settled moderation's outputs — three sanctions, and
+  > **Suspension** taking the name ADR-0003 had wrongly given the peer act — and ADR-0011 settled
+  > its inputs. What this rule depends on is now fixed: **Block is stored directed and evaluated
+  > in either direction** (ADR-0014 d4, on this ADR's decision 10), a Block also ends a
+  > Friendship, and **filing a report never creates one** — ADR-0011 d13 refused auto-Block
+  > precisely because Block is a hard matching constraint here, so reporting a peer would
+  > otherwise shrink their candidate pool.

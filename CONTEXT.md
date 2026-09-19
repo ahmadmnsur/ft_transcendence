@@ -20,8 +20,9 @@ a participant — an Admin never enters matching, whatever Skills they list.
 _Avoid_: Staff, moderator, superuser
 
 **Peer Moderator**:
-A trusted Student granted one further authority: reviewing reported Posts and removing a
-Post. Nothing else — never a reported Student, never a reporter's identity, never a
+A trusted Student granted one further authority: working the queue of reported Posts, where
+they may remove the Post or dismiss the report, and either way the platform records which of
+them did it. Nothing else — never a reported Student, never a reporter's identity, never a
 Suspension, a Removal, a Round or a Reflection Prompt. Unlike an Admin, a Peer Moderator is
 a full participant, matched and earning XP like any Student.
 _Avoid_: Moderator, mod, trusted user
@@ -103,6 +104,8 @@ _Avoid_: Pair, pairing, connection
 The number shown to both Students expressing how well a Match serves their skill needs.
 Never shown without its plain-language explanation, and never recalculated: the number and the
 explanation are both fixed when the Match is created, so what the pair were told stays true.
+A Match an Admin makes by hand carries no Score at all — an Admin pairs the Students the rule
+refused, so there is no honest number and none is shown.
 _Avoid_: Match score, fit, rating
 
 **Mission**:
@@ -214,10 +217,12 @@ it: a Streak that later breaks does not take back the Badge it won.
 _Avoid_: Achievement, trophy, award
 
 **Learning Analytics**:
-What the community as a whole is trying to learn and teach, and where its Matches stall: the
-Skills most wanted, the Skills most offered, the gap between them, and how often a Match reaches
-a Review. Always about the community, never about a named Student — that is what separates it
-from a Student's own record, and it is read by Admins alone.
+What the community as a whole is trying to learn and teach, and where its Matches are stuck:
+the Skills most wanted, the Skills most offered, the gap between them, how often a Match reaches
+a Review, and how Matches are distributed across the statuses. Nothing records how a Match moved
+from one status to the next, so this says where Matches stand now and how past ones ended, never
+where they spent longest. Always about the community, never about a named Student — that is what
+separates it from a Student's own record, and it is read by Admins alone.
 _Avoid_: Insights, reporting, statistics, metrics
 
 **Leaderboard**:

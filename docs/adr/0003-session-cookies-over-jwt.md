@@ -136,3 +136,12 @@ database read per chat message.
 - **The public API cannot use this credential.** A cookie is a browser mechanism; a script or
   external consumer has no session to present, so the public-API module needs a credential of
   its own. That question is now on the map.
+
+  > **Closed by removing the module, not by answering it.** The module-claim decision dropped
+  > the public API — the most expensive claim on the list — and OAuth 2.0 plus additional-browser
+  > support replaced its 2 points, which ruled
+  > [#12](https://github.com/ahmadmnsur/ft_transcendence/issues/12) out of scope. With no public
+  > API there are no non-browser consumers to authenticate. **This ADR needed no amendment and got
+  > none: the session cookie is the product's only credential**, which is a simplification rather
+  > than a gap. OAuth later added a second way to *establish* a session and never a second
+  > credential to carry one (ADR-0004's module-claim amendment).

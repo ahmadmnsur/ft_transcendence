@@ -387,10 +387,20 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
 - **Every read path over Students and Posts filters `removed_at`**, unchanged from ADR-0008, and
   seventeen tables pay nothing. Reading decision 6 of that ADR literally is what kept the count at
   two.
-- **Nine raw-SQL migration steps** — four `CHECK` constraints, two expression-based unique indexes
-  (Friendship's unordered pair, Round's single-open), one expression index (no-repeats), and
-  ADR-0011's two partial unique indexes if the Prisma preview feature is not taken. Kamel's schema
-  gate (ADR-0005) reviews these rather than authoring them, as that ADR requires.
+- **Six raw-SQL migration steps, or eight if the `partialIndexes` preview feature is not taken.**
+  **Three** `CHECK` constraints — exactly one origin per `Post`, exactly one target per `Report`,
+  and `rating BETWEEN 1 AND 5` — plus two expression-based unique indexes (Friendship's unordered
+  pair from decision 4, Round's single-open from decision 13) and one expression index
+  (no-repeats). ADR-0011's two partial unique indexes are raw only if the preview feature is
+  declined; the note at the top of this ADR takes it, so the working number is **six**. Kamel's
+  schema gate (ADR-0005) reviews these rather than authoring them, as that ADR requires.
+
+  > **Corrected 2026-09-19: this read "nine … four `CHECK` constraints".** Decision 13 names
+  > three CHECKs and there is no fourth — the obvious candidate, a `Report`'s reporter not being
+  > its target, is listed in that same decision as **not expressible** and left to the
+  > application. The count also read as nine unconditionally while the header note takes the
+  > preview feature, which removes two. Nothing about the schema changes; the gate now has a
+  > number it can check off.
 - **The seed gains an input that was not on the map's list: the Skill catalogue.** Without it no
   Student can list anything, no Match can form and the matcher has no inputs — it joins the bootstrap
   Admin, the Peer Moderator and the one Reflection Prompt as something without which nothing is

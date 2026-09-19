@@ -14,6 +14,17 @@ categories, so "a minimal badge set plus one leaderboard" is reduced depth rathe
 Version 2 pull-forward — an argument that only holds once *minimal* and *one* are actually
 pinned down.
 
+> **Reclassified by ADR-0015, and the point is unaffected.** That ADR counts the minimal badge
+> set plus one Leaderboard as one of exactly **three deliberate Version 2 pull-forwards**,
+> beside 42 OAuth and Learning Analytics — the opposite label to "reduced depth rather than a
+> pull-forward" above. ADR-0015 is right, on a precedent set after this ADR was written:
+> **Section 15 is the MVP list** (ADR-0013), and Section 15 names only "Core XP and a single
+> participation streak", so badges and leaderboards are not MVP and the map's standing default
+> makes them Version 2. **Nothing moves** — the pull-forward passes ADR-0015 decision 10's test
+> outright, because the Gamification Minor requires it and this ADR is the "only to the depth
+> the module requires" clause doing its work. Only the framing was inconsistent between two
+> records.
+
 Two numbers did already exist, unratified. The matching prototype invented `mentee +120 /
 mentor +80` and `levelOf(xp) = min(10, 1 + floor(xp / 250))` to make a *different* question
 runnable, and ADR-0006 was then measured against that Level function. This ADR ratifies one of
@@ -76,8 +87,10 @@ them deliberately and settles the rest.
    measurement on this map has ever been taken against**: ADR-0006's weight-2 elbow and its
    measured 59% Level-gap compliance both assume it, so changing it re-opens a calibration that
    cost a prototype to establish. And the band count is not cosmetic — see the note on ADR-0006
-   above. At the table in decisions 1 and 2 a band costs just over two mentored Matches, and
-   Level 10 sits at 2250 XP, roughly nineteen.
+   above. At the table in decisions 1 and 2 a band costs just over **two Matches as Mentee**
+   (120 XP each) or just over **three as Mentor** (80), and Level 10 sits at **2250 XP** —
+   roughly nineteen Matches as Mentee, twenty-eight as Mentor. The two figures differ because
+   decision 1 pays the two sides differently; quoting one number for "a Match" hides that.
 
 4. **Three Badges, each a numeric threshold tested inside the same transaction that awards the
    XP, and each awarded the first instant its test passes.**
