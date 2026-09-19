@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compatibility Score — prototype</title>
+<style>
+  :root {
+    --bg: #fbfbfd; --panel: #ffffff; --ink: #14161a; --muted: #6b7280;
+    --line: #e5e7eb; --accent: #4f46e5; --accent-soft: #eef2ff;
+    --pass: #0f7a4d; --pass-soft: #e8f6ef; --fail: #b3261e; --fail-soft: #fdecea;
+    --warn: #8a5a00; --warn-soft: #fdf3e0; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101114; --panel: #181a1f; --ink: #e9eaee; --muted: #9aa1ac;
+      --line: #2a2d34; --accent: #a5b4fc; --accent-soft: #1e2130;
+      --pass: #6ee7b7; --pass-soft: #12241c; --fail: #fca5a5; --fail-soft: #2a1717;
+      --warn: #fcd34d; --warn-soft: #2a2213;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 96px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 32px; }
+  .tag {
+    display: inline-block; font: 600 11px/1 var(--mono); letter-spacing: .12em;
+    text-transform: uppercase; color: var(--warn); background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+    padding: 6px 9px; border-radius: 4px; margin-bottom: 18px;
+  }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 12px; letter-spacing: -.02em; }
+  h2 { font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; }
+  h3 { font-size: 16px; margin: 0 0 8px; }
+  .lede { font-size: 17px; color: var(--muted); max-width: 72ch; margin: 0 0 6px; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  section { margin-bottom: 32px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  .panel + .panel { margin-top: 20px; }
+  /* buttons */
+  button {
+    font: inherit; font-size: 14px; color: var(--ink); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 7px; padding: 8px 13px; cursor: pointer; text-align: left;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.1); color: #fff; }
+  button.step { display: block; width: 100%; margin-bottom: 8px; }
+  button.step.done { opacity: .5; }
+  button.step.next { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  /* state readout */
+  .fields { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; }
+  .fields dt { color: var(--muted); }
+  .fields dd { margin: 0; font-family: var(--mono); }
+  .changed { background: var(--accent-soft); border-radius: 3px; padding: 0 4px; margin: 0 -4px; }
+  .just { font-size: 14px; color: var(--accent); background: var(--accent-soft);
+          border-left: 3px solid var(--accent); padding: 10px 12px; border-radius: 0 6px 6px 0; margin-bottom: 18px; }
+  .refused { color: var(--fail); background: var(--fail-soft); border-left-color: var(--fail); }
+  /* match cards */
+  .match { border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .match-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .score { font: 700 22px var(--mono); color: var(--accent); }
+  .roles { font-size: 14px; }
+  .roles b { font-weight: 600; }
+  .pill { font: 600 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
+          padding: 4px 7px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.live { color: var(--pass); background: var(--pass-soft); border-color: transparent; }
+  .pill.dead { color: var(--fail); background: var(--fail-soft); border-color: transparent; }
+  .explain { font-size: 14px; padding: 9px 11px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); margin-bottom: 6px; }
+  .explain .who { color: var(--muted); font: 600 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .07em; display: block; margin-bottom: 4px; }
+  .explain.broken { background: var(--fail-soft); border-color: var(--fail); color: var(--fail); }
+  .meta { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  /* criteria table */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  td.v { font-family: var(--mono); white-space: nowrap; }
+  tr.pass td.v { color: var(--pass); }
+  tr.fail td.v { color: var(--fail); }
+  tr.idle td.v { color: var(--muted); }
+  .verdict { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; }
+  .verdict.pass { color: var(--pass); background: var(--pass-soft); }
+  .verdict.fail { color: var(--fail); background: var(--fail-soft); }
+  .verdict.idle { color: var(--muted); background: var(--bg); }
+  /* rule controls */
+  .ctrl { display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; align-items: center; font-size: 14px; margin-bottom: 12px; }
+  .ctrl:last-child { margin-bottom: 0; }
+  .ctrl label { cursor: pointer; }
+  .ctrl .hint { display: block; color: var(--muted); font-size: 13px; }
+  select, input[type=range] { font: inherit; font-size: 14px; accent-color: var(--accent); }
+  select { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+  .danger label { color: var(--warn); }
+  /* tabs */
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .tabs button { border: 1px solid transparent; border-bottom: none; border-radius: 7px 7px 0 0; margin-bottom: -1px; color: var(--muted); }
+  .tabs button[aria-selected=true] { border-color: var(--line); background: var(--panel); color: var(--accent); font-weight: 600; }
+  .watch { font-size: 14px; background: var(--accent-soft); border-radius: 7px; padding: 12px 14px; margin: 14px 0 18px; }
+  .watch b { display: block; font-size: 11px; font-family: var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  ul.tight { margin: 8px 0 0; padding-left: 20px; font-size: 14px; }
+  ul.tight li { margin-bottom: 5px; }
+  code { font-family: var(--mono); font-size: .92em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+  .empty { color: var(--muted); font-size: 14px; font-style: italic; }
+  footer { border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font-size: 13px; }
+  .roster { font-size: 13px; max-height: 260px; overflow-y: auto; }
+  .roster div { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .roster b { font-weight: 600; }
+  .roster .t { color: var(--pass); }
+  .roster .w { color: var(--accent); }
+  .bar { height: 7px; background: var(--accent); border-radius: 4px; display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">Throwaway prototype · issue #9 · not production code</span>
+  <h1>What rule produces a good Compatibility Score?</h1>
+  <p class="lede">
+    A <strong>Compatibility Score</strong> is the number shown to both Students in a
+    <strong>Match</strong>, saying how well that pairing serves their skill needs. It is never shown
+    without a plain-language reason. This page lets you drive the rule that produces it: change how
+    the Score is calculated, open <strong>Rounds</strong>, and watch which Students get paired, what
+    number they see, and what sentence they read.
+  </p>
+  <p class="lede">
+    Matching v1 is <strong>Compatibility Score + no-repeats only</strong> — fair mentor rotation and
+    availability are Version&nbsp;2 and are not being designed here. Opening a Round runs the matching
+    atomically (ADR-0002), so a Match exists for both Students the instant it is created: there is no
+    window in which to catch a bad pairing afterwards. That is why the rule is being pushed through
+    awkward cases <em>here</em>, before it ships.
+  </p>
+</header>
+
+<div id="just" class="just"></div>
+
+<div class="grid">
+  <section>
+    <h2>The Round</h2>
+    <div class="panel">
+      <dl class="fields" id="round-state"></dl>
+    </div>
+    <div class="panel">
+      <h3>Unmatched Students <span class="pill" id="unmatched-count"></span></h3>
+      <p class="meta" style="margin-top:0">
+        Derived, never stored: a Student in the pool with no Match in a live status. An Admin pairs
+        these by hand.
+      </p>
+      <div id="unmatched"></div>
+    </div>
+    <div class="panel">
+      <h3>The cohort</h3>
+      <div class="roster" id="roster"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The rule</h2>
+    <div class="panel" id="rule-controls"></div>
+    <div class="panel">
+      <h3>Mentor role, spread across the cohort</h3>
+      <p class="meta" style="margin-top:0">
+        Fair Mentor Rotation is Version 2. This is here to check v1 does not <em>already</em>
+        concentrate mentoring in a few Students (criterion C5).
+      </p>
+      <div id="mentor-spread"></div>
+    </div>
+  </section>
+</div>
+
+<section>
+  <h2>Matches in this Round</h2>
+  <div class="panel" id="matches"></div>
+</section>
+
+<section>
+  <h2>Success criteria <span class="pill">fixed before the first run — SUCCESS-CRITERIA.md</span></h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>#</th><th>Criterion</th><th>Target</th><th>Measured</th><th></th></tr></thead>
+      <tbody id="criteria"></tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Free play</h2>
+  <div class="panel">
+    <p class="meta" style="margin-top:0">
+      Always available, in any order. Anything the rules forbid is refused with a reason rather than
+      hidden.
+    </p>
+    <div class="btn-row" id="freeplay"></div>
+  </div>
+</section>
+
+<section>
+  <h2>Guided walkthroughs</h2>
+  <p class="lede" style="font-size:15px">
+    Each tab sets up one awkward case and hands you the buttons to press in order. Starting a
+    walkthrough resets everything, so a scenario runs the same way every time.
+  </p>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="grid">
+    <div class="panel" id="scenario-brief"></div>
+    <div class="panel">
+      <h3>Press these, in order</h3>
+      <div id="scenario-steps"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    Throwaway code answering one question, kept on branch <code>prototype/compatibility-score</code>.
+    The block marked <code>COHORT GENERATOR</code> in this file's source is kept as a test fixture;
+    the page around it is not. Success criteria: <code>SUCCESS-CRITERIA.md</code>.
+  </p>
+</footer>
+
+</div>
+<script>
+/* ==========================================================================================
+   PURE MODULE — the bit that answers the question.
+
+   No DOM, no `document`, no event handlers: the page calls in, nothing flows back out. This
+   is written to be lifted into `src/matching/` once the rule is validated. The page below it
+   is throwaway.
+   ========================================================================================== */
+
+/* ---- deterministic randomness (criterion C6: the same seed must replay identically) ---- */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hash01(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+/* ---- Level is derived from XP alone, never accumulated alongside it (CONTEXT.md) ---- */
+function levelOf(xp) { return Math.min(10, 1 + Math.floor(xp / 250)); }
+
+/* ==========================================================================================
+   COHORT GENERATOR  —  ★ KEEP THIS AS A TEST FIXTURE ★
+   Issue #9 asks for the synthetic cohort generator to survive the prototype. This block and
+   SKILLS / RARE_SKILLS / NAMES / levelOf above are the whole fixture; they depend on nothing
+   else on this page.
+   ========================================================================================== */
+const SKILLS = ['C','C++','Makefile','Shell','Git','Docker','Networking','Sockets','HTTP','SQL',
+  'Prisma','NestJS','React','Tailwind','TypeScript','Testing','Debugging','Valgrind','Algorithms',
+  'Graphics','Threads','Security','Linux','Nginx'];
+/* Skills nobody in a generated cohort can teach — used to manufacture an unmatchable Student. */
+const RARE_SKILLS = ['Quantum Computing','FPGA Design','Rust Macros'];
+const NAMES = ['Karim','Ahmad','Lina','Youssef','Sofia','Mehdi','Nour','Omar','Hiba','Tarek',
+  'Salma','Bilal','Rania','Anas','Dounia','Ilyas','Fadel','Kamel','Amine','Zineb','Walid','Nadia',
+  'Sami','Houda'];
+
+function generateCohort({ size = 20, seed = 42, maxTeach = 5, maxWant = 5, unmatchable = 0 } = {}) {
+  const rnd = mulberry32(seed);
+  const take = (pool, n) => {
+    const copy = pool.slice(), out = [];
+    for (let i = 0; i < n && copy.length; i++) out.push(copy.splice(Math.floor(rnd() * copy.length), 1)[0]);
+    return out;
+  };
+  const students = [];
+  for (let i = 0; i < size; i++) {
+    const canTeach = take(SKILLS, 1 + Math.floor(rnd() * maxTeach));
+    const wantsToLearn = take(SKILLS.filter(s => !canTeach.includes(s)), 1 + Math.floor(rnd() * maxWant));
+    students.push({
+      id: 's' + i,
+      name: NAMES[i % NAMES.length],
+      canTeach, wantsToLearn,
+      learningGoal: rnd() < 0.6 ? wantsToLearn[Math.floor(rnd() * wantsToLearn.length)] : null,
+      xp: Math.floor(rnd() * 2500),
+      mentorReputation: 40 + Math.floor(rnd() * 60),
+      timesMentor: 0,
+    });
+  }
+  /* A Student whose wants nobody in the cohort teaches. Every Round has to do something with
+     them, and "something" is an Admin flag, not a 0% Match. */
+  for (let i = 0; i < unmatchable && i < students.length; i++) {
+    students[i].wantsToLearn = RARE_SKILLS.slice(0, 2);
+    students[i].learningGoal = RARE_SKILLS[0];
+  }
+  return students;
+}
+
+/* Hand-built cohorts, each isolating one awkward case. */
+const S = (id, name, canTeach, wantsToLearn, xp, learningGoal = null, rep = 70) =>
+  ({ id, name, canTeach, wantsToLearn, xp, learningGoal, mentorReputation: rep, timesMentor: 0 });
+
+const COHORTS = {
+  standard:    () => generateCohort({ size: 20, seed: 42 }),
+  small:       () => generateCohort({ size: 8,  seed: 7 }),
+  unmatchable: () => generateCohort({ size: 10, seed: 3, unmatchable: 2 }),
+
+  /* The proposal's own example, Section 4. */
+  exchange: () => [
+    S('s0','Ahmad', ['React','Tailwind','TypeScript'], ['Docker','Networking'], 900, 'Docker'),
+    S('s1','Karim', ['Docker','Sockets','Networking'], ['React','Tailwind'],    1100,'React'),
+    S('s2','Lina',  ['SQL','Prisma'],                  ['Testing','Debugging'], 300, 'Testing'),
+    S('s3','Omar',  ['Testing','Debugging','Valgrind'],['SQL','Prisma'],        1800,'Prisma'),
+  ],
+
+  /* Same amount of teaching, wildly different number — unless the denominator changes. */
+  denominator: () => [
+    S('s0','Houda',  ['Docker','Git','SQL'], ['Graphics'], 700),
+    S('s1','Yassine',['Docker','Git','SQL'], ['Graphics'], 800),
+    S('s2','Lina',   ['Shell'],              ['Docker'],   200),
+    S('s3','Omar',   ['Shell'],              ['Docker','Threads','Security','Algorithms','Nginx'], 250),
+  ],
+
+  /* One perfect pair eats the two Students who were everybody else's only option. */
+  starvation: () => [
+    S('s0','Sami',  ['Docker','Git','SQL','React'], ['Graphics','Threads'],          1200),
+    S('s1','Nadia', ['Graphics','Threads'],         ['Docker','Git','SQL','React'],  1300),
+    S('s2','Tarek', ['Shell'],                      ['Docker','Git'],                400),
+    S('s3','Walid', ['Shell'],                      ['Graphics'],                    500),
+  ],
+};
+
+/* ==========================================================================================
+   THE RULE
+   ========================================================================================== */
+const RULE_DEFAULTS = {
+  direction: 'reciprocal',   /* 'one-way' | 'reciprocal' | 'mutual' */
+  reverseWeight: 0.3,        /* how much the Mentor's own gain counts, under 'reciprocal'   */
+  coverage: 'saturating',    /* 'ratio' = matched / wanted | 'saturating' = 1 - 0.5^matched */
+  goalBonus: true,           /* +10 when the teaching covers the Mentee's Learning Goal     */
+  levelTieBreak: true,       /* -2 per Level of gap beyond 2                                */
+  reputationWeight: 0,       /* Mentor Reputation in the Score. Rotation is V2 — see C5.    */
+  floor: 25,                 /* below this, no Match: the pair becomes an Admin flag        */
+  noRepeats: true,
+  adminBoundByNoRepeats: false,  /* routed question 2 */
+  adminCarriesScore: true,       /* routed question 1 */
+};
+
+const overlap = (a, b) => a.filter(s => b.includes(s));
+
+function coverageOf(matched, wanted, mode) {
+  if (wanted === 0) return 0;
+  if (mode === 'saturating') return 1 - Math.pow(0.5, matched);  /* 1 -> 50%, 2 -> 75%, 3 -> 87.5% */
+  return matched / wanted;
+}
+
+/* Score for the ORDERED pair: `mentor` teaches, `mentee` learns and writes the Review. */
+function scoreDirected(mentor, mentee, rule) {
+  const forward = overlap(mentor.canTeach, mentee.wantsToLearn); /* what the Mentee gains */
+  const reverse = overlap(mentee.canTeach, mentor.wantsToLearn); /* what the Mentor gains */
+  const fwd = coverageOf(forward.length, mentee.wantsToLearn.length, rule.coverage);
+  const rev = coverageOf(reverse.length, mentor.wantsToLearn.length, rule.coverage);
+
+  let base;
+  if (rule.direction === 'one-way')  base = fwd;
+  else if (rule.direction === 'mutual') base = Math.sqrt(fwd * rev); /* both directions or nothing */
+  else base = (1 - rule.reverseWeight) * fwd + rule.reverseWeight * rev;
+
+  let score = 100 * base;
+  if (rule.goalBonus && mentee.learningGoal && forward.includes(mentee.learningGoal)) score += 10;
+  if (rule.levelTieBreak) {
+    const gap = Math.abs(levelOf(mentor.xp) - levelOf(mentee.xp));
+    if (gap > 2) score -= 2 * (gap - 2);
+  }
+  if (rule.reputationWeight) score += 100 * rule.reputationWeight * (mentor.mentorReputation / 100);
+
+  return { score: Math.max(0, Math.min(100, Math.round(score))), forward, reverse, fwd, rev };
+}
+
+/* A Match names one Mentor and one Mentee, so the rule also decides the roles: whichever
+   direction scores higher. Ties break on id, so the result never depends on iteration order. */
+function scorePair(a, b, rule) {
+  const ab = scoreDirected(a, b, rule);
+  const ba = scoreDirected(b, a, rule);
+  const takeAB = ab.score > ba.score || (ab.score === ba.score && a.id <= b.id);
+  const win = takeAB ? ab : ba;
+  return {
+    mentorId: takeAB ? a.id : b.id,
+    menteeId: takeAB ? b.id : a.id,
+    score: win.score, forward: win.forward, reverse: win.reverse,
+    otherDirection: (takeAB ? ba : ab).score,
+    pairKey: [a.id, b.id].sort().join('|'),
+  };
+}
+
+/* ---- the explanation. A Score is never shown without one (CONTEXT.md). ---- */
+function listOf(skills) {
+  const shown = skills.slice(0, 3);
+  const extra = skills.length - shown.length;
+  const parts = extra > 0 ? [...shown, extra + ' more'] : shown;
+  if (parts.length === 1) return parts[0];
+  return parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+}
+
+function explain(match, byId, viewerId) {
+  const mentor = byId[match.mentorId], mentee = byId[match.menteeId];
+  const asMentee = viewerId === match.menteeId;
+  const clauses = [];
+  if (match.forward.length) {
+    clauses.push(asMentee
+      ? `${mentor.name} can teach ${listOf(match.forward)}, which you want to learn`
+      : `you can teach ${listOf(match.forward)}, which ${mentee.name} wants to learn`);
+  }
+  if (match.reverse.length) {
+    clauses.push(asMentee
+      ? `you can teach ${listOf(match.reverse)}, which ${mentor.name} wants to learn`
+      : `${mentee.name} can teach ${listOf(match.reverse)}, which you want to learn`);
+  }
+  const shownScore = match.scored === false ? null : match.score;
+  const head = shownScore === null ? 'Paired by an Admin' : `${shownScore}% match`;
+  return {
+    clauses: clauses.length,
+    text: clauses.length ? `${head}: ${clauses.join('; ')}.` : `${head}.`,
+  };
+}
+
+/* ---- the matcher: greedy over every legal pair, highest Score first ---- */
+function runMatching(pool, pairHistory, rule) {
+  const byId = Object.fromEntries(pool.map(s => [s.id, s]));
+  const candidates = [], rejected = { repeat: 0, floor: 0 };
+  for (let i = 0; i < pool.length; i++) {
+    for (let j = i + 1; j < pool.length; j++) {
+      const p = scorePair(pool[i], pool[j], rule);
+      if (rule.noRepeats && pairHistory.includes(p.pairKey)) { rejected.repeat++; continue; }
+      if (p.score < rule.floor) { rejected.floor++; continue; }
+      candidates.push(p);
+    }
+  }
+  candidates.sort((x, y) => y.score - x.score || x.pairKey.localeCompare(y.pairKey));
+  const taken = new Set(), matches = [];
+  for (const p of candidates) {
+    if (taken.has(p.mentorId) || taken.has(p.menteeId)) continue;
+    taken.add(p.mentorId); taken.add(p.menteeId);
+    matches.push({
+      ...p, madeBy: 'rule', status: 'Proposed', scored: true,
+      mentorLevel: levelOf(byId[p.mentorId].xp), menteeLevel: levelOf(byId[p.menteeId].xp),
+    });
+  }
+  return { matches, considered: candidates.length, rejected, unmatchedIds: pool.filter(s => !taken.has(s.id)).map(s => s.id) };
+}
+
+/* ==========================================================================================
+   THE ROUND, as a reducer. ADR-0002: Admin-only, at most one Open, opening runs the matching
+   atomically, closing is terminal.
+   ========================================================================================== */
+const LIVE = ['Proposed', 'Accepted'];
+
+function initState({ preset = 'standard', rule = {} } = {}) {
+  return {
+    start: { preset, rule },
+    students: COHORTS[preset](),
+    rule: { ...RULE_DEFAULTS, ...rule },
+    rounds: [], pairHistory: [], log: [],
+    note: 'Nothing has happened yet. No Round is open — a legitimate, expected state (ADR-0002).',
+    refused: false, changed: [],
+  };
+}
+
+/* Every Student with at least one Skill on either list. No per-Round opt-in (ADR-0002 dec. 4). */
+const poolOf = st => st.students.filter(s => s.canTeach.length || s.wantsToLearn.length);
+const openRoundOf = st => st.rounds.find(r => r.status === 'Open') || null;
+const matchesOf = st => st.rounds.flatMap(r => r.matches);
+const findMatch = (st, id) => matchesOf(st).find(m => m.id === id);
+/* Unmatched is derived, never stored (ADR-0002 dec. 6): in the pool, no Match in a live status. */
+function unmatchedIn(st, round) {
+  const held = new Set();
+  round.matches.filter(m => LIVE.includes(m.status)).forEach(m => { held.add(m.mentorId); held.add(m.menteeId); });
+  return round.poolIds.filter(id => !held.has(id));
+}
+/* For the criteria: did this Student get a Match at all this Round? A declined Match doesn't count. */
+function wentUnmatched(round) {
+  const held = new Set();
+  round.matches.filter(m => m.status !== 'Declined').forEach(m => { held.add(m.mentorId); held.add(m.menteeId); });
+  return round.poolIds.filter(id => !held.has(id));
+}
+
+function reduce(prev, action) {
+  const st = JSON.parse(JSON.stringify(prev));
+  st.refused = false; st.changed = [];
+  const byId = Object.fromEntries(st.students.map(s => [s.id, s]));
+  const refuse = why => { st.note = why; st.refused = true; return st; };
+  const open = openRoundOf(st);
+
+  switch (action.type) {
+    case 'SET_RULE': {
+      st.rule = { ...st.rule, ...action.patch };
+      st.log.push(action);
+      const [k, v] = Object.entries(action.patch)[0];
+      st.note = `Rule changed: ${k} is now ${v}. Existing Matches keep the Score they were created with — reopen or re-run a Round to see the new rule bite.`;
+      st.changed = ['rule'];
+      return st;
+    }
+    case 'OPEN_ROUND': {
+      if (open) return refuse(`Refused: Round ${open.n} is still open. At most one Round is open at a time (ADR-0002 decision 2) — close it first.`);
+      const pool = poolOf(st);
+      const res = runMatching(pool, st.pairHistory, st.rule);
+      const n = st.rounds.length + 1;
+      res.matches.forEach((m, i) => { m.id = `r${n}m${i}`; m.roundN = n; });
+      st.rounds.push({
+        n, status: 'Open', matches: res.matches, poolIds: pool.map(s => s.id),
+        considered: res.considered, rejected: res.rejected,
+      });
+      /* The pair was offered, so it counts as a repeat from now on — even if it gets declined. */
+      res.matches.forEach(m => { if (!st.pairHistory.includes(m.pairKey)) st.pairHistory.push(m.pairKey); });
+      res.matches.forEach(m => byId[m.mentorId].timesMentor++);
+      st.log.push(action);
+      st.note = `Round ${n} opened and matched in the same breath: ${pool.length} Students in the pool, ${res.considered} legal pairs considered, ${res.matches.length} Matches created, ${res.unmatchedIds.length} left unmatched. ${res.rejected.repeat} pairs were excluded as repeats and ${res.rejected.floor} for scoring below the floor of ${st.rule.floor}%.`;
+      st.changed = ['round', 'matches', 'unmatched'];
+      return st;
+    }
+    case 'ACCEPT': {
+      const m = findMatch(st, action.matchId);
+      if (!m || m.status !== 'Proposed') return refuse('Refused: only a Proposed Match can be accepted.');
+      m.status = 'Accepted';
+      st.log.push(action);
+      st.note = `${byId[m.menteeId].name} and ${byId[m.mentorId].name} both accepted their Match.`;
+      st.changed = ['matches'];
+      return st;
+    }
+    case 'DECLINE': {
+      const m = findMatch(st, action.matchId);
+      if (!m || !LIVE.includes(m.status)) return refuse('Refused: that Match is no longer live.');
+      m.status = 'Declined';
+      st.log.push(action);
+      st.note = `Declined. ${byId[m.mentorId].name} and ${byId[m.menteeId].name} both drop back to unmatched for this Round, and only an Admin repairs it — the system does not hunt for a replacement (ADR-0002 decision 8). Note the Match row still exists, and the pair is still burned for no-repeats.`;
+      st.changed = ['matches', 'unmatched'];
+      return st;
+    }
+    case 'REVIEW': {
+      const m = findMatch(st, action.matchId);
+      if (!m || m.status !== 'Accepted') return refuse('Refused: the Mentee submits a Review only on an accepted Match.');
+      m.status = 'Completed';
+      byId[m.menteeId].xp += 120; byId[m.mentorId].xp += 80;
+      const stars = 3 + Math.round(2 * hash01(`fb:${m.id}`));
+      const rep = byId[m.mentorId];
+      rep.mentorReputation = Math.round((rep.mentorReputation * 3 + stars * 20) / 4);
+      st.log.push(action);
+      st.note = `${byId[m.menteeId].name} submitted a Review: a Learning Outcome, Private Feedback and a Public Takeaway. XP awarded to both; ${rep.name}'s Mentor Reputation is now ${rep.mentorReputation}. Levels are read from XP, so this can move them.`;
+      st.changed = ['matches', 'roster'];
+      return st;
+    }
+    case 'ADMIN_MATCH': {
+      if (!open) return refuse('Refused: an Admin creates a Match inside an open Round (ADR-0002 decision 7). No Round is open.');
+      const free = new Set(unmatchedIn(st, open));
+      if (!free.has(action.aId) || !free.has(action.bId) || action.aId === action.bId)
+        return refuse('Refused: an Admin can only pair two Students who are currently unmatched in this Round.');
+      const a = byId[action.aId], b = byId[action.bId];
+      const p = scorePair(a, b, st.rule);
+      if (st.rule.adminBoundByNoRepeats && st.pairHistory.includes(p.pairKey))
+        return refuse(`Refused: ${a.name} and ${b.name} have been Matched before, and hand-made Matches are currently bound by no-repeats. Turn that off in the rule panel to let the Admin override it.`);
+      const m = {
+        ...p, id: `r${open.n}a${open.matches.length}`, roundN: open.n, madeBy: 'admin',
+        status: 'Proposed', scored: st.rule.adminCarriesScore,
+        mentorLevel: levelOf(a.xp), menteeLevel: levelOf(b.xp),
+      };
+      open.matches.push(m);
+      if (!st.pairHistory.includes(p.pairKey)) st.pairHistory.push(p.pairKey);
+      byId[m.mentorId].timesMentor++;
+      st.log.push(action);
+      st.note = `Admin paired ${a.name} with ${b.name} by hand. The rule would have scored it ${p.score}%` +
+        (st.rule.adminCarriesScore
+          ? ` and that is what both Students see.${p.forward.length ? '' : ' Note there is nothing the Mentor can teach the Mentee here, so the explanation has no clause to show — look at the Match below.'}`
+          : ', but hand-made Matches are set to carry no Score, so the Students see the pairing without a number.');
+      st.changed = ['matches', 'unmatched'];
+      return st;
+    }
+    case 'CLOSE_ROUND': {
+      if (!open) return refuse('Refused: no Round is open.');
+      const abandoned = open.matches.filter(m => LIVE.includes(m.status));
+      abandoned.forEach(m => { m.status = 'FinalisedWithoutReview'; });
+      open.status = 'Closed';
+      st.log.push(action);
+      st.note = `Round ${open.n} closed. Closing is irreversible, and it finalises every Match in it: ${abandoned.length} Match(es) had no Review, so they are FinalisedWithoutReview — a terminal status distinct from Completed, awarding no XP and contributing nothing to Streak.`;
+      st.changed = ['round', 'matches', 'unmatched'];
+      return st;
+    }
+    /* Convenience for the multi-Round criteria: one whole Round, accepted and reviewed. */
+    case 'AUTO_ROUND': {
+      if (open) return refuse(`Refused: Round ${open.n} is still open.`);
+      let s = reduce(st, { type: 'OPEN_ROUND' });
+      const r = openRoundOf(s);
+      if (r) {
+        r.matches.slice().forEach(m => { s = reduce(s, { type: 'ACCEPT', matchId: m.id }); });
+        r.matches.slice().forEach(m => { s = reduce(s, { type: 'REVIEW', matchId: m.id }); });
+      }
+      s = reduce(s, { type: 'CLOSE_ROUND' });
+      s.log = [...prev.log, action];
+      const done = s.rounds[s.rounds.length - 1];
+      s.note = `Round ${done.n} ran start to finish: ${done.matches.length} Matches created, accepted and reviewed, then the Round closed. ${wentUnmatched(done).length} Student(s) got no Match at all. Watch the criteria below.`;
+      s.changed = ['round', 'matches', 'unmatched', 'roster'];
+      return s;
+    }
+    case 'RESET': return initState({ preset: action.preset, rule: action.rule });
+    default: return refuse('Unknown action: ' + action.type);
+  }
+}
+
+/* ==========================================================================================
+   CRITERIA — the yardstick from SUCCESS-CRITERIA.md, committed before the first run.
+   ========================================================================================== */
+function fingerprint(st) {
+  return st.rounds.map(r => r.n + ':' + r.matches
+    .map(m => [m.mentorId, m.menteeId, m.score, m.status].join('/')).join(',')).join('|');
+}
+
+function evaluateCriteria(st) {
+  const all = matchesOf(st);
+  const byId = Object.fromEntries(st.students.map(s => [s.id, s]));
+  const pct = (n, d) => d === 0 ? null : Math.round((100 * n) / d);
+  const out = [];
+  const add = (id, label, target, measured, verdict, detail) => out.push({ id, label, target, measured, verdict, detail });
+
+  /* C1 — nobody stalls */
+  if (st.rounds.length < 2) add('C1', 'Nobody stalls', '0 Students', 'needs 2 Rounds', 'idle', 'Run at least two Rounds.');
+  else {
+    const stalled = [];
+    for (let i = 1; i < st.rounds.length; i++) {
+      const a = new Set(wentUnmatched(st.rounds[i - 1])), b = wentUnmatched(st.rounds[i]);
+      b.filter(id => a.has(id)).forEach(id => stalled.push(`${byId[id].name} (Rounds ${st.rounds[i - 1].n}–${st.rounds[i].n})`));
+    }
+    add('C1', 'Nobody stalls', '0 Students', stalled.length + ' Students', stalled.length === 0 ? 'pass' : 'fail',
+      stalled.length ? 'Unmatched twice running: ' + [...new Set(stalled)].join(', ') : 'No Student was unmatched in two consecutive Rounds.');
+  }
+
+  /* C2 — experience stays balanced */
+  const close = all.filter(m => Math.abs(m.mentorLevel - m.menteeLevel) <= 3).length;
+  const c2 = pct(close, all.length);
+  add('C2', 'Level gap ≤ 3', '≥ 90%', c2 === null ? 'no Matches' : c2 + '%', c2 === null ? 'idle' : (c2 >= 90 ? 'pass' : 'fail'),
+    'Measured, never enforced — v1 constrains on no-repeats only.');
+
+  /* C3 — the Mentor can actually teach the Mentee */
+  const teaches = all.filter(m => m.forward.length > 0).length;
+  const c3 = pct(teaches, all.length);
+  const adminBad = all.filter(m => m.madeBy === 'admin' && m.forward.length === 0).length;
+  add('C3', 'Mentor teaches ≥1 wanted Skill', '100%', c3 === null ? 'no Matches' : c3 + '%',
+    c3 === null ? 'idle' : (c3 === 100 ? 'pass' : 'fail'),
+    adminBad ? `${adminBad} of the shortfall is hand-made by an Admin — the rule never produces one. That is routed question 1 biting.` : 'Disqualifying if it fails: a Mentor who teaches nothing the Mentee wants is not a Match.');
+
+  /* C4 — every Score is explainable */
+  const explainable = all.filter(m => explain(m, byId, m.menteeId).clauses > 0).length;
+  const c4 = pct(explainable, all.length);
+  add('C4', 'Every Score is explainable', '100%', c4 === null ? 'no Matches' : c4 + '%',
+    c4 === null ? 'idle' : (c4 === 100 ? 'pass' : 'fail'),
+    'A Compatibility Score is never shown without its plain-language explanation (CONTEXT.md).');
+
+  /* C5 — mentoring does not concentrate */
+  if (st.rounds.length < 3) add('C5', 'Mentoring does not concentrate', '≤ 2× the mean', 'needs 3 Rounds', 'idle', 'Run at least three Rounds.');
+  else {
+    const counts = {};
+    all.forEach(m => { counts[m.mentorId] = (counts[m.mentorId] || 0) + 1; });
+    const vals = st.rounds[0].poolIds.map(id => counts[id] || 0);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const over = Object.entries(counts).filter(([, c]) => mean > 0 && c > 2 * mean);
+    add('C5', 'Mentoring does not concentrate', '≤ 2× the mean',
+      `max ${Math.max(...vals)} vs mean ${mean.toFixed(1)}`, over.length === 0 ? 'pass' : 'fail',
+      over.length ? 'Over the line: ' + over.map(([id, c]) => `${byId[id].name} ×${c}`).join(', ') + '. Fair Mentor Rotation is Version 2, so v1 must not concentrate mentoring by itself.' : 'No Student is hogging the Mentor role.');
+  }
+
+  /* C6 — reproducible */
+  if (!st.log.length) add('C6', 'Reproducible from the seed', 'exact match', 'nothing to replay', 'idle', 'Do something first.');
+  else {
+    let replayed = initState(st.start);
+    for (const a of st.log) replayed = reduce(replayed, a);
+    const same = fingerprint(replayed) === fingerprint(st);
+    add('C6', 'Reproducible from the seed', 'exact match', same ? 'identical' : 'DIVERGED', same ? 'pass' : 'fail',
+      `Replayed all ${st.log.length} action(s) from the seed and compared every Match. A defense demo has to run the same way twice.`);
+  }
+
+  /* C7 — a weak pair is an Admin flag, not a Match */
+  const below = all.filter(m => m.madeBy === 'rule' && m.score < st.rule.floor).length;
+  add('C7', 'No Match below the floor', '0 Matches', all.length ? below + ' Matches' : 'no Matches',
+    all.length === 0 ? 'idle' : (below === 0 ? 'pass' : 'fail'),
+    `The floor is ${st.rule.floor}%. Below it the pair surfaces as unmatched for an Admin instead of becoming a Match.`);
+
+  return out;
+}
+
+/* ==========================================================================================
+   THROWAWAY PAGE SHELL — everything below is for clicking, not for keeping. It only calls
+   into the module above; nothing flows back the other way.
+   ========================================================================================== */
+let state = initState({ preset: 'standard' });
+let scenario = null, step = 0, adminPick = [null, null];
+
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const byIdOf = st => Object.fromEntries(st.students.map(s => [s.id, s]));
+
+function dispatch(action) {
+  if (!action) return;
+  state = action.type === 'RESET' ? initState({ preset: action.preset, rule: action.rule }) : reduce(state, action);
+  if (action.type === 'RESET') state.note = 'Reset to a known starting point, so the walkthrough runs the same way every time.';
+  adminPick = [null, null];
+  render();
+}
+
+/* ---- the rule controls ---- */
+const RULE_UI = [
+  { key: 'direction', type: 'select', label: 'How the two directions count',
+    hint: 'A Match names one Mentor and one Mentee — but the proposal’s own example describes a two-way exchange. This decides whether the reverse direction is a bonus, a requirement, or ignored.',
+    options: [['one-way', 'Only what the Mentee gains'], ['reciprocal', 'Mentee mostly, Mentor a little'], ['mutual', 'Both directions, or nothing']] },
+  { key: 'reverseWeight', type: 'range', label: 'How much the Mentor’s own gain counts', min: 0, max: 0.5, step: 0.05,
+    hint: 'Only used by "Mentee mostly, Mentor a little".', fmt: v => Math.round(v * 100) + '%' },
+  { key: 'coverage', type: 'select', label: 'The denominator',
+    hint: 'What the percentage is a percentage of. "Covered ÷ wanted" means a Student who wants one Skill sees 100% the moment it is covered; "diminishing returns" scores by how much is taught, not by how little was asked for.',
+    options: [['ratio', 'Skills covered ÷ Skills wanted'], ['saturating', 'Diminishing returns per Skill taught']] },
+  { key: 'floor', type: 'range', label: 'Score floor', min: 0, max: 60, step: 5, fmt: v => v + '%',
+    hint: 'Below this, no Match is created: the pair surfaces as unmatched for an Admin. Drag it to 0 and watch what both Students are shown.' },
+  { key: 'goalBonus', type: 'check', label: 'Bonus when the teaching covers the Mentee’s Learning Goal', hint: '+10 points.' },
+  { key: 'levelTieBreak', type: 'check', label: 'Nudge Levels together', hint: '−2 points per Level of gap beyond 2. A tie-break, not a constraint.' },
+  { key: 'reputationWeight', type: 'range', label: 'Mentor Reputation in the Score', min: 0, max: 0.3, step: 0.05, danger: true, fmt: v => Math.round(v * 100) + '%',
+    hint: 'Fair Mentor Rotation is Version 2. Turn this up and watch criterion C5 — this is how mentoring concentrates in a few Students.' },
+  { key: 'noRepeats', type: 'check', label: 'No-repeats', hint: 'The one hard constraint in matching v1: never pair the same two Students twice.' },
+  { key: 'adminCarriesScore', type: 'check', label: 'A hand-made Match carries a Score', hint: 'Routed question 1 from ADR-0002.' },
+  { key: 'adminBoundByNoRepeats', type: 'check', label: 'A hand-made Match obeys no-repeats', hint: 'Routed question 2 from ADR-0002.' },
+];
+
+function renderRule() {
+  const box = $('rule-controls'); box.innerHTML = '';
+  for (const c of RULE_UI) {
+    const row = el('div', 'ctrl' + (c.danger ? ' danger' : ''));
+    const left = el('div');
+    const lab = el('label', null, c.label); lab.htmlFor = 'rule-' + c.key;
+    left.append(lab, el('span', 'hint', c.hint));
+    const right = el('div');
+    if (c.type === 'select') {
+      const sel = el('select'); sel.id = 'rule-' + c.key;
+      c.options.forEach(([v, t]) => { const o = el('option', null, t); o.value = v; sel.append(o); });
+      sel.value = state.rule[c.key];
+      sel.onchange = () => dispatch({ type: 'SET_RULE', patch: { [c.key]: sel.value } });
+      right.append(sel);
+    } else if (c.type === 'range') {
+      const wrap = el('div'); wrap.style.textAlign = 'right';
+      const inp = el('input'); inp.type = 'range'; inp.id = 'rule-' + c.key;
+      inp.min = c.min; inp.max = c.max; inp.step = c.step; inp.value = state.rule[c.key];
+      inp.oninput = () => dispatch({ type: 'SET_RULE', patch: { [c.key]: parseFloat(inp.value) } });
+      wrap.append(inp, el('div', 'num', c.fmt(state.rule[c.key])));
+      right.append(wrap);
+    } else {
+      const inp = el('input'); inp.type = 'checkbox'; inp.id = 'rule-' + c.key;
+      inp.checked = !!state.rule[c.key];
+      inp.onchange = () => dispatch({ type: 'SET_RULE', patch: { [c.key]: inp.checked } });
+      right.append(inp);
+    }
+    row.append(left, right); box.append(row);
+  }
+}
+
+/* ---- the Round ---- */
+function renderRoundState() {
+  const open = openRoundOf(state), pool = poolOf(state);
+  const last = state.rounds[state.rounds.length - 1];
+  const shown = open || last;
+  const rows = [
+    ['Round', state.rounds.length ? `${shown.n} of ${state.rounds.length}` : '—'],
+    ['Status', open ? 'Open' : state.rounds.length ? 'Closed — no Round is open' : 'No Round has ever opened'],
+    ['Candidate pool', `${pool.length} Students`],
+    ['Matches this Round', shown ? String(shown.matches.length) : '—'],
+    ['Unmatched now', shown ? String(unmatchedIn(state, shown).length) : '—'],
+    ['Legal pairs considered', shown ? `${shown.considered} of ${(pool.length * (pool.length - 1)) / 2}` : '—'],
+    ['Excluded as repeats', shown ? String(shown.rejected.repeat) : '—'],
+    ['Excluded below floor', shown ? String(shown.rejected.floor) : '—'],
+    ['Pairs burned forever', `${state.pairHistory.length} of ${(pool.length * (pool.length - 1)) / 2}`],
+    ['Cohort', state.start.preset],
+  ];
+  const dl = $('round-state'); dl.innerHTML = '';
+  for (const [k, v] of rows) {
+    dl.append(el('dt', null, k));
+    dl.append(el('dd', state.changed.includes('round') && (k === 'Round' || k === 'Status') ? 'changed' : null, v));
+  }
+}
+
+function renderMatches() {
+  const box = $('matches'); box.innerHTML = '';
+  const byId = byIdOf(state);
+  const open = openRoundOf(state);
+  const shown = open || state.rounds[state.rounds.length - 1];
+  if (!shown || !shown.matches.length) {
+    box.append(el('p', 'empty', shown ? 'This Round produced no Matches at all. Legal, and no special case: with fewer than two viable candidates the matcher simply has nothing to pair.' : 'No Round has opened yet. Opening one runs the matching in the same breath — there is no separate "run matching" step.'));
+    return;
+  }
+  for (const m of shown.matches) {
+    const card = el('div', 'match');
+    const top = el('div', 'match-top');
+    top.append(el('span', 'score', m.scored === false ? 'no Score' : m.score + '%'));
+    const roles = el('div', 'roles');
+    roles.innerHTML = `<b>${byId[m.mentorId].name}</b> mentors <b>${byId[m.menteeId].name}</b>
+      &nbsp;<span class="meta">Level ${m.mentorLevel} → Level ${m.menteeLevel}${Math.abs(m.mentorLevel - m.menteeLevel) > 3 ? ' · gap of ' + Math.abs(m.mentorLevel - m.menteeLevel) : ''}</span>`;
+    top.append(roles);
+    top.append(el('span', 'pill ' + (LIVE.includes(m.status) ? 'live' : m.status === 'Completed' ? 'live' : 'dead'), m.status));
+    if (m.madeBy === 'admin') top.append(el('span', 'pill', 'by hand'));
+    card.append(top);
+
+    for (const viewer of [m.menteeId, m.mentorId]) {
+      const ex = explain(m, byId, viewer);
+      const p = el('div', 'explain' + (ex.clauses === 0 ? ' broken' : ''));
+      p.append(el('span', 'who', `${byId[viewer].name} (${viewer === m.menteeId ? 'Mentee' : 'Mentor'}) sees`));
+      p.append(document.createTextNode(ex.text));
+      if (ex.clauses === 0) p.append(el('div', 'meta', 'A bare number with nothing to explain it. CONTEXT.md says a Compatibility Score is never shown without its plain-language reason — this violates the glossary, not just taste.'));
+      card.append(p);
+    }
+    if (m.score === m.otherDirection && m.reverse.length && m.forward.length) {
+      card.append(el('div', 'meta', `Both directions score ${m.score}%, so which Student is Mentor came down to a tie-break on id. Only the Mentee writes the Review, and only the Mentor’s Reputation moves — arbitrary roles, asymmetric consequences.`));
+    }
+    const acts = el('div', 'btn-row'); acts.style.marginTop = '10px';
+    const mk = (label, action, ok) => { const b = el('button', null, label); b.disabled = !ok; b.onclick = () => dispatch(action); acts.append(b); };
+    mk('Both accept', { type: 'ACCEPT', matchId: m.id }, m.status === 'Proposed');
+    mk('Decline', { type: 'DECLINE', matchId: m.id }, LIVE.includes(m.status));
+    mk('Mentee submits the Review', { type: 'REVIEW', matchId: m.id }, m.status === 'Accepted');
+    card.append(acts);
+    box.append(card);
+  }
+}
+
+function renderUnmatched() {
+  const box = $('unmatched'); box.innerHTML = '';
+  const byId = byIdOf(state);
+  const open = openRoundOf(state);
+  const shown = open || state.rounds[state.rounds.length - 1];
+  const ids = shown ? unmatchedIn(state, shown) : [];
+  $('unmatched-count').textContent = shown ? ids.length + ' now' : 'no Round';
+  if (!shown) { box.append(el('p', 'empty', 'No Round has opened.')); return; }
+  if (!ids.length) { box.append(el('p', 'empty', 'Everyone in the pool holds a live Match.')); return; }
+  box.append(el('p', null, ids.map(i => byId[i].name).join(', ')));
+  const row = el('div', 'btn-row');
+  const mkSel = slot => {
+    const sel = el('select');
+    const blank = el('option', null, '— pick a Student —'); blank.value = ''; sel.append(blank);
+    ids.forEach(i => { const o = el('option', null, byId[i].name); o.value = i; sel.append(o); });
+    sel.value = adminPick[slot] || '';
+    sel.onchange = () => { adminPick[slot] = sel.value || null; render(); };
+    return sel;
+  };
+  row.append(mkSel(0), mkSel(1));
+  const b = el('button', 'primary', 'Admin pairs them by hand');
+  b.disabled = !(open && adminPick[0] && adminPick[1] && adminPick[0] !== adminPick[1]);
+  b.onclick = () => dispatch({ type: 'ADMIN_MATCH', aId: adminPick[0], bId: adminPick[1] });
+  row.append(b);
+  box.append(row);
+}
+
+function renderRoster() {
+  const box = $('roster'); box.innerHTML = '';
+  for (const s of state.students) {
+    const d = el('div');
+    d.innerHTML = `<b>${s.name}</b> <span class="meta">L${levelOf(s.xp)} · ${s.xp} XP · rep ${s.mentorReputation} · mentored ×${s.timesMentor}</span><br>
+      <span class="t">teaches:</span> ${s.canTeach.join(', ') || '—'}<br>
+      <span class="w">wants:</span> ${s.wantsToLearn.join(', ') || '—'}${s.learningGoal ? ` <span class="meta">(goal: ${s.learningGoal})</span>` : ''}`;
+    box.append(d);
+  }
+}
+
+function renderSpread() {
+  const box = $('mentor-spread'); box.innerHTML = '';
+  const counts = state.students.map(s => s.timesMentor);
+  const max = Math.max(1, ...counts);
+  const ranked = state.students.map((s, i) => [s, counts[i]]).sort((a, b) => b[1] - a[1]);
+  if (!state.rounds.length) { box.append(el('p', 'empty', 'No Round has opened.')); return; }
+  for (const [s, c] of ranked.slice(0, 8)) {
+    const d = el('div'); d.style.fontSize = '13px';
+    const bar = el('span', 'bar'); bar.style.width = Math.round((c / max) * 120) + 'px';
+    const nm = el('span', null, s.name); nm.style.display = 'inline-block'; nm.style.width = '76px';
+    d.append(nm, bar, el('span', 'num', ' ×' + c));
+    box.append(d);
+  }
+}
+
+function renderCriteria() {
+  const body = $('criteria'); body.innerHTML = '';
+  for (const c of evaluateCriteria(state)) {
+    const tr = el('tr', c.verdict);
+    tr.append(el('td', 'v', c.id));
+    const label = el('td'); label.append(el('div', null, c.label), el('div', 'meta', c.detail));
+    tr.append(label, el('td', 'v', String(c.target)), el('td', 'v', String(c.measured)));
+    const v = el('td'); v.append(el('span', 'verdict ' + c.verdict, c.verdict === 'idle' ? 'not yet' : c.verdict));
+    tr.append(v);
+    body.append(tr);
+  }
+}
+
+/* ---- free play ---- */
+const FREEPLAY = [
+  ['Open a Round (runs the matching)', () => ({ type: 'OPEN_ROUND' }), true],
+  ['Run a whole Round start to finish', () => ({ type: 'AUTO_ROUND' })],
+  ['Close the Round', () => ({ type: 'CLOSE_ROUND' })],
+  ['Accept every Match', st => { const r = openRoundOf(st); const m = r && r.matches.find(x => x.status === 'Proposed'); return m ? { type: 'ACCEPT', matchId: m.id } : null; }],
+  ['Decline the top Match', st => { const r = openRoundOf(st); const m = r && r.matches.find(x => LIVE.includes(x.status)); return m ? { type: 'DECLINE', matchId: m.id } : null; }],
+  ['Admin pairs the first two unmatched', st => { const r = openRoundOf(st); if (!r) return null; const u = unmatchedIn(st, r); return u.length >= 2 ? { type: 'ADMIN_MATCH', aId: u[0], bId: u[1] } : null; }],
+  ['Start over — 20 Students', () => ({ type: 'RESET', preset: 'standard' })],
+  ['Start over — 8 Students', () => ({ type: 'RESET', preset: 'small' })],
+];
+
+function renderFreeplay() {
+  const box = $('freeplay'); box.innerHTML = '';
+  for (const [label, make, primary] of FREEPLAY) {
+    const b = el('button', primary ? 'primary' : null, label);
+    b.onclick = () => {
+      const a = make(state);
+      if (!a) { state = { ...state, note: 'Nothing to do: there is no Match or Student in the right state for that.', refused: true, changed: [] }; render(); return; }
+      dispatch(a);
+    };
+    box.append(b);
+  }
+}
+
+/* ---- guided walkthroughs ---- */
+const firstLive = st => { const r = openRoundOf(st); return r && r.matches.find(x => LIVE.includes(x.status)); };
+const SCENARIOS = [
+  { name: 'The exchange, as promised',
+    blurb: 'The pair straight out of the concept proposal: Ahmad teaches React and Tailwind, Karim teaches Docker and Networking, and each wants what the other has. This is the case the Score is supposed to be good at, so it is the baseline — if the number and the sentence do not read well here, nothing else will save the rule.',
+    watch: 'The number lands at 85%, not 100% — close to the “82% match” the proposal itself uses. Read both viewpoints: the same Match, two sentences, “you” pointing at different people. Then notice the line under it: both directions score identically, so which of the two is Mentor came down to a tie-break — yet only the Mentee writes the Review.',
+    setup: { preset: 'exchange' },
+    steps: [['Open a Round', () => ({ type: 'OPEN_ROUND' })],
+            ['Both Students accept', st => { const m = firstLive(st); return m ? { type: 'ACCEPT', matchId: m.id } : null; }],
+            ['The Mentee submits the Review', st => { const r = openRoundOf(st); const m = r && r.matches.find(x => x.status === 'Accepted'); return m ? { type: 'REVIEW', matchId: m.id } : null; }],
+            ['Close the Round', () => ({ type: 'CLOSE_ROUND' })]] },
+
+  { name: 'The 100% that means nothing',
+    blurb: 'Two Students want to learn Docker. Lina listed only Docker; Omar listed Docker and four other things. One Mentor teaches Docker to each of them — exactly the same teaching, in both Matches. Under a “covered ÷ wanted” denominator they are told wildly different numbers.',
+    watch: 'Lina is shown 100% for one Skill. Omar scores 20% for the same single Skill — below the floor, so he is not matched at all. Step 2 swaps the denominator for diminishing returns: now both see 50%, and both get a Match. This is the denominator decision, and it is the difference between a Student being told “perfect match” and being told nothing.',
+    setup: { preset: 'denominator', rule: { direction: 'one-way', coverage: 'ratio' } },
+    steps: [['Open a Round', () => ({ type: 'OPEN_ROUND' })],
+            ['Switch to diminishing returns and start over', () => ({ type: 'RESET', preset: 'denominator', rule: { direction: 'one-way', coverage: 'saturating' } })],
+            ['Open a Round', () => ({ type: 'OPEN_ROUND' })]] },
+
+  { name: 'Nobody can teach them',
+    blurb: 'A cohort of ten where two Students want Skills nobody in the pool teaches. Every Round has to do something with them. The floor decides what: an Admin flag, or a Match.',
+    watch: 'Step 2 drops the floor to zero so nobody is left out — and produces a Match whose explanation has no clause at all, just “0% match.” shown to two real Students. That is a glossary violation, flagged in red, and criteria C3 and C4 fail. Step 4 restores the floor and hands the pair to an Admin instead, which is what ADR-0002 decision 7 exists for.',
+    setup: { preset: 'unmatchable' },
+    steps: [['Open a Round', () => ({ type: 'OPEN_ROUND' })],
+            ['Drop the floor to 0 and start over', () => ({ type: 'RESET', preset: 'unmatchable', rule: { floor: 0 } })],
+            ['Open a Round', () => ({ type: 'OPEN_ROUND' })],
+            ['Put the floor back and start over', () => ({ type: 'RESET', preset: 'unmatchable' })],
+            ['Open a Round', () => ({ type: 'OPEN_ROUND' })],
+            ['Admin pairs two unmatched Students by hand', st => { const r = openRoundOf(st); if (!r) return null; const u = unmatchedIn(st, r); return u.length >= 2 ? { type: 'ADMIN_MATCH', aId: u[0], bId: u[1] } : null; }]] },
+
+  { name: 'Greedy strands two Students',
+    blurb: 'Four Students. Sami and Nadia are a flawless two-way exchange. Tarek can only learn from Sami; Walid can only learn from Nadia. The matcher takes the highest-scoring pair first, because that is what greedy means.',
+    watch: 'Sami and Nadia pair at 88%, and Tarek and Walid — who had exactly one viable partner each, now consumed — are left with nothing. Two Matches at 70-ish percent would have served four Students instead of two. This is the price of a greedy matcher, and it is worth paying only if you have decided to pay it. Step 2 shows what the Admin can do about it, and what number the pair would be shown.',
+    setup: { preset: 'starvation' },
+    steps: [['Open a Round', () => ({ type: 'OPEN_ROUND' })],
+            ['Admin pairs the two stranded Students', st => { const r = openRoundOf(st); if (!r) return null; const u = unmatchedIn(st, r); return u.length >= 2 ? { type: 'ADMIN_MATCH', aId: u[0], bId: u[1] } : null; }],
+            ['Turn off the Score on hand-made Matches', () => ({ type: 'SET_RULE', patch: { adminCarriesScore: false } })]] },
+
+  { name: 'No-repeats closes the door',
+    blurb: 'Eight Students, five Rounds, every Match reviewed. No-repeats is the one hard constraint in matching v1: a pair can never happen twice. Eight Students only have 28 possible pairs, and each Round burns four of them forever.',
+    watch: 'The “pairs burned forever” counter climbing, and the unmatched count with it. Criterion C1 — no Student unmatched two Rounds running — is the one to watch. A 42 cohort is bigger than eight, but a demo cohort is not, and neither is a Round late in a quiet month.',
+    setup: { preset: 'small' },
+    steps: [['Run Round 1', () => ({ type: 'AUTO_ROUND' })], ['Run Round 2', () => ({ type: 'AUTO_ROUND' })],
+            ['Run Round 3', () => ({ type: 'AUTO_ROUND' })], ['Run Round 4', () => ({ type: 'AUTO_ROUND' })],
+            ['Run Round 5', () => ({ type: 'AUTO_ROUND' })]] },
+
+  { name: 'Reputation concentrates mentoring',
+    blurb: 'The same twenty Students, six Rounds, but Mentor Reputation now counts for 15% of the Score. This is the obvious-looking improvement: route Students to the Mentors who are good at it. Fair Mentor Rotation, which exists to counteract exactly this, is Version 2.',
+    watch: 'The Mentor spread panel and criterion C5. The well-reviewed Students get picked, get reviewed again, and get picked more. The proposal warns about “always routing students to the same few highest-rated mentors” — this is that, arriving through the Score rather than through a rotation bug.',
+    setup: { preset: 'standard', rule: { reputationWeight: 0.15 } },
+    steps: [1, 2, 3, 4, 5, 6].map(n => [`Run Round ${n}`, () => ({ type: 'AUTO_ROUND' })]) },
+
+  { name: 'Demanding a two-way exchange',
+    blurb: 'The proposal’s example is mutual: each Student teaches the other. This runs the twenty-Student cohort with that as a requirement rather than a bonus — a pair scores nothing unless both directions have something in them.',
+    watch: 'The pool collapses. Perfect exchanges are rare, so most Students get no Match at all, and it compounds as no-repeats eats the few pairs that do work. Reciprocity has to be a bonus, not a gate — which is the whole reason the default weights it at 30% instead of demanding it.',
+    setup: { preset: 'standard', rule: { direction: 'mutual' } },
+    steps: [1, 2, 3].map(n => [`Run Round ${n}`, () => ({ type: 'AUTO_ROUND' })]) },
+];
+
+function startScenario(i) {
+  scenario = i; step = 0;
+  const s = SCENARIOS[i];
+  state = initState({ preset: s.setup.preset, rule: s.setup.rule || {} });
+  state.note = `Walkthrough "${s.name}" is set up and reset to a known starting point. Press the steps in order.`;
+  render();
+}
+
+function renderTabs() {
+  const box = $('tabs'); box.innerHTML = '';
+  SCENARIOS.forEach((s, i) => {
+    const b = el('button', null, `${i + 1}. ${s.name}`);
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', scenario === i ? 'true' : 'false');
+    b.onclick = () => startScenario(i);
+    box.append(b);
+  });
+}
+
+function renderScenario() {
+  const brief = $('scenario-brief'), steps = $('scenario-steps');
+  brief.innerHTML = ''; steps.innerHTML = '';
+  if (scenario === null) {
+    brief.append(el('p', 'empty', 'Pick a walkthrough above. Each one resets the cohort and the rule, then hands you the buttons in order.'));
+    steps.append(el('p', 'empty', '—'));
+    return;
+  }
+  const s = SCENARIOS[scenario];
+  brief.append(el('h3', null, s.name), el('p', null, s.blurb));
+  const w = el('div', 'watch'); w.append(el('b', null, 'What to watch for'), document.createTextNode(s.watch));
+  brief.append(w);
+  s.steps.forEach(([label, make], i) => {
+    const b = el('button', 'step' + (i < step ? ' done' : i === step ? ' next' : ''), `${i + 1}. ${label}`);
+    b.disabled = i !== step;
+    b.onclick = () => { step = i + 1; dispatch(make(state)); };
+    steps.append(b);
+  });
+  if (step >= s.steps.length) steps.append(el('p', 'meta', 'Walkthrough finished. Free play below stays available, and the rule panel is live — change something and run another Round.'));
+}
+
+function render() {
+  const j = $('just');
+  j.className = 'just' + (state.refused ? ' refused' : '');
+  j.textContent = state.note;
+  renderRule(); renderRoundState(); renderMatches(); renderUnmatched();
+  renderRoster(); renderSpread(); renderCriteria(); renderFreeplay(); renderTabs(); renderScenario();
+}
+render();
+</script>
+</body>
+</html>
