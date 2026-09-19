@@ -145,7 +145,8 @@ _Avoid_: Points, score, credits
 **Level**:
 The band a Student's XP places them in, expressing continued participation and
 contribution. Derived from XP alone: a Level is read from the pool, never accumulated
-alongside it as a second counter.
+alongside it as a second counter. There are ten bands, and the tenth is terminal — a
+Student who reaches it keeps earning XP but has no Level left to gain.
 _Avoid_: Rank, tier, grade
 
 **Streak**:
@@ -161,9 +162,13 @@ _Avoid_: Karma, stars, rating
 **Badge**:
 A named award a Student earns once for a specific accomplishment, and never loses.
 Distinct from XP, which accumulates continuously: a Badge is a discrete, permanent mark.
+Always a threshold reached, never a position held — a Badge cannot depend on what other
+Students do, because nothing that another person's actions can take away could be kept
+for good.
 _Avoid_: Achievement, trophy, award
 
 **Leaderboard**:
 A ranking of Students by one named measure, such as XP or Mentor Reputation. Always
-scoped to a stated measure; there is no single overall ranking of Students.
+scoped to a stated measure; there is no single overall ranking of Students. Only
+participants are ranked: an Admin is staff and never appears, however much XP they hold.
 _Avoid_: Ranking, top list, chart
