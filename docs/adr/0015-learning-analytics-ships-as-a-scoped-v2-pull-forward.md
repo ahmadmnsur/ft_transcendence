@@ -51,12 +51,47 @@ license pulling any other.**
 
 2. **All five of the proposal's Learning Analytics figures ship, and the depth around them is
    deliberately reduced.** Most-requested Skills to learn; most-available Skills to teach; the
-   supply/demand gap; overall Match completion rate; where in the status flow Matches stall.
+   supply/demand gap; overall Match completion rate; where in the status flow Matches stall — the
+   last of which the model can only answer in a narrower form, below.
 
    Five queries over ADR-0014's schema — dropping any makes the surface thinner without making it
    meaningfully cheaper. What is reduced is everything *around* them: no workshop-planning tooling,
    no custom date ranges, no export, and no per-Student drill-down, the Users table (ADR-0008 d11)
    already being that.
+
+   **Each figure is defined here rather than left to a slice**, because every one of them has a
+   plausible second reading and a dashboard whose numbers cannot be explained on the day is worse
+   than no dashboard:
+
+   | Figure | Definition |
+   | --- | --- |
+   | **Demand** for a Skill | count of `StudentSkill` rows with `kind = LEARN` |
+   | **Supply** for a Skill | count of `StudentSkill` rows with `kind = TEACH` |
+   | **Gap** | `Demand − Supply`; positive is unmet need, and the list is sorted by it descending |
+   | **Match completion rate** | `COMPLETED ÷ all Matches created in closed Rounds × 100` |
+   | **Match state and outcomes** (the proposal's *"where matches stall"*) | open Round: the current distribution over the non-terminal states. Closed Rounds: the final outcome distribution |
+
+   **Demand and Supply count candidate-pool Students only** — Skill listed *and* role is not `ADMIN`
+   *and* neither Suspended nor Removed, which is ADR-0002 decision 4 as narrowed by ADR-0008 decision
+   2. Counting the whole table instead would report demand from people who can never be matched, so
+   the gap would name needs that do not exist.
+
+   **The completion rate's denominator is closed Rounds, not all Rounds, and this is not a detail.**
+   Matches in the open Round have not had their chance yet: include them and the rate falls every
+   time a Round opens and climbs as it closes, with nothing about anyone's behaviour having changed.
+   That swing would happen *during the defense*, since the demo runs several Rounds inside the slot.
+   Over closed Rounds the figure is also final, because ADR-0002 decision 5 makes every Match in a
+   closed Round terminal. Declines and administrative terminations stay in the denominator: it is an
+   *overall* rate, and the outcome distribution beside it already shows the composition.
+
+   ⚠️ **"Where matches stall" cannot be a historical claim, because no status-transition history
+   exists.** ADR-0014 gave `Match` a single `status` column and no transition log, so *"matches spend
+   longest at X"* and *"matches most often stall at X"* — the proposal's own phrasing at Section 13 —
+   are not answerable and must not be implied by a label. What is answerable is stated in the table
+   above: where Matches are stuck **right now** in the open Round, and how Matches **ended** in the
+   closed ones. Label both for what they are. (Two dwell times *are* derivable without a log, from
+   `mentor_accepted_at` / `mentee_accepted_at` and `Review.submitted_at` against `Round.opened_at` —
+   recorded, like decision 6, so that nobody proposes a transition table to get them. Not built.)
 
    **"Where matches stall" needs no translation table, and that is not an accident.** ADR-0014 took
    three of its six status names verbatim from `42_PeerConnect_Concept_Proposal-6.md:127`'s flow —
@@ -80,8 +115,9 @@ license pulling any other.**
 
    **`MatchSkillCoverage` supports a second, stronger form that nothing else in the model could
    answer**: Skills that are wanted, *are* offered by someone, and have nevertheless **never been
-   covered by an actual Match**. That is a different and more interesting claim than "nobody teaches
-   it" — it says the matcher is not reaching a need that exists. ADR-0014 decision 9 kept the
+   covered by an actual Match** — `Demand > 0` and `Supply > 0` and no `MatchSkillCoverage` row
+   names that Skill. That is a different and more interesting claim than "nobody teaches it" — it
+   says the matcher is not reaching a need that exists. ADR-0014 decision 9 kept the
    explanation state as rows rather than prose partly on this argument; this is that bet paying out.
 
 4. **Time series are indexed by Round, never by date.** ADR-0001 established that a **Round** is
@@ -116,7 +152,7 @@ license pulling any other.**
    charted**, so an XP-growth line would plot the same information twice. The next person who wants
    XP history should reach for this query, not for a schema change.
 
-7. **Recharts is added to the stack, as the single charting dependency.** The locked stack carries no
+7. **Recharts is added as the charting dependency.** The locked stack carries no
    charting library, so this is a stack addition rather than a slice's choice. The module is graded
    on the word *dashboard*, and hand-rolling a funnel, two bar charts and a rate over time costs more
    than the dependency it avoids.
@@ -212,8 +248,8 @@ being claimed.
 - **The map's Out of scope section is now amended rather than absolute**, which is a change in kind
   and the reason decision 10 exists. Any future proposal to pull a Version 2 item forward is tested
   against the table there, not argued afresh.
-- **The stack gains its first dependency since charting** — Recharts — and `CONTRIBUTING.md`'s
-  schema gate is untouched, this being a frontend package rather than a schema change.
+- **Recharts is added as the charting dependency**, and `CONTRIBUTING.md`'s schema gate is
+  untouched, this being a frontend package rather than a schema change.
 - **The seed must span several Rounds, not merely contain history.** The demo-strategy fog already
   required fabricated Match, Review and Post history for Badges and Streak; a Round-indexed time
   series over a single Round is one point, so the same fixture now has a second reason to cover
