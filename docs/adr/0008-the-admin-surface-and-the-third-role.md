@@ -103,6 +103,15 @@ revoke XP.**
    same read-time filter every other path applies, which is the whole point of the flag being
    a flag.
 
+   > **Narrowed by ADR-0013: in MVP there is no Mentor Reputation to keep.** The score is Version
+   > 2 and **no aggregate is computed or displayed anywhere** (ADR-0013 d3, d4), so the rule above
+   > reads on **XP** alone. ADR-0013 d9 deliberately left this decision, d4 and d8 unamended,
+   > because all three stay correct with the term defined and out of scope — a rule that protects
+   > a value costs nothing when the value is absent. This note exists so the sentence is not read
+   > as evidence that one exists. **The individual Private Feedback a suspended or removed Student
+   > wrote does survive** (d6 above, ADR-0013 d8) and still renders to its Mentor, attributed to
+   > the tombstone; that is the thing being preserved here, not a score.
+
 7. **Removal is final by policy, not by data loss, and the email burns.** The soft delete
    exists for referential integrity, never as an undo buffer; there is no reinstate action
    for a removed Student, because Suspension already covers every case where you would want

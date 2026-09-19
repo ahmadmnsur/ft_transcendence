@@ -83,6 +83,14 @@ authorisation structural rather than enforced.
    > Public Takeaway and Private Feedback beside it. The sentence above is what decided it, so the
    > rule states in one line: **a Review is immutable; its one attachment is not.**
 
+   > **The clause before that one — "Mentor Reputation depends on Private Feedback" — is
+   > half-revised by ADR-0013**, and the decision stands. It names a score that does not ship:
+   > **no aggregate is taken over the ratings anywhere** (ADR-0013 d4). The Post clause carries
+   > the analogy on its own, and the dependency that survives is a *human* one rather than a
+   > computed one — ADR-0013 d6 makes the individual Private Feedback a Mentor has received the
+   > whole of their recognition, so deleting it would take away everything they get to read.
+   > Evidence remains the one attachment no other record rests on, which is the point.
+
    Accepting images as well as documents is what actually satisfies `:538`. Evidence from a
    pair-programming session is most naturally a screenshot, so a document-only attachment would
    be useless for its commonest case — and one surface taking both categories makes "multiple

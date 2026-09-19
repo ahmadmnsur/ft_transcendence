@@ -103,6 +103,14 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
    symmetric pair the roles are therefore arbitrary, which is a known asymmetry: only the Mentee
    writes the Review, and only the Mentor's Reputation moves.
 
+   > **Corrected by ADR-0013: "only the Mentor's Reputation moves" names something that does not
+   > ship.** No aggregate is ever taken over the ratings (ADR-0013 d4), so there is no Reputation
+   > to move. **The asymmetry the decision names is real and is now sharper, not weaker** — it just
+   > has different contents: only the Mentee writes the Review, ADR-0010 d1 pays the Mentee **120
+   > XP against the Mentor's 80**, and **First Mentor** is a Badge only the Mentor can earn. So for
+   > a genuinely symmetric pair the id tie-break decides who banks 40 more XP and who gets a Badge.
+   > The decision is untouched; only the consequence it reached for was wrong.
+
 6. **Selection is most-constrained-first, not greedy.** The Student with the fewest viable
    partners picks first, taking their highest-priority available partner. Plain greedy discards
    roughly 9% of the Matches available each Round. Most-constrained-first **reached the best
