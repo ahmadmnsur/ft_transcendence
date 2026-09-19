@@ -152,9 +152,17 @@ a pair where the Mentor can teach the Mentee *nothing* scores 30%, clears the fl
 as "30% match." with no sentence after it. Reputation manufactures a number the explanation
 cannot mention.
 
-**Fair Mentor Rotation and availability matching** stay Version 2, as the locked scope cut has
-them. Rotation exists to counteract routing Students to the highest-rated Mentors, which decision
-8 makes impossible; it is a counterweight to a bias this rule does not have.
+**Fair Mentor Rotation is cut; availability matching stays Version 2.** Rotation exists to
+counteract routing Students to the highest-rated Mentors, which decision 8 makes impossible; it is
+a counterweight to a bias this rule does not have, and the prototype missed its
+mentoring-concentration criterion by a single Match with no rotation term present at all.
+
+**The two are different acts, and the record said otherwise until 2026-09-19.** The proposal tags
+rotation **_(MVP)_** outright at `42_PeerConnect_Concept_Proposal-6.md:111`, and Section 15 — the
+MVP list ADR-0013 and ADR-0015 both ruled authoritative — names it again at `:293`. So cutting it
+**reduces the proposal's own MVP** and stands on the argument just given, where availability
+matching is tagged _(Version 2)_ at `:115` and merely stays where the proposal put it. The decision
+is unchanged; only "stay Version 2, as the locked scope cut has them" was wrong.
 
 **Hashing the tie-break to avoid favouring early-registered Students** (rejected, decision 9).
 The bias was measured rather than assumed, and it is not there: Matches per Student by roster

@@ -195,7 +195,6 @@ license pulling any other.**
 
     | Version 2 item | Claimed module requiring it |
     | --- | --- |
-    | Fair mentor rotation | none — ADR-0006 d8 removed the bias it counterweights |
     | Availability matching | none |
     | Notification system | **the module was refused outright** by the module-claim decision |
     | Prompt categories | none — ADR-0007 d3 refused scheduling |
@@ -203,6 +202,23 @@ license pulling any other.**
     | Learning Progress view | none — Gamification is satisfied by ADR-0010 |
     | 2FA | none — 2FA is not on the claimed list |
     | Mentor Reputation score | none — ADR-0013 d3 |
+
+    > **Corrected 2026-09-19 by the ticket-to-record audit: fair mentor rotation was a row in
+    > this table and is not a Version 2 item at all.** The proposal tags it **_(MVP)_** outright at
+    > `42_PeerConnect_Concept_Proposal-6.md:111`, and Section 15 — the MVP list this map has twice
+    > ruled authoritative, by ADR-0013 and again in the preamble above — names it at `:293`. It is
+    > therefore **an MVP feature this map cut**, not a Version 2 feature it declined to pull
+    > forward, and **decision 10 does not reach it**: this test governs pulling V2 work *in* and
+    > says nothing about cutting MVP work *out*. **The cut stands and was always argued on its
+    > merits** — see ADR-0006 decision 8 and its Considered options, now corrected to say so. What
+    > was wrong was the label, and it mattered here more than anywhere: this table is the one place
+    > the map claims its Version 2 list is mechanical rather than re-argued each time, so a row
+    > that was never on that list undercut exactly the property the table exists to demonstrate.
+    >
+    > **Network freshness (`:109`) and "balance experience or skill levels" (`:105`, `:293`) carry
+    > no version tag either**, and the map mislabelled both the same way; corrected there rather
+    > than here, since neither was ever a row in this table. **Availability matching is genuinely
+    > Version 2** (`:115`, `:321`), so every remaining row stands unchanged.
 
     The second half of the test matters as much as the first: **only to the depth the module
     requires.** Decision 2's reduced scope is that clause doing its work, and it is the same move
