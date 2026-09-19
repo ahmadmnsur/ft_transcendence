@@ -51,8 +51,12 @@ silent. Reading `:221` as scope now would retroactively argue the map owed all s
 ## What this ADR changes in earlier records
 
 - **ADR-0010's open consequence is answered.** "The only shipped glossary term with no rule
-  behind it … It has its own ticket." This is that ticket, and the answer is that it is not a
-  shipped term. Decision 6's rejection of Mentor Reputation as the Leaderboard measure is
+  behind it … It has its own ticket." This is that ticket, and the answer is that **Mentor
+  Reputation remains defined in the glossary as a Version 2 concept, with no shipped aggregate
+  score and no MVP computation** — what it gains is a stated scope, not a formula. ADR-0010 is
+  annotated to that effect rather than rewritten: its consequence was true when written, and it
+  is the record of the discovery that opened this ticket. Decision 6's rejection of Mentor
+  Reputation as the Leaderboard measure is
   **strengthened, not revisited**: three of its four counts survive verbatim, and the fourth —
   "it has no formula anywhere on this map" — is now a deliberate absence rather than a gap.
 - **ADR-0008 stands unamended**, and this is why decision 4 keeps the glossary entry. Decision 8
@@ -144,9 +148,9 @@ in words.
 
 **Deleting the Mentor Reputation glossary entry** (rejected, decision 9). A glossary is the
 vocabulary of the thing being built, and a V2-marked entry can read as an invitation to build
-toward it. Rejected because ADR-0008 decisions 6 and 8 and its role-promotion rule at `:64` all
-name the term in rules that are still correct, so deletion buys tidiness with three rewrites of
-live decisions. Keeping it marked is the cheaper honest record.
+toward it. Rejected because ADR-0008 decisions 4, 6 and 8 all name the term in rules that are
+still correct, so deletion buys tidiness with three rewrites of live decisions. Keeping it
+marked is the cheaper honest record.
 
 **The feedback list on the profile page behind a viewer check** (rejected, decision 5). One `if`
 in a shared template, and it works. Rejected on ADR-0009's precedent that a structural guarantee

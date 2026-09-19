@@ -174,7 +174,9 @@ _Avoid_: Weekly streak, chain, run
 The single score derived from Private Feedback, expressing how useful a Student is as
 a Mentor. Nothing computes or displays it: a Mentor reads the individual Private Feedback
 they have received, and no average is taken over it. Defined here because live rules still
-name it — an Admin may never edit it, and it is never a matching or ranking measure.
+name it: an Admin may never edit it, and it is **never** a matching measure — it plays no part
+in a Compatibility Score or in who is Matched with whom, in any version. Ranking is the one
+thing it may become, and only in Version 2.
 _Avoid_: Karma, stars, rating
 
 **Badge**:
