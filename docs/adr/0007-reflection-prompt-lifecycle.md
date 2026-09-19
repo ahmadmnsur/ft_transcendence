@@ -122,6 +122,12 @@ ADR extends that record rather than reopening it.
   frees the unique `(Prompt, Student)` slot, so answer → delete → answer awards XP twice unless
   XP is revoked — and nothing anywhere in this model revokes XP. This is a hard constraint on
   whatever settles delete semantics, not a preference.
+
+  > **Settled by ADR-0008: soft, everywhere.** A `removed_at` column rather than a hard delete,
+  > so the surviving row keeps the `(Prompt, Student)` slot occupied for one nullable column and
+  > **XP never becomes a ledger** — the constraint above is met without revoking anything.
+  > ADR-0011 later recorded the accepted cost: **removing a Post does not revoke its XP**, so an
+  > abusive Prompt answer keeps its 20 XP after removal.
 - **Streak needs no new rule.** Every edge reads off the existing definitions: Streak is per
   Round and boolean, so two Prompts answered in one Round count once; an answer during an idle
   period earns XP only (ADR-0002 decision 9); and an answer to a Prompt published in an earlier
