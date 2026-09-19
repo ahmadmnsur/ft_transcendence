@@ -81,12 +81,16 @@ Becomes a Post.
 _Avoid_: Summary, highlight, testimonial
 
 **Reflection Prompt**:
-An open question published by an Admin to the whole community. Answering is optional.
-_Avoid_: Question, poll, survey
+An open question published by an Admin to the whole community. Answering is optional, and
+once only. Exactly one Prompt is live at a time — the most recently published one — and
+publishing the next closes it. A closed Prompt stays readable forever and can never be
+answered again.
+_Avoid_: Question, poll, survey, prompt cycle
 
 **Post**:
 An item on the community feed. Arises only from a Public Takeaway or an answer to a
-Reflection Prompt; Students cannot write free-form Posts.
+Reflection Prompt; Students cannot write free-form Posts. Never edited once published: a
+Post records what was reflected at the time, and is not a document its author revises.
 _Avoid_: Status, update, article
 
 ### Progress
