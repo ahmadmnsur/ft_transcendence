@@ -43,10 +43,22 @@ of the platform, and a Student reads as offline until they next connect. That ga
 accepted, not a defect.
 _Avoid_: Activity status, availability, last seen
 
+**Friend**:
+Another Student whose connection a Student asked for and who accepted. Never one-sided: a
+request confers nothing until it is accepted, and either Student may end it. Friends see each
+other's Presence, which is the reason the acceptance exists.
+_Avoid_: Connection, contact, follower
+
+**Direct Message**:
+One private message from one Student to another. Always between exactly two Students, never a
+group, and never reportable: a Student's remedy for their own inbox is a Block.
+_Avoid_: Conversation, thread, chat message
+
 **Block**:
 One Student's standing refusal of contact with another. Mutual in effect whichever Student
-set it: a blocked pair can never become a Match, in either direction. Always a Student's own
-act, never an Admin's — the Admin equivalents are Suspension and Removal.
+set it: a blocked pair can never become a Match, in either direction, and a Block ends any
+Friendship between them. Always a Student's own act, never an Admin's — the Admin equivalents
+are Suspension and Removal.
 _Avoid_: Mute, ban, ignore
 
 **Report**:
@@ -80,12 +92,15 @@ is terminal for the Round and for every Match in it.
 _Avoid_: Week, cycle, session, sprint
 
 **Match**:
-A pairing of two Students within one Round, one as Mentor and one as Mentee.
+A pairing of two Students within one Round, one as Mentor and one as Mentee. It ends in exactly
+one of four ways: a Review is submitted, the Round closes without one, a Student declines it, or
+an Admin's sanction terminates it.
 _Avoid_: Pair, pairing, connection
 
 **Compatibility Score**:
 The number shown to both Students expressing how well a Match serves their skill needs.
-Never shown without its plain-language explanation.
+Never shown without its plain-language explanation, and never recalculated: the number and the
+explanation are both fixed when the Match is created, so what the pair were told stays true.
 _Avoid_: Match score, fit, rating
 
 **Mission**:
@@ -141,16 +156,24 @@ Reflection Prompt; Students cannot write free-form Posts. Never edited once publ
 Post records what was reflected at the time, and is not a document its author revises.
 _Avoid_: Status, update, article
 
+**Like**:
+A Student's mark of appreciation on a Post, given and withdrawn freely. It earns nothing and
+cannot be reported, and it is the only thing the community may do to a Post — there are no
+comments.
+_Avoid_: Reaction, upvote, favourite
+
 ### Progress
 
 **Skill**:
-A named capability a Student lists either as one they can teach or one they want to
-learn. Comparing those two lists across Students is what produces Matches.
+A named capability, drawn from a catalogue shared by everyone, that a Student lists either as one
+they can teach or one they want to learn. The shared catalogue is what makes two Students' lists
+comparable, and comparing them is what produces Matches.
 _Avoid_: Tag, topic, expertise
 
 **Learning Goal**:
-One optional, specific objective a Student is currently pursuing, stated concretely
-enough to act on. Narrower than the Skills they want to learn.
+One Skill a Student has singled out from those they want to learn as the one that matters most to
+them right now, together with the sentence saying why. Optional, and never a Skill they have not
+listed: it names a priority among their Skills rather than something narrower than all of them.
 _Avoid_: Objective, target, aim
 
 **XP**:

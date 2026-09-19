@@ -1,0 +1,388 @@
+# The entity set: nineteen tables, a Review split across three homes, and one invariant the schema cannot hold
+
+`document/en.subject.md:373` requires "a clear schema and well-defined relations", and `:1280`-`:1284`
+requires the schema to be *documented* — tables, relationships, key fields and data types. Twelve
+tickets have decided what this platform does; none of them has said what tables it has. This ADR is
+that map. It is the last structural decision on the plan and everything before it is an input.
+
+The shape we chose: **each of a Review's three parts lives where its readership is already
+structural, every invariant the database can express is expressed there, and the one it cannot is
+named rather than assumed.**
+
+## What this ADR changes in earlier records
+
+- **ADR-0002 decision 6 — a correction, and the rule it states is currently a live bug.**
+  *Unmatched* is derived as "no Match in that Round **in a live status**". Read literally a
+  `COMPLETED` Match is not live, so the Students who did exactly what the platform asked would
+  derive as *unmatched* for that Round. The partition the rule needs is **standing** versus
+  **repudiated**, not live versus terminal. Decision 2 below names both sets; the intent of
+  ADR-0002 decision 6 is untouched, only the word was wrong.
+- **ADR-0006 decision 1 — the Learning Goal bonus was unimplementable as written.** It fires when
+  "`forward` contains the Mentee's **Learning Goal**", where `forward` is a set of **Skills** — but
+  `CONTEXT.md` defined a Learning Goal as a free-text objective *narrower than* the Skills wanted,
+  which can never be an element of that set. Decision 3 below makes the Goal a reference to one of
+  the Student's own `LEARN` Skills, which is what the bonus always meant. The Score rule itself is
+  unchanged and the prototype's calibration stands.
+- **ADR-0009 decision 3 stands unamended.** It requires an "opaque random id" on every file route.
+  **UUIDv7 encodes a millisecond timestamp by construction — it is unguessable but not opaque** — so
+  rather than weaken the rule to fit the identifier, the two file tables carry their own `uuid(4)`
+  token, and that is what appears in the route (decision 10).
+- **ADR-0010 decision 4 — widened from two write paths to three.** Badges are tested "inside the
+  same transaction that awards the XP", on "the two existing write paths". **Streak** can only change
+  when a **Round** closes, so **Consistent Learner** is tested there too. No sweep of the Student
+  table looking for conditions that have started holding, and no scheduled job: ADR-0001's promise is
+  intact. There is simply a third transaction in which a threshold is tested once and never
+  re-examined.
+- **The `#15` hand-off's "avatar is a field on Student, not an entity" is refined to a table.**
+  ADR-0009 decision 2 says the bytes live in "a `bytea` column" and never says in which table.
+  Decision 12 puts both files in dedicated tables; the ADR's text is unaffected.
+- **ADR-0011 decision 3's partial unique indexes need no raw migration.** Prisma expresses them
+  natively under its `partialIndexes` preview feature. `CHECK` constraints still have no native
+  support and remain raw SQL, as that ADR assumed.
+
+## The entity set
+
+Nineteen tables and nine enums. Every identifier is `uuid(7)` unless noted.
+
+| # | Entity | Holds |
+| --- | --- | --- |
+| 1 | `Student` | The account. Role, XP, Streak, Learning Goal, the two sanction flags. |
+| 2 | `Session` | ADR-0003's opaque session row: `id`, `student_id`, `expires_at`. |
+| 3 | `Avatar` | 0..1 per Student. Bytes, plus the route token. |
+| 4 | `Skill` | The shared catalogue. Seeded, extended by migration only. |
+| 5 | `StudentSkill` | A Student's teach/learn lists, one table with a `kind` enum. |
+| 6 | `Block` | Directed, evaluated either-way (ADR-0006 d10). |
+| 7 | `Friendship` | Directed request, accepted or pending. |
+| 8 | `DirectMessage` | 1:1 chat. No Conversation entity. |
+| 9 | `Round` | `opened_at`, nullable `closed_at`; state derived from the latter. |
+| 10 | `Match` | The pair, its Mission, its frozen Score, its status. |
+| 11 | `MatchSkillCoverage` | The frozen explanation state: which Skills, which direction. |
+| 12 | `Review` | The Learning Outcome. Owns the Evidence. |
+| 13 | `PrivateFeedback` | Two answers and the optional rating. Its own table on purpose. |
+| 14 | `Evidence` | 0..1 per Review. Bytes, plus the route token. |
+| 15 | `ReflectionPrompt` | Question and `published_at`. No status column (ADR-0007 d1). |
+| 16 | `Post` | The feed item, carrying its origin and the Public Takeaway text. |
+| 17 | `Like` | Revocable, attributed. |
+| 18 | `Report` | ADR-0011's two nullable targets and three states. |
+| 19 | `BadgeAward` | One row per Badge earned, never deleted. |
+
+Enums: `Role`, `SkillKind`, `FriendshipStatus`, `MatchStatus`, `Mission`, `CoverageDirection`,
+`ReportReason`, `ReportState`, `Badge`.
+
+**What is deliberately not here**, each already ruled and each worth re-reading as a set, because the
+absences are what keep this model small: no queue or enrolment entity and no candidate-pool table
+(ADR-0002 d6); no Prompt-answer entity (ADR-0007 d5); no Mission table (ADR-0012 d5); no
+`ModerationCase` (ADR-0011 d6); no `Comment` (ADR-0011 d1); no Presence column (ADR-0003); no
+reputation column, aggregate or materialised view (ADR-0013 d4); no XP ledger and no ranking history
+(ADR-0008 d6); no `Conversation` (decision 6); and no per-Round participation row (ADR-0010's
+standing warning). **Five of those are derived-not-stored rulings.** Anything that reintroduces one
+is reversing a decision, not adding a feature.
+
+## The relation map
+
+```
+Student ──1:0..1── Avatar
+Student ──1:N───── Session
+Student ──1:N───── StudentSkill ──N:1── Skill
+Student ──0..1:1── StudentSkill                 (learning_goal_student_skill_id)
+Student ──1:N───── Block ──N:1── Student        (directed; unique on the ordered pair)
+Student ──1:N───── Friendship ──N:1── Student   (directed; unique on the UNORDERED pair)
+Student ──1:N───── DirectMessage ──N:1── Student
+Student ──1:N───── BadgeAward                   (unique on (student, badge))
+Student ──1:N───── Like ──N:1── Post            (unique on the pair)
+
+Round ──1:N────── Match ──N:1── Student         (mentor_id)
+                  Match ──N:1── Student         (mentee_id)
+Match ──1:N────── MatchSkillCoverage ──N:1── Skill
+Match ──1:0..1─── Review ──1:0..1── PrivateFeedback
+                  Review ──1:0..1── Evidence
+                  Review ──1:0..1── Post         (the Takeaway arm)
+
+ReflectionPrompt ──1:N── Post                    (the Prompt arm; unique on (prompt, author))
+Post ──N:1── Student                             (author_id)
+
+Report ──N:1── Student                           (reporter_id)
+Report ──N:0..1── Post          ┐ exactly one non-null,
+Report ──N:0..1── Student       ┘ by CHECK (ADR-0011 d3)
+Report ──N:0..1── Student                        (resolved_by_id)
+```
+
+Every `Match` reaches a `Round`; every `Review` reaches exactly one `Match`; no `Post` reaches both
+arms. Those three sentences are the whole shape.
+
+## The decisions
+
+1. **A Review is three parts in three homes, one per readership.** `Review` carries the **Learning
+   Outcome** and owns the **Evidence**, read by the Match pair and Admins. `PrivateFeedback` is its
+   own table, read by the Mentor, Admins and its author, and carries the optional rating. The
+   **Public Takeaway** is the `body` of its **Post**, read by everyone.
+
+   The alternative — one row with three columns — is cheaper by two tables and is how most teams
+   would write it. It loses on the standing preference this map has applied five times: ADR-0007
+   derived Prompt liveness rather than storing it, ADR-0009 put Evidence in Postgres so every read
+   *necessarily* passes through Nest, ADR-0013 gave private testimony a route rather than a viewer
+   check. Each time the reasoning was the same — make the guarantee structural rather than a rule
+   someone must remember. `CONTEXT.md` says the three parts "are never merged"; with one table that
+   is a discipline every query must observe, and a single forgotten `select` puts **Private
+   Feedback** on the community feed. With three, the feed query cannot reach it, because reaching it
+   means naming the table.
+
+   Putting the Takeaway on the Post is what makes the split exactly three rather than two: the Post
+   *is* the public surface, so that part needs no table of its own to be structurally public. **Soft
+   delete is what makes it safe** — Remove Post sets `removed_at` and the text survives, so
+   moderation never destroys part of a Review and ADR-0008 decision 8 holds. This also matches
+   ADR-0007 decision 5 word for word: Post's second arm "references the **Review** whose Public
+   Takeaway it distils."
+
+2. **Six Match statuses, partitioned into standing and repudiated.**
+
+   | Status | Meaning | |
+   | --- | --- | --- |
+   | `PROPOSED` | Created; not yet accepted by both | standing |
+   | `ACCEPTED` | Both accepted | standing |
+   | `COMPLETED` | Review submitted | standing |
+   | `LAPSED` | Round closed with no Review | standing |
+   | `DECLINED` | Either Student declined (ADR-0002 d8) | **repudiated** |
+   | `TERMINATED_BY_ADMIN` | A Suspension or Removal ended it (ADR-0008 d5) | **repudiated** |
+
+   **`LAPSED` is the terminal state ADR-0002 required** — "finalised by Round close without a
+   Review", distinct from `COMPLETED` so that the XP and Streak queries can tell a real success from
+   an abandonment. **`TERMINATED_BY_ADMIN` is the distinct administrative cause ADR-0008 decision 5
+   required**: it reuses decline's mechanism and refuses its label, because neither Student declined
+   and recording it as a decline misattributes the act.
+
+   Acceptance is two-sided and carried as `mentor_accepted_at` / `mentee_accepted_at` rather than as
+   further statuses, so "one has accepted" needs no state of its own. `declined_by_id` records which
+   Student declined — nullable, and null for every other status, which is what keeps a Suspension
+   from being silently attributed to the other party.
+
+   **ADR-0002 decision 6's *unmatched* reads the standing set**: a candidate with no Match in that
+   Round in a standing status. A Student whose only Match was declined is unmatched even though a row
+   exists; a Student whose Match lapsed is not unmatched, because they were matched and the Round
+   simply ended.
+
+3. **`Skill` is a catalogue entity, and the Learning Goal is one of the Student's own `LEARN`
+   Skills.** `Skill(id, name unique)`, seeded and extended by migration — **no admin CRUD screen**,
+   on ADR-0008 decision 11's reasoning that a screen holding a fixed list reads worse than no screen.
+   A Student's two lists are rows in one `StudentSkill(student_id, skill_id, kind)` table, unique on
+   all three.
+
+   A catalogue rather than free text because **ADR-0006 is a set intersection and its correctness
+   depends on exact identity**: with free text, "Docker", "docker" and "Docker basics" are three
+   Skills and the matcher silently under-matches. It also hands the claimed **advanced search** Minor
+   its filter as a dropdown rather than a text box.
+
+   `Student.learning_goal_student_skill_id` references the join row, not the `Skill` — so the Goal is
+   necessarily one the Student *listed as wanting to learn*, and `learning_goal_text` beside it holds
+   the sentence that is actually displayed. This is what makes ADR-0006's `+10` bonus a well-formed
+   test rather than a string comparison, and it reads as what the rule meant all along: the Mentor
+   teaches the one Skill the Mentee cares most about right now.
+
+4. **A Friendship is a directed request with an acceptance, and a Block ends one.**
+   `Friendship(requester_id, addressee_id, status, created_at, responded_at)`, unique on the
+   **unordered** pair via a unique index on `(LEAST(a,b), GREATEST(a,b))`.
+
+   `en.subject.md:504` says only "add/remove friends", with no accept step — but `:598` and
+   `CONTEXT.md` make friendship the thing that **discloses Presence**, and one-sided adding would
+   publish a Student's online status without their consent. The accept step costs one enum and one
+   pending list, and ADR-0002 already built the accept/decline pattern.
+
+   **A Block in either direction bars a new request and ends an existing Friendship** — a new rule,
+   and the only sensible reading of "a standing refusal of contact". Remove is a hard delete:
+   ADR-0008 decision 6 scoped `removed_at` to two entities and this ADR reads that literally
+   throughout.
+
+5. **A Like is revocable, attributed, and may be given to one's own Post.**
+   `Like(post_id, student_id, created_at)`, unique on the pair, unliking deletes the row, and who
+   liked a Post is readable. Self-like is **permitted with no rule**: a Like awards no XP (ADR-0010's
+   table is closed) and is not reportable (ADR-0011), so there is nothing to farm and nothing to
+   moderate, and a guard would be a cross-table check bought purely for appearances.
+
+6. **No Conversation entity; `DirectMessage` carries its own read state.**
+   `DirectMessage(id, sender_id, recipient_id, body, created_at, read_at NULL)`. A 1:1 thread is a
+   query over the unordered pair — the same derived-not-stored move as *unmatched*, Prompt liveness
+   and ADR-0011's report group, and the fourth time this map has refused to materialise a grouping.
+
+   `read_at` is set in bulk when a thread is opened. **This is not the notification system `#7`
+   refused**: there is no delivery, no inbox and no cross-surface push, only a column the thread list
+   counts. One nullable timestamp is the difference between a chat that demonstrates and one that
+   does not. Direct messages survive a **Removal**, like every other record outside the two
+   soft-deleted entities.
+
+7. **Streak is a stored integer on Student, recomputed in the Round-close transaction.** For every
+   Student, that transaction asks whether the closing Round contained qualifying activity:
+   increment if so, reset to zero if not, **and skip Students who are Suspended or Removed**.
+
+   Stored rather than derived because **ADR-0008 decision 6 says a Suspension makes Streak *freeze***,
+   and a derived Streak cannot freeze — the suspended Rounds contain no activity, so it would break.
+   Freezing needs either a stored counter or a history of suspensions, and ADR-0008 refused history
+   outright. Skipping the flagged rows is what makes the freeze literal: the value does not change,
+   so it resumes on reinstatement rather than restarting.
+
+   Round close is the only moment at which "a Round contained no activity" becomes knowable, so
+   **Consistent Learner is tested there**, widening ADR-0010 decision 4 to three write paths. This is
+   still a threshold tested once inside a real transaction and never re-examined, which is the whole
+   of that decision's guarantee — and still no scheduled job, because closing a Round is an Admin's
+   action.
+
+   **XP stays a plain integer column** and Badges are `BadgeAward(student_id, badge, awarded_at)`
+   unique on the pair, the `Badge` being an enum on ADR-0012's reasoning exactly: three fixed values,
+   frozen, with no authoring surface, so a table would collapse into an enum with extra steps.
+
+8. **The socket is outbound-only for everything except a direct message, and there are three rooms.**
+   This is what lets the claimed WebSockets Major have a broadcast at all — the only socket surface
+   in scope was 1:1 DMs, which are unicast.
+
+   ADR-0003 decision 9 bars a privileged **action** on the socket. A server→client event is not an
+   action: nothing the client sends does anything, so no second authorization path is created and the
+   decision holds exactly as written. Stating the rule as *outbound-only, except DMs* is what keeps it
+   holding under the pressure that will arrive during implementation.
+
+   Three rooms: a global `feed` room carrying `post:created` with the full payload, so *N* clients
+   cost one broadcast rather than *N* refetches; a global `rounds` room carrying `round:opened` and
+   `round:closed`; and a per-Student `student:<id>` room for DMs and the unicast "your Match is
+   ready", which is a room rather than a socket lookup so that multiple tabs work. **Round *close* is
+   the demo** — Round *open* is naturally unicast, since each Student wants their own Match, whereas
+   close carries one identical payload to everyone and is the sharpest evidence of "efficient message
+   broadcasting" the model can produce.
+
+9. **The entire explanation state is frozen on the Match, not merely the Score.** `Match` carries
+   `compatibility_score smallint NULL` (null for an Admin's hand-made Match, ADR-0006 d10) and
+   `goal_bonus_applied boolean`; `MatchSkillCoverage(match_id, skill_id, direction)` freezes the
+   forward and reverse Skill sets. Every input to the displayed sentence is written once at Match
+   creation and never updated.
+
+   Freezing the number alone is the tempting half-measure and it fails: ADR-0006's consequence makes
+   "never shown without its plain-language explanation" an **invariant**, so a recomputed sentence
+   beside a frozen number is a Match whose reason drifts away from its Score the moment a Student
+   edits their Skills. That is ADR-0012's argument for a Mission enum, applied to the other thing
+   written at Match creation — an editable row behind a foreign key silently rewrites the past.
+
+   Storing the coverage as rows rather than as a rendered string keeps it queryable, and **that query
+   is the only genuine insight the claimed analytics Minor has access to**: which Skills the platform
+   actually *covers*, as opposed to which Skills Students merely list.
+
+10. **`uuid(7)` is the identifier everywhere, and the two file tables carry a separate `uuid(4)`
+    route token.** Two records want opposite things from one identifier. ADR-0006 decisions 4 and 9
+    and ADR-0010 decision 6 break ties on "the lower Student id" and need that order stable and
+    correlated with registration — ADR-0006 rejected hashing on a *measured* roster-position bias,
+    which only means anything if ids are ordered. ADR-0009 decision 3 wants an opaque random id on
+    every file route, and sequential integers would make every Student enumerable.
+
+    UUIDv7 is time-ordered, so every existing tie-break survives unchanged, and non-enumerable, so
+    the integer's problem does not arise. **It is not, however, opaque: UUIDv7 encodes a millisecond
+    timestamp by construction.** Rather than amend ADR-0009 to match whatever the identifier happens
+    to be, `Avatar` and `Evidence` each carry a `token uuid @default(uuid(4)) @unique`, and the route
+    carries the token. One column on two tables, and ADR-0009 stands unamended.
+
+11. **A Review is immutable; its one attachment is not.** The Learning Outcome text gets no edit
+    path, for anyone, matching the Public Takeaway (immutable by the Post rule) and Private Feedback
+    (ADR-0013 d7). ADR-0009 decision 5 left this open and its own sentence settles it — *"the Learning
+    Outcome text is testimony; the Evidence is an aid. That is what makes the file deletable while
+    Posts, Prompt answers and Private Feedback are not."* An Admin was already barred by ADR-0008
+    decision 8.
+
+12. **The bytes live in two dedicated tables, not in columns on Student and Review.**
+    `Avatar(student_id unique, token, bytes, mime, size, uploaded_at)` and
+    `Evidence(review_id unique, token, bytes, mime, size, filename, uploaded_at)`.
+
+    The deciding argument is mechanical rather than aesthetic: **Prisma selects every scalar field by
+    default**, so a `bytea` column on `Student` means `student.findMany()` drags two megabytes per row
+    unless every call site remembers `select` — a footgun that fires silently, on the busiest table in
+    the model. A separate table makes the bytes unreachable by accident instead of by discipline,
+    which is decision 1's argument in a different suit. Both are also genuinely 0..1 with their own
+    replace-and-delete lifecycle, and neither is soft-deleted (ADR-0008 d6, ADR-0009 d6).
+
+13. **Four invariants move into the database; one cannot, and is named rather than assumed.**
+
+    Expressible, and taken:
+    - **At most one open Round** — `CREATE UNIQUE INDEX ON "Round" ((closed_at IS NULL)) WHERE
+      closed_at IS NULL`. ADR-0002 decision 2 states this as "one line: no Round may be opened while
+      another is open" and leaves it to a service; it is one line in the schema instead.
+    - **One answer per (Prompt, Student)** — a plain `UNIQUE (prompt_id, author_id)` on `Post`. The
+      nullable column is **not** ADR-0011's trap here: many Takeaway Posts *should* coexist with a
+      null `prompt_id`, so distinct NULLs are the wanted behaviour rather than a hole.
+    - **Exactly one origin per Post, exactly one target per Report, `rating BETWEEN 1 AND 5`** —
+      `CHECK` constraints, raw SQL, since Prisma has no native support.
+    - **No repeated pairing** — an index on `(LEAST(mentor_id, mentee_id), GREATEST(…))` turns
+      ADR-0006 step 2's no-repeats test into one index hit instead of a two-way scan.
+
+    **Not expressible: at most one standing Match per Student per Round.** The Student sits in either
+    `mentor_id` or `mentee_id`, so no unique index reaches them both. Holding it structurally would
+    mean splitting a Match's two sides into participant rows and paying a join on every read of the
+    central entity in the model. **We do not.** ADR-0006 already calls it "a loop invariant, not a
+    filter", and it is recorded here as the one rule the schema does not hold — the Admin's hand-made
+    Match (ADR-0002 d7) being the path where it can actually be violated. Two smaller denormalisation
+    invariants sit in the same category: a Takeaway `Post`'s `author_id` must equal its Review's
+    Mentee, and a `Report`'s reporter must not be its target (ADR-0011 d11).
+
+## Considered options
+
+**One `Review` table with three columns** (rejected, decision 1). Two tables cheaper and the shape
+most teams would reach for. Rejected because it converts `CONTEXT.md`'s "never merged" from a
+structural fact into a discipline observed by every query that ever touches a Review, where the
+failure mode is Private Feedback on the public feed.
+
+**Three tables plus a `PublicTakeaway` entity** (rejected, decision 1). The symmetrical version, and
+it buys nothing: the Post already *is* the structurally public surface, so a fourth table would give
+the Takeaway a second home rather than a first one — and it would leave the Post's own `body` column
+needing an explanation for the Prompt arm.
+
+**Free-text Skill lists as Postgres arrays** (rejected, decision 3). One column per list, no join
+table, no catalogue to seed. It quietly breaks the matcher: ADR-0006 is a set intersection, so any
+spelling variance under-matches, and the failure is invisible — pairs simply never form, and nothing
+reports that they didn't.
+
+**A `Conversation` entity for direct messages** (rejected, decision 6), and **a `last_read_at` per
+(student, peer) pair** (rejected, same) — which is a conversation entity arriving by the back door.
+
+**Deriving Streak by query** (rejected, decision 7). Cheaper, no stored counter, no Round-close
+write, and it keeps ADR-0010's two write paths exactly as written. It cannot honour ADR-0008's
+freeze: a suspended Student's Rounds contain no activity, so a derived Streak breaks where the
+record says it holds. Choosing it would have meant amending ADR-0008 to match the implementation.
+
+**Feed fan-out alone, or Round broadcast alone** (rejected, decision 8). Feed-only sidesteps the
+ADR-0003 boundary question entirely but gives the weaker demo; Round-only leaves the fully-specified
+surface unused. Both cost one room each.
+
+**Integer primary keys** (rejected, decision 10), which read most naturally against "the lower
+Student id" but make every Student enumerable. **Amending ADR-0009 to call UUIDv7 opaque** (rejected,
+same) — it is not, and one `uuid(4)` column on two tables is cheaper than a weakened rule.
+
+**Splitting `Match` into participant rows** to make one-standing-Match-per-Round enforceable
+(rejected, decision 13). It is the only structural fix available and it taxes every read of the
+model's central entity, to hold a rule the matcher already holds as a loop invariant.
+
+## Consequences
+
+- **The advanced search Minor is now fully determined and needs no ticket.** The research flagged
+  filters, sorting and pagination as its gap; decision 3's catalogue supplies the filter (by
+  Skill-taught, Skill-wanted, Learning Goal presence) as a bounded dropdown, and sorting and paging
+  are TanStack over `Student`. This is the cheapest claimed point on the list and it is now
+  specified.
+- **The user activity analytics Minor is not.** Decision 9 gives it the one aggregate the model could
+  not otherwise produce, but nothing has decided what the dashboard *shows* or what counts as an
+  insight — and `#17` set the precedent that an unmet module bullet nobody owns means the point is
+  not firm. Ticketed separately.
+- **Every read path over Students and Posts filters `removed_at`**, unchanged from ADR-0008, and
+  seventeen tables pay nothing. Reading decision 6 of that ADR literally is what kept the count at
+  two.
+- **Nine raw-SQL migration steps** — four `CHECK` constraints, two expression-based unique indexes
+  (Friendship's unordered pair, Round's single-open), one expression index (no-repeats), and
+  ADR-0011's two partial unique indexes if the Prisma preview feature is not taken. Kamel's schema
+  gate (ADR-0005) reviews these rather than authoring them, as that ADR requires.
+- **The seed gains an input that was not on the map's list: the Skill catalogue.** Without it no
+  Student can list anything, no Match can form and the matcher has no inputs — it joins the bootstrap
+  Admin, the Peer Moderator and the one Reflection Prompt as something without which nothing is
+  demoable. Friendships, Likes and direct messages need seeding too, for the same reason `#20`
+  required a reported Post: the surfaces exist but demonstrate nothing empty.
+- **`#13`, the Privacy Policy and Terms of Service, is unblocked and now has its subject matter.**
+  This ADR is the exhaustive list of what personal data the platform holds — including the two
+  `bytea` stores, the `last_seen_at` write, and the fact that a Removal keeps the row and burns the
+  email forever.
+- **`document/en.subject.md:1280`-`:1284`'s documentation requirement is satisfied by this file**, or
+  by a diagram generated from the schema it describes: tables, relationships, key fields and data
+  types are all above.
+- **Nothing in the model reads Mission, and nothing reads Streak except Consistent Learner.** Both
+  were recorded before this ADR and both survive it. The list of things that exist only to be
+  displayed is now Mission and the frozen explanation state; everything else has a consumer.
