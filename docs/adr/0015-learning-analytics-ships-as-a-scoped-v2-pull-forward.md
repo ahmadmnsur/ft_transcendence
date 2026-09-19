@@ -29,7 +29,7 @@ license pulling any other.**
   Leaderboard** as the third deliberate pull-forward. **Every other item on that list stays out**:
   fair mentor rotation, availability matching, the notification system, prompt categories, per-skill
   endorsements, the **Learning Progress** view, 2FA, and the **Mentor Reputation** score ADR-0013
-  added to it. Decision 9 states the test that distinguishes them.
+  added to it. Decision 10 states the test that distinguishes them.
 - **Nothing else moves.** This ADR adds no entity, amends no other ADR, and takes no decision back.
   ADR-0003 decision 9, ADR-0008 decisions 3 and 6, ADR-0010 and ADR-0014 are all load-bearing here
   and all stand exactly as written.
@@ -58,10 +58,16 @@ license pulling any other.**
    no custom date ranges, no export, and no per-Student drill-down, the Users table (ADR-0008 d11)
    already being that.
 
-   **"Where matches stall" reports on the proposal's own status flow.** ADR-0014 took the Match
-   status names from `42_PeerConnect_Concept_Proposal-6.md:127` verbatim, so this report reads
-   directly against Section 5 with nothing to translate — the stall column *is* `MATCHED`,
-   `ACCEPTED`, `COMPLETED`, `LAPSED`, `DECLINED`, `TERMINATED_BY_ADMIN`.
+   **"Where matches stall" needs no translation table, and that is not an accident.** ADR-0014 took
+   three of its six status names verbatim from `42_PeerConnect_Concept_Proposal-6.md:127`'s flow —
+   `MATCHED`, `ACCEPTED`, `COMPLETED` — and `DECLINED` from the same section's prose (`:123`,
+   `:263`). Only `LAPSED` and `TERMINATED_BY_ADMIN` are ours, and they exist because Section 5's
+   happy path never enumerated the two ways a Match ends badly; Section 5's own *Meeting Scheduled*
+   and *Review Submitted* are absent for the reasons ADR-0014 records. **The six and the five are
+   therefore not the same list** — but a Match can only *stall* in a non-terminal state, and there
+   are exactly two of those, `MATCHED` and `ACCEPTED`, both of them the proposal's own words. So the
+   report reads against Section 5 precisely where stalling happens, which is the only place this
+   figure looks.
 
 3. **The insight is the supply/demand gap, rendered as a sentence rather than a number.** *"9
    Students want to learn Rust; nobody lists it as a Skill they can teach."*
