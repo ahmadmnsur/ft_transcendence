@@ -128,6 +128,10 @@ it leaves a live route to failing `:542` that no amount of care in the API can c
   which bears directly on the "one entity or three?" question already open there.
 - **Whether an attachment is reportable is now a question for the report queue**, and a sharp
   one: if Evidence is reportable, the one role built for reviewing reports cannot see it.
+
+  > **Answered by ADR-0011: it is not.** Exactly the bind named here is why — it would place an
+  > item in the queue that the queue's own role cannot open. Abuse in Evidence is reported as a
+  > **Student**, which only an Admin reads, so **the visibility rule above stands unamended**.
 - **The seed needs no avatar images.** Seeded Students carry the default avatar; one or two
   real uploads during the demo are enough to show the surface.
 - **Mission authorship is exposed as undecided.** Pricing the Mission-brief option found that

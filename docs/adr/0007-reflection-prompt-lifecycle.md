@@ -56,6 +56,11 @@ follows from refusing to give either the Prompt or its answer a state machine.
    what the community has already liked and commented on, and it lets a clean Post become an
    abusive one after it has been seen and cleared.
 
+   > **Rationale half-revised by ADR-0011**; the decision stands. **Likes ship, Comments do
+   > not**, so "already liked **and commented on**" over-describes what the community can do to
+   > a Post. The second clause carries the decision on its own — and ADR-0011 makes it concrete
+   > by giving "seen and cleared" an actual name: a report resolved as `DISMISSED`.
+
 9. **No eligibility gate: any Student may answer.** Deliberately asymmetric with ADR-0002
    decision 4, which gates the Match candidate pool on holding at least one **Skill**. A
    Student with an empty Skill list cannot be matched but can answer a Prompt, earn XP and

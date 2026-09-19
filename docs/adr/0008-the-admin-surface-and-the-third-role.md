@@ -54,6 +54,12 @@ revoke XP.**
    `42_PeerConnect_Concept_Proposal-6.md:279` — "help review flagged content without full
    admin access" — which is what distinguishes it from a role invented to be counted.
 
+   > **Sharpened by ADR-0011.** "The report queue" is precisely the ***Post*-report queue**.
+   > The sanctions for a reported **Student** are Suspension and Removal, which this same
+   > decision reserves to Admins, so a report a Peer Moderator can neither action nor escalate
+   > does not appear in their list at all. The authority above is unchanged; its surface is now
+   > named.
+
 4. **All privileged-role assignment is manual, by an Admin, always.** No OAuth claim grants
    a role; no XP, **Level** or **Mentor Reputation** threshold auto-promotes. An
    auto-promotion rule would be a second, invisible roles-management path competing with the
@@ -124,6 +130,16 @@ revoke XP.**
     complaint about themselves" is the first hole anyone looks for. Admins need no such
     guard: they sit outside the participation graph.
 
+    > **Widened twice by ADR-0011, and the first is a correction.** (1) The Block test must read
+    > **a Block in either direction**, not "a mutual Block": **Block** is stored directed and
+    > evaluated either-way (ADR-0006 decision 2; `CONTEXT.md` "mutual in effect whichever
+    > Student set it"), so implemented literally as "both have blocked each other" this guard
+    > would almost never fire, the common case being one-sided. (2) It also covers **reports the
+    > moderator filed**, not only reports concerning their own Post — a Peer Moderator is a full
+    > participating Student who may report, and nothing here stopped them actioning their own
+    > complaint. ADR-0011 decision 8 adds that the hole this guard does *not* close is their
+    > **friends**, answered by attribution rather than by a narrower permission.
+
 11. **One Users table in the admin dashboard, and roles management is its role column.**
     Search, plus name / email / role / status (active, suspended, removed), with row actions
     for view, edit, change role, suspend or reinstate, and remove. **No separate Roles
@@ -191,3 +207,8 @@ this map never made.
   Peer Moderator sees only the report queue, Student sees no dashboard at all.
 - **The report queue itself is still unspecified.** What can be reported, what a report
   record holds, and what the reporter sees afterwards are not settled here.
+
+  > **Settled by ADR-0011.** Two targets, a Post and a Student; one table with two nullable
+  > foreign keys; a queue grouped by target; and the reporter is told nothing. It also found
+  > that `:87`'s third target, a Comment, does not exist in this model — and ruled that it
+  > never will.

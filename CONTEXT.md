@@ -20,9 +20,10 @@ a participant — an Admin never enters matching, whatever Skills they list.
 _Avoid_: Staff, moderator, superuser
 
 **Peer Moderator**:
-A trusted Student granted one further authority: reviewing reported content and removing a
-Post. Nothing else — never a Suspension, a Removal, a Round or a Reflection Prompt. Unlike
-an Admin, a Peer Moderator is a full participant, matched and earning XP like any Student.
+A trusted Student granted one further authority: reviewing reported Posts and removing a
+Post. Nothing else — never a reported Student, never a reporter's identity, never a
+Suspension, a Removal, a Round or a Reflection Prompt. Unlike an Admin, a Peer Moderator is
+a full participant, matched and earning XP like any Student.
 _Avoid_: Moderator, mod, trusted user
 
 **Mentor**:
@@ -47,6 +48,13 @@ One Student's standing refusal of contact with another. Mutual in effect whichev
 set it: a blocked pair can never become a Match, in either direction. Always a Student's own
 act, never an Admin's — the Admin equivalents are Suspension and Removal.
 _Avoid_: Mute, ban, ignore
+
+**Report**:
+A Student's request that staff review a Post or another Student — the only two things that
+can be reported. The reporter's account of the problem is testimony, never edited by anyone,
+and the reporter is never told the outcome. Not a Block: a Report asks for staff action,
+where a Block withdraws contact and asks for nothing.
+_Avoid_: Flag, complaint, abuse report
 
 **Suspension**:
 An Admin's reversible withdrawal of a Student's access: they are signed out at once and
