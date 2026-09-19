@@ -89,9 +89,7 @@ license pulling any other.**
    longest at X"* and *"matches most often stall at X"* — the proposal's own phrasing at Section 13 —
    are not answerable and must not be implied by a label. What is answerable is stated in the table
    above: where Matches are stuck **right now** in the open Round, and how Matches **ended** in the
-   closed ones. Label both for what they are. (Two dwell times *are* derivable without a log, from
-   `mentor_accepted_at` / `mentee_accepted_at` and `Review.submitted_at` against `Round.opened_at` —
-   recorded, like decision 6, so that nobody proposes a transition table to get them. Not built.)
+   closed ones. Label both for what they are.
 
    **"Where matches stall" needs no translation table, and that is not an accident.** ADR-0014 took
    three of its six status names verbatim from `42_PeerConnect_Concept_Proposal-6.md:127`'s flow —
