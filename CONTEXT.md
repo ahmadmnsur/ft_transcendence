@@ -34,6 +34,11 @@ of the platform, and a Student reads as offline until they next connect. That ga
 accepted, not a defect.
 _Avoid_: Activity status, availability, last seen
 
+**Block**:
+One Student's standing refusal of contact with another. Mutual in effect whichever Student
+set it: a blocked pair can never become a Match, in either direction.
+_Avoid_: Mute, ban, ignore
+
 ### The matching cycle
 
 **Round**:
