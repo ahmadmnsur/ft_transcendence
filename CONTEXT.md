@@ -93,8 +93,15 @@ _Avoid_: Weekly review, evaluation, feedback
 
 **Learning Outcome**:
 The Mentee's structured record of what they learned and what they can now do that they
-could not before the Match.
+could not before the Match. Read by the Match pair and by Admins, never by the community:
+only the Public Takeaway drawn from it is public.
 _Avoid_: Result, lesson, achievement
+
+**Evidence**:
+One optional file a Mentee attaches to their Learning Outcome, showing what the Match
+actually produced. Read by whoever reads the Learning Outcome, and theirs to delete or
+replace at any time — the Learning Outcome is testimony, the Evidence only an aid to it.
+_Avoid_: Attachment, upload, file, proof
 
 **Private Feedback**:
 The Mentee's assessment of the Mentor, visible only to that Mentor and to Admins.
