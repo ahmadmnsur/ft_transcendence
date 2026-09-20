@@ -243,6 +243,14 @@ features to six thin ones. The Mentee already gets the larger XP award and the p
   Students would otherwise show as Level 8 with no badges and a Streak of 0. Either the seed
   fabricates Match, Review and Post history, or it writes Badge rows directly. This is a demo
   strategy input, not a decision this ADR takes.
+
+  > **Taken by ADR-0017: the seed fabricates, by driving the real write paths.** It runs the
+  > matcher, submits Reviews and closes Rounds through the same functions the application uses, so
+  > every Badge and Streak in the demo is awarded by the transactions decision 4 and ADR-0014 d7
+  > define rather than by a second implementation in the seed. **The warning above is what decided
+  > it.** One consequence follows and is accepted there: four seeded Rounds pay at most 480 XP, so
+  > demo Levels run **1 to 3** and ADR-0006 d7's Level tie-break never fires on stage — harmless,
+  > since that term is internal and never displayed.
 - **At Level 10 the progress bar is full permanently.** The cap is what bounds the matching
   tie-break, so the dead zone is the price of decision 3 rather than a defect — but the rules
   surface must say the cap exists rather than ship a bar that never moves again.

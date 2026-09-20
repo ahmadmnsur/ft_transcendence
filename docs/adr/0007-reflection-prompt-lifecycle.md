@@ -77,6 +77,13 @@ follows from refusing to give either the Prompt or its answer a state machine.
     "no Round can open and nothing is demoable." The same property holds here: with no live
     Prompt the feed's second origin is dead and the Prompt loop cannot be shown at all.
 
+    > **Extended by ADR-0017: four, not one.** One live Prompt is enough for *this* decision and
+    > stays the rule — but **Knowledge Sharer** requires three Prompts answered (ADR-0010 d4), and
+    > decision 1 above allows exactly one live at a time, so three must already have been closed
+    > by supersession before a Student can hold the Badge. The seed publishes **four in sequence**:
+    > three closed, one live. Nothing here changes; this decision was sized before that Badge
+    > existed.
+
 12. **"The reflection prompt cycle" names nothing in the model.** The phrase in the proposal's
     Admin Dashboard section (`:253`) is prose for the Prompt loop; the "cycle" is the
     publication ordering over Prompts. No entity and no glossary entry — ADR-0001's argument

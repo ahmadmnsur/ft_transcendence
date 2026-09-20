@@ -87,7 +87,9 @@ and why there is no `SESSION_SECRET`.
    > pair they **do** ship with working development defaults, decision 8's one-command clean
    > clone still holds, and the warning this decision attaches to `ADMIN_PASSWORD` extends to
    > them. Recorded here because decision 9 is what anyone writing `.env.example` reads, and
-   > until this note the moderator pair lived only in ADR-0008.
+   > until this note the moderator pair lived only in ADR-0008. **ADR-0017 adds a fifteenth**,
+   > `SEED_STUDENT_PASSWORD`, shared by all thirty seeded Students — without it an evaluator can
+   > reach the platform only as staff, and the Student view is where the product lives.
 
 10. **There is no `SESSION_SECRET`, deliberately.** ADR-0003 decision 1 makes the session id
     opaque with the database row as the authority, so there is nothing to sign. Recorded
@@ -104,6 +106,13 @@ and why there is no `SESSION_SECRET`.
     > without it, demonstrating the per-role views costs minutes of a defense slot.
 
     Postgres uses a named volume; `make down` keeps data and a separate target wipes it.
+
+    > **Sized by ADR-0017, and it is no longer small.** The seed now drives the real write paths
+    > to produce four closed Rounds, 62 Matches, 46 Reviews and four Reflection Prompts, and
+    > **stays on this boot path** — decision 8's rule that the Makefile is never a hiding place for
+    > required setup is what keeps it here, since the fixture is what makes the claimed modules
+    > demonstrable. **Idempotence now means "if any Round exists, skip"** rather than per-row
+    > upserts.
 
 12. **Kamel owns this slice in week 1, and it is a gate rather than parallel work.** Every
     vertical feature slice needs the single command working before it can start. The budget

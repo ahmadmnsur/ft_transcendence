@@ -118,6 +118,14 @@ license pulling any other.**
    says the matcher is not reaching a need that exists. ADR-0014 decision 9 kept the
    explanation state as rows rather than prose partly on this argument; this is that bet paying out.
 
+   > **Given a construction by ADR-0017, and the obvious one does not work.** Reaching for a
+   > **suspended** Student's `TEACH` row fails on **decision 2 above**: Supply counts the candidate
+   > pool only, so a suspended Student contributes nothing to it and the case collapses into the
+   > plain gap. What works is a **Block** — seed one Skill with exactly one active `TEACH` and one
+   > active `LEARN`, and block that pair. ADR-0006 step 2 rejects blocked pairs in either direction
+   > and ADR-0006 d10 binds an Admin's hand too, so `Demand = 1`, `Supply = 1`, and no
+   > `MatchSkillCoverage` row can ever name it.
+
 4. **Time series are indexed by Round, never by date.** ADR-0001 established that a **Round** is
    explicitly not a calendar week, and ADR-0002 made Rounds admin-triggered at arbitrary intervals.
 
