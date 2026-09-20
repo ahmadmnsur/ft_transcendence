@@ -16,8 +16,6 @@ Three developers, six weeks, one database. This file is the short version of
 - Branch off `main`. Keep branches **short-lived** — the rebase rule below assumes it.
 - Name them `<type>/<slice>-<short>`, e.g. `feat/matching-round-open`, `fix/session-expiry`.
 - One PR per slice increment. **Squash-merge**, then delete the branch.
-- **Pairing? Add `Co-authored-by:` trailers.** Squash keeps only the PR author otherwise, and
-  "commits from all team members" is a rejection criterion (`document/en.subject.md:308`).
 
 ## Commits
 
@@ -27,8 +25,9 @@ describing the changes", and it sits in the list that gets a project **rejected*
 
 ## Review
 
-- **Every PR needs one review from another member.** Not enforced by GitHub — this repository
-  is private on a free plan, so there is no branch protection. It is a convention the three of
+- **Every PR needs one *completed* review from another member.** Requesting a reviewer is not a
+  review — the box is ticked when the review has been given. Not enforced by GitHub — this
+  repository is private on a free plan, so there is no branch protection. It is a convention the three of
   us keep, and the PR history is what we show an evaluator when asked how work was divided.
 - **Non-schema PRs: round-robin.** Anyone reviews anyone.
 - **PRs touching `prisma/`: Kamel reviews, always.** If he is blocked for more than 24 hours,
@@ -88,30 +87,87 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
 anything the compiler or a demo step would catch is not tested. Four categories, closed until
 someone argues a fifth.
 
-**CI is advisory and always will be.** Branch protection is unavailable on this plan, so the
-workflow cannot block a merge. Its job is evidence for `document/en.subject.md:243`-`:249`: a green
-check per PR is how an evaluator sees how work was divided without taking our word for it.
+**CI is advisory for the current repository setup.** Branch protection is unavailable on this
+plan, so the workflow cannot block a merge. Its job is evidence for
+`document/en.subject.md:243`-`:249`: a green check per PR is how an evaluator sees how work was
+divided without taking our word for it. **It may become a required check if branch protection
+becomes available** — ADR-0016 leaves that open by name, and ADR-0005 decision 7 lists it among the
+first rules to enforce if it is.
 
 ## Done
 
 **A ticket is done when its PR is merged with every box in the template ticked.** There is no
 second definition — the template *is* the definition, so it cannot drift from the checklist beside
-it, and an agent can check it without asking anyone.
+it, and it can be checked without asking anyone.
 
-That means, every time: the suite green, the ticket's acceptance criteria met, one review, and —
+That means, every time: the suite green, the ticket's acceptance criteria met, **one completed
+review**, and —
 if the PR touches `prisma/`, the Compose files or a Dockerfile — **a clean-clone boot verified**.
+If a change to an ADR, the project map, or a GitHub issue moves a rule, acceptance criterion,
+scope, status, or resolved question, **the affected records moved together in the same task**.
+
+### Records move together
+
+**A settled decision is represented across three surfaces**: its **ADR** in `docs/adr/`, the
+**GitHub issue that owns it**, and the **map**
+([#1](https://github.com/ahmadmnsur/ft_transcendence/issues/1)). Not every decision reaches all
+three — synchronize the surfaces that exist rather than inventing one to match. Three record audits
+found the same miss — a correction lands on whichever surface the fixer was looking at and stops
+there — so this is now a rule rather than a habit.
+
+> Whenever an ADR, project-map entry, or GitHub issue changes a rule, acceptance criterion, scope,
+> status, or resolved question represented on another record surface, the owning ADR, issue, and
+> map must be inspected and synchronized in the same task.
+
+It fires in **both directions**, in the same task. From an **ADR**, find the owning issue by searching
+the issues for the ADR's filename — it is the ticket whose resolution comment records that ADR, and
+the other hits are cross-references worth checking too. From an **issue**, its ADR is named in the
+resolution comment, and any ADR still pointing at a question the issue has now settled needs a
+forward pointer. Either way, fix the map's line if the change moved the decision's scope.
+
+**Not done until it is synchronized.** A substantive change sitting on one surface only is not
+done, whatever else the PR ticks.
+
+**A wording or formatting edit that leaves the meaning intact fires none of this** — the threshold
+is there so the rule stays worth keeping.
+
+**Annotate, never rewrite.** These records are what we hand an evaluator, so a correction is
+*added* where the stale claim is read and the original stays visible:
+
+> **Corrected 2026-09-20 by ADR-0015 d9**: this read "no charts". `/admin/analytics` ships exactly
+> one charted surface; the operational tables stay tables.
+
+That already holds across ADR-0002 d6, ADR-0008 d10 and ADR-0010 d4, and it applies to issue bodies
+and resolution comments the same way. The version with the `gh` commands is `AGENTS.md`
+→ *Record propagation* and `docs/agents/issue-tracker.md`.
 
 ### The clean-clone check
 
 Run it from a fresh clone, not your working tree:
 
 ```bash
-docker compose up --build     # must work end-to-end, no Makefile
+make up     # the single command — must bring the stack up end-to-end
 ```
 
-`document/en.subject.md:314` makes the single command mandatory, and a broken migration breaks
-**every other developer's database** (see the three rules above). Catching that at merge costs one
-command; catching it in the final fortnight costs the demo.
+**`make up` is the project's entry point.** It copies `.env.example` into place when `.env` is
+absent and then brings the stack up, so an evaluator never hand-writes a file (ADR-0004 decision 8).
+The Compose invocation used by `make up` is an implementation detail inside the `Makefile`; bare
+`docker compose up --build` must also work independently. `document/en.subject.md:314` requires
+deployment to run with **a single command**; it names no particular command and does not rule out a
+`Makefile`.
+
+So, still from the fresh clone, run the second half of the same decision:
+
+```bash
+docker compose up --build     # must also work end-to-end, without the Makefile
+```
+
+**That is not a duplicate of the first.** ADR-0004 decision 8 requires bare Compose to work on its
+own precisely so **the `Makefile` is never a hiding place for required setup** — a rule ADR-0008 and
+ADR-0017 both lean on. If `make up` works and this does not, setup has leaked into the `Makefile`.
+
+A broken migration breaks **every other developer's database** (see the three rules above).
+Catching that at merge costs two commands; catching it in the final fortnight costs the demo.
 
 ## Environment
 

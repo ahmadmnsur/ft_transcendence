@@ -76,7 +76,7 @@ done when the PR template already is one.**
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
    `ts-jest`/babel configuration to keep alive. One runner means **one command for decision 6 to
    point at**, which matters more than it sounds: a definition of done that names two commands is
-   one an agent gets half-right.
+   one that gets half-run.
 
    The cost is honest and small: NestJS scaffolds with Jest, so `nest new`'s defaults get
    replaced on day one.
@@ -121,15 +121,39 @@ done when the PR template already is one.**
    and decision 5's boot check where it applies — beside the branch, commit, rebase,
    `Co-authored-by:` and `prisma/**` boxes ADR-0005 already put there.
 
+   > **Amended 2026-09-20 — a fourth check, and the decision is unchanged.** *Records move
+   > together*: when a change to an ADR, the map or an issue moves a rule, acceptance criterion,
+   > scope, status or resolved question, the affected ADR, issue and map are inspected and
+   > synchronized in that same task. Settled as question 4 of
+   > [#28](https://github.com/ahmadmnsur/ft_transcendence/issues/28); the rule lives in root
+   > `AGENTS.md`, `docs/agents/issue-tracker.md` and `CONTRIBUTING.md`. It is added to the template
+   > *because* of this decision — a Done condition written only in `CONTRIBUTING.md` would be the
+   > second definition decision 6 refuses. **"Three checks" above is the count at the time of
+   > writing, not a closed list**; unlike decision 7's test categories, nothing here closed it.
+
+   > **Amended 2026-09-20 — the `Co-authored-by:` box is removed from the template.** The clause
+   > above now reads: beside the branch, commit, rebase and `prisma/**` boxes ADR-0005 already put
+   > there. The three checks *this* decision added are untouched; the box removed is one of
+   > ADR-0005's, and **the requirement behind it is retired outright** — see ADR-0005 d7's
+   > annotation.
+
    **This deliberately invents no second concept.** A separately written definition of done drifts
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be
-   "done" with a red suite. Making the template the definition also keeps it **checkable by an
-   agent without asking a human**, which is the property `/to-tickets` actually needs.
+   "done" with a red suite. Making the template the definition also keeps it **checkable
+   without asking anyone**, which is the property `/to-tickets` actually needs.
 
 7. **A test is added only for something that fails silently, and decision 1's list is closed until
-   someone argues a fourth category.** The pull to broaden will arrive during implementation, the
-   way ADR-0003 decision 9 predicts the pull to put a privileged action on the socket and ADR-0005
-   decision 4 predicts the quiet reversal of the schema gate. **Anything the compiler or a demo
+   someone argues a fourth category.**
+
+   > *(**Corrected 2026-09-20**: a **fifth** category. Decision 1 enumerates **four** — the matcher,
+   > the six raw-SQL migration steps, the one standing Match per Student per Round, and ADR-0009
+   > d3's access-control pair — so the next one argued is the fifth. `CONTRIBUTING.md` → *Testing*
+   > and [#25](https://github.com/ahmadmnsur/ft_transcendence/issues/25)'s resolution both already
+   > read "four categories, closed until someone argues a fifth"; this sentence was the outlier.)*
+
+   The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
+   pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet
+   reversal of the schema gate. **Anything the compiler or a demo
    step would catch is not tested.**
 
    Stated as a rule rather than a cap because a cap on count or runtime is arbitrary and games
@@ -233,6 +257,8 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
 
 - **`CONTRIBUTING.md` gains a Testing section and a Done section, and the PR template gains three
   boxes.** That is where decisions 5, 6 and 7 actually live; this ADR records *why*.
+  *(**2026-09-20**: four boxes — the *Records move together* check was added under decision 6's own
+  rule. See the annotation there.)*
 - **`CONTEXT.md` gains nothing, deliberately.** Testing and done are process, and the glossary is
   domain language. A "definition of done" entry there would be the first implementation detail in
   it.

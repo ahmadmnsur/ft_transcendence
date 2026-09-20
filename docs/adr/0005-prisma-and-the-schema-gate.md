@@ -65,6 +65,13 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    contribution stays visible — **paired work needs `Co-authored-by:` trailers** or the second
    person disappears from a rejection criterion.
 
+   > **Annotated 2026-09-20 — the `Co-authored-by:` requirement is retired.** Both surfaces that
+   > carried it are gone: the PR template's checkbox and the `CONTRIBUTING.md` → *Branching*
+   > bullet. **Nothing replaced either.** The reasoning above is kept as the record of why the rule
+   > existed. ⚠️ **Squash-merge still keeps only the PR author and `:306`-`:312` still grades
+   > contribution from all members**, so that exposure now rests on the PR trail alone — which is
+   > what this decision argued the trail was for, but it is no longer checked at merge time.
+
 8. **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`), satisfying `:310`'s "clear
    commit messages describing the changes" with no tooling.
 
@@ -100,6 +107,15 @@ is fragile.
   protection turns out to be available, decisions 5 and 7 are the ones to enforce first.
 
 ## Not settled by this decision
+
+> **Forward pointer, added 2026-09-20.** All three items below are owned by
+> [#28](https://github.com/ahmadmnsur/ft_transcendence/issues/28), *Settle repository governance*,
+> and are blocked on [#16](https://github.com/ahmadmnsur/ft_transcendence/issues/16): `CODEOWNERS`
+> auto-request has nobody to request from while the collaborator list holds one person. That ticket
+> carries a fourth question, **record propagation**, which is **not** residue of this decision and
+> is now **settled** — the rule lives in root `AGENTS.md`, in `docs/agents/issue-tracker.md`
+> → *Record propagation*, and in `CONTRIBUTING.md` → *Records move together*, which is decision 6's
+> own rule about where rules live applied to records.
 
 - **Whether `CODEOWNERS` auto-request works on this plan.** Add it; treat it as a convenience, and
   never as the mechanism.
