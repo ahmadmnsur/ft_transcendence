@@ -95,6 +95,12 @@ them deliberately and settles the rest.
 4. **Three Badges, each a numeric threshold tested inside the same transaction that awards the
    XP, and each awarded the first instant its test passes.**
 
+   ⚠️ **Corrected by ADR-0014: Consistent Learner is the exception.** `Streak >= 3` is tested in
+   the **Round-close** transaction rather than either XP transaction. The other two are tested on
+   their respective XP-awarding paths — First Mentor on Review submission (decision 1), Knowledge
+   Sharer on a Prompt answer (decision 2). Everything else in this decision stands; the note at
+   the end has the reasoning.
+
    - **First Mentor** — `Matches completed as Mentor >= 1`. It also gives teaching the only
      public mark it has, which matters because decision 1 permanently ranks a Mentee above a
      Mentor at equal participation and decision 6 keeps **Mentor Reputation** off the board.
@@ -118,10 +124,6 @@ them deliberately and settles the rest.
    promise not to turn any of this into a scheduled-job problem — nothing ever sweeps the
    Student table looking for conditions that have started or stopped holding — and Badges
    already have no setter under ADR-0008.
-
-   ⚠️ **Corrected by ADR-0014: three write paths, not two.** Consistent Learner is tested at
-   Round close. **The promise this sentence defends survives intact** — still no sweep, still no
-   scheduled job, because closing a Round is an Admin's action. The note below has the reasoning.
 
    > **Widened by ADR-0014 to three write paths.** **Streak** can only change when a **Round**
    > closes — that is the moment "this Round contained no activity" becomes knowable — so
