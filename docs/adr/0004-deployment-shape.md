@@ -170,7 +170,14 @@ six weeks and three developers.
   which ADR-0014 unblocked and supplied with its subject matter — that ADR is the exhaustive list
   of personal data the platform holds.
 - **What fixture data makes every claimed module demonstrable.** Decision 11 settles the
-  mechanism and the bootstrap Admin only; the demo strategy is still open.
+  mechanism and the bootstrap Admin only; the demo strategy is still open. **Settled by ADR-0017**,
+  which took ADR-0010's open choice and had the seed **drive the real write paths** rather than
+  write end-state rows: four closed Rounds, 62 Matches, 46 Reviews, four Reflection Prompts and a
+  social graph, with the platform left **idle** so the demo opens the fifth Round on stage. **It
+  stays on decision 11's boot path** — decision 8's rule that the Makefile is never a hiding place
+  for required setup is what keeps it there, since the fixture is what makes the claimed modules
+  demonstrable. See the note on decision 11 for what idempotence now means, and on decision 9 for
+  the `SEED_STUDENT_PASSWORD` it adds.
 
 ## Amended by the module-claim decision (2026-09-19)
 
