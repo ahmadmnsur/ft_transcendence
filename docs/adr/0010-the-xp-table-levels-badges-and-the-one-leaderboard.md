@@ -99,7 +99,8 @@ them deliberately and settles the rest.
      public mark it has, which matters because decision 1 permanently ranks a Mentee above a
      Mentor at equal participation and decision 6 keeps **Mentor Reputation** off the board.
    - **Knowledge Sharer** — `Reflection Prompts answered >= 3`. Covers the second loop.
-   - **Consistent Learner** — `Streak >= 3`.
+   - **Consistent Learner** — `Streak >= 3`. ⚠️ **Tested in the Round-close transaction, not on
+     either XP path** — see the note at the end of this decision.
 
    **What makes "earns once … and never loses" structural is that the test is run once and its
    result is never re-examined — not that the quantity it reads can only rise.** The
@@ -117,6 +118,10 @@ them deliberately and settles the rest.
    promise not to turn any of this into a scheduled-job problem — nothing ever sweeps the
    Student table looking for conditions that have started or stopped holding — and Badges
    already have no setter under ADR-0008.
+
+   ⚠️ **Corrected by ADR-0014: three write paths, not two.** Consistent Learner is tested at
+   Round close. **The promise this sentence defends survives intact** — still no sweep, still no
+   scheduled job, because closing a Round is an Admin's action. The note below has the reasoning.
 
    > **Widened by ADR-0014 to three write paths.** **Streak** can only change when a **Round**
    > closes — that is the moment "this Round contained no activity" becomes knowable — so
