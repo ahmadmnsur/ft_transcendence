@@ -61,11 +61,16 @@ follows from refusing to give either the Prompt or its answer a state machine.
    > a Post. The second clause carries the decision on its own — and ADR-0011 makes it concrete
    > by giving "seen and cleared" an actual name: a report resolved as `DISMISSED`.
 
-9. **No eligibility gate: any Student may answer.** Deliberately asymmetric with ADR-0002
-   decision 4, which gates the Match candidate pool on holding at least one **Skill**. A
+9. **No eligibility gate: any signed-in Student may answer.** Deliberately asymmetric with
+   ADR-0002 decision 4, which gates the Match candidate pool on holding at least one **Skill**. A
    Student with an empty Skill list cannot be matched but can answer a Prompt, earn XP and
    appear on the feed on their first day. Recorded because the asymmetry reads as an oversight
    otherwise: it is the lighter-weight loop doing its job.
+
+   **A Suspended or Removed Student cannot sign in at all** (ADR-0008 d5), so that case needs no
+   rule here — the same reasoning ADR-0011 decision 11 applies to filing a report, and now the
+   same phrasing. The gate this decision refuses is an *eligibility* gate; the sanction gate sits
+   at the authentication layer and is paid once, for everything.
 
 10. **Answers are visible immediately to everyone, including Students who have not answered.**
     No answer-first gate and no hold-until-close. The proposal describes the loop as immediate —
@@ -135,11 +140,19 @@ ADR extends that record rather than reopening it.
   > **XP never becomes a ledger** — the constraint above is met without revoking anything.
   > ADR-0011 later recorded the accepted cost: **removing a Post does not revoke its XP**, so an
   > abusive Prompt answer keeps its 20 XP after removal.
-- **Streak needs no new rule.** Every edge reads off the existing definitions: Streak is per
-  Round and boolean, so two Prompts answered in one Round count once; an answer during an idle
-  period earns XP only (ADR-0002 decision 9); and an answer to a Prompt published in an earlier
-  Round attaches to the Round open at answer time, because Streak is defined on Rounds and not
-  on Prompts.
+- **Streak needs no new rule.** Every edge reads off the existing definitions: **a Round either
+  contained qualifying activity or it did not**, so two Prompts answered in one Round count once;
+  an answer during an idle period earns XP only (ADR-0002 decision 9); and an answer to a Prompt
+  published in an earlier Round attaches to the Round open at answer time, because Streak is
+  defined on Rounds and not on Prompts.
+
+  > **This read "Streak is per Round and boolean", which was loose even when written and is now
+  > wrong.** **Streak is a stored integer on `Student`, recomputed in the Round-close transaction**
+  > (ADR-0014 d7): incremented when the closing Round held qualifying activity, reset to zero when
+  > it did not, and **skipped for Suspended and Removed Students**, which is what makes ADR-0008's
+  > freeze literal rather than a restart. What is boolean is each Round's **contribution** — the
+  > only part this consequence ever needed, and still the reason two Prompts in one Round count
+  > once. ADR-0014 did not back-reference this record, so the note lands here.
 - **The feed fan-out broadcast candidate is now fully specified.** A new Post reaching the
   community feed carries no privileged action, so it sidesteps ADR-0003 decision 9's boundary
   entirely — which is what made it the safer of the two candidates.
