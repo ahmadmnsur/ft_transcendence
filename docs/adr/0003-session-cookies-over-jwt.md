@@ -15,8 +15,14 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
 
 2. **One origin.** The React bundle, the HTTP API and the socket.io endpoint are served from
    the same scheme, host and port as the browser sees them, behind a single reverse proxy.
-   This is a hard constraint on the deployment shape, not a preference — the cookie strategy
-   collapses without it.
+   This is a hard constraint on the deployment shape, not a preference: it keeps the session
+   cookie, the HTTP API and the socket.io handshake on a single origin, so the cookie travels
+   **same-site and needs no cross-origin configuration to carry it**. Splitting the origin
+   would require a separate cross-origin CORS configuration for credentialed browser requests
+   — an explicit credentialed origin allowlist, since `*` is not permitted once credentials
+   are sent — and, **where the split is also cross-site**, `SameSite=None` on the cookie as
+   well. Either way it **adds a cross-origin security boundary this architecture deliberately
+   avoids**.
 
 3. **argon2id for passwords**, via `@node-rs/argon2` (prebuilt binaries, so the container
    build needs no native toolchain), at the OWASP floor of m = 19 MiB, t = 2, p = 1. The
@@ -24,8 +30,8 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
 
 4. **Sliding expiry, 30 days of inactivity, renewed lazily.** `expires_at` is only rewritten
    when it is more than an hour old, so an authenticated request is not also a database
-   write. Cookie `Max-Age` tracks `expires_at` so the two cannot disagree. There is no
-   absolute cap.
+   write. Cookie `Max-Age` is derived from `expires_at`, keeping the browser-side and
+   server-side expiry aligned. There is no absolute cap.
 
 5. **The session row holds `id`, `student_id`, `expires_at` — and not the role.** The
    **Admin** role is read from the Student row in the same query that resolves the session.
@@ -39,8 +45,8 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > the code enforces rather than an intention.
 
 6. **What kills a session:** logout deletes that row; a password change or a moderation
-   block deletes *every* row for that Student. A **role change deletes nothing** — decision 5
-   means it takes effect on the next request.
+   **Suspension** deletes *every* row for that Student. A **role change deletes nothing** —
+   decision 5 means it takes effect on the next request.
 
    > **Renamed by ADR-0008.** "Moderation block" here is now **Suspension**. ADR-0006 later
    > gave **Block** to the peer-to-peer act, and a peer Block must never delete anyone's
@@ -51,8 +57,25 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    re-present: the reconnect story is that there isn't one. A rejected handshake must stop
    the client retrying and send it to login, overriding socket.io's infinite reconnect.
 
+   > **Hardened 2026-09-20 — browser origin is a separate handshake authorization.** The
+   > browser Socket.IO client uses **WebSocket transport only**; Engine.IO HTTP long-polling
+   > fallback is disabled. Every initial connection and reconnect therefore carries the
+   > browser's `Origin`. At the Engine.IO admission gate (`allowRequest` or the framework
+   > equivalent), require that header to equal the configured `PUBLIC_ORIGIN` exactly and
+   > reject an absent, `null` or mismatched value **before** resolving the session cookie. A
+   > valid session never bypasses this check. Socket.IO CORS configuration is not a substitute:
+   > it governs HTTP long-polling, not WebSocket connection authorization. The product has no
+   > non-browser socket client, so there is no origin-less exception.
+   >
+   > The origin gate runs on every reconnect. Its rejection is terminal for that connection
+   > attempt and stops automatic retry under the rule above, but it leaves the session row
+   > untouched. The existing send-to-login path applies when session authentication fails;
+   > origin rejection by itself surfaces an origin/configuration error. ADR-0004 supplies the
+   > one allowed value per path: `https://localhost:8443` in production and
+   > `http://localhost:8081` in development.
+
 8. **Deleting a Student's sessions force-disconnects their live sockets**, through the same
-   in-memory registry that already backs **Presence**. Without this, a blocked Student keeps
+   in-memory registry that already backs **Presence**. Without this, a suspended Student keeps
    messaging over an already-authenticated socket.
 
 9. **No privileged action is ever exposed over the socket.** Opening and closing a **Round**,
@@ -61,10 +84,10 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    messages, nothing else.
 
 10. **CSRF is answered by SameSite=Lax plus a JSON content-type requirement** on every
-    mutation — a cross-site form cannot set `application/json` without a preflight that
-    same-origin policy then blocks. Login and signup are throttled (5 attempts per 15
-    minutes, keyed on IP and email) and fail with one generic message, so login cannot be
-    used to enumerate accounts.
+    mutation — a cross-site HTML form cannot submit `application/json`; a script attempt
+    would require a CORS preflight that the same-origin deployment does not authorize. Login
+    and signup are throttled (5 attempts per 15 minutes, keyed on IP and email) and failure
+    responses use one generic message, reducing account-enumeration signals.
 
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
@@ -101,8 +124,22 @@ database read per chat message.
 
 - **The deployment shape is now partly decided.** TLS terminates at one proxy and the socket
   is reached as `wss` on the same origin. What remains open there is local development:
-  browsers treat `http://localhost` as trustworthy, so `Secure` cookies work, but any dev
-  setup on a LAN IP or custom hostname will silently drop the session cookie.
+  `http://localhost` is treated as a trustworthy origin for this cookie contract, so the
+  `Secure` cookie is set and sent there — but an **HTTP** dev setup on a LAN IP or a custom
+  hostname is not a secure context and would not receive the `Secure` session cookie.
+
+  > **Closed by ADR-0004 decision 5, and narrowed further on 2026-09-20.** Local development is
+  > not open: `http://localhost` is a contract, not a default. As of 2026-09-20 **LAN access is
+  > out of scope on both paths** — the production command is no longer the escape hatch decision 5
+  > originally offered — and ADR-0004 decision 7 now publishes the proxy on `127.0.0.1` only, so
+  > the contract is enforced by the binding. The mechanism this bullet names is unchanged and is
+  > still the reason.
+
+  > **Completed by ADR-0004 on 2026-09-20 — each path now has its own structural binding.**
+  > Decision 7's `127.0.0.1:8443` and `127.0.0.1:8080` bindings enforce production locality;
+  > the dev overlay separately publishes nginx on `127.0.0.1:8081`, making
+  > `http://localhost:8081` the supported development origin. The production socket uses
+  > `wss`; the developer-only HTTP overlay uses same-origin `ws` and HMR through nginx.
 - **A Session entity enters the data model**, owned by nobody's feature slice — it is
   infrastructure that every slice reads through.
 - **Presence is process-local and not durable.** A backend restart reads every Student as
@@ -128,8 +165,8 @@ database read per chat message.
   > anywhere in the model, and would put a timestamped record of every Student's habits into the
   > Privacy Policy for a profile line neither source asks for. **Presence is whether a Student is
   > online now; when they were last online is not recorded at all.**
-- **Whoever settles moderation depth inherits decision 6**, and should wire "block" into
-  session deletion rather than inventing a second mechanism.
+- **Whoever settles moderation depth inherits decision 6**, and should wire the moderation
+  **Suspension** into session deletion rather than inventing a second mechanism.
 - **Decision 9 is a rule to hold, not a fact to observe.** The pressure to put a privileged
   action on the socket "because it's already open" will arrive during implementation; giving
   in re-creates a second authorization path that nothing else in the system checks.

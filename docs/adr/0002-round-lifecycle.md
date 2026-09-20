@@ -30,6 +30,14 @@ that reacts to events over a Round's lifetime.
    This is what lets several Rounds complete inside an hour-long defense slot, which is
    the reason ADR-0001 gave for the entity existing at all.
 
+   **"Atomically" means one database transaction: the Round row and every generated Match
+   row commit together, or none of them do.** ADR-0014's unique index guards "at most one
+   open Round" against two simultaneous Admin requests each trying to open one; it says
+   nothing about a single Admin request that fails partway through matching. Without a
+   transaction boundary, that failure mode leaves a Round with no Matches, or with some of
+   its Matches, sitting there as if it had finished — the transaction is what makes decision
+   6's "unmatched" derivation and decision 5's "finalises every Match" trustworthy at all.
+
 4. **The candidate pool is automatic**: every Student with at least one Skill on either
    list is a candidate, with no per-Round opt-in. Consent happens *after* pairing, through
    accept/decline, which is how the concept proposal describes it. Seeding a demo is

@@ -38,7 +38,8 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
 
 ## The decisions
 
-1. **Four closed Rounds are seeded, the platform ends idle, and two Rounds run live on stage.**
+1. **Four closed Rounds are seeded, the platform ends idle, and two Rounds run live on stage
+   sequentially.**
 
    Ending idle rather than mid-Round is the deliberate part. ADR-0002 decision 2 makes the gap
    between Rounds *"a real, expected state, not a fault"*, and a seeded open Round would force the
@@ -49,6 +50,35 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    ADR-0015 decision 4 indexes every time series **by Round**, so fewer than three closed Rounds
    renders the analytics as a point rather than a series. Two live Rounds rather than one because
    the second proves the first was not a fluke.
+
+   > **Corrected 2026-09-20 — the floor is three, and four is a choice. The decision does not
+   > move.** The paragraph above contradicts itself: it concludes *"four"* from rules it then
+   > states as *"fewer than **three** closed Rounds"*. And only two of the three cited rules
+   > constrain the **Round** count at all:
+   >
+   > - **Consistent Learner (`Streak >= 3`, ADR-0010 d4)** — a genuine Round floor of **three**.
+   >   Streak moves only in the Round-close transaction (ADR-0014 d7), so it takes three closed
+   >   Rounds with qualifying activity.
+   > - **ADR-0015 decision 4's by-Round time series** — a genuine Round floor of **three**, which
+   >   is what the sentence above actually says.
+   > - **Knowledge Sharer (three Prompts answered)** — **not a Round floor.** ADR-0002 decision 9
+   >   decoupled the Prompt loop from matching and ADR-0007's consequence is explicit that *"Streak
+   >   is defined on Rounds and not on Prompts"*, with two Prompts answered in one Round counting
+   >   once. Three Prompts could be answered inside a single Round. It is a floor on the **Prompt**
+   >   sequence, met by the four published Prompts, not on the Round count.
+   >
+   > **So three is the floor and the fourth closed Round is chosen.** What chooses it is already in
+   > this ADR and was never connected to decision 1: **ADR-0006 line 192 guides "roughly 30 Students
+   > in demo and test fixtures" *for six Rounds***, which is the calibration decision 3 relies on
+   > for `size: 30`. **Four seeded plus two live is exactly that six.** The fourth Round also buys
+   > the analytics a four-point series before the demo adds two more, and the headroom the
+   > consequence below measures — 62 of roughly 174 legal pairs burned, leaving ~112 against ~30
+   > consumed live.
+
+   **Sequentially, because there is no other option.** ADR-0002 decision 2 allows **at most one
+   open Round**, and ADR-0014 decision 13 holds it in the schema with a unique index on
+   `(closed_at IS NULL)`. So the stage flow is **Round 5 opened, matched, closed — then Round 6**,
+   never both at once.
 
 2. **The seed drives the real write paths. It does not write end-state rows.** It runs the
    matcher, submits Reviews, publishes Prompts and closes Rounds through the same functions the
@@ -120,6 +150,17 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    The removed Student must therefore have been a **Mentee** in a completed Match before removal,
    or the last of those has nothing to show.
 
+   > **Corrected 2026-09-20 — the Streak parenthesis describes a beat this fixture cannot show.**
+   > *"So it resumes rather than restarts"* is ADR-0014 decision 7's wording, and that sentence
+   > ends *"it **resumes on reinstatement** rather than restarting."* **This Student is left
+   > suspended and is never reinstated**, so no resumption ever happens on stage. What the fixture
+   > actually demonstrates is the **freeze itself**: the Round-close transaction skips Suspended and
+   > Removed rows, so the stored Streak is **preserved rather than reset to zero** when a Round
+   > closes without qualifying activity from them — which is what would happen to an active Student.
+   > That is ADR-0008 decision 6's *"a Suspension makes Streak freeze"* and `CONTEXT.md`'s *"their
+   > XP and Streak freeze rather than revert"*. **The fixture is unchanged**; only the claim about
+   > what it shows is corrected.
+
 6. **`SEED_STUDENT_PASSWORD` in `.env.example`, shared by all thirty seeded Students.**
 
    Today `.env` carries credentials for the bootstrap **Admin** and **Peer Moderator** only
@@ -128,6 +169,11 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    because it lets them sign in as **any** seeded Student the moment they stop following the
    script, which is exactly when a demo is really being tested. ADR-0004 decision 9's warning
    extends to it unchanged.
+
+   > **Clarified 2026-09-20 by ADR-0004 d8/d11 — the seed reads the resolved container
+   > environment, not only `.env`.** `.env.example` is the required baseline `env_file` for
+   > the bare clean-clone path; optional `.env` is loaded later and overrides it. The variable,
+   > its shared development value and the fifteen-entry environment list are unchanged.
 
    The cohort is deterministic from its seed, so **the designated demo Student is stable by
    construction**. They must carry a Match, a Review, a Badge, a **Streak of at least 3**, and
@@ -170,9 +216,21 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    What works instead: pick one catalogue Skill and seed it so **exactly one active candidate
    lists it as `TEACH` and exactly one lists it as `LEARN`** — and make **those two Students one
    of the two seeded Blocks** (decision 9). ADR-0006 step 2 rejects blocked pairs as hard-invalid
-   in either direction, and ADR-0006 decision 10 binds an Admin's hand too, so the only pair that
-   could ever cover that Skill never can. `Demand = 1`, `Supply = 1`, no `MatchSkillCoverage` row.
-   One Block does double duty and nothing is manufactured.
+   in either direction, and **ADR-0006 decision 10 binds an Admin's hand too** — its prohibition is
+   unqualified, *"a blocked pair can never be Matched, in either direction"*, and the same sentence
+   then names exactly what a hand-made Match **is** exempt from: the Compatibility Score and
+   no-repeats. **The Block is not on that list.** So the only pair that could ever cover that Skill
+   never can. `Demand = 1`, `Supply = 1`, no `MatchSkillCoverage` row. One Block does double duty
+   and nothing is manufactured.
+
+   ⚠️ **No database constraint holds that, and this construction rests on it.** ADR-0014 decision
+   13's list of invariants that move into the schema does not include it — `Block`'s only unique
+   constraint is on the ordered pair (ADR-0014 d4), which stops duplicate Block rows, not a Match
+   across one. The rule lives in **matcher step 2**, and an Admin's hand-made Match **does not run
+   the matcher** (ADR-0002 d7, ADR-0006 step 9). An Admin path that omits the Block check would
+   cover this Skill and silently erase the gap ADR-0015 decision 3 is demonstrated by. Same shape
+   as ADR-0014 decision 13's note that the standing-Match rule is violable through the same path,
+   and recorded for the same reason.
 
    **A third, separate beat worth keeping:** suspending a Student who teaches something makes
    **Supply for that Skill visibly drop**, which is ADR-0015 decision 2's candidate-pool

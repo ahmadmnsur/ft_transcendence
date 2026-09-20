@@ -26,10 +26,11 @@ license pulling any other.**
 
 - **The map's Out of scope section is amended for exactly one entry.** **Admin Learning Analytics**
   moves from excluded to shipped, joining **42 OAuth** and the **minimal badge set plus one
-  Leaderboard** as the third deliberate pull-forward. **Every other item on that list stays out**:
+  Leaderboard** as the third deliberate pull-forward. **Every other excluded surface stays out**:
   fair mentor rotation, availability matching, the notification system, prompt categories, per-skill
   endorsements, the **Learning Progress** view, 2FA, and the **Mentor Reputation** score ADR-0013
-  added to it. Decision 10 states the test that distinguishes them.
+  added to it. Decision 10 states the test that distinguishes the **Version 2** items among them —
+  fair mentor rotation is an MVP cut rather than a Version 2 item, so that test does not reach it.
 - **Nothing else moves.** This ADR adds no entity, amends no other ADR, and takes no decision back.
   ADR-0003 decision 9, ADR-0008 decisions 3 and 6, ADR-0010 and ADR-0014 are all load-bearing here
   and all stand exactly as written.
@@ -49,11 +50,12 @@ license pulling any other.**
    every figure below is a query over tables that already exist: **no new entity, no new storage, no
    new role, one new route.**
 
-2. **All five of the proposal's Learning Analytics figures ship — the fifth narrowed to what a
-   model with no transition history can answer — and the depth around them is deliberately
-   reduced.** Most-requested Skills to learn; most-available Skills to teach; the supply/demand
-   gap; overall Match completion rate; and where in the status flow Matches stall, which becomes
-   **where Matches stand now and how past ones ended**, never where they spent longest.
+2. **All five of the proposal's Learning Analytics figures ship. The fifth is explicitly narrowed
+   to current open-Round state and closed-Round outcomes, because no status-transition history
+   exists — and the depth around them is deliberately reduced.** Most-requested Skills to learn;
+   most-available Skills to teach; the supply/demand gap; overall Match completion rate; and where
+   in the status flow Matches stall, which becomes **where Matches stand now and how past ones
+   ended**, never where they spent longest.
 
    Five queries over ADR-0014's schema — dropping any makes the surface thinner without making it
    meaningfully cheaper. What is reduced is everything *around* them: no workshop-planning tooling,
@@ -126,23 +128,39 @@ license pulling any other.**
    > active `LEARN`, and block that pair. ADR-0006 step 2 rejects blocked pairs in either direction
    > and ADR-0006 d10 binds an Admin's hand too, so `Demand = 1`, `Supply = 1`, and no
    > `MatchSkillCoverage` row can ever name it.
+   >
+   > ⚠️ **Qualified 2026-09-20: "can ever" is a rule, not a constraint.** ADR-0006 d10 does bind an
+   > Admin — the Block is absent from the closed list of what a hand-made Match is exempt from — but
+   > **ADR-0014 d13 does not put it in the schema**, and an Admin's hand-made Match does not run the
+   > matcher that enforces it. ADR-0017's seed creates **two Admin repairs**, so this construction
+   > survives only while that path checks Blocks. Tracked as a seed acceptance condition on
+   > [#27](https://github.com/ahmadmnsur/ft_transcendence/issues/27): *"the seeded blocked pair must
+   > remain unmatched after all Admin repair paths."* The gap definition above is unchanged.
 
-4. **Time series are indexed by Round, never by date.** ADR-0001 established that a **Round** is
-   explicitly not a calendar week, and ADR-0002 made Rounds admin-triggered at arbitrary intervals.
+4. **Any historical time series in this surface is indexed by Round, never by date.** ADR-0001
+   established that a **Round** is explicitly not a calendar week, and ADR-0002 made Rounds
+   admin-triggered at arbitrary intervals.
 
    A date axis is not merely less apt, it is actively misleading in the one setting that decides the
    grade: **several Rounds are run inside a single defense slot, so a date axis renders the entire
    demonstration as a vertical line at one point in time.** Round order also makes periods comparable
    to each other, which arbitrary intervals cannot.
 
-5. **Nothing is stored. This is the sixth derived-not-stored ruling on this map.** No snapshot table,
-   no aggregates table, no materialised view. It joins derived *unmatched* (ADR-0002), derived Prompt
-   liveness (ADR-0007), the report queue's read-time grouping (ADR-0011), and ADR-0014's refusals of
-   a candidate-pool table and a `Conversation`.
+   **Not every figure here is a series.** Current stock measures — **Demand**, **Supply**, the gap
+   derived from them, and the open-Round state distribution — remain **point-in-time snapshots**,
+   and are not presented as historical series because the model stores no state snapshots
+   (decision 5). Round indexing governs the figures that genuinely run over time; it is not a claim
+   that every number on the dashboard has a history behind it.
 
-   **The model charts flows freely and cannot chart stocks.** Matches created, Reviews submitted,
-   Posts created and Badges awarded all carry timestamps; **XP**, **Level** and **Streak** exist only
-   as today's value, because ADR-0008 decision 6 left no ledger and nothing snapshots state.
+5. **Nothing is stored.** No snapshot table, no aggregates table, no materialised view. This
+   follows the map's existing pattern of deriving read-time groupings rather than storing them:
+   derived *unmatched* (ADR-0002), derived Prompt liveness (ADR-0007), the report queue's read-time
+   grouping (ADR-0011), and ADR-0014's refusals of a candidate-pool table and a `Conversation`.
+
+   **The model has timestamped event flows but does not preserve historical snapshots of state.**
+   Matches created, Reviews submitted, Posts created and Badges awarded all carry timestamps;
+   **XP**, **Level** and **Streak** exist only as today's value, because ADR-0008 decision 6 left no
+   ledger and nothing snapshots state.
 
 6. **The XP ledger ADR-0008 refused to store is exactly reconstructible as a query — and we do not
    build it.**
@@ -158,6 +176,19 @@ license pulling any other.**
    It is not built because **XP is a linear function of the three event counts already being
    charted**, so an XP-growth line would plot the same information twice. The next person who wants
    XP history should reach for this query, not for a schema change.
+
+   > **Corrected 2026-09-20 — "already being charted" is false; decision 2 is what falsifies it.**
+   > The sentence should read: **"It is not built because XP is exactly reconstructible from
+   > timestamped Match/Review and Prompt-origin Post events already present in the model, while an
+   > XP-growth line would add a derivative view rather than a new community-level insight."**
+   >
+   > Decision 2's five figures are **Demand, Supply, the gap, the completion rate, and Match state
+   > and outcomes**. **None of them charts a count of completed Matches, Reviews submitted or
+   > Prompt-origin Posts**, so "plot the same information twice" overstated the case — those events
+   > are *present in the model* and carry timestamps (decision 5), which is not the same as being
+   > on the dashboard. The conclusion is unchanged and if anything better supported: XP is
+   > **per-Student**, and decision 9 makes this surface report on the community and never on an
+   > individual Student.
 
 7. **Recharts is added as the charting dependency.** The locked stack carries no
    charting library, so this is a stack addition rather than a slice's choice. The module is graded
@@ -200,7 +231,14 @@ license pulling any other.**
     All three exceptions pass it and are the only three: **42 OAuth** backs the OAuth 2.0 Minor;
     **the minimal badge set and one Leaderboard** back the Gamification Minor; **Learning Analytics**
     backs the user activity analytics Minor. **Nothing else on the Version 2 list backs a claimed
-    module**, and the check is mechanical rather than a matter of judgement:
+    module**, and the check is mechanical rather than a matter of judgement.
+
+    **Every row below sits on the proposal's own Version 2 list** — six tagged *(Version 2)* in
+    the text, plus **Mentor Reputation**, which ADR-0013 decision 3 placed there on the proposal's
+    own grouping of it with the per-skill endorsements at `:205` and `:327`. **An MVP cut and an
+    untagged feature are not candidates for this test at all**: it governs pulling Version 2 work
+    *in*, and says nothing about cutting MVP work *out*. That distinction is what the correction
+    beneath the table turns on.
 
     | Version 2 item | Claimed module requiring it |
     | --- | --- |
@@ -250,11 +288,15 @@ the other three are one query each, and it weakens the surface against precisely
 module is exposed to.
 
 **A stored aggregates or snapshot table, to make trends cheap** (rejected, decision 5). It is what
-an analytics feature normally wants, and this model does not need it at demo scale — and it would be
-the fifth time this map materialised a derived grouping after refusing it four times.
+an analytics feature normally wants, and this model does not need it at demo scale — and it would
+depart from the map's consistent pattern of deriving these groupings rather than storing them, the
+pattern decision 5 lists. ADR-0014 puts it plainly: reintroducing one is *"reversing a decision, not
+adding a feature."*
 
 **Reconstructing and charting XP history** (rejected, decision 6). Genuinely available and exactly
-correct, and redundant against the event counts already charted.
+correct, and redundant against the event counts already charted. *(**Corrected 2026-09-20**: those
+event counts are **present in the model**, not charted — see decision 6's annotation. The rejection
+stands; XP history is a derivative per-Student view, and this surface is community-level.)*
 
 **Hand-rolled Tailwind and SVG charts, keeping the stack closed** (rejected, decision 7). Viable —
 bar charts carry four of the five figures — and it loses on the funnel, where a line chart is the

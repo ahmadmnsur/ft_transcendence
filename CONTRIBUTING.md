@@ -5,17 +5,17 @@ Three developers, six weeks, one database. This file is the short version of
 
 ## Roles
 
-| | Role | Also |
-|---|---|---|
-| **Ahmad** | Product Owner | Developer · schema-gate deputy |
-| **Kamel** | Technical Lead / Architect | Developer · **schema gate** |
-| **Fadel** | Scrum Master | Developer |
+|           | Role                       | Also                           |
+| --------- | -------------------------- | ------------------------------ |
+| **Ahmad** | Product Owner              | Developer · schema-gate deputy |
+| **Kamel** | Technical Lead / Architect | Developer · **schema gate**    |
+| **Fadel** | Scrum Master               | Developer                      |
 
 ## Branching
 
-- Branch off `main`. Keep branches **short-lived** — the rebase rule below assumes it.
-- Name them `<type>/<slice>-<short>`, e.g. `feat/matching-round-open`, `fix/session-expiry`.
-- One PR per slice increment. **Squash-merge**, then delete the branch.
+* Branch off `main`. Keep branches **short-lived** — the rebase rule below assumes it.
+* Name them `<type>/<slice>-<short>`, e.g. `feat/matching-round-open`, `fix/session-expiry`.
+* One PR per slice increment. **Squash-merge**, then delete the branch.
 
 ## Commits
 
@@ -25,26 +25,54 @@ describing the changes", and it sits in the list that gets a project **rejected*
 
 ## Review
 
-- **Every PR needs one *completed* review from another member.** Requesting a reviewer is not a
+* **Every PR needs one *completed* review from another member.** Requesting a reviewer is not a
   review — the box is ticked when the review has been given. Not enforced by GitHub — this
-  repository is private on a free plan, so there is no branch protection. It is a convention the three of
-  us keep, and the PR history is what we show an evaluator when asked how work was divided.
-- **Non-schema PRs: round-robin.** Anyone reviews anyone.
-- **PRs touching `prisma/`: Kamel reviews, always.** If he is blocked for more than 24 hours,
-  **Ahmad** deputises. Fadel watches for the stall rather than absorbing it.
+  repository is private on a free plan, so there is no branch protection. It is a convention the
+  three of us keep, and the PR history is what we show an evaluator when asked how work was divided.
 
-## Schema changes — read this before touching `prisma/`
+  > **Corrected 2026-09-20 — this account is not on the Free plan.** `gh api user` reports the
+  > owning account's plan as **Pro**, which does support branch protection on a private repository
+  > (Free personal accounts cannot; Pro, Team and Enterprise Cloud can). The mechanism is available;
+  > nobody has turned it on. Until that happens, this rule is still a convention, not a
+  > platform-enforced one. See ADR-0005 decision 7.
+* **PRs outside the Prisma gate: round-robin.** Anyone reviews anyone.
+* **PRs touching `prisma/` or the root `prisma.config.ts`: Kamel reviews, always.** If he is
+  blocked for more than 24 hours, **Ahmad** deputises. Fadel watches for the stall rather than
+  absorbing it.
+
+## Schema changes — read this before touching `prisma/` or `prisma.config.ts`
 
 **You write your own migration. Kamel reviews it.** You own your feature DB-through-UI; the
 gate exists to catch bad or conflicting schema, not to take authorship away from you.
 
+**You also author your own `prisma.config.ts` change; the gate holder reviews it.** Prisma 7 Config
+selects the schema, migration path, migration datasource and seed command, so changing that root
+file can affect the same shared mechanisms as changing `prisma/`. Files outside these two Prisma
+surfaces remain round-robin.
+
+**`prisma` and `@prisma/client` are constrained to the `^7` major in `package.json` — don't let an
+install pull Prisma 8.** (`^7` is a semver range, not an exact-version pin — no exact patch/minor
+is fixed.) The rebase/regenerate workflow and migration-ordering model below are both version 7's;
+Prisma 8 (GA expected October 2026) replaces them with a different, incompatible model.
+*(ADR-0005 decision 6, locked 2026-09-20.)*
+
 ```bash
 # 1. edit prisma/schema.prisma
-# 2. generate + apply locally
+# 2. create + apply the migration locally
 npx prisma migrate dev --name <slice>_<change>
-# 3. commit schema.prisma AND the generated migration together
-# 4. open a PR and request Kamel
+# 3. regenerate Prisma Client explicitly
+npx prisma generate
+# 4. commit schema.prisma AND the generated migration together
+# 5. open a PR and request Kamel
 ```
+
+**`migrate dev` no longer runs `prisma generate`.** Prisma 7 keeps migration and client generation
+as separate steps, so run the explicit generation command above after schema changes when the
+generated client needs updating. *(ADR-0005 Consequences, added 2026-09-20.)*
+
+**`migrate dev` no longer seeds your local database on its own.** Prisma 7 removed automatic
+seeding from `migrate dev`/`migrate reset`; run `npx prisma db seed` explicitly if you want seed
+data after the command above. *(ADR-0005 Consequences, added 2026-09-20.)*
 
 ### The three rules
 
@@ -53,10 +81,28 @@ npx prisma migrate dev --name <slice>_<change>
    `main` breaks **every other developer's database** with a checksum mismatch. If it is wrong,
    write a new migration that corrects it.
 
+   > **Tightened 2026-09-20 — concretely, that means `migrate dev` prompts a destructive reset,
+   > or `migrate deploy` blocks the deploy.** Not silent corruption: Prisma detects the checksum
+   > drift and refuses to proceed. Locally that means a prompt to **reset the database**
+   > (discarding your data); in CI/production, `migrate deploy` errors out instead. See
+   > ADR-0005 decision 6 for the full explanation.
+
 2. **Rebase onto `main` before you merge. If `schema.prisma` moved underneath you, regenerate.**
    Prisma orders migrations by their timestamp directory, not by merge order. Two people working
    in parallel can produce a history that applies in one order on their laptops and a different
    order on a fresh clone. Rebasing is what keeps those two identical.
+
+   > **Clarified 2026-09-20 — "regenerate" is your own unmerged migration, never one already on
+   > `main`.** Rule 1 above is unconditional; rebasing creates no exception to it. What may be
+   > discarded and recreated is the migration this branch produced and has not yet merged, so it
+   > sits correctly on top of the rebased schema. See ADR-0005 decision 6.
+
+   > **Tightened 2026-09-20 — the "different order" risk is about out-of-order timestamps against
+   > already-applied history, not the same migrations applying differently in different places.**
+   > An identical set of migration directories always applies in the same name-sorted order,
+   > locally or on a fresh clone. What actually diverges is which migrations a given database has
+   > already recorded as applied — rebasing before merging is what keeps a later merge's timestamp
+   > later than whatever it followed. See ADR-0005 decision 6 for the full explanation.
 
 3. **The seed is gated exactly like the schema.**
    `prisma/seed.ts` runs on every boot (ADR-0004 decision 11) and must stay **idempotent**. It is
@@ -77,15 +123,22 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    up as pairs quietly never forming. Asserts C3, C4, C6 and C7 from
    `prototypes/compatibility-score/SUCCESS-CRITERIA.md`. **C1, C2 and C5 are not assertions** —
    they failed and ADR-0006 resolved them by decision.
+
 2. **The six raw-SQL migration steps** — three `CHECK` constraints, three expression indexes. If a
    migration stops creating one, the database accepts bad data and says nothing.
+
 3. **At most one standing Match per Student per Round** — the one invariant the schema cannot
    hold, violable through an Admin's hand-made Match.
+
 4. **File access control** — signed out is 401, signed in as an unrelated Student is 403.
 
+5. **Socket.IO origin admission** — with a real valid session, the Engine.IO gate accepts an
+   exact `Origin === PUBLIC_ORIGIN` and rejects absent, `null` and mismatched origins. It also
+   verifies that the browser connection is WebSocket-only and HTTP long-polling is unavailable.
+
 **Adding a test outside that list needs an argument.** The rule is *does it fail silently?* —
-anything the compiler or a demo step would catch is not tested. Four categories, closed until
-someone argues a fifth.
+anything the compiler or a demo step would catch is not tested. Five categories, closed until
+someone argues a sixth.
 
 **CI is advisory for the current repository setup.** Branch protection is unavailable on this
 plan, so the workflow cannot block a merge. Its job is evidence for
@@ -94,6 +147,11 @@ divided without taking our word for it. **It may become a required check if bran
 becomes available** — ADR-0016 leaves that open by name, and ADR-0005 decision 7 lists it among the
 first rules to enforce if it is.
 
+> **Corrected 2026-09-20 — branch protection is not unavailable on this plan; it is simply not
+> turned on.** The account is GitHub Pro, which supports branch protection on a private repository.
+> CI's advisory status is unchanged by this correction — nobody has decided to make it a required
+> check, and this paragraph does not decide that now. See ADR-0005 decision 7.
+
 ## Done
 
 **A ticket is done when its PR is merged with every box in the template ticked.** There is no
@@ -101,8 +159,9 @@ second definition — the template *is* the definition, so it cannot drift from 
 it, and it can be checked without asking anyone.
 
 That means, every time: the suite green, the ticket's acceptance criteria met, **one completed
-review**, and —
-if the PR touches `prisma/`, the Compose files or a Dockerfile — **a clean-clone boot verified**.
+review**, and — if the PR touches `prisma/`, `prisma.config.ts`, the Compose files or a Dockerfile —
+**a clean-clone boot verified**.
+
 If a change to an ADR, the project map, or a GitHub issue moves a rule, acceptance criterion,
 scope, status, or resolved question, **the affected records moved together in the same task**.
 
@@ -110,14 +169,14 @@ scope, status, or resolved question, **the affected records moved together in th
 
 **A settled decision is represented across three surfaces**: its **ADR** in `docs/adr/`, the
 **GitHub issue that owns it**, and the **map**
-([#1](https://github.com/ahmadmnsur/ft_transcendence/issues/1)). Not every decision reaches all
-three — synchronize the surfaces that exist rather than inventing one to match. Three record audits
-found the same miss — a correction lands on whichever surface the fixer was looking at and stops
-there — so this is now a rule rather than a habit.
+([#1](https://github.com/ahmadmnsur/ft_transcendence/issues/1)). **Not every decision reaches all
+three — synchronize the surfaces that exist rather than inventing one to match.** Three record
+audits found the same miss — a correction lands on whichever surface the fixer was looking at and
+stops there — so this is now a rule rather than a habit.
 
 > Whenever an ADR, project-map entry, or GitHub issue changes a rule, acceptance criterion, scope,
-> status, or resolved question represented on another record surface, the owning ADR, issue, and
-> map must be inspected and synchronized in the same task.
+> status, or resolved question represented on another record surface, **inspect and synchronize every
+> applicable record surface that exists in the same task.**
 
 It fires in **both directions**, in the same task. From an **ADR**, find the owning issue by searching
 the issues for the ADR's filename — it is the ticket whose resolution comment records that ADR, and
@@ -143,34 +202,53 @@ and resolution comments the same way. The version with the `gh` commands is `AGE
 
 ### The clean-clone check
 
-Run it from a fresh clone, not your working tree:
+Run **each check independently from a separate fresh clone**. Do not run the two commands
+back-to-back against the same working clone.
+
+**Check 1 — project entry point:**
 
 ```bash
-make up     # the single command — must bring the stack up end-to-end
+make up
 ```
 
-**`make up` is the project's entry point.** It copies `.env.example` into place when `.env` is
-absent and then brings the stack up, so an evaluator never hand-writes a file (ADR-0004 decision 8).
-The Compose invocation used by `make up` is an implementation detail inside the `Makefile`; bare
-`docker compose up --build` must also work independently. `document/en.subject.md:314` requires
-deployment to run with **a single command**; it names no particular command and does not rule out a
-`Makefile`.
+**`make up` is the project's entry point.** It bootstraps `.env` from `.env.example` when
+`.env` is absent and then brings the stack up, so an evaluator does not need to hand-write
+environment configuration (ADR-0004 decision 8).
 
-So, still from the fresh clone, run the second half of the same decision:
+The Compose invocation used by `make up` is an implementation detail inside the `Makefile`;
+bare `docker compose up --build` must also work independently.
+
+`document/en.subject.md:314` requires deployment to run with **a single command**; it names no
+particular command and does not rule out a `Makefile`.
+
+**Check 2 — independent Compose path:**
+
+From a **different fresh clone**, run:
 
 ```bash
-docker compose up --build     # must also work end-to-end, without the Makefile
+docker compose up --build
 ```
+
+This must also work end-to-end **without relying on `make up` or any setup performed by the
+Makefile**. A fresh clone must therefore provide everything bare Compose requires through the
+Compose/configuration design itself; the direct Compose path must not depend on `.env` having first
+been created by `make up`.
 
 **That is not a duplicate of the first.** ADR-0004 decision 8 requires bare Compose to work on its
 own precisely so **the `Makefile` is never a hiding place for required setup** — a rule ADR-0008 and
-ADR-0017 both lean on. If `make up` works and this does not, setup has leaked into the `Makefile`.
+ADR-0017 both lean on. If `make up` works and the independent bare Compose check does not, setup has
+leaked into the Makefile.
 
 A broken migration breaks **every other developer's database** (see the three rules above).
-Catching that at merge costs two commands; catching it in the final fortnight costs the demo.
+Catching that at merge costs two independent checks; catching it in the final fortnight costs the
+demo.
 
 ## Environment
 
-`.env` is gitignored; `.env.example` carries working development defaults. `make up` copies it
-into place when `.env` is absent — see [ADR-0004](docs/adr/0004-deployment-shape.md). Develop on
-`http://localhost`: a LAN IP silently drops the session cookie.
+`.env` is gitignored; `.env.example` carries working development defaults. Services load
+`.env.example` first as their required `env_file` and optional `.env` second, so local values
+override the committed defaults. Values used for Compose interpolation still carry their own
+Compose-level defaults. `make up` copies `.env.example` into place when `.env` is absent; bare
+Compose ignores the absent optional file — see
+[ADR-0004](docs/adr/0004-deployment-shape.md). Develop through nginx at
+`http://localhost:8081`, published as `127.0.0.1:8081`; LAN access is outside the contract.

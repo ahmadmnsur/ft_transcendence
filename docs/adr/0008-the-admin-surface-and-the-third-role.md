@@ -167,6 +167,12 @@ revoke XP.**
     already attaches to `ADMIN_PASSWORD` extends to `MODERATOR_PASSWORD`: these are real
     credentials for a throwaway database and must be changed anywhere others can reach.
 
+    > **Clarified 2026-09-20 by ADR-0004 d8/d11 — "from `.env`" is not the bare path's
+    > source.** The seed reads the resolved container environment. Committed `.env.example`
+    > supplies the throwaway localhost defaults as the required first `env_file`; optional,
+    > gitignored `.env` is loaded later and overrides it. The two moderator variables and
+    > their values are unchanged, and the bootstrap Peer Moderator exists on both boot paths.
+
 ## Considered options
 
 **Two roles, arguing that Admin↔Student assignment *is* roles management** (rejected,

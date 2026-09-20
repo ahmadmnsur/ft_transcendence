@@ -72,6 +72,14 @@ done when the PR template already is one.**
    **Everything else is deliberately untested.** CRUD, forms, the feed, the three dashboards and
    every screen fail *loudly*, and the demo is a better detector than a test would be.
 
+   > **Extended 2026-09-20 — ADR-0003 decision 7 adds the fifth silent-failure category.**
+   > The Socket.IO origin gate can be absent while the legitimate UI and cookie-authenticated
+   > socket still work, leaving a security boundary silently unenforced. Integration coverage
+   > therefore exercises the Engine.IO admission gate with a real session: exact
+   > `PUBLIC_ORIGIN` succeeds; absent, `null` and mismatched `Origin` fail even with a valid
+   > cookie; and HTTP long-polling is unavailable because the browser transport is WebSocket-only.
+   > The four original categories and the one-level, no-coverage-target shape are unchanged.
+
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
    `ts-jest`/babel configuration to keep alive. One runner means **one command for decision 6 to
@@ -112,9 +120,26 @@ done when the PR template already is one.**
    the Dockerfiles — not only before defense.** ADR-0004 decision 8 makes `make up` *and* bare
    `docker compose up --build` from a clean clone the mandatory single command (`:314`), and
    ADR-0005 decision 6 warns that one bad migration **breaks every other developer's database**
-   through a checksum mismatch. Discovering either in the final fortnight is the worst available
+   through a checksum mismatch — concretely, a forced dev-database reset or a blocked
+   `migrate deploy`, per that decision's 2026-09-20 annotation. Discovering either in the final fortnight is the worst available
    time, and the check is one command. It goes in the PR template; ADR-0004's pre-defense
    checklist keeps it too.
+
+   > **Corrected 2026-09-20 — it is two checks, in two separate fresh clones.** *"The check is
+   > one command"* understated it. ADR-0004 decision 8 requires **both** `make up` and bare
+   > `docker compose up --build` to work end-to-end, and its 2026-09-20 note makes the two boot
+   > paths **independent**: bare Compose must run from a clone where the Makefile has created
+   > nothing. Run back-to-back in one clone, the second command inherits the `.env` the first
+   > wrote and proves nothing — which is the whole reason decision 8 asks for it. Neither the
+   > moment this decision moved the check to, nor the trigger (`prisma/**`, Compose files,
+   > Dockerfiles), changes. `CONTRIBUTING.md` → *The clean-clone check* and the PR template
+   > carry the two-clone procedure.
+
+   > **Extended 2026-09-20, following ADR-0005 decision 5's gate-scope correction.** The trigger
+   > now also includes the root `prisma.config.ts`. Prisma 7 Config selects the schema, migration
+   > path, migration datasource and seed command, so a Config-only change can break the same
+   > clean-clone boot while touching nothing under `prisma/**`. The Compose/Dockerfile triggers and
+   > the two-independent-clone procedure are unchanged.
 
 6. **Done is the merged PR, with every box in the template ticked. Nothing else is defined.**
    The template gains three checks — the suite is green, the ticket's acceptance criteria are met,
@@ -137,6 +162,11 @@ done when the PR template already is one.**
    > ADR-0005's, and **the requirement behind it is retired outright** — see ADR-0005 d7's
    > annotation.
 
+   > **Amended 2026-09-20 — the Prisma gate box now covers both `prisma/**` and the root
+   > `prisma.config.ts`.** This follows ADR-0005 decision 5's scope correction and decision 5
+   > above's matching clean-clone trigger. Done remains the merged PR with every applicable box
+   > ticked; only the Prisma box's path scope changed.
+
    **This deliberately invents no second concept.** A separately written definition of done drifts
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be
    "done" with a red suite. Making the template the definition also keeps it **checkable
@@ -150,6 +180,11 @@ done when the PR template already is one.**
    > d3's access-control pair — so the next one argued is the fifth. `CONTRIBUTING.md` → *Testing*
    > and [#25](https://github.com/ahmadmnsur/ft_transcendence/issues/25)'s resolution both already
    > read "four categories, closed until someone argues a fifth"; this sentence was the outlier.)*
+
+   > **Extended 2026-09-20 — the fifth category has now been argued and added.** ADR-0003
+   > decision 7's Socket.IO origin gate is the silent boundary described in decision 1's new
+   > annotation. The next proposed category is therefore the sixth and still needs the same
+   > *does it fail silently?* argument.
 
    The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
    pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet
@@ -168,6 +203,11 @@ done when the PR template already is one.**
    evidence**, on that decision's own argument: `:243`-`:249` asks how work was divided and each
    member's contribution, and a green check per PR is that answer in a form an evaluator reads
    without taking anyone's word.
+
+   > **Corrected 2026-09-20, following ADR-0005 decision 7's correction.** The account is GitHub
+   > Pro, not Free, and Pro supports branch protection on a private repository — the mechanism is
+   > available, just not turned on. This workflow is still advisory: nobody has decided to make it
+   > a required check, and this correction does not decide that.
 
    **The Compose boot is not in CI.** That is where minutes and flakiness actually bite, and
    decision 5 already put it on a human at the two moments it matters.
@@ -282,3 +322,8 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
 - **Whether the advisory workflow ever becomes a required check**, should branch protection turn
   out to be available. ADR-0005 decision 7 already names it as one of the two rules to enforce
   first if it is.
+
+  > **Corrected 2026-09-20.** Branch protection is available now (ADR-0005 decision 7's
+  > correction, decisions 5 and 7 named as first to enforce) — the "should it turn out to be
+  > available" framing is resolved. Whether to actually enable it, and whether this workflow then
+  > becomes required, is still not settled by this decision or by ADR-0005.
