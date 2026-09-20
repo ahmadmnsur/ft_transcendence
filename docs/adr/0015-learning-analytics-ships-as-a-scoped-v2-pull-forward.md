@@ -49,10 +49,11 @@ license pulling any other.**
    every figure below is a query over tables that already exist: **no new entity, no new storage, no
    new role, one new route.**
 
-2. **All five of the proposal's Learning Analytics figures ship, and the depth around them is
-   deliberately reduced.** Most-requested Skills to learn; most-available Skills to teach; the
-   supply/demand gap; overall Match completion rate; where in the status flow Matches stall — the
-   last of which the model can only answer in a narrower form, below.
+2. **All five of the proposal's Learning Analytics figures ship — the fifth narrowed to what a
+   model with no transition history can answer — and the depth around them is deliberately
+   reduced.** Most-requested Skills to learn; most-available Skills to teach; the supply/demand
+   gap; overall Match completion rate; and where in the status flow Matches stall, which becomes
+   **where Matches stand now and how past ones ended**, never where they spent longest.
 
    Five queries over ADR-0014's schema — dropping any makes the surface thinner without making it
    meaningfully cheaper. What is reduced is everything *around* them: no workshop-planning tooling,
