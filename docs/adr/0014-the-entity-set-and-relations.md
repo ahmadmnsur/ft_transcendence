@@ -69,6 +69,25 @@ Nineteen tables and nine enums. Every identifier is `uuid(7)` unless noted.
 Enums: `Role`, `SkillKind`, `FriendshipStatus`, `MatchStatus`, `Mission`, `CoverageDirection`,
 `ReportReason`, `ReportState`, `Badge`.
 
+> **Student lifecycle clarified 2026-09-21 by ADR-0008.** The two sanction flags expose exactly
+> one dashboard status: Removed takes precedence, otherwise Suspended, otherwise Active. A Removed
+> row is terminal and view-only, and its retained email cannot be changed. Mutations that can
+> reduce the set of active Admins — role `ADMIN` and neither flag set — serialize and may commit
+> only while at least one active Admin remains. No new entity or sanction-history table is added.
+
+> **Prompt-order clarification, 2026-09-21.** The `ReflectionPrompt` row above needs no status
+> column and no new sequence column. ADR-0007 now defines publication order totally as
+> `(published_at, id)`; `id` is already the UUIDv7 primary key from decision 10. The live Prompt is
+> the greatest key, including when two rows share `published_at`.
+
+> **Corrected 2026-09-21 by ADR-0007's real-time ordering contract.** The preceding
+> `(published_at, id)` and “no new sequence column” clarification is superseded. It cannot guarantee
+> that a publication committed before a later request began is ordered first. Each
+> `ReflectionPrompt` therefore needs a unique, durable, comparable publication-order value assigned
+> at the shared database serialization boundary; its representation and mechanism belong to
+> `/to-spec #1`. `published_at` remains descriptive metadata. No Prompt status or lifecycle entity
+> is added, and the live Prompt remains derived as the greatest committed publication order.
+
 **What is deliberately not here**, each already ruled and each worth re-reading as a set, because the
 absences are what keep this model small: no queue or enrolment entity and no candidate-pool table
 (ADR-0002 d6); no Prompt-answer entity (ADR-0007 d5); no Mission table (ADR-0012 d5); no
@@ -116,6 +135,12 @@ arms. Those three sentences are the whole shape.
    Outcome** and owns the **Evidence**, read by the Match pair and Admins. `PrivateFeedback` is its
    own table, read by the Mentor, Admins and its author, and carries the optional rating. The
    **Public Takeaway** is the `body` of its **Post**, read by everyone.
+
+   > **Evidence authorization clarified 2026-09-22 by ADR-0009.** Resolve its audience through
+   > `Evidence.review_id -> Review.match_id`: that one Match's `mentor_id` and `mentee_id`, plus a
+   > requester whose current role is `ADMIN`. No current-Match lookup and no scan of other
+   > historical Matches grants access. `PEER_MODERATOR` grants none by itself, while a moderator
+   > who belongs to the originating pair keeps pair-bound access.
 
    The alternative — one row with three columns — is cheaper by two tables and is how most teams
    would write it. It loses on the standing preference this map has applied five times: ADR-0007
@@ -249,6 +274,14 @@ arms. Those three sentences are the whole shape.
    unique on the pair, the `Badge` being an enum on ADR-0012's reasoning exactly: three fixed values,
    frozen, with no authoring surface, so a table would collapse into an enum with extra steps.
 
+   > **Prompt-answer serialization clarified 2026-09-21.** ADR-0007 orders an answer against a
+   > concurrent Round close. An answer ordered before the close is visible to this transaction as
+   > qualifying activity; one ordered after it cannot contribute to the closed Round, regardless
+   > of request start time. An `ADMIN` cannot create a Prompt answer, so that path contributes
+   > nothing while the role is held. This adds no Admin-specific skip/freeze here: only Suspended
+   > and Removed Students are skipped, and an already-open Match surviving promotion remains
+   > governed by ADR-0008 d2.
+
 8. **The socket is outbound-only for everything except a direct message, and there are three rooms.**
    This is what lets the claimed WebSockets Major have a broadcast at all — the only socket surface
    in scope was 1:1 DMs, which are unicast.
@@ -302,9 +335,20 @@ arms. Those three sentences are the whole shape.
     Posts, Prompt answers and Private Feedback are not."* An Admin was already barred by ADR-0008
     decision 8.
 
+    > **Attachment lifecycle clarified 2026-09-22 by ADR-0009.** The separate Evidence row remains
+    > mutable after the owning Match is `COMPLETED`: only that Match's Mentee may create, replace or
+    > delete it while able to authenticate. Suspension pauses the path, reinstatement restores it,
+    > and Removal ends it without deleting the row. Validation precedes an atomic replacement, so
+    > failure leaves the previous row intact; concurrent mutations serialize and the `review_id`
+    > uniqueness continues to hold at every commit. None of these operations updates the Review.
+
 12. **The bytes live in two dedicated tables, not in columns on Student and Review.**
     `Avatar(student_id unique, token, bytes, mime, size, uploaded_at)` and
     `Evidence(review_id unique, token, bytes, mime, size, filename, uploaded_at)`.
+
+    > **Stored metadata clarified 2026-09-22 by ADR-0009.** `mime` and `size` are server-derived
+    > facts about validated bytes, never trusted upload metadata. The accepted sets are Evidence
+    > = PDF/PNG/JPEG and Avatar = PNG/JPEG, under the exact byte caps in ADR-0009 decision 5.
 
     The deciding argument is mechanical rather than aesthetic: **Prisma selects every scalar field by
     default**, so a `bytea` column on `Student` means `student.findMany()` drags two megabytes per row
@@ -327,6 +371,21 @@ arms. Those three sentences are the whole shape.
     - **No repeated pairing** — an index on `(LEAST(mentor_id, mentee_id), GREATEST(…))` turns
       ADR-0006 step 2's no-repeats test into one index hit instead of a two-way scan.
 
+    > **Prompt concurrency attached to the existing shape, 2026-09-21.** The unique answer index
+    > remains the final arbiter for duplicate and retried submissions: at most one Post commits for
+    > `(Prompt, Student)`, and ADR-0007 keeps that Post, its XP award, Knowledge Sharer evaluation
+    > and Streak contribution in one atomic success. Concurrent Prompt publications are ordered by
+    > `(published_at, id)`, and answer/publication plus answer/Round-close outcomes must serialize
+    > as ADR-0007 d1 specifies. No Answer entity, Prompt status or sequence column is added; the
+    > implementation specification chooses the locking or transaction mechanism.
+
+    > **Corrected 2026-09-21 by ADR-0007.** Concurrent publications use the durable publication
+    > order described above, not `(published_at, id)`. The atomic answer success creates the Post,
+    > awards its XP, evaluates Knowledge Sharer and establishes qualifying Round activity; it does
+    > not update the stored Streak. Only the serialized Round-close transaction updates
+    > `Student.streak` under decision 7, skipping Suspended and Removed Students. The unique answer
+    > index and the prohibition on an Answer entity or Prompt status remain unchanged.
+
     **Not expressible: at most one standing Match per Student per Round.** The Student sits in either
     `mentor_id` or `mentee_id`, so no unique index reaches them both. Holding it structurally would
     mean splitting a Match's two sides into participant rows and paying a join on every read of the
@@ -335,6 +394,12 @@ arms. Those three sentences are the whole shape.
     Match (ADR-0002 d7) being the path where it can actually be violated. Two smaller denormalisation
     invariants sit in the same category: a Takeaway `Post`'s `author_id` must equal its Review's
     Mentee, and a `Report`'s reporter must not be its target (ADR-0011 d11).
+
+    > **Enforcement point settled, 2026-09-21 — see ADR-0006 decision 10's clarification.** The
+    > schema still cannot express this invariant (unchanged); what moved is that it is no longer
+    > merely named as a risk for the Admin's hand-made Match. ADR-0006 now states explicitly that a
+    > manual Match requires both Students to be currently unmatched for the Round, and that the
+    > service creating it must check this before writing the row, since the database will not.
 
 ## Considered options
 
@@ -387,6 +452,11 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
 - **Every read path over Students and Posts filters `removed_at`**, unchanged from ADR-0008, and
   seventeen tables pay nothing. Reading decision 6 of that ADR literally is what kept the count at
   two.
+
+  > **Corrected 2026-09-21 by ADR-0008.** Every such read must **apply** `removed_at`, but exclusion
+  > is surface-specific: discovery, participation and the normal feed exclude removed rows;
+  > historical Student relations render the retained row as a tombstone; and the Admin Users table
+  > includes Removed Students as view-only. This is still exactly two soft-deleted entities.
 - **Six raw-SQL migration steps, or eight if the `partialIndexes` preview feature is not taken.**
   **Three** `CHECK` constraints — exactly one origin per `Post`, exactly one target per `Report`,
   and `rating BETWEEN 1 AND 5` — plus two expression-based unique indexes (Friendship's unordered

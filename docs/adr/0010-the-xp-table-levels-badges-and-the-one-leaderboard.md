@@ -171,6 +171,15 @@ them deliberately and settles the rest.
    applies to Suspension and Removal, not a new mechanism. A **Peer Moderator** is a full
    participant and appears normally.
 
+   > **Corrected 2026-09-21 after applying ADR-0008's role semantics to ADR-0007.** The Admin
+   > filter stands, but “an Admin who answers one earns XP” does not: an `ADMIN` may not submit a
+   > Prompt answer. The filter is still necessary because a Student promoted to Admin retains XP,
+   > its derived Level, Streak, permanent BadgeAwards and earlier Posts. While the role is held,
+   > the Prompt path creates no Post, pays no 20 XP, cannot move Level, supplies no Streak activity
+   > and cannot advance or award Knowledge Sharer. Demotion restores eligibility and the retained
+   > record becomes visible under the ordinary participant rules. ADR-0008's already-open Match
+   > exception and ADR-0014's Round-close Streak rule remain unchanged.
+
 7. **The two unmet module bullets are owned here rather than left to a slice.** The
    acceptance-criteria research flagged both as not in shipped scope, and no ticket had picked
    them up — which meant the point the module-claim decision banked was not actually firm.

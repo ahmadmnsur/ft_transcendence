@@ -40,6 +40,13 @@ every place they could do social damage.**
 - **ADR-0009.** The question it handed here is answered: **Evidence is not reportable**, so its
   visibility rule — the Match pair and Admins, explicitly not Peer Moderators — stands
   **unamended**.
+
+  > **Visibility wording clarified 2026-09-22 by ADR-0009.** “Explicitly not Peer Moderators”
+  > means the role supplies no queue-wide Evidence permission. A Peer Moderator who is the Mentor
+  > or Mentee on the Evidence-owning Review's Match may read that one file through pair membership,
+  > not through moderation authority. That exception cannot support a report queue, whose worker
+  > must be able to open every listed target, so Evidence remains unreportable and this decision's
+  > mechanism is unchanged.
 - **The proposal's `:87`.** "Report a user, post, or comment" names three targets; the third is
   moot from decision 1 onward.
 

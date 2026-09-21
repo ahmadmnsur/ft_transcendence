@@ -58,6 +58,14 @@ and why there is no `SESSION_SECRET`.
    > `http://localhost:8081` for the development overlay. This is still one-origin routing;
    > it adds no origin and no environment variable.
 
+   > **Upload envelope extended 2026-09-22 by ADR-0009.** nginx's
+   > [documented default](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size)
+   > `client_max_body_size` is 1 MiB, which would reject both a valid 2 MiB Avatar and a valid
+   > 5 MiB Evidence file before NestJS could apply the product rule. The locations proxying those
+   > upload routes set the request limit explicitly to **6 MiB**. That is a transport envelope for
+   > one file plus multipart framing, not a new file cap: the application remains authoritative at
+   > 2 MiB for Avatar and 5 MiB for Evidence, and a maximum-size Evidence upload must reach it.
+
 3. **The React bundle is built in a multi-stage build and served by the proxy** in
    production. NestJS serving its own static files and terminating TLS was the two-container
    alternative; it makes TLS, caching and compression application concerns and couples a
@@ -331,6 +339,22 @@ six weeks and three developers.
   > `PUBLIC_ORIGIN=http://localhost:8081`. Application code still reads one source, and no
   > callback variable is introduced. Whether one 42 OAuth application can register both
   > exact redirect origins remains the factual question owned by issue #26.
+
+  > **Resolved 2026-09-21 by issue #26 — yes, one application can register both.** `redirect_uri`
+  > on a 42 application is stored as a single whitespace/newline-delimited field (the platform is
+  > a Doorkeeper OAuth2 provider); each entry is validated and matched independently, so
+  > `https://localhost:8443` and `http://localhost:8081` can both sit on one registration.
+  > Matching is **exact string comparison** (RFC 6749 §3.1.2.3) — the RFC 8252 §7.3 loopback-port
+  > exception applies only to a numeric loopback IP, not the hostname `localhost`, so each
+  > registered `localhost` origin still needs its port to match exactly, and non-default ports are
+  > otherwise unrestricted. **This is a Doorkeeper/RFC-level inference, not a 42-confirmed fact**:
+  > 42's own documentation and the live application-registration form are both behind a 42 login
+  > and could not be reached. One question stays open — whether 42's deployment permits plain
+  > `http://` for a `localhost` redirect URI, since Doorkeeper's own default rejects non-HTTPS
+  > redirect URIs outside development and 42's override (if any) is exactly what the login wall
+  > hides. Full findings and citations: `docs/research/42-oauth-redirect-uris.md`. Fed to
+  > [#24](https://github.com/ahmadmnsur/ft_transcendence/issues/24) as an input to its
+  > who-registers-the-application question.
 * **This decision earns no module points and must not grow.** The four infrastructure
   majors are out of scope, and the pull to add monitoring, a WAF or a second environment
   because the Compose file is already open is the thing this ADR is meant to stop.

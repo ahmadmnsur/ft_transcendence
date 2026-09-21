@@ -110,6 +110,10 @@ On top of compatibility, the algorithm applies further constraints:
 
 - Fair Mentor Rotation: the algorithm also tracks how often a student has recently been chosen as a Mentor, and gives qualified but less-active mentors more opportunities instead of always routing students to the same few highest-rated mentors. This keeps mentoring opportunities — and the reputation data described in Section 10 — spread across more of the community rather than concentrated in a small group. _(MVP)_ 
 
+> **Scope corrected 2026-09-21 by ADR-0006:** Fair Mentor Rotation was proposed here as an MVP
+> feature, but it was deliberately cut from the locked MVP scope. It is **not** relabelled as
+> Version 2. Availability matching below remains Version 2.
+
 - Detect students who cannot be matched and flag them for the admin to handle manually. 
 
 A further refinement layers each student's weekly availability (e.g., “Monday 5–8 PM, Wednesday 4–7 PM”) on top of compatibility and fairness, so the system prefers pairs who also share free time. This is introduced after the core matching logic is proven, since combining compatibility, fairness, and time-matching at once is a meaningfully harder scheduling problem. _(Version 2)_ 
@@ -291,6 +295,11 @@ The first version focuses on making the core loop work end-to-end, with just eno
 - Student search and friend system. 
 
 - Skill-compatibility-based weekly matching, with a visible Compatibility Score and match explanation, fair mentor rotation, and basic constraints (no repeats, balanced experience). 
+
+> **Scope corrected 2026-09-21 by ADR-0006:** Section 15 is the proposal's authoritative MVP
+> list, so this line records Fair Mentor Rotation as an original MVP item. The locked project scope
+> subsequently removes Rotation from MVP; it does not defer or relabel it as Version 2. The rest of
+> this matching line is unchanged.
 
 - Match acceptance/decline and full status tracking. 
 

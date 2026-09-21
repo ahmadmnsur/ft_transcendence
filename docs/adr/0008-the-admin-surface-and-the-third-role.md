@@ -48,6 +48,31 @@ revoke XP.**
    any later **Round** while they hold the role, and demotion restores candidacy with no
    further rule.
 
+   > **Candidate-pool correction, 2026-09-21.** “Skill listed and role is not `ADMIN`” above is
+   > incomplete. The operative predicate is: **at least one Skill listed, role is not `ADMIN`, and
+   > the Student is active — neither Suspended nor Removed**. Demotion restores candidacy only if
+   > the Student is also active and still lists a Skill. This is the same rule already propagated
+   > to ADR-0002 d4; it governs both automatic matching and the “currently unmatched” requirement
+   > for an Admin's hand-made Match in ADR-0006 d10.
+   >
+   > Candidate eligibility is evaluated at the Match-creation transaction's logical serialization
+   > point. A role or sanction change affecting a Student and automatic or manual Match creation
+   > involving that Student must have outcomes equivalent to one serial order. If exclusion by
+   > `ADMIN`, Suspension or Removal comes first, no new Match may include the Student. If Match
+   > creation comes first, later promotion leaves that Match standing as ruled above, while later
+   > Suspension or Removal applies decision 5 to it if it is still in progress. `/to-spec #1`
+   > chooses the database transaction or locking mechanism.
+
+   > **Prompt-loop consequence made explicit 2026-09-21.** “An Admin is not [a participating
+   > Student]” governs both primary loops, not matching alone. A role of `STUDENT` or
+   > `PEER_MODERATOR` may answer a Reflection Prompt; `ADMIN` may publish one but may not answer.
+   > That path therefore gives an Admin no Prompt-answer Post, XP, Level movement, Streak
+   > contribution or Knowledge Sharer progress. Promotion retains all earlier Posts, XP, derived
+   > Level, Streak and permanent BadgeAwards, and the existing Leaderboard filter continues to
+   > hide the Admin. Demotion restores eligibility. The standing-Match exception above is
+   > untouched, and role alone does not gain the Streak freeze reserved in decisions 5–6 for
+   > Suspension and Removal.
+
 3. **The Peer Moderator's authority is the report queue and Remove Post, and nothing else.**
    Suspend Student, Remove Student, Round control, Prompt publication and roles management
    all stay Admin-only. This is verbatim the proposal's own Future item at
@@ -83,6 +108,22 @@ revoke XP.**
    Suspension can be lifted and a Removal never is. Without this stated, a Student removed
    while signed in would keep a valid cookie for up to the thirty days ADR-0003 decision 4
    allows.
+
+   > **Removal and matching clarified, 2026-09-21.** Removal performs every participation effect
+   > of Suspension: it excludes the Student from matching, terminates every still-in-progress Match
+   > (`MATCHED` or `ACCEPTED`) with the administrative-termination cause, and freezes XP and Streak,
+   > in addition to deleting sessions, dropping sockets and blocking login. A completed Match and
+   > its awards remain history. The difference is finality, not Match handling. Together with
+   > decision 2's serialization rule, a committed Suspension or Removal can never leave or create
+   > an in-progress Match for that Student.
+
+   > **Administrative-termination consequence corrected, 2026-09-22.** The parenthesis above
+   > saying “both Students drop back to unmatched” applies to a Decline under ADR-0002 d8, not to
+   > a Suspension or Removal. *Unmatched* requires membership in the candidate pool (ADR-0002 d6),
+   > so the sanctioned Student is outside the pool and cannot derive as unmatched. Only the other
+   > Student becomes unmatched, and only if they still satisfy the candidate predicate. The system
+   > still does not search automatically for a replacement; an Admin may repair that remaining
+   > candidate by hand. The `TERMINATED_BY_ADMIN` cause and retained Match history are unchanged.
 
 6. **Soft delete on Student and Post — those two entities only.** A `removed_at` on `Student`
    and a `removed_at` on `Post`. **No other entity gets one**: **Match**, **Review**, **Round**
@@ -126,12 +167,29 @@ revoke XP.**
    already says a Post is never edited once published. Against abusive free text the lever is
    Suspension, not a silent rewrite.
 
+   > **Removed-row correction, 2026-09-21.** This edit authority applies only while the Student is
+   > Active or Suspended. A Removed Student is **view-only**: no display-name, email, avatar,
+   > Learning Goal, Skill or role edit, and no further suspend, reinstate or remove action. In
+   > particular the retained email cannot be changed, so its unique row continues to burn the
+   > original address exactly as decision 7 requires. This adds no mechanism; it makes Removal's
+   > existing finality and ADR-0009 d6's permanent default-avatar result operative.
+
 9. **Three guards against locking the platform out.** An Admin may not change their own role;
    may not suspend or remove themselves; and the last remaining Admin may not be demoted or
    removed. The first two alone are already sufficient, but the third costs three lines and
    "try to remove the last admin" is exactly what an evaluator pokes at. Without these, one
    click leaves a platform where no **Round** can open and no **Reflection Prompt** can be
    published, with no in-app repair.
+
+   > **Active-Admin invariant and concurrency contract, 2026-09-21.** “Last remaining Admin” means
+   > the last Student with role `ADMIN` who is neither Suspended nor Removed — an Admin who cannot
+   > authenticate cannot keep the platform operable. The sentence above that the first two guards
+   > are sufficient is superseded for concurrent cross-actions. Every demotion, Suspension or
+   > Removal that can reduce that active-Admin set must have outcomes equivalent to one serial order
+   > and may commit only if at least one active Admin remains afterward. Thus two Admins cannot
+   > concurrently
+   > demote, suspend or remove each other and both succeed. The self-action guards above remain;
+   > `/to-spec #1` chooses the database transaction or locking mechanism.
 
 10. **A Peer Moderator may not act on a report concerning their own Post, or one involving a
     Student in a mutual Block with them.** Both escalate to an Admin. The report queue is the
@@ -155,6 +213,13 @@ revoke XP.**
     screen** — decision 4 makes manual assignment the only path, so such a screen would hold
     three hard-coded rows and no CRUD, reading worse than putting the control where the users
     are. ADR-0003 decision 9 binds: all of it over HTTP, never the socket.
+
+    > **State-specific actions clarified, 2026-09-21.** The action list above is a union, not a set
+    > offered on every row. An **Active** Student may be viewed, edited, have their role changed,
+    > be suspended or be removed. A **Suspended** Student may be viewed, edited, have their role
+    > changed, be reinstated or be removed. A **Removed** Student may only be viewed. Removal is
+    > the terminal status and takes precedence over Suspension for display; it has no reinstate or
+    > other mutation path. Decision 9's active-Admin invariant further restricts actions on Admins.
 
 12. **The seed creates one bootstrap Admin and one bootstrap Peer Moderator**, the latter a
     fully participating Student with Skills. ADR-0004 seeded an Admin because without one
@@ -214,6 +279,13 @@ this map never made.
 - **Every read path over Students and Posts must filter `removed_at`.** This is the standing
   cost of decision 6, paid in every slice that touches those two entities, not once. No other
   entity carries the flag, so no other read path pays it.
+
+  > **Corrected 2026-09-21.** “Filter” means **apply the removal policy**, not universally append
+  > `WHERE removed_at IS NULL`. Discovery and participation surfaces exclude Removed Students;
+  > the normal feed excludes Removed Posts. Historical relations retain a Removed Student as the
+  > tombstone decision 6 requires, and the Admin Users table includes Removed rows as view-only so
+  > decision 11's `removed` status is observable. Every read must inspect `removed_at`; whether it
+  > excludes or renders a tombstone is determined by the already-set surface rule.
 - **The Match status flow gains a requirement**: an administrative termination must be
   distinguishable from a decline (decision 5). Enumerating the statuses — including which
   count as "live" for ADR-0002 decision 6's derived *unmatched* — remains the entity-set

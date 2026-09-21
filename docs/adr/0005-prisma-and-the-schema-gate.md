@@ -270,7 +270,7 @@ is fragile.
     unspecified implicit `.env` discovery.
 
     **The filename `prisma.config.ts` is this project's deliberate choice, not whatever a
-    scaffolding tool defaults to.** Prisma 7's own CLI searches for `prisma7.config.*` first and
+    scaffolding tool defaults to.** **Prisma 7.10+** searches for `prisma7.config.*` first and
     falls back to an existing `prisma.config.*`; a fresh `prisma init` against this locked `^7`
     range can generate either name depending on the installed minor version — `prisma7.config.ts`
     is the current default for new projects — and the CLI discovers either one. `/to-spec` must

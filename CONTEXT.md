@@ -16,7 +16,8 @@ _Avoid_: User, member, peer
 **Admin**:
 The most privileged role, held by a 42 staff member: opening and closing Rounds, publishing
 Reflection Prompts, managing Students and their roles, and every sanction. Staff rather than
-a participant — an Admin never enters matching, whatever Skills they list.
+a participant — an Admin never enters matching or answers a Reflection Prompt, whatever Skills
+they list. The platform always retains at least one Admin who can sign in.
 _Avoid_: Staff, moderator, superuser
 
 **Peer Moderator**:
@@ -82,9 +83,9 @@ _Avoid_: Ban, block, moderation block, deactivation
 **Removal**:
 An Admin's final withdrawal of a Student from the platform. Like a Suspension they are signed
 out at once; unlike a Suspension it is never lifted, and that Student's email can never be
-used again. What they contributed stays — their Posts, the Matches they were half of, the
-Private Feedback they wrote — shown as a former student rather than erased, because it forms
-part of other Students' records too.
+used again. Their retained account row is view-only, including to an Admin. What they contributed
+stays — their Posts, the Matches they were half of, the Private Feedback they wrote — shown as a
+former student rather than erased, because it forms part of other Students' records too.
 _Avoid_: Deletion, purge, account closure
 
 ### The matching cycle
@@ -120,19 +121,22 @@ _Avoid_: Task, assignment, challenge, brief
 
 **Review**:
 What a Mentee submits after a Match, comprising exactly three separate parts: a Learning
-Outcome, Private Feedback, and a Public Takeaway. The three are never merged.
+Outcome, Private Feedback, and a Public Takeaway. The three are never merged and, once
+submitted, are never edited; Evidence remains a separate mutable attachment.
 _Avoid_: Weekly review, evaluation, feedback
 
 **Learning Outcome**:
 The Mentee's structured record of what they learned and what they can now do that they
-could not before the Match. Read by the Match pair and by Admins, never by the community:
-only the Public Takeaway drawn from it is public.
+could not before the Match. Read by that Review's originating Match pair and by current
+Admins, never by the community: only the Public Takeaway drawn from it is public.
 _Avoid_: Result, lesson, achievement
 
 **Evidence**:
-One optional file a Mentee attaches to their Learning Outcome, showing what the Match
-actually produced. Read by whoever reads the Learning Outcome, and theirs to delete or
-replace at any time — the Learning Outcome is testimony, the Evidence only an aid to it.
+One optional file the Mentee attaches to a Review's Learning Outcome, showing what that
+Review's Match produced. The originating pair and current Admins may read it — Peer Moderator
+alone grants nothing — while only the originating Mentee may add, replace or delete it while
+active, including after Match completion; Suspension pauses that authority and Removal ends it
+without deleting the Evidence.
 _Avoid_: Attachment, upload, file, proof
 
 **Private Feedback**:
@@ -149,10 +153,12 @@ Becomes a Post.
 _Avoid_: Summary, highlight, testimonial
 
 **Reflection Prompt**:
-An open question published by an Admin to the whole community. Answering is optional, and
-once only. Exactly one Prompt is live at a time — the most recently published one — and
-publishing the next closes it. A closed Prompt stays readable forever and can never be
-answered again.
+An open question published by an Admin to the whole community. Answering is optional and once
+only for a participating Student — a Student whose role is `STUDENT` or `PEER_MODERATOR`; an
+Admin publishes but does not answer. Exactly one Prompt is live at a time — the greatest in the
+durable publication order established when Prompts are published; publication time is descriptive
+and does not choose the winner — and publishing the next closes it. A closed Prompt stays readable
+forever and can never be answered again.
 _Avoid_: Question, poll, survey, prompt cycle
 
 **Post**:

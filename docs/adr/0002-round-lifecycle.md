@@ -48,6 +48,13 @@ that reacts to events over a Round's lifetime.
    > **Suspended** nor **Removed**. Read the Skill clause alone and a promoted Admin or a
    > suspended Student silently re-enters matching.
 
+   > **Eligibility serialization clarified 2026-09-21 by ADR-0008.** This predicate is evaluated
+   > at Match creation's logical serialization point. A role, Suspension or Removal change and
+   > automatic or manual Match creation involving that Student must resolve as one serial order:
+   > exclusion first means no Match; Match first means a later promotion leaves it standing, while
+   > a later Suspension or Removal terminates it administratively if it is still in progress. The
+   > database mechanism belongs to `/to-spec #1`.
+
 5. **Closing a Round finalises every Match in it.** A Match without a submitted Review
    awards no XP and contributes nothing to Streak. This needs no new rule: the glossary
    already says XP is "awarded only for completed, confirmed activity", and an unfinished
@@ -78,6 +85,13 @@ that reacts to events over a Round's lifetime.
    nothing to attach to during an idle period. The Prompt loop stays decoupled from
    matching, as the proposal intends, and the shortfall is the honest answer rather than a
    hole in the model.
+
+   > **Concurrency boundary clarified 2026-09-21 by ADR-0007.** “While no Round is open” and
+   > “the Round open at answer time” are evaluated at the Prompt-answer transaction's logical
+   > serialization point, not when its request began. If an accepted answer is ordered before a
+   > concurrent close, that close observes it as qualifying activity. If the close is ordered
+   > first, the answer earns its normal XP and Badge progress but contributes nothing to the
+   > closed Round; it belongs for Streak purposes to the Round then open, if any, or to none.
 
 ## Considered options
 

@@ -136,9 +136,27 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    exact `Origin === PUBLIC_ORIGIN` and rejects absent, `null` and mismatched origins. It also
    verifies that the browser connection is WebSocket-only and HTTP long-polling is unavailable.
 
+6. **Reflection Prompt serialization** — exercises publication versus answer, two publications
+   with equal timestamps, answer versus Round close, and duplicate/retried answers. It asserts one
+   live Prompt by the durable, real-time-respecting publication order, no answer accepted after
+   supersession, and at most one atomic Post + XP + Badge + qualifying-activity success. It also
+   asserts that only the serialized Round-close transaction updates the stored Streak for the
+   correct Round, skipping Suspended and Removed Students.
+
+7. **Student lifecycle and Admin lockout invariants** — asserts that matching uses only active,
+   non-`ADMIN` Students with a Skill; role and sanction changes serialize against Match creation;
+   Removed rows are view-only and keep their email unavailable; and concurrent Admin demotion,
+   Suspension or Removal always leaves at least one active Admin.
+
+8. **File acceptance, authorization and lifecycle** — through nginx, asserts exact byte caps and
+   server-side byte validation; rejects type spoofing and Avatar PDFs; anchors Evidence reads and
+   writes to the owning Review's Match; distinguishes pair-bound Peer Moderator access from role
+   access; preserves Evidence through Suspension and Removal; keeps failed replacement atomic; and
+   rejects upload mutations without the exact Origin and `X-PeerConnect-CSRF: 1` header.
+
 **Adding a test outside that list needs an argument.** The rule is *does it fail silently?* —
-anything the compiler or a demo step would catch is not tested. Five categories, closed until
-someone argues a sixth.
+anything the compiler or a demo step would catch is not tested. Eight categories, closed until
+someone argues a ninth.
 
 **CI is advisory for the current repository setup.** Branch protection is unavailable on this
 plan, so the workflow cannot block a merge. Its job is evidence for

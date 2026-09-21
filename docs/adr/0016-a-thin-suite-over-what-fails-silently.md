@@ -80,6 +80,43 @@ done when the PR template already is one.**
    > cookie; and HTTP long-polling is unavailable because the browser transport is WebSocket-only.
    > The four original categories and the one-level, no-coverage-target shape are unchanged.
 
+   > **Extended 2026-09-21 — ADR-0007's concurrency contract adds the sixth silent-failure
+   > category.** Integration coverage exercises the four races the contract names: publication
+   > versus answer; two publications with equal `published_at`; answer versus Round close; and two
+   > concurrent/retried submissions by the same Student. It asserts the observable outcomes — one
+   > live Prompt by `(published_at, id)`, no accepted answer after supersession, the answer counted
+   > in exactly the Round selected by the serial order, and at most one atomic Post + XP + Badge
+   > success. The database mechanism remains for `/to-spec #1`; the tests bind the behavior, not a
+   > particular lock.
+
+   > **Corrected 2026-09-21 by ADR-0007.** The equal-timestamp publication case remains in scope,
+   > but `(published_at, id)` is no longer the expected order. The test must assert a unique,
+   > durable publication order that respects completed-before-started transactions and gives
+   > overlapping publications one database-established total order, with exactly one live Prompt.
+   > For answer versus Round close, it must also assert that the answer transaction atomically
+   > establishes qualifying activity without updating `Student.streak`, and that only the serialized
+   > Round-close transaction updates the stored Streak while skipping Suspended and Removed Students.
+
+   > **Extended 2026-09-21 — ADR-0008's lifecycle and lockout corrections add the seventh
+   > silent-failure category.** Integration coverage verifies that matching admits only active,
+   > non-`ADMIN` Students with a Skill; role/Suspension/Removal changes serialize against automatic
+   > and manual Match creation; Removed rows reject every mutation and retain the burned email; and
+   > concurrent demotion, Suspension or Removal cannot reduce the platform below one active Admin.
+   > These are data-integrity and security failures that can return successful responses while
+   > leaving forbidden state, so the existing scope guard admits them.
+
+   > **Extended 2026-09-22 — ADR-0009's corrected file contract adds the eighth silent-failure
+   > category.** Through the nginx path, integration coverage proves exact-limit valid files reach
+   > the application; over-limit, malformed, truncated, extension/MIME-spoofed and Avatar-PDF
+   > payloads fail server-side. It proves Evidence reads are anchored to the owning Review's Match
+   > (including pair-bound access for a Peer Moderator, no role-wide moderator access, and no access
+   > from another current or historical Match), and that only the originating active Mentee may
+   > mutate after completion. Suspension pauses mutation, Removal ends it without deleting the row,
+   > failed replacement preserves the old bytes, and upload requests missing the exact Origin or
+   > `X-PeerConnect-CSRF: 1` fail. A client-only validator, current-Match authorization or
+   > delete-before-validate replacement can leave the ordinary UI healthy, so the scope guard admits
+   > this category; the one-level, no-coverage-target shape is unchanged.
+
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
    `ts-jest`/babel configuration to keep alive. One runner means **one command for decision 6 to
@@ -185,6 +222,21 @@ done when the PR template already is one.**
    > decision 7's Socket.IO origin gate is the silent boundary described in decision 1's new
    > annotation. The next proposed category is therefore the sixth and still needs the same
    > *does it fail silently?* argument.
+
+   > **Extended 2026-09-21 — the sixth category has now been argued and added.** ADR-0007's four
+   > concurrency races can leave the ordinary UI apparently healthy while accepting a superseded
+   > answer, selecting the wrong Round or awarding duplicate XP. The next proposed category is
+   > therefore the seventh and still needs the same *does it fail silently?* argument.
+
+   > **Extended 2026-09-21 — ADR-0008 supplies that seventh category.** Candidate, sanction and
+   > active-Admin concurrency can commit forbidden state while every request appears successful,
+   > so decision 1 now covers it. The next proposed category is the eighth and still needs the same
+   > scope argument.
+
+   > **Extended 2026-09-22 — ADR-0009 supplies that eighth category.** File qualification,
+   > originating-Match authorization, mutation lifecycle, atomic replacement, upload CSRF and the
+   > nginx envelope can all fail silently behind a working happy path, so decision 1 now covers
+   > them. The next proposed category is the ninth and still needs the same scope argument.
 
    The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
    pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet

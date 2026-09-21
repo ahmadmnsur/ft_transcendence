@@ -35,6 +35,12 @@ about fairness lives in the order pairs are selected, where it never has to be e
    bound by no-repeats.
 ```
 
+> **Candidate input clarified 2026-09-21 by ADR-0008.** “Student” in step 1 means a member of
+> ADR-0002 d4's candidate pool before pair generation: at least one Skill listed, role not
+> `ADMIN`, and neither Suspended nor Removed. Those are input gates, not new Score terms or hard
+> pair filters. A role or sanction change racing automatic or manual Match creation follows
+> ADR-0008 d2's serialization rule.
+
 Two details carry weight out of proportion to their size. **Step 7 recomputes viable partners
 after every Match** — that recomputation *is* most-constrained-first; counting once up front
 gives a different and worse algorithm. And **marking both Students matched is what enforces one
@@ -119,10 +125,34 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
    nothing here proves it attains the global maximum, and no such guarantee is claimed or
    needed.
 
-7. **Level is a tie-break inside selection priority, never part of the Score.**
+   > **Clarified 2026-09-21 — the 600 randomized re-runs are a validation benchmark, not a
+   > production step.** This measured most-constrained-first's coverage against a
+   > randomized-selection baseline (the best of 600 re-runs per fixture, across 8 seeds and three
+   > cohort sizes) during the prototype validation this ADR's opening paragraph describes.
+   > Production matching is the deterministic algorithm above, run exactly once per Round —
+   > decision 9's total ordering (`priority DESC, Score DESC, pair key ASC`) leaves nothing to
+   > randomize or re-run. `/to-spec` implements one deterministic pass per Round; the 600 re-runs
+   > belong to the fixture/test-harness history, not the runtime rule.
+
+7. **Level is a weighted term inside selection priority, never part of the Score — and not
+   merely a tie-break.**
    `priority = score − 2 × max(0, |Level(mentor) − Level(mentee)| − 2)`. It is never displayed,
    never a hard constraint, and weight 2 sits at a sharp elbow — the first two units buy four
    times more Level compliance per unit than anything above them.
+
+   > **Corrected 2026-09-21 — "tie-break" describes decision 9's `Score DESC, pair key ASC`
+   > chain, not this term.** A tie-break only resolves pairs whose priority is already equal;
+   > this term is subtracted from Score *before* priority is compared, so it can reorder two
+   > pairs with *different* Scores whenever the penalty gap exceeds the Score gap — e.g. Score 90
+   > with a Level difference of 10 (penalty 16, priority 74) loses selection to Score 80 with
+   > matching Levels (penalty 0, priority 80). With only 8 distinct Score values across 78
+   > candidate pairs in a 20-Student cohort (Consequences, below), Score gaps are often small
+   > enough for this to happen routinely, not as an edge case. **The accurate description: Level
+   > is a weighted secondary term in Selection Priority that can change which pair is chosen
+   > ahead of another, not a mechanism that only fires once two pairs already tie.** It still
+   > never appears in the displayed Score and is still never a hard constraint — that part is
+   > unchanged. This also corrects the Consequences bullet below that reasoned from the same
+   > label.
 
 8. **No fairness term, no unmatched history, no Mentor Reputation, in the Score or in the
    priority.** Most-constrained-first already matches everyone a priority boost would have, so
@@ -134,6 +164,21 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
 
 10. **A blocked pair can never be Matched, in either direction**, and an Admin's hand-made Match
     carries **no** Compatibility Score and is **not** bound by no-repeats.
+
+    > **Clarified 2026-09-21 — the one-Match-per-Student-per-Round invariant applies to the
+    > Admin's hand-made Match too, and Block's reach was left implicit for that path.** Neither
+    > this decision nor ADR-0002 decision 7 said so explicitly, and ADR-0014 decision 13 records
+    > the gap directly: `Match` keeps its two sides as `mentor_id`/`mentee_id`, so no unique index
+    > reaches a Student sitting on either side, and it names the Admin's hand-made Match as "the
+    > path where it can actually be violated." **Settled here: a manual Match requires both
+    > Students to be currently unmatched for the Round** — the same invariant step 7's loop holds
+    > for algorithmic Matches. "Not bound by no-repeats" waives only the previously-Matched check
+    > (step 2's cross-Round history test); it was never meant to touch same-Round exclusivity.
+    > Because the schema cannot enforce this (ADR-0014 d13), the service that creates a manual
+    > Match must check it before writing the row. **Block remains unconditional for this path
+    > too** — this decision's opening clause, "in either direction," carries no carve-out for
+    > manual creation, so a blocked pair is unmatchable by an Admin exactly as it is by the
+    > algorithm.
 
 ## Considered options
 
@@ -185,8 +230,16 @@ position came out flat.
 - **Matching more Students lowers the average Score** — about 4 points — because the marginal
   pairs get matched too. Deliberate, and bounded by the floor.
 - **The Score has few distinct values** (8 across 78 candidate pairs in a 20-Student cohort), so
-  the Level tie-break decides more Matches than its weight suggests. It is a tie-break in
-  practice, not a secondary factor, and should be described that way.
+  the Level ~~tie-break~~ **weighted term** decides more Matches than its weight suggests. ~~It is
+  a tie-break in practice, not a secondary factor, and should be described that way.~~ **It is a
+  secondary term whose effect is often decisive in practice, exactly as decision 7 now describes
+  it.**
+
+  > **Corrected 2026-09-21 — see decision 7's correction.** "Tie-break" is the wrong label: Level
+  > is a weighted secondary term in Selection Priority that can reorder pairs with *different*
+  > Scores, not only equal ones. The observation this bullet makes — that with only 8 distinct
+  > Score values, Level frequently decides which pair is picked — still holds; only the name for
+  > the mechanism doing the deciding needed fixing.
 - **No Student is guaranteed a Match.** Coverage reached 96–99% on a 30-Student cohort in
   testing; the remainder are an Admin's work, which is what ADR-0002 decision 7 exists for.
 - **Seed roughly 30 Students in demo and test fixtures** for six Rounds. This is **guidance for

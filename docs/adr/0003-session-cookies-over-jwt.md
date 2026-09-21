@@ -52,6 +52,11 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > gave **Block** to the peer-to-peer act, and a peer Block must never delete anyone's
    > sessions. The mechanism is unchanged; only the word was wrong.
 
+   > **Removal propagation completed 2026-09-22 by ADR-0008 d5.** Removal also deletes every
+   > session for that Student and triggers decision 8's live-socket disconnection. Both sanctions
+   > are rejected during session resolution under decision 5; they differ only in that Suspension
+   > may be lifted while Removal is final.
+
 7. **The socket authenticates by the same cookie**, which same-origin socket.io replays on
    every handshake, including every reconnect. There is no token to pass, refresh, or
    re-present: the reconnect story is that there isn't one. A rejected handshake must stop
@@ -88,6 +93,14 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     would require a CORS preflight that the same-origin deployment does not authorize. Login
     and signup are throttled (5 attempts per 15 minutes, keyed on IP and email) and failure
     responses use one generic message, reducing account-enumeration signals.
+
+    > **Narrowed 2026-09-22 by ADR-0009.** “Every mutation” cannot be literal for file uploads
+    > without inventing base64-in-JSON. Avatar and Evidence create/replace routes are the only
+    > exception: `multipart/form-data` is accepted only with `Origin === PUBLIC_ORIGIN` and
+    > `X-PeerConnect-CSRF: 1`, both checked before file processing; an absent, `null` or mismatched
+    > Origin and a missing or different header are rejected. A cross-site form cannot set that
+    > header and a cross-origin script cannot pass the preflight because no CORS permission is
+    > added. File deletion and every non-upload mutation remain JSON-only; `SameSite=Lax` remains.
 
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
