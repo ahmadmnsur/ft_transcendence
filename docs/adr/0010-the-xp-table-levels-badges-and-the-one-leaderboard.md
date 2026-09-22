@@ -69,6 +69,40 @@ them deliberately and settles the rest.
    breaks their Streak, when their Mentee never submits a Review.** That was already true under
    ADR-0002 decision 5; the table makes it visible.
 
+   > **Streak consequence corrected 2026-09-22 before `/to-spec #1`.** “Breaks their Streak” above
+   > is too broad. An unreviewed Match supplies no Match XP and no qualifying activity from that
+   > Match for either Student; it does not itself reset either Streak. At Round close, ADR-0014 d7
+   > asks whether the Student had **any** qualifying activity anywhere in the Round. An accepted
+   > Prompt answer serialized into that Round therefore increments or preserves the Mentor's Streak
+   > despite the unreviewed Match. The Streak resets only when the whole Round contains no qualifying
+   > activity for that Student, subject to the existing Suspension/Removal freeze.
+
+   > **Review lifecycle and retry contract clarified 2026-09-22 before `/to-spec #1`.** A Review
+   > may commit only for an `ACCEPTED` Match, moving it to `COMPLETED`. ADR-0014's existing
+   > `Match 1:0..1 Review` relation is a database uniqueness rule on `Review.match_id`: the Review,
+   > its three parts, the Match status change, both XP line items and First Mentor evaluation are
+   > one transaction. One duplicate or retried submission may win; every other attempt receives the
+   > already-reviewed outcome and creates or awards nothing. A failed attempt rolls the whole unit
+   > back and does not consume the one Review slot.
+   >
+   > Promotion to `ADMIN` does **not** cancel the Match ADR-0008 d2 leaves standing. The Mentee may
+   > finish that already-created Match, including accepting it and submitting its Review, and a
+   > valid Review pays the ordinary 80/120 XP and evaluates First Mentor for the pair even if either
+   > Student now holds `ADMIN`; retained XP and BadgeAwards remain hidden by the Admin Leaderboard
+   > filter. Role alone never freezes XP. Suspension or Removal is different: Review submission and
+   > the administrative termination have one logical order. Review first means `COMPLETED` plus the
+   > full atomic awards, which the later sanction preserves and freezes; sanction first means
+   > `TERMINATED_BY_ADMIN`, so the Review is rejected and neither Student receives Match XP or Badge
+   > progress. Reinstatement cannot revive that terminated Match.
+
+   > **Admin history visibility corrected 2026-09-22 before `/to-spec #1`.** “Retained XP and
+   > BadgeAwards remain hidden by the Admin Leaderboard filter” above overstates that filter. Only
+   > the Admin's **Leaderboard row and personal-rank pin** are omitted. XP remains stored, continues
+   > to derive Level, and remains available on the ordinary profile/history surfaces; permanent
+   > BadgeAwards likewise remain available and render normally there. BadgeAwards are not a
+   > Leaderboard field and promotion creates no Badge-specific visibility rule. Demotion merely makes
+   > the retained XP rank-eligible again; it does not restore data that had been hidden or removed.
+
 2. **A Prompt answer pays 20 XP**, in the transaction that creates the Post. That is 1:6
    against a Mentee's Match, and the ratio is deliberately the only governor.
 
@@ -79,6 +113,25 @@ them deliberately and settles the rest.
    publish more than six Prompts in a single Round before the lighter loop outweighed the
    heavier one, which is an admin-discipline matter rather than a hole. No cap is invented, so
    ADR-0007's "no scheduling, no draft" stands untouched.
+
+   > **Cross-path XP concurrency contract added 2026-09-22.** Successful XP-award transactions
+   > affecting the same Student — Review and Prompt paths alike — must have outcomes equivalent to
+   > one serial order. Every increment accumulates; none may overwrite another, and each Badge
+   > threshold is evaluated against that same order. ADR-0014's existing unique
+   > `(student_id, badge)` constraint remains the final arbiter if concurrent work reaches the same
+   > Badge. `/to-spec #1` chooses the PostgreSQL transaction or locking mechanism; the required
+   > result is no lost XP, no missed threshold award and no duplicate BadgeAward.
+
+   > **BadgeAward conflict outcome corrected 2026-09-22 before `/to-spec #1`.** "Final arbiter"
+   > above names a storage backstop, not permission to reject an otherwise valid earning event. If
+   > two distinct valid transactions for the same Student both reach the same Badge, both underlying
+   > Review or Prompt actions and both XP increments must eventually commit exactly once, exactly one
+   > BadgeAward must exist, and the competing transaction must converge on that already-awarded state.
+   > A uniqueness conflict may be resolved or retried internally, but it may not become a permanent
+   > failure that cancels otherwise valid XP merely because the Badge now exists. Any aborted attempt
+   > commits none of its event, XP or Badge changes, and a transparent retry must rely on the existing
+   > Review/Prompt event constraints so it cannot pay that event twice. This remains one atomic earning
+   > transaction with no award job, backfill or ledger; `/to-spec #1` chooses the PostgreSQL mechanism.
 
 3. **`Level = min(10, 1 + floor(XP / 250))` — ten bands, the tenth terminal.** Promoted from
    prototype placeholder to decision, unchanged.
@@ -108,6 +161,17 @@ them deliberately and settles the rest.
    - **Consistent Learner** — `Streak >= 3`. ⚠️ **Tested in the Round-close transaction, not on
      either XP path** — see the note at the end of this decision.
 
+   > **Badge provenance clarified 2026-09-22 before `/to-spec #1`.** **Consistent Learner is a
+   > project-authored name, not one of the proposal's six examples.** The proposal says “Badges
+   > **such as**” before that list, so the names are illustrative rather than a closed vocabulary;
+   > this decision reuses its First Mentor and Knowledge Sharer names and deliberately defines the
+   > third. Consistent Learner turns the proposal's existing “one participation streak that counts
+   > any qualifying weekly activity” into a permanent personal threshold spanning both product
+   > loops. It is chosen instead of the named Longest Learning Streak because that is a global
+   > superlative requiring ranking history, while `Streak >= 3` uses the already-stored MVP counter,
+   > introduces no new state, and gives Streak its only product consumer. It is not presented as a
+   > renamed proposal Badge or as implementation of the deferred full Badge set.
+
    **What makes "earns once … and never loses" structural is that the test is run once and its
    result is never re-examined — not that the quantity it reads can only rise.** The
    distinction matters for exactly one of the three: the first two count events and are
@@ -131,6 +195,16 @@ them deliberately and settles the rest.
    > guarantee above is untouched: it is still a threshold tested once inside a real transaction
    > and never re-examined, still no scheduled job, and still no sweep looking for conditions that
    > have started holding. There are simply three such transactions rather than two.
+
+   > **Suspension/Round-close boundary clarified 2026-09-22 before `/to-spec #1`.** Suspension or
+   > Removal and Round close must have one logical order for the affected Student. If the sanction
+   > is ordered first, the Round-close transaction skips that Student entirely: even qualifying
+   > activity already recorded in the closing Round does not increment Streak and cannot award
+   > Consistent Learner. The frozen Streak remains unchanged; the skipped Round is never carried
+   > forward or backfilled, and a later reinstatement can reach the threshold only through a later
+   > qualifying Round. If Round close is ordered first, it updates Streak and may award Consistent
+   > Learner atomically; a later sanction preserves both. Role `ADMIN` alone does not trigger this
+   > skip — ADR-0008 reserves the freeze for Suspension and Removal.
 
    **Consistent Learner is the only thing anywhere on this map that reads Streak.** Every other
    mention defines it, freezes it on Suspension, or protects it; nothing consumes it. Without
@@ -180,6 +254,19 @@ them deliberately and settles the rest.
    > record becomes visible under the ordinary participant rules. ADR-0008's already-open Match
    > exception and ADR-0014's Round-close Streak rule remain unchanged.
 
+   > **Visibility wording aligned 2026-09-22.** “The retained record becomes visible” above refers
+   > only to the Student's XP-ranked Leaderboard row becoming eligible again. Their XP, derived Level,
+   > BadgeAwards, Posts and other ordinary profile/history records were never role-hidden while they
+   > held `ADMIN`; promotion changed participation and Leaderboard eligibility, not historical-record
+   > visibility.
+
+   > **Personal-rank pin clarified 2026-09-22.** The pin is computed only after applying the same
+   > participant filter as the top ten. It is available only to an active `STUDENT` or
+   > `PEER_MODERATOR`; it never reintroduces a viewer whose role is `ADMIN` or whose account is
+   > Suspended or Removed. An Admin therefore receives no own-rank row, and Suspended/Removed
+   > Students cannot authenticate and receive no pin even if the ranking query is reused elsewhere.
+   > Demotion or reinstatement restores the ordinary pin from retained XP; Removal never does.
+
 7. **The two unmet module bullets are owned here rather than left to a slice.** The
    acceptance-criteria research flagged both as not in shipped scope, and no ticket had picked
    them up — which meant the point the module-claim decision banked was not actually firm.
@@ -190,6 +277,16 @@ them deliberately and settles the rest.
    the screen where the act happened: no delivery, no inbox, nothing that re-opens the
    notification system the module-claim decision refused. The bullet's own parenthetical offers
    "progress bars" as an alternative to notifications, so this satisfies it on its own terms.
+
+   > **Consistent Learner feedback corrected 2026-09-22.** “On the screen where the act happened”
+   > applies to First Mentor and Knowledge Sharer, not to a Badge awarded by an Admin's Round-close
+   > action. The existing profile progress surface also lists earned Badges. While that profile is
+   > open, ADR-0014's existing content-free `round:closed` event triggers an authenticated refresh of
+   > the viewer's own progress, so Consistent Learner appears as soon as its transaction commits.
+   > The socket carries no Badge or privileged data, and there is no new event, toast, delivery,
+   > inbox, unread flag or “seen” state. A Student who is offline or not viewing the profile sees the
+   > durable Badge on the next profile visit; the platform does not backfill an earn alert. The two
+   > existing confirmation-screen earn panels are unchanged.
 
    **Clear rules and progression mechanics (`:856`)** is one static route listing the XP table,
    the Level bands and every Badge condition. No queries, no data. It doubles as the defense

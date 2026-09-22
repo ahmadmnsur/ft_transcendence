@@ -111,6 +111,20 @@ follows from refusing to give either the Prompt or its answer a state machine.
    5 rather than being a choice: "on submitting the answer" and "on the Post appearing" are one
    instant, so the question of which one triggers XP has no answer to give.
 
+   > **Cross-path XP ordering added by ADR-0010, 2026-09-22.** This atomic unit is unchanged, but
+   > a successful Prompt-answer transaction and any Review transaction awarding XP to the same
+   > Student must have outcomes equivalent to one serial order. Both increments accumulate, and
+   > Badge thresholds are evaluated against that order, so overlapping valid earning events cannot
+   > lose XP or miss the threshold crossing. ADR-0014's unique BadgeAward pair remains the duplicate
+   > arbiter; `/to-spec #1` chooses the database transaction or locking mechanism.
+
+   > **Badge contention outcome corrected by ADR-0010, 2026-09-22.** A valid Prompt answer cannot be
+   > rejected or lose its XP solely because another distinct valid event wins a concurrent insert of
+   > the same BadgeAward. Both events and their XP must eventually commit exactly once while only one
+   > BadgeAward exists. An aborted attempt commits nothing and may be retried transparently; decision
+   > 7's existing `(Prompt, Student)` uniqueness prevents that retry from paying the answer twice.
+   > `/to-spec #1` still chooses the PostgreSQL mechanism.
+
 7. **One answer per Student per Prompt, enforced as a unique constraint on (Prompt, Student).**
    In the schema, not in a service. `document/42_PeerConnect_Concept_Proposal-6.md:229` rules
    out farming XP "through meaningless activity," and resubmitting to the same Prompt is

@@ -16,16 +16,18 @@ _Avoid_: User, member, peer
 **Admin**:
 The most privileged role, held by a 42 staff member: opening and closing Rounds, publishing
 Reflection Prompts, managing Students and their roles, and every sanction. Staff rather than
-a participant — an Admin never enters matching or answers a Reflection Prompt, whatever Skills
-they list. The platform always retains at least one Admin who can sign in.
+a participant — an Admin never enters a new Match or answers a Reflection Prompt, whatever Skills
+they list. Promotion does not cancel a Match already created: that Match may still be accepted and
+reviewed through its ordinary path, with its ordinary XP and Badge effects, while the Admin remains
+excluded from the Leaderboard. The platform always retains at least one Admin who can sign in.
 _Avoid_: Staff, moderator, superuser
 
 **Peer Moderator**:
-A trusted Student granted one further authority: working the queue of reported Posts, where
+A trusted Student granted one further authority: working the queue of open reported Posts, where
 they may remove the Post or dismiss the report, and either way the platform records which of
 them did it. Nothing else — never a reported Student, never a reporter's identity, never a
-Suspension, a Removal, a Round or a Reflection Prompt. Unlike an Admin, a Peer Moderator is
-a full participant, matched and earning XP like any Student.
+resolved-report audit history, a Suspension, a Removal, a Round or a Reflection Prompt. Unlike an
+Admin, a Peer Moderator is a full participant, matched and earning XP like any Student.
 _Avoid_: Moderator, mod, trusted user
 
 **Mentor**:
@@ -68,16 +70,19 @@ _Avoid_: Mute, ban, ignore
 **Report**:
 A Student's request that staff review a Post or another Student — the only two things that
 can be reported. The reporter's account of the problem is testimony, never edited by anyone,
-and the reporter is never told the outcome. Not a Block: a Report asks for staff action,
-where a Block withdraws contact and asks for nothing.
+and the reporter is never told the outcome. A Report an Admin filed, or one about that Admin or
+their Post, is reviewed only by another Admin; its subject cannot read the reporter. Not a Block:
+a Report asks for staff action, where a Block withdraws contact and asks for nothing.
 _Avoid_: Flag, complaint, abuse report
 
 **Suspension**:
 An Admin's reversible withdrawal of a Student's access: they are signed out at once and
 cannot sign in again, and stand outside matching and every Leaderboard until it is lifted.
 Their Posts remain and their XP and Streak freeze rather than revert — standing outside a
-Leaderboard means not being shown on it, never losing what it measures. Not a Block: a Block
-withdraws nothing and is never an Admin's to set.
+Leaderboard means not being shown on it, never losing what it measures. If Suspension precedes
+Round close, even qualifying activity already in that Round cannot advance Streak or award
+Consistent Learner; the Round is not replayed after reinstatement. Not a Block: a Block withdraws
+nothing and is never an Admin's to set.
 _Avoid_: Ban, block, moderation block, deactivation
 
 **Removal**:
@@ -189,7 +194,8 @@ _Avoid_: Objective, target, aim
 
 **XP**:
 The single pool of points fed by both the Match loop and the Reflection Prompt loop.
-Awarded only for completed, confirmed activity.
+Awarded only for completed, confirmed activity. Concurrent valid awards accumulate without loss;
+one earning event can never pay twice.
 _Avoid_: Points, score, credits
 
 **Level**:
@@ -234,6 +240,7 @@ _Avoid_: Insights, reporting, statistics, metrics
 **Leaderboard**:
 A ranking of Students by one named measure. The measure is XP, and it is the only one:
 there is no overall ranking of Students, and no ranking by any other measure. Only
-participants are ranked: an Admin is staff and never appears, however much XP they hold.
-Further measures, **Mentor Reputation** among them, are Version 2.
+active participants are ranked: an Admin, Suspended Student or Removed Student never appears,
+however much XP they hold. The viewer's own-rank pin follows the same filter and cannot add them
+back. Further measures, **Mentor Reputation** among them, are Version 2.
 _Avoid_: Ranking, top list, chart

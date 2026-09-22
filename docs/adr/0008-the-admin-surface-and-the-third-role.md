@@ -85,6 +85,12 @@ revoke XP.**
    > does not appear in their list at all. The authority above is unchanged; its surface is now
    > named.
 
+   > **Visibility boundary completed by ADR-0011, 2026-09-22.** That surface is the queue of
+   > **open** Post-report groups that pass the whole-group conflict guard in decision 10. Resolved
+   > Reports are retained for Admin audit and do not become a Peer Moderator history view. This
+   > narrows no action the role held; it prevents “the report queue” from silently growing into
+   > historical moderation access.
+
 4. **All privileged-role assignment is manual, by an Admin, always.** No OAuth claim grants
    a role; no XP, **Level** or **Mentor Reputation** threshold auto-promotes. An
    auto-promotion rule would be a second, invisible roles-management path competing with the
@@ -125,6 +131,39 @@ revoke XP.**
    > still does not search automatically for a replacement; an Admin may repair that remaining
    > candidate by hand. The `TERMINATED_BY_ADMIN` cause and retained Match history are unchanged.
 
+   > **Review/award boundary clarified 2026-09-22 before `/to-spec #1`.** The standing-Match
+   > exception in decision 2 includes the ordinary Match-bound actions needed to finish it: a
+   > promoted Mentee may accept and submit the Review for a Match created before promotion. A valid
+   > Review still pays both Students and evaluates First Mentor even if either now holds `ADMIN`;
+   > the Admin's retained XP and BadgeAwards are hidden from the Leaderboard, and role alone creates
+   > no freeze. Suspension or Removal instead serializes against Review submission. Review first
+   > completes the Match and its awards survive the later sanction; sanction first changes an
+   > in-progress Match to `TERMINATED_BY_ADMIN`, after which no Review, Match XP or Match Badge
+   > progress may commit. Reinstatement does not reopen the terminated Match. This is the Match-loop
+   > exception to decision 2's Prompt rule, not a way for an Admin to enter a new Match.
+
+   > **Leaderboard-filter scope corrected 2026-09-22 by ADR-0010.** “XP and BadgeAwards are hidden
+   > from the Leaderboard” above must not be implemented as a role-based concealment of either
+   > record. Promotion preserves XP, its derived Level and every permanent BadgeAward, all of which
+   > remain available through the ordinary profile/history surfaces. The only hidden output is the
+   > Admin's XP-ranked Leaderboard row, including the personal-rank pin; BadgeAwards are not part of
+   > that projection. Demotion makes the retained XP rank-eligible again without restoring or
+   > recomputing any history.
+
+   > **Round-close freeze boundary clarified 2026-09-22.** Suspension or Removal serializes with
+   > Round close for the affected Student. Sanction first means the close skips both the Streak
+   > update and Consistent Learner evaluation, even when that Round already contains qualifying
+   > activity; the Round is not replayed after reinstatement. Close first may update Streak and
+   > award the Badge, both of which the later sanction preserves. Promotion to `ADMIN` does not
+   > invoke this skip, because role alone has no Streak freeze.
+
+   > **Report consequence added by ADR-0011, 2026-09-22.** Final Removal of a Student and the
+   > transition of every open Report targeting that Student to `ACTIONED` are one transaction,
+   > attributed to the removing Admin. The retained Student tombstone and every historical Report
+   > survive. Suspension remains reversible and does not resolve Reports automatically; an Admin
+   > resolves those explicitly. This changes no sanction count and preserves the distinction
+   > between Suspension and Removal.
+
 6. **Soft delete on Student and Post — those two entities only.** A `removed_at` on `Student`
    and a `removed_at` on `Post`. **No other entity gets one**: **Match**, **Review**, **Round**
    and **Reflection Prompt** are untouched, because a Prompt is never deleted and a Post is
@@ -152,6 +191,12 @@ revoke XP.**
    > as evidence that one exists. **The individual Private Feedback a suspended or removed Student
    > wrote does survive** (d6 above, ADR-0013 d8) and still renders to its Mentor, attributed to
    > the tombstone; that is the thing being preserved here, not a score.
+
+   > **Leaderboard pin clarified 2026-09-22 by ADR-0010.** “Filtered from the result” applies to
+   > both the top ten and the viewer's own-rank pin. Only an active `STUDENT` or `PEER_MODERATOR`
+   > receives that pin. An `ADMIN`, Suspended Student or Removed Student gets no rank row; the pin
+   > cannot add a filtered viewer back. Demotion and reinstatement expose the retained XP under the
+   > ordinary ranking rules, while Removal remains final.
 
 7. **Removal is final by policy, not by data loss, and the email burns.** The soft delete
    exists for referential integrity, never as an undo buffer; there is no reinstate action
@@ -206,6 +251,26 @@ revoke XP.**
     > participating Student who may report, and nothing here stopped them actioning their own
     > complaint. ADR-0011 decision 8 adds that the hole this guard does *not* close is their
     > **friends**, answered by attribution rather than by a narrower permission.
+
+    > **Applied to the derived group by ADR-0011, 2026-09-22.** A Peer Moderator action resolves
+    > every `OPEN` Report for one Post, so the guard is evaluated over the whole group: its Post
+    > author and every open reporter. If the moderator owns the Post, filed any row, or has a Block
+    > in either direction with the author or any reporter, the entire group is absent and remains
+    > open for an Admin. Filtering only the conflicting rows and then resolving the rest would let
+    > the moderator resolve a complaint this decision forbids them to touch. The action endpoint
+    > re-runs ADR-0003's session/current-role/sanction authorization, so a stale queue read grants no
+    > authority. Block edges are evaluated at the action serialization point; a concurrent Block
+    > create/remove is ordered with the action. ADR-0003's existing “next request” role boundary is
+    > otherwise unchanged.
+
+    > **Admin self-interest correction by ADR-0011, 2026-09-22.** “Admins need no such guard”
+    > remains true for participation-graph conflicts, but not when an Admin is the direct subject
+    > or a reporter. A group targeting that Admin's Student row or their Post is hidden from that
+    > Admin in both the open queue and resolved audit. Any open group or resolved batch containing
+    > a Report they filed is hidden as well, so promotion cannot reveal that complaint's outcome.
+    > Another Admin may read and resolve it; with no eligible other Admin an open group stays
+    > `OPEN`. This makes ADR-0011's staff-misconduct, own-complaint and no-feedback guards survive a
+    > later role change.
 
 11. **One Users table in the admin dashboard, and roles management is its role column.**
     Search, plus name / email / role / status (active, suspended, removed), with row actions
@@ -292,6 +357,13 @@ this map never made.
   ticket's work, not this ADR's.
 - **The three-dashboard split is what makes bullet 3 demonstrable**: Admin sees everything,
   Peer Moderator sees only the report queue, Student sees no dashboard at all.
+
+  > **Visibility wording narrowed by ADR-0011, 2026-09-22.** “Admin sees everything” means the
+  > full operational and audit surfaces subject to the direct-conflict guard: an Admin does not see
+  > open or resolved Reports about themselves/their Post, or a resolution batch containing a Report
+  > they filed. “The report queue” for a Peer Moderator means eligible open Post groups only,
+  > without reporter identity or resolved history. The three views remain distinct and the
+  > advanced-permissions claim is unchanged.
 - **The report queue itself is still unspecified.** What can be reported, what a report
   record holds, and what the reporter sees afterwards are not settled here.
 

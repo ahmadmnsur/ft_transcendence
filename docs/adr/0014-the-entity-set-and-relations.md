@@ -129,6 +129,15 @@ Report ──N:0..1── Student                        (resolved_by_id)
 Every `Match` reaches a `Round`; every `Review` reaches exactly one `Match`; no `Post` reaches both
 arms. Those three sentences are the whole shape.
 
+> **Report integrity completed 2026-09-22 by ADR-0011.** The relation map above is accompanied by
+> the two target-specific partial unique indexes from ADR-0011 d5. The row also has two further
+> CHECKs: `(reported_student_id IS NULL OR reporter_id <> reported_student_id)`, and the resolution
+> tuple invariant under which `OPEN` has null `resolved_by_id`/`resolved_at` while `ACTIONED` and
+> `DISMISSED` have both non-null. A Post self-report still needs a service check through immutable
+> `Post.author_id`; PostgreSQL row CHECKs cannot inspect the referenced table. Report state changes
+> and target mutation follow ADR-0011's whole-group transaction and serialization contract; no
+> `ModerationCase` or other relation is added.
+
 ## The decisions
 
 1. **A Review is three parts in three homes, one per readership.** `Review` carries the **Learning
@@ -206,6 +215,16 @@ arms. Those three sentences are the whole shape.
    exists; a Student whose Match lapsed is not unmatched, because they were matched and the Round
    simply ended.
 
+   > **Review cardinality and terminal transitions made explicit 2026-09-22 before `/to-spec #1`.**
+   > The existing `Match 1:0..1 Review` relation means `Review.match_id` is unique in the database;
+   > it is the final arbiter for duplicate and retried submissions, not a service-only pre-check.
+   > Only `ACCEPTED -> COMPLETED` may create that Review. Review creation, its `PrivateFeedback` and
+   > Takeaway `Post`, the status transition, both Match XP line items and First Mentor evaluation are
+   > one atomic success, so a uniqueness loser rolls back every award. Review submission serializes
+   > with `LAPSED`, `DECLINED` and `TERMINATED_BY_ADMIN`: whichever transition is ordered first wins,
+   > and no terminal Match can later acquire a Review. Promotion to `ADMIN` is not a terminal
+   > transition and leaves the pre-existing Match eligible for that ordinary path under ADR-0008 d2.
+
 3. **`Skill` is a catalogue entity, and the Learning Goal is one of the Student's own `LEARN`
    Skills.** `Skill(id, name unique)`, seeded and extended by migration — **no admin CRUD screen**,
    on ADR-0008 decision 11's reasoning that a screen holding a fixed list reads worse than no screen.
@@ -274,6 +293,24 @@ arms. Those three sentences are the whole shape.
    unique on the pair, the `Badge` being an enum on ADR-0012's reasoning exactly: three fixed values,
    frozen, with no authoring surface, so a table would collapse into an enum with extra steps.
 
+   > **XP and Badge concurrency clarified 2026-09-22 by ADR-0010.** The unique BadgeAward pair above
+   > already guarantees that concurrent transactions cannot award the same Badge twice; no second
+   > idempotency mechanism or award ledger is added. Separately, all successful XP-award transactions
+   > touching the same Student must be equivalent to one serial order, so atomic increments cannot be
+   > lost and threshold evaluation cannot miss the transaction that crosses it. The existing unique
+   > pair remains the final arbiter if two transactions attempt the same BadgeAward.
+
+   > **BadgeAward conflict outcome corrected 2026-09-22 before `/to-spec #1`.** The unique pair
+   > prevents duplicate rows, but a raw uniqueness failure must not permanently abort a distinct,
+   > otherwise valid earning event. When two valid Review/Prompt events for one Student contend for
+   > the same Badge, both event records and XP increments eventually commit exactly once, one and only
+   > one BadgeAward exists, and the contender converges on that existing award. An aborted database
+   > attempt commits none of its changes and may be retried transparently; the existing Review Match
+   > uniqueness and Prompt-answer `(Prompt, Student)` uniqueness keep that retry from paying twice.
+   > This is different from a duplicate or retried submission of the same event, whose event constraint
+   > still admits no second event or XP. The PostgreSQL conflict/serialization mechanism is left to
+   > `/to-spec #1`; the model adds no second ledger or deferred award path.
+
    > **Prompt-answer serialization clarified 2026-09-21.** ADR-0007 orders an answer against a
    > concurrent Round close. An answer ordered before the close is visible to this transaction as
    > qualifying activity; one ordered after it cannot contribute to the closed Round, regardless
@@ -281,6 +318,14 @@ arms. Those three sentences are the whole shape.
    > nothing while the role is held. This adds no Admin-specific skip/freeze here: only Suspended
    > and Removed Students are skipped, and an already-open Match surviving promotion remains
    > governed by ADR-0008 d2.
+
+   > **Sanction ordering and Consistent Learner clarified 2026-09-22.** For each affected Student,
+   > Suspension or Removal and Round close must be equivalent to one serial order. Sanction first
+   > skips the stored Streak update and the Consistent Learner test as one unit, regardless of
+   > qualifying activity earlier in that Round. Close first may increment Streak and insert the
+   > unique BadgeAward before the later sanction freezes them. A skipped Round is never replayed;
+   > reinstatement resumes from the frozen integer on a later Round. `ADMIN` remains deliberately
+   > outside this skip because ADR-0008 gives role alone no freeze.
 
 8. **The socket is outbound-only for everything except a direct message, and there are three rooms.**
    This is what lets the claimed WebSockets Major have a broadcast at all — the only socket surface
@@ -298,6 +343,12 @@ arms. Those three sentences are the whole shape.
    the demo** — Round *open* is naturally unicast, since each Student wants their own Match, whereas
    close carries one identical payload to everyone and is the sharpest evidence of "efficient message
    broadcasting" the model can produce.
+
+   > **Consistent Learner refresh clarified 2026-09-22 by ADR-0010.** The existing `round:closed`
+   > event remains identical and content-free. An open profile uses it only as an invalidation signal
+   > and re-queries the authenticated viewer's own progress over HTTP; the ordinary Badge list then
+   > reflects any Consistent Learner award committed by Round close. No Badge payload, per-Student
+   > socket event, notification entity, unread state or delivery mechanism is added.
 
 9. **The entire explanation state is frozen on the Match, not merely the Score.** `Match` carries
    `compatibility_score smallint NULL` (null for an Admin's hand-made Match, ADR-0006 d10) and
@@ -371,6 +422,11 @@ arms. Those three sentences are the whole shape.
     - **No repeated pairing** — an index on `(LEAST(mentor_id, mentee_id), GREATEST(…))` turns
       ADR-0006 step 2's no-repeats test into one index hit instead of a two-way scan.
 
+    > **Report CHECK set extended 2026-09-22 by ADR-0011.** Two row invariants were missing from
+    > the historical list: a Student-target Report cannot name its reporter, and Report state must
+    > agree with both attribution fields. They are database CHECKs, not service conventions. The
+    > exactly-one-target CHECK and the two partial unique indexes remain unchanged.
+
     > **Prompt concurrency attached to the existing shape, 2026-09-21.** The unique answer index
     > remains the final arbiter for duplicate and retried submissions: at most one Post commits for
     > `(Prompt, Student)`, and ADR-0007 keeps that Post, its XP award, Knowledge Sharer evaluation
@@ -400,6 +456,12 @@ arms. Those three sentences are the whole shape.
     > merely named as a risk for the Admin's hand-made Match. ADR-0006 now states explicitly that a
     > manual Match requires both Students to be currently unmatched for the Round, and that the
     > service creating it must check this before writing the row, since the database will not.
+
+    > **Report self-target correction 2026-09-22.** The paragraph above remains right about a
+    > Post target: determining whether `reporter_id = Post.author_id` crosses a table and stays a
+    > service invariant. It was too broad about a Student target, which is expressible on the
+    > Report row and is now enforced by CHECK. The Takeaway-author and standing-Match invariants
+    > remain in the service category.
 
 ## Considered options
 
@@ -471,6 +533,13 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > application. The count also read as nine unconditionally while the header note takes the
   > preview feature, which removes two. Nothing about the schema changes; the gate now has a
   > number it can check off.
+
+  > **Count revised 2026-09-22 by ADR-0011's final audit.** Two newly explicit Report CHECKs make
+  > the current working count **eight raw-SQL migration steps**: five CHECKs (Post origin, Report
+  > target, Report Student self-target, Report resolution tuple, rating range), two expression
+  > unique indexes and the no-repeats expression index. If the `partialIndexes` preview feature is
+  > declined, ADR-0011's two target-specific unique indexes raise that count to **ten**. The earlier
+  > “six or eight” and “there is no fourth” paragraphs remain as history, not the operative count.
 - **The seed gains an input that was not on the map's list: the Skill catalogue.** Without it no
   Student can list anything, no Match can form and the matcher has no inputs — it joins the bootstrap
   Admin, the Peer Moderator and the one Reflection Prompt as something without which nothing is

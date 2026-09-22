@@ -124,8 +124,9 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    `prototypes/compatibility-score/SUCCESS-CRITERIA.md`. **C1, C2 and C5 are not assertions** —
    they failed and ADR-0006 resolved them by decision.
 
-2. **The six raw-SQL migration steps** — three `CHECK` constraints, three expression indexes. If a
-   migration stops creating one, the database accepts bad data and says nothing.
+2. **The eight raw-SQL migration steps** — five `CHECK` constraints, three expression indexes. If a
+   migration stops creating one, the database accepts bad data and says nothing. The Report checks
+   cover its target, Student self-reporting, and state/attribution tuple.
 
 3. **At most one standing Match per Student per Round** — the one invariant the schema cannot
    hold, violable through an Admin's hand-made Match.
@@ -141,7 +142,9 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    live Prompt by the durable, real-time-respecting publication order, no answer accepted after
    supersession, and at most one atomic Post + XP + Badge + qualifying-activity success. It also
    asserts that only the serialized Round-close transaction updates the stored Streak for the
-   correct Round, skipping Suspended and Removed Students.
+   correct Round, skipping Suspended and Removed Students. A Student with an unreviewed Match but an
+   accepted Prompt answer in that Round must increment rather than reset Streak; the paired case
+   with no qualifying activity anywhere in the Round must reset it.
 
 7. **Student lifecycle and Admin lockout invariants** — asserts that matching uses only active,
    non-`ADMIN` Students with a Skill; role and sanction changes serialize against Match creation;
@@ -154,9 +157,35 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    access; preserves Evidence through Suspension and Removal; keeps failed replacement atomic; and
    rejects upload mutations without the exact Origin and `X-PeerConnect-CSRF: 1` header.
 
+9. **Review, XP and Badge transaction integrity** — asserts one atomic Review/status/Takeaway/
+   Private Feedback/XP/Badge success under duplicate or retried submission; serial outcomes against
+   Round close, Decline, Suspension and Removal; completion of a Match that predates promotion to
+   Admin with the Admin still filtered; and cumulative XP plus exactly-once threshold Badges when
+   valid Review and Prompt awards overlap for one Student. It also orders Suspension/Removal against
+   Round close when qualifying activity already exists, and proves the Leaderboard's viewer-rank pin
+   cannot reintroduce an Admin, Suspended Student or Removed Student. The same-Badge contention case
+   must prove both distinct valid event records and XP increments commit exactly once, exactly one
+   BadgeAward remains, and conflict recovery neither loses the threshold nor cancels valid XP. For
+   promotion, it also proves retained XP still drives the ordinary profile Level and earned Badges
+   remain normally available while only the Admin's Leaderboard row and personal-rank pin disappear.
+
+10. **Report integrity, authorization and group serialization** — asserts the two target-specific
+    uniqueness rules and Report CHECKs; one winner plus an `already reported` loser for two
+    concurrent filings by the same reporter against the same target, with the winning row
+    unmodified; one winner plus an `already resolved` loser for concurrent
+    actions on the same open group; uniform terminal state and attribution; and the serial outcomes
+    of filing against resolution or target Removal. Remove Post and Remove Student must each commit
+    atomically with `ACTIONED` open reports, while Suspension leaves Student reports open. A Peer
+    Moderator sees only eligible open Post groups, never reporter identity or resolved history, and
+    one conflicting open reporter hides the whole group. A reported Admin cannot read or resolve
+    their own Student/Post group or any open group/resolved batch containing a Report they filed;
+    another Admin retains reporter-visible audit access. The action request must re-run
+    session/current-role/sanction authorization after a stale queue read, and a Block create/remove
+    race proves the conflict guard is evaluated at the action serialization point.
+
 **Adding a test outside that list needs an argument.** The rule is *does it fail silently?* —
-anything the compiler or a demo step would catch is not tested. Eight categories, closed until
-someone argues a ninth.
+anything the compiler or a demo step would catch is not tested. Ten categories, closed until
+someone argues an eleventh.
 
 **CI is advisory for the current repository setup.** Branch protection is unavailable on this
 plan, so the workflow cannot block a merge. Its job is evidence for

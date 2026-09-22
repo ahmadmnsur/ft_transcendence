@@ -60,6 +60,30 @@ that reacts to events over a Round's lifetime.
    already says XP is "awarded only for completed, confirmed activity", and an unfinished
    Match was never confirmed activity.
 
+   > **Match contribution versus Round outcome clarified 2026-09-22 by ADR-0010.** “Contributes
+   > nothing” is Match-local, not an instruction to reset either participant's Streak. Round close
+   > evaluates the Student's whole Round under ADR-0014 d7: any qualifying activity increments the
+   > Streak, so an accepted Prompt answer in that Round still counts even when the Match has no
+   > Review. Only a Round with no qualifying activity for that Student resets the value, apart from
+   > the existing Suspension/Removal freeze.
+
+   > **Review/terminal-transition boundary serialized 2026-09-22 before `/to-spec #1`.** Review
+   > submission may move only an `ACCEPTED` Match to `COMPLETED`, and it must serialize with every
+   > competing terminal transition. If the Review commits first, its row, Public Takeaway,
+   > Private Feedback, both XP line items and Badge evaluation commit together and Round close
+   > leaves that Match `COMPLETED`; a later Decline is no longer available. If Round close or a
+   > Decline is ordered first, the Match becomes `LAPSED` or `DECLINED` and the Review attempt is
+   > rejected with no XP or Badge progress. ADR-0008 applies the same rule to
+   > `TERMINATED_BY_ADMIN`. Request start time does not grandfather a Review; `/to-spec #1` chooses
+   > the database transaction or locking mechanism.
+
+   > **Sanction/Round-close order clarified 2026-09-22 by ADR-0008 and ADR-0010.** For each affected
+   > Student, Suspension or Removal and this Round-close transaction must have one logical order.
+   > Sanction first makes the close skip both Streak mutation and Consistent Learner evaluation,
+   > even if the Round contains earlier qualifying activity. Close first may update Streak and award
+   > the Badge, which the later sanction preserves. The skipped Round is never replayed after
+   > reinstatement; `/to-spec #1` chooses the database mechanism.
+
 6. **"Unmatched" is derived, never stored, and never carried over.** A Student is
    unmatched in a Round when the pool contains them and that Round holds no Match for them
    in a live status. The status check matters: a Student whose only Match was declined and

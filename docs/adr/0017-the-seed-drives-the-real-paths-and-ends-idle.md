@@ -199,6 +199,15 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    (ADR-0008 d10 as widened by ADR-0011) — otherwise the conflict-of-interest filter hides the
    only rows there are, and the queue renders empty on a moderator account that has one.
 
+   > **Report-fixture authorization corrected 2026-09-22 by ADR-0011.** “An Admin reads
+   > everything” above means every group that Admin is eligible to review; a group targeting the
+   > Admin or their Post, or containing a Report they filed, is hidden from them. With only the
+   > bootstrap Admin guaranteed, the seeded open Student report therefore neither targets nor is
+   > filed by that Admin, so it is actually actionable. The two open Post reporters must **both**
+   > pass the Peer Moderator conflict guard because it now applies to the whole group, not row by
+   > row. The resolved fixture remains Admin audit history and is not expected on the Peer
+   > Moderator's open queue.
+
 8. **The Skill catalogue is the fixture's twenty-four plus three `RARE_SKILLS`, and both of
    ADR-0015's gap forms are constructed.**
 

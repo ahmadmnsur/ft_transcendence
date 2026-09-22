@@ -99,6 +99,27 @@ every place they could do social damage.**
    queue usable — a moderator acts on the Post, not on each complaint about it — and the count
    is triage signal that costs nothing. One action resolves the whole group.
 
+   > **Database uniqueness corrected 2026-09-22 before `/to-spec #1`.** The singular wording
+   > above must not become `UNIQUE (reporter_id, post_id, reported_student_id)`: PostgreSQL treats
+   > the unused target's `NULL` as distinct, so that rule admits duplicate reports. The operative
+   > rule is exactly two target-specific partial unique indexes:
+   > `UNIQUE (reporter_id, post_id) WHERE post_id IS NOT NULL` and
+   > `UNIQUE (reporter_id, reported_student_id) WHERE reported_student_id IS NOT NULL`. Together
+   > with decision 3's exactly-one-target CHECK, they allow different targets and cross-type
+   > reports while refusing a second report by the same reporter against the same target. No
+   > target abstraction or service-only duplicate check is added.
+
+   > **Concurrent duplicate filing outcome added 2026-09-22 before `/to-spec #1`.** When the same
+   > reporter submits two concurrent requests against the same target, the two partial unique
+   > indexes above — not a service-level check — decide between them: exactly one `INSERT`
+   > commits and creates the Report row; the other violates the index and is rejected. The service
+   > maps that rejection to an **already reported** outcome, mirroring decision 6's **already
+   > resolved** for a losing resolution attempt — a clean rejection, not a 500. The existing
+   > (winning) report is not read for comparison and is not modified by the loser: decision 4
+   > already makes a report immutable once filed, so there is nothing to merge. This is the
+   > filing-side half of the same serialization contract decision 6 states for resolution; it was
+   > previously implicit in the indexes and is now explicit for `/to-spec #1`.
+
 6. **Three states on the report row — `OPEN`, `ACTIONED`, `DISMISSED` — plus `resolved_by` and
    `resolved_at`. No case entity, and escalation is not a state.** The group in decision 5 is a
    `GROUP BY` at read time; resolving one updates its open rows in a single transaction. A
@@ -110,10 +131,57 @@ every place they could do social damage.**
    Making it a state would require a moderator *action* to mark it — the exact button decision
    10 exists to deny them — and would create a state only one role can leave.
 
+   > **Resolution and concurrency contract added 2026-09-22 before `/to-spec #1`.** An **open
+   > group** is exactly the `OPEN` rows for one target at the transaction's logical serialization
+   > point. `ACTIONED` and `DISMISSED` are terminal: a resolution attempt may commit only while
+   > that group has at least one open row. Concurrent attempts against the same group have outcomes
+   > equivalent to one serial order. The first committed resolution wins; every later contender is
+   > rejected as **already resolved** and changes neither the target, any Report row nor attribution.
+   > In particular, if dismissal wins against a concurrent queue action to Remove Post, the losing
+   > removal does not remove the Post; if removal wins, dismissal loses without rewriting
+   > `ACTIONED` to `DISMISSED`. `/to-spec #1` chooses the PostgreSQL locking or transaction
+   > mechanism, not this outcome.
+   >
+   > The winning transaction moves every row in that open group to one final state with the same
+   > `resolved_by` and `resolved_at`. Each row also carries a database CHECK: `OPEN` requires both
+   > attribution fields to be null, while `ACTIONED` or `DISMISSED` requires both to be non-null.
+   > Target mutation and automatic resolution are one success or no success. Filing against the
+   > same target serializes at the same boundary: a report ordered before resolution joins the
+   > group and is resolved with it; one ordered after a dismissal or other resolution may form a
+   > new open group if the target remains reportable and that reporter has not used their lifetime
+   > slot; one ordered after target Removal is rejected and creates no row.
+
+   > **"Lifetime slot" made precise, 2026-09-22 — wording only, no rule change.** "That reporter"
+   > above is whoever files the *later* report, not necessarily the filer of the row that was just
+   > resolved. Decision 5's two partial unique indexes are not scoped by `OPEN` / `ACTIONED` /
+   > `DISMISSED`: a reporter's row against a given target persists forever once created, through
+   > resolution and past it, since resolution never deletes rows. **A reporter who has already
+   > filed against a target can never file against that same target again, in any state, for the
+   > target's entire lifetime in the system** — dismissal and action do not free the slot. A new
+   > open group after a resolution can therefore only be opened by a *different* reporter who has
+   > not yet used their own slot against that target, never by the original filer re-reporting the
+   > same target.
+
 7. **The Peer Moderator's queue is Post reports; Student reports are Admin-only.** One `WHERE`
    clause on decision 3's shape: a Peer Moderator reads `post_id IS NOT NULL`, an Admin reads
    everything. This is what makes decision 2's routing honest — DM and Evidence abuse reach a
    queue only an Admin can see.
+
+   > **Queue and filter scope clarified 2026-09-22 before `/to-spec #1`.** A Peer Moderator's
+   > queue contains only **open Post groups**; resolved rows are durable **Admin audit history**, not
+   > a Peer Moderator history surface. Because one action resolves every open row for the target,
+   > ADR-0008 decision 10's conflict checks apply to the **whole group**, never after filtering
+   > individual reports out of its count. The group is absent from that moderator's queue if the
+   > Post is theirs, if they filed any open report in it, or if a Block exists in either direction
+   > between them and the Post author or any open reporter. The whole group remains `OPEN` for an
+   > Admin; no partial group may let the moderator resolve a hidden reporter's complaint. Friendship
+   > remains deliberately outside the guard, with attribution and Admin audit as decision 8's answer.
+   > The action request re-runs ADR-0003's session, current-role and sanction authorization; a stale
+   > queue response grants nothing. The dynamic Block guard is then evaluated at the action's
+   > serialization point. A concurrent Block create/remove has one serial outcome: if the Block is
+   > present first, the action is forbidden with no mutation; if the authorized action is first, it
+   > may commit and the later Block does not rewrite its attribution. Role changes retain ADR-0003's
+   > existing “next request” boundary rather than gaining a new mid-request rule here.
 
 8. **A Peer Moderator may dismiss as well as remove, and every moderation action records who
    took it.** ADR-0008 decision 10 guarded *acting on* reports but never split the two, and
@@ -132,6 +200,17 @@ every place they could do social damage.**
    regardless: decision 5's constraint needs it, the conflict-of-interest check needs it, and an
    Admin's judgement needs it. It is withheld from exactly one role's read.
 
+   > **Admin self-interest exception added 2026-09-22 before `/to-spec #1`.** “An Admin always
+   > does” means an Admin authorized to review that group. A group reporting that Admin's own
+   > Student row or one of their Posts is absent from that Admin's open queue and resolved audit.
+   > The same is true of any open group or resolved resolution batch containing a Report that
+   > Admin filed; promotion cannot become a status surface for an earlier complaint. If no other
+   > Admin is currently eligible, an open group waits. An Admin may neither resolve a complaint
+   > against themselves nor action or audit their own complaint. Every other Admin retains the full
+   > queue, reporter identity and resolved audit history. This is the minimum rule that makes
+   > decision 11's “routes to other Admins” true, keeps the own-complaint/no-feedback guards through
+   > a later role change, and prevents staff misconduct from disclosing the reporter to its subject.
+
 10. **Removing a Post auto-resolves its open reports; a Suspension does not.** Remove Post sets
     every open report on that Post to `ACTIONED` in the same transaction, with the remover as
     `resolved_by` — otherwise the queue keeps showing a Post that is already gone and a second
@@ -142,6 +221,15 @@ every place they could do social damage.**
     carry several unrelated reports. An Admin resolves those explicitly, which is also the
     attribution decision 8 wants.
 
+    > **Student Removal lifecycle added 2026-09-22 before `/to-spec #1`.** Removing a reported
+    > Student follows the Post rule, not the Suspension exception: final Removal and the transition
+    > of every open report on that Student to `ACTIONED` commit in one transaction, attributed to
+    > the removing Admin. Removal targets exactly the Student the reports name and cannot be lifted;
+    > leaving those rows open would retain a queue item no further sanction can action. Suspension
+    > remains distinct and resolves nothing automatically. The Student row remains a tombstone and
+    > every Report remains durable, readable to authorized Admins with its original testimony and
+    > final resolution attribution.
+
 11. **Any signed-in Student may file a report, never against themselves or their own Post.**
     Including a Peer Moderator, who is a full participating Student (ADR-0008 decision 2) — hence
     the guard widening above. A suspended Student cannot sign in at all (ADR-0008 decision 5), so
@@ -151,12 +239,42 @@ every place they could do social damage.**
     rule either — reports are filed from surfaces that already filter `removed_at`, which is
     ADR-0008 decision 6's standing cost paid everywhere.
 
+    > **Self-target enforcement and target status clarified 2026-09-22.** The database enforces
+    > the Student half with `CHECK (reported_student_id IS NULL OR reporter_id <>
+    > reported_student_id)`; the service verifies a Post's immutable `author_id` because a row CHECK
+    > cannot inspect the Post table. Suspension is not Removal: it neither closes existing reports
+    > nor by itself makes the Student an invalid target, so a retained surface may still accept a
+    > report about them. Removal prevents every later report. A filing concurrent with Removal is
+    > included and actioned if ordered first, or rejected with no row if Removal is ordered first.
+
+    > **Filing authority distinguished from participation eligibility, 2026-09-22 before
+    > `/to-spec #1`.** "Any signed-in Student" names filing authority, not matching participation,
+    > and the two are separate axes. ADR-0008 decision 2 excludes an Admin from the *participating*
+    > Student pool — matching and the Prompt loop — but `CONTEXT.md` is explicit that "every account
+    > is a Student; Admin and Peer Moderator are roles a Student holds, not separate kinds of
+    > person," so an Admin remains a signed-in Student in the sense this decision uses. **An Admin
+    > may file a report**, against a Post or another Student including another Admin: staff
+    > misconduct reaches the same channel, decision 9's own-interest exception already presupposes
+    > "a Report that Admin filed" as a live case, and the seed fixture contract
+    > (`docs/adr/0017`) already requires one. The self-report ban is unchanged and role-agnostic —
+    > the database CHECK on `reported_student_id` and the service check on a Post's immutable
+    > `author_id` block a reporter from naming themselves or their own Post regardless of role.
+    > Decisions 7 and 9's machinery need no change: `reporter_id` is read generically, so an
+    > Admin-filed report joins the same group and passes through the same conflict and visibility
+    > rules as any other.
+
 12. **The reporter learns nothing.** An honest confirmation at submit time and no status surface
     at all. The module claim refused the notification system outright, so there is no push
     channel; the only alternative was a pull-based "my reports" list, and that reports
     moderation outcomes about a third party to the person who complained. The outcomes that
     matter are visible anyway — a removed Post leaves the feed, a suspended Student stops
     appearing.
+
+    > **Suspension visibility wording corrected 2026-09-22.** “Stops appearing” cannot mean
+    > globally hidden. ADR-0008 keeps the Student row, Posts and historical contributions and
+    > excludes a Suspended Student only from authentication, matching and the Leaderboard. The
+    > reporter receives no report status or sanction disclosure and cannot reliably infer a
+    > Suspension; decision 12's no-feedback rule stands on privacy rather than on that example.
 
 13. **Reporting and Block stay separate in the model, and are offered together in the UI.**
     `CONTEXT.md` says a Block is "always a Student's own act"; a report is a request for staff

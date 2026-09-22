@@ -61,6 +61,11 @@ done when the PR template already is one.**
    - **The six raw-SQL migration steps** (ADR-0014 decision 13, as corrected). Three `CHECK`
      constraints and three expression indexes, hand-written. If a migration stops creating one,
      the database accepts bad data and says nothing.
+
+     > **Count corrected 2026-09-22 by ADR-0011's final audit.** The working set is now **eight**:
+     > five CHECKs and three expression indexes. The two added CHECKs reject a Student self-report
+     > and a Report state/attribution mismatch. They extend this existing migration category; they
+     > do not create a separate test category.
    - **At most one standing Match per Student per Round** — the one invariant ADR-0014 decision 13
      records as **not expressible in the schema**, violable through an Admin's hand-made Match
      (ADR-0002 decision 7). If anything in this model earns a test, it is the rule nothing else
@@ -97,6 +102,12 @@ done when the PR template already is one.**
    > establishes qualifying activity without updating `Student.streak`, and that only the serialized
    > Round-close transaction updates the stored Streak while skipping Suspended and Removed Students.
 
+   > **Extended 2026-09-22 for the Match/Round Streak distinction; still the sixth category.** The
+   > Round-close case includes a Student whose Match has no Review but whose accepted Prompt answer
+   > belongs to that Round: the answer is qualifying activity, so the close increments rather than
+   > resets Streak. The paired no-other-activity case resets it. This guards the whole-Round query
+   > without adding a new test category or prescribing a database mechanism.
+
    > **Extended 2026-09-21 — ADR-0008's lifecycle and lockout corrections add the seventh
    > silent-failure category.** Integration coverage verifies that matching admits only active,
    > non-`ADMIN` Students with a Skill; role/Suspension/Removal changes serialize against automatic
@@ -116,6 +127,55 @@ done when the PR template already is one.**
    > `X-PeerConnect-CSRF: 1` fail. A client-only validator, current-Match authorization or
    > delete-before-validate replacement can leave the ordinary UI healthy, so the scope guard admits
    > this category; the one-level, no-coverage-target shape is unchanged.
+
+   > **Extended 2026-09-22 — the Review/XP transaction contract adds the ninth silent-failure
+   > category.** Integration coverage verifies one atomic Review + status + Takeaway + Private
+   > Feedback + both XP line items + Badge success under duplicate/retried submission; Review versus
+   > Round close, Decline, Suspension and Removal yields exactly the winning serial outcome; a Match
+   > created before promotion can still complete and award normally while the Admin remains filtered;
+   > and concurrent valid Review/Prompt awards to one Student accumulate without lost XP or a missed
+   > or duplicate BadgeAward. These failures can commit plausible rows and return successful responses,
+   > so the scope guard admits them; the one-level, no-coverage-target shape is unchanged.
+
+   > **Extended 2026-09-22 by ADR-0010's final Badge/Leaderboard audit; still the ninth category.**
+   > The lifecycle cases now also cover Suspension/Removal versus Round close for a Student whose
+   > closing Round already contains qualifying activity: sanction first must freeze Streak and award
+   > no Consistent Learner, while close first may award it and the later sanction preserves it. The
+   > Leaderboard assertion applies the eligibility filter to both the top ten and the viewer-rank pin,
+   > so `ADMIN`, Suspended and Removed viewers can never be reintroduced by the pin. These are silent
+   > lifecycle/ranking failures inside the existing category, not a tenth category.
+
+   > **Extended 2026-09-22 for BadgeAward conflict recovery; still the ninth category.** The
+   > concurrency case must make two distinct valid earning events for one Student contend for the same
+   > Badge and assert that both event records and XP increments commit exactly once, exactly one
+   > BadgeAward remains, and neither the threshold nor valid XP is lost when the uniqueness contender
+   > converges or retries. The test binds the observable result, not a PostgreSQL technique.
+
+   > **Extended 2026-09-22 for Admin history visibility; still the ninth category.** The
+   > completion-after-promotion case asserts that the Admin's XP remains stored and drives the
+   > ordinary profile Level, any earned BadgeAward remains on the ordinary profile/history surface,
+   > and only the XP Leaderboard row and personal-rank pin are absent. This prevents the role filter
+   > from leaking out of the Leaderboard without adding a new category.
+
+   > **Extended 2026-09-22 — Report integrity adds the tenth silent-failure category.** Integration
+   > coverage verifies both target-specific uniqueness rules and the Report CHECKs; two concurrent
+   > filings by the same reporter against the same target admit exactly one winning row and return
+   > **already reported** to the loser without modifying the winner; concurrent
+   > resolution of one open target group admits exactly one winner and returns **already resolved**
+   > to the loser without applying its sanction; every winning row shares one terminal state,
+   > resolver and time; and a concurrent filing against a *different* reporter or after resolution
+   > is either included, forms a later group, or is rejected after Removal according to the serial
+   > order. Remove Post and Remove Student each
+   > commit atomically with `ACTIONED` open reports, while Suspension leaves Student reports open.
+   > Authorization coverage proves that a Peer Moderator sees only eligible open Post groups with
+   > no reporter identity or resolved history, that one conflicting open reporter hides the whole
+   > group, and that an Admin cannot read or resolve their own-target group or read any open group /
+   > resolved batch containing a Report they filed, while another Admin retains reporter-visible
+   > audit access. It also proves the action endpoint re-runs session/current-role/sanction
+   > authorization after a stale queue read and races action against Block create/remove, whose
+   > guard is decided at the action serialization point. These failures can return plausible data
+   > and successful responses while violating privacy or attribution, so they meet the scope guard;
+   > the tests bind outcomes, not a PostgreSQL locking technique.
 
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
@@ -237,6 +297,32 @@ done when the PR template already is one.**
    > originating-Match authorization, mutation lifecycle, atomic replacement, upload CSRF and the
    > nginx envelope can all fail silently behind a working happy path, so decision 1 now covers
    > them. The next proposed category is the ninth and still needs the same scope argument.
+
+   > **Extended 2026-09-22 — the ninth category has now been argued and added.** Review retries,
+   > competing terminal Match transitions and concurrent XP paths can silently duplicate or lose
+   > awards while leaving individually plausible rows. Decision 1 now binds their atomic and serial
+   > outcomes. The next proposed category is the tenth and still needs the same scope argument.
+
+   > **Extended again 2026-09-22 without adding a category.** Sanction versus Round-close ordering
+   > for Consistent Learner and the rule that the personal-rank pin cannot bypass Leaderboard
+   > filtering are additional assertions in the ninth lifecycle/gamification category. The next
+   > proposed category remains the tenth.
+
+   > **Extended 2026-09-22 for BadgeAward contention, still without adding a category.** A uniqueness
+   > contender must not turn a distinct valid earning event into lost XP: both events commit once, one
+   > BadgeAward survives and the threshold cannot be missed. The next proposed category remains the
+   > tenth.
+
+   > **Extended 2026-09-22 for Admin history visibility, still without adding a category.** The
+   > role filter must remove only the Leaderboard row and pin while retained XP/Level and BadgeAwards
+   > remain available on ordinary profile/history reads. This is another assertion in the ninth
+   > category; the next proposed category remains the tenth.
+
+   > **Extended 2026-09-22 — ADR-0011 supplies the tenth category.** Duplicate reports, partial
+   > group filtering, competing resolutions and target Removal can all commit plausible but
+   > contradictory moderation data behind a working queue. Decision 1 now covers the database,
+   > atomicity, serialization and authorization outcomes named there. The next proposed category
+   > is the eleventh and still needs the same *does it fail silently?* argument.
 
    The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
    pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet
