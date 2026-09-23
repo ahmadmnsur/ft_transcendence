@@ -37,6 +37,12 @@ revoke XP.**
    capability ladder where multiplicity buys nothing. This was already implicit in decision
    5; it is stated here because the entity-set work depends on it.
 
+   > **Role visibility ruled 2026-09-23 by ADR-0018 d4.** An Admin is labelled as an Admin
+   > wherever other Students see them, so a Student can find one to ask for a Removal (decision 7
+   > below). The Peer Moderator role is not shown to other Students: it is a queue permission,
+   > not a status, and advertising it invites the pressure from friends that ADR-0011 decision 8
+   > answered with attribution.
+
 2. **A Peer Moderator is a participating Student; an Admin is not, by an explicit rule.** The
    Peer Moderator is matched, earns XP and appears on Leaderboards — "trusted student" is the
    entire point. **An Admin is excluded from the candidate pool by a rule, not by
@@ -76,7 +82,7 @@ revoke XP.**
 3. **The Peer Moderator's authority is the report queue and Remove Post, and nothing else.**
    Suspend Student, Remove Student, Round control, Prompt publication and roles management
    all stay Admin-only. This is verbatim the proposal's own Future item at
-   `42_PeerConnect_Concept_Proposal-6.md:279` — "help review flagged content without full
+   `42_PeerConnect_Concept_Proposal-6.md:283` — "help review flagged content without full
    admin access" — which is what distinguishes it from a role invented to be counted.
 
    > **Sharpened by ADR-0011.** "The report queue" is precisely the ***Post*-report queue**.
@@ -205,6 +211,12 @@ revoke XP.**
    can never register again — the right default where identity is institutional, and what
    stops removal being a formality someone re-registers around an hour later.
 
+   > **How a Student reaches it, 2026-09-23 by ADR-0018 d3.** A Student who wants to leave asks
+   > an Admin, who performs this ordinary Removal. There is no self-service deletion: a one-click
+   > act that burns an institutional email for good wants a human confirmation step. The Privacy
+   > Policy says plainly that Removal is final and is not erasure, and lists what it keeps. The
+   > mechanism and its Admin-only authority are unchanged.
+
 8. **An Admin may edit only what the Student themselves could edit, plus the role.** Display
    name, email, avatar, **Learning Goal**, **Skills**. Never XP, Level, Streak, **Badges** or
    Mentor Reputation — all derived, and derived values have no setter by construction. Never
@@ -218,6 +230,12 @@ revoke XP.**
    > particular the retained email cannot be changed, so its unique row continues to burn the
    > original address exactly as decision 7 requires. This adds no mechanism; it makes Removal's
    > existing finality and ADR-0009 d6's permanent default-avatar result operative.
+
+   > **The password's absence made deliberate, 2026-09-23 by ADR-0018 d8.** The list above omits
+   > the password, and an Admin may never set or reset one. An Admin who could would be able to
+   > sign in as any Student and read their Direct Messages, which the Privacy Policy promises no
+   > Admin can do. A forgotten password is therefore unrecoverable, and the Terms of Service say
+   > so, together with this decision's edit authority.
 
 9. **Three guards against locking the platform out.** An Admin may not change their own role;
    may not suspend or remove themselves; and the last remaining Admin may not be demoted or
@@ -330,6 +348,11 @@ routine per field. The tombstone render achieves the same visible outcome.
 `:626`'s named examples, but nothing in PeerConnect currently sits behind no login, so it is
 a product change — and a public feed of Students' **Public Takeaways** is a privacy decision
 this map never made.
+
+> **Four signed-out routes, 2026-09-23 by ADR-0018 d12.** Sign-in, sign-up, the Privacy Policy
+> and the Terms of Service are readable without signing in, because a visitor has to be able to
+> read the terms the signup checkbox asks them to accept. None of the four holds Student data, so
+> the reasoning above is unaffected: the feed and every Student surface still sit behind login.
 
 ## Consequences
 

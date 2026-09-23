@@ -56,7 +56,7 @@ them deliberately and settles the rest.
    none is to be added.** Anything downstream that reads this table as two events, or that
    builds a "mark complete" action for the first one to hang off, has misread it.
 
-   `:213` names three earning events, but ADR-0002 decision 5 makes an unreviewed Match award
+   `:217` names three earning events, but ADR-0002 decision 5 makes an unreviewed Match award
    nothing, and Completed *means* the Review landed — so "completing a weekly match" can never
    fire on its own. Reading the
    proposal's three events as three *line items* rather than three *moments* keeps all three
@@ -211,7 +211,7 @@ them deliberately and settles the rest.
    this badge, Streak is a counter the platform maintains and never uses.
 
 5. **Four of the proposal's six badges cannot be built in this model, and the reason is
-   structural rather than a matter of effort.** `:223` offers First Mentor, Knowledge Sharer,
+   structural rather than a matter of effort.** `:227` offers First Mentor, Knowledge Sharer,
    Problem Solver, Top Mentor, Most Improved and Longest Learning Streak.
 
    **Top Mentor, Most Improved and Longest Learning Streak are superlatives**: each names a
@@ -219,7 +219,7 @@ them deliberately and settles the rest.
    at some past instant", which needs a record of past rankings — and ADR-0008 settled that XP
    is never a ledger, with nothing anywhere snapshotting state. There is simply no data to
    evaluate them against. The cleanest reading is that the proposal blurred two of its own
-   lists: `:243` and `:247` name Most Improved and Longest Streak as **leaderboard categories**,
+   lists: `:247` and `:251` name Most Improved and Longest Streak as **leaderboard categories**,
    and the badge line borrowed the language. **Problem Solver** needs Mission outcomes, and who
    authors a Mission is still an open question on this map.
 
@@ -298,7 +298,7 @@ them deliberately and settles the rest.
 Mentor" category and the natural counterweight to a table that pays a Mentee more than a Mentor.
 Rejected on four counts. It **has no formula anywhere on this map**, so choosing it would have
 silently folded a second, unowned decision into this one. Its source rating is *optional* at
-`:169`. It publishes a ranking derived from what `CONTEXT.md` defines as "visible only to that
+`:173`. It publishes a ranking derived from what `CONTEXT.md` defines as "visible only to that
 Mentor and to Admins" — near-identifying at a seed of ~30 Students, where a Mentor may have had
 exactly one Mentee and their rank leaks what that Mentee said privately. And it can only rank
 Students who have mentored, excluding everyone who has so far only learned or only answered
@@ -343,7 +343,7 @@ features to six thin ones. The Mentee already gets the larger XP award and the p
   > **Settled by ADR-0013, and the claim above no longer holds. Mentor Reputation remains
   > defined in the glossary as a Version 2 concept; it has no shipped aggregate score or
   > computation in MVP.** The rating ships — optional, 1 to 5, a component of Private Feedback —
-  > and the score does not, going to Version 2 with the per-skill endorsements `:205` calls "a
+  > and the score does not, going to Version 2 with the per-skill endorsements `:209` calls "a
   > more detailed view of the same number". **No aggregate is ever taken over the ratings**; a
   > Mentor reads the individual feedback on a private route instead. **The glossary keeps the
   > term rather than deleting it**, because three live ADR-0008 rules name it — so what changed

@@ -38,7 +38,8 @@ describing the changes", and it sits in the list that gets a project **rejected*
 * **PRs outside the Prisma gate: round-robin.** Anyone reviews anyone.
 * **PRs touching `prisma/` or the root `prisma.config.ts`: Kamel reviews, always.** If he is
   blocked for more than 24 hours, **Ahmad** deputises. Fadel watches for the stall rather than
-  absorbing it.
+  absorbing it. If the change touches personal data, that review also confirms the Privacy Policy
+  moved with it (*Personal data moves the Privacy Policy*, below).
 
 ## Schema changes — read this before touching `prisma/` or `prisma.config.ts`
 
@@ -122,14 +123,18 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
 1. **The matcher** — matching is atomic, so there is no correction window, and a regression shows
    up as pairs quietly never forming. Asserts C3, C4, C6 and C7 from
    `prototypes/compatibility-score/SUCCESS-CRITERIA.md`. **C1, C2 and C5 are not assertions** —
-   they failed and ADR-0006 resolved them by decision.
+   they failed and ADR-0006 resolved them by decision. Also asserts no-repeats: a pair with a prior
+   Match of any status, `DECLINED` and `TERMINATED_BY_ADMIN` included, is never proposed.
 
-2. **The eight raw-SQL migration steps** — five `CHECK` constraints, three expression indexes. If a
-   migration stops creating one, the database accepts bad data and says nothing. The Report checks
-   cover its target, Student self-reporting, and state/attribution tuple.
+2. **The eight raw-SQL migration steps** — five `CHECK` constraints, two unique expression indexes
+   and the non-unique no-repeats lookup index. If a migration stops creating one of the first seven,
+   the database accepts bad data and says nothing; without the last, the no-repeats test silently
+   becomes a scan. The Report checks cover its target, Student self-reporting, and
+   state/attribution tuple.
 
 3. **At most one standing Match per Student per Round** — the one invariant the schema cannot
-   hold, violable through an Admin's hand-made Match.
+   hold, violable through an Admin's hand-made Match. Two concurrent hand-made creations sharing a
+   Student must admit exactly one Match and reject the other with nothing written.
 
 4. **File access control** — signed out is 401, signed in as an unrelated Student is 403.
 
@@ -148,7 +153,9 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
 
 7. **Student lifecycle and Admin lockout invariants** — asserts that matching uses only active,
    non-`ADMIN` Students with a Skill; role and sanction changes serialize against Match creation;
-   Removed rows are view-only and keep their email unavailable; and concurrent Admin demotion,
+   a hand-made Match serializes against Round close, so none commits into a closed Round;
+   a Block serializes against a new Friendship request, so a Block and a Friendship row never
+   coexist; Removed rows are view-only and keep their email unavailable; and concurrent Admin demotion,
    Suspension or Removal always leaves at least one active Admin.
 
 8. **File acceptance, authorization and lifecycle** — through nginx, asserts exact byte caps and
@@ -212,6 +219,9 @@ review**, and — if the PR touches `prisma/`, `prisma.config.ts`, the Compose f
 If a change to an ADR, the project map, or a GitHub issue moves a rule, acceptance criterion,
 scope, status, or resolved question, **the affected records moved together in the same task**.
 
+If it changes what personal data is stored, who can see it, or how long it is kept, **the Privacy
+Policy moved with it in the same PR** — see *Personal data moves the Privacy Policy* below.
+
 ### Records move together
 
 **A settled decision is represented across three surfaces**: its **ADR** in `docs/adr/`, the
@@ -247,10 +257,38 @@ That already holds across ADR-0002 d6, ADR-0008 d10 and ADR-0010 d4, and it appl
 and resolution comments the same way. The version with the `gh` commands is `AGENTS.md`
 → *Record propagation* and `docs/agents/issue-tracker.md`.
 
+### Personal data moves the Privacy Policy
+
+[`docs/legal/privacy-policy.md`](docs/legal/privacy-policy.md) is the data model told to the people
+it describes, and `document/en.subject.md:336` rejects the project if it is inadequate. It goes
+stale the first time someone adds a column. So:
+
+* **A PR that changes what personal data is stored, who can see it, or how long it is kept updates
+  the Privacy Policy in the same PR.** A new column holding something about a Student, a new
+  surface showing it, and a new delete path all count.
+* **A PR that changes a conduct rule or a sanction updates
+  [`docs/legal/terms-of-service.md`](docs/legal/terms-of-service.md)** — including the Report
+  reasons, which are the Terms' first three rules (ADR-0011 d4).
+* **Kamel checks it on `prisma/` PRs**, as part of the schema gate. Everywhere else, the PR
+  template's Done box is the check.
+* **The pages are corrected in place, not annotated.** They are user-facing text, not records an
+  evaluator audits; update the *Last updated* date and let git keep the history.
+
+The rules the pages already bind — one cookie, nothing fetched from third parties, no passwords or
+request bodies in logs, and the rest — are in
+[ADR-0018](docs/adr/0018-the-legal-pages-describe-the-model-as-built-and-bind-it.md).
+
 ### The clean-clone check
 
 Run **each check independently from a separate fresh clone**. Do not run the two commands
 back-to-back against the same working clone.
+
+**A fresh clone is not a fresh database.** Compose groups containers and volumes by project
+name, and every clone of this repository shares that name. So before each check, no container or
+volume may remain under it, whether from the other check or from your working stack. Otherwise the
+boot reuses a database that is already migrated and seeded, and proves nothing about starting from
+empty. Clearing that state is not setup ([ADR-0016](docs/adr/0016-a-thin-suite-over-what-fails-silently.md)
+d5).
 
 **Check 1 — project entry point:**
 

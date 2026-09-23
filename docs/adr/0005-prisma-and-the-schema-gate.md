@@ -104,6 +104,12 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > `prisma/`. Kamel remains the reviewer, Ahmad still deputises after 24 hours, developers still
    > author their own changes, and every PR outside these two Prisma surfaces remains round-robin.
 
+   > **One check added 2026-09-23 by ADR-0018 d15; the scope is unchanged.** When a PR inside the
+   > gate changes what personal data is stored, the gate holder also confirms that
+   > `docs/legal/privacy-policy.md` moved in the same PR. The gate still covers only `prisma/**`
+   > and the root `prisma.config.ts`; a personal-data change outside those paths, such as a new
+   > visibility rule, is caught by the PR template's Done box rather than by widening the gate.
+
 6. **Three rules on migrations, which live in `CONTRIBUTING.md` and the PR template, not only
    here.** They must be visible at the moment someone is about to break them:
    - **A merged migration is immutable.** Prisma checksums applied migrations in

@@ -20,6 +20,7 @@ a participant — an Admin never enters a new Match or answers a Reflection Prom
 they list. Promotion does not cancel a Match already created: that Match may still be accepted and
 reviewed through its ordinary path, with its ordinary XP and Badge effects, while the Admin remains
 excluded from the Leaderboard. The platform always retains at least one Admin who can sign in.
+Shown as an Admin to every signed-in Student, so a Student can always find one to ask.
 _Avoid_: Staff, moderator, superuser
 
 **Peer Moderator**:
@@ -52,7 +53,8 @@ _Avoid_: Activity status, availability, last seen
 **Friend**:
 Another Student whose connection a Student asked for and who accepted. Never one-sided: a
 request confers nothing until it is accepted, and either Student may end it. Friends see each
-other's Presence, which is the reason the acceptance exists.
+other's Presence, which is the reason the acceptance exists. A Student's list of Friends is
+theirs alone: no other Student sees it.
 _Avoid_: Connection, contact, follower
 
 **Direct Message**:
@@ -63,8 +65,8 @@ _Avoid_: Conversation, thread, chat message
 **Block**:
 One Student's standing refusal of contact with another. Mutual in effect whichever Student
 set it: a blocked pair can never become a Match, in either direction, and a Block ends any
-Friendship between them. Always a Student's own act, never an Admin's — the Admin equivalents
-are Suspension and Removal.
+Friendship between them and any request still pending. Always a Student's own act, never an
+Admin's — the Admin equivalents are Suspension and Removal.
 _Avoid_: Mute, ban, ignore
 
 **Report**:
@@ -103,7 +105,8 @@ _Avoid_: Week, cycle, session, sprint
 **Match**:
 A pairing of two Students within one Round, one as Mentor and one as Mentee. It ends in exactly
 one of four ways: a Review is submitted, the Round closes without one, a Student declines it, or
-an Admin's sanction terminates it.
+an Admin's sanction terminates it. Seen only by its two Students and by Admins: no profile lists
+a Student's Matches.
 _Avoid_: Pair, pairing, connection
 
 **Compatibility Score**:
@@ -231,9 +234,9 @@ _Avoid_: Achievement, trophy, award
 **Learning Analytics**:
 What the community as a whole is trying to learn and teach, and where its Matches are stuck:
 the Skills most wanted, the Skills most offered, the gap between them, how often a Match reaches
-a Review, and how Matches are distributed across the statuses. Nothing records how a Match moved
-from one status to the next, so this says where Matches stand now and how past ones ended, never
-where they spent longest. Always about the community, never about a named Student — that is what
+a Review, and how Matches are distributed across the statuses. It reads each Match's status alone,
+so it says where Matches stand now and how past ones ended, never how long they spent in a status
+or which way they came. Always about the community, never about a named Student — that is what
 separates it from a Student's own record, and it is read by Admins alone.
 _Avoid_: Insights, reporting, statistics, metrics
 

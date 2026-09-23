@@ -13,6 +13,16 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
 1. **An opaque session id in an httpOnly, Secure, SameSite=Lax cookie.** No JWT anywhere in
    the product. The session row is the authority; the cookie is just a pointer to it.
 
+   > **Made the only cookie, 2026-09-23 by ADR-0018 d5.** This is the one cookie the product
+   > sets, and any other browser storage holds interface preferences only. The Privacy Policy
+   > promises exactly that, and explains the absence of a cookie banner as a consequence of it.
+
+   > **What the cookie may point to, 2026-09-23 (ADR-0018 d5's annotation, decision 10's).** Before
+   > any session exists, during Sign in with 42, the same cookie points to the pre-authentication
+   > attempt; a successful callback replaces it with a newly issued session id. Its attributes are
+   > unchanged, and `SameSite=Lax` is what carries it to the callback, a cross-site top-level GET
+   > from 42. `Strict` would drop it.
+
 2. **One origin.** The React bundle, the HTTP API and the socket.io endpoint are served from
    the same scheme, host and port as the browser sees them, behind a single reverse proxy.
    This is a hard constraint on the deployment shape, not a preference: it keeps the session
@@ -88,6 +98,13 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    where the role check from decision 5 lives. The socket carries **Presence** and 1:1 direct
    messages, nothing else.
 
+   > **Extended by ADR-0014 decision 8; noted 2026-09-23.** The last sentence describes the
+   > socket as it stood then. ADR-0014 later added outbound, server-to-client events:
+   > `post:created` to the feed, `round:opened` and `round:closed` to everyone, and each
+   > Student's own Match-ready event. ADR-0010 and ADR-0015 read those as refresh signals.
+   > **The rule above is unchanged**: nothing a client sends over the socket performs a
+   > privileged action, and a direct message is the only write a client sends.
+
 10. **CSRF is answered by SameSite=Lax plus a JSON content-type requirement** on every
     mutation — a cross-site HTML form cannot submit `application/json`; a script attempt
     would require a CORS preflight that the same-origin deployment does not authorize. Login
@@ -102,10 +119,51 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > header and a cross-origin script cannot pass the preflight because no CORS permission is
     > added. File deletion and every non-upload mutation remain JSON-only; `SameSite=Lax` remains.
 
+    > **Throttle storage fixed 2026-09-23 by ADR-0018 d6.** The attempt counts keyed on IP and
+    > email live in memory only and are never persisted; the Privacy Policy discloses them in
+    > exactly those terms. The numbers above remain engineering defaults.
+
+    > **Clarified 2026-09-23 before `/to-spec #1` — three things this decision left implicit.**
+    >
+    > - **No GET request creates, changes or deletes a domain row.** The defence above depends on
+    >   it: `SameSite=Lax` still sends the cookie on a cross-site top-level GET, and a GET has no
+    >   JSON body to require. So marking a thread read (ADR-0014 d6) and logout are their own
+    >   non-GET mutations, never side effects of a read. Exactly two GET-time writes fall outside
+    >   this rule: decision 4's lazy session-expiry renewal, which only updates the caller's own
+    >   session, and the OAuth callback that creates the session (below).
+    > - **The 42 OAuth callback must carry `state`.** The provider redirects the browser to the
+    >   callback, so it is a GET that creates a session, and the JSON requirement cannot protect
+    >   it. The flow therefore uses a one-time `state` value bound to the initiating browser
+    >   **through the single cookie** (ADR-0018 d5's annotation): before a session exists, that
+    >   cookie temporarily identifies the attempt, and a successful callback replaces it with a
+    >   newly issued session id. No second cookie and no web storage. The callback checks `state`
+    >   before any session exists. RFC 9700 §2.1 makes that binding (*"Clients MUST prevent
+    >   Cross-Site Request Forgery"*). PKCE may be added as defence in depth (§2.1.1), but **`state`
+    >   stays mandatory unless a later record explicitly establishes a demonstrably equivalent
+    >   browser-binding mechanism.** Starting the attempt adds no third GET exception: it is a
+    >   non-GET request, or it writes no domain row. This constrains the flow, not #24's identity
+    >   mapping.
+    > - **The throttle key is the client address together with the submitted email — never the
+    >   address alone.** The API is reachable only through nginx (ADR-0004 d2, d7), and every
+    >   supported browser sits on the same machine. An address-only bucket would therefore be one
+    >   bucket for the whole platform: five failures by anyone would lock everyone out. **nginx is
+    >   the only trusted proxy.** It supplies the client address from the peer address it observed
+    >   itself, overwriting any forwarding header the browser sent. The API takes the client address
+    >   only from that nginx-set value, and never trusts a browser-supplied forwarding header.
+    >   `/to-spec #1` chooses the framework and proxy configuration that does this. The numbers stay
+    >   engineering defaults.
+
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
     rule. Email verification in particular would put SMTP deliverability on the critical path
     of a live defense.
+
+    > **Extended 2026-09-23 by ADR-0018 d8 — no Admin may set or reset a password either.**
+    > With no reset link and no email, a forgotten password cannot be recovered, and the Terms of
+    > Service say so. An Admin-set password was the obvious repair and is refused: an Admin who
+    > could set one could sign in as any Student and read their Direct Messages, which the
+    > Privacy Policy promises no Admin can do. ADR-0008 decision 8's editable fields already
+    > omitted the password; the omission is now deliberate.
 
 **The numbers in decisions 3, 4 and 10 are engineering defaults, not citations.** The subject
 sets no figure for session length, renewal threshold or rate limit. Change them freely; the

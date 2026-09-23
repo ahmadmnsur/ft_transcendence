@@ -14,7 +14,7 @@ existence. A Mission is therefore chosen by the machine at that instant, or it a
 from someone, or it is not a stored thing at all — three different entities.
 
 `en.subject.md` never says "mission". Not once. Mission is entirely proposal-driven —
-`42_PeerConnect_Concept_Proposal-6.md:17`, `:33`, `:121`, `:131`-`:147` and `:299` — and it sits
+`42_PeerConnect_Concept_Proposal-6.md:17`, `:33`, `:125`, `:135`-`:151` and `:308` — and it sits
 on the proposal's own MVP list, the same list ADR-0011 half-cut when it ruled Comments out. So
 its depth is a product judgement and **no claimed module point rests on it**.
 
@@ -49,6 +49,15 @@ It says *how* to meet; ADR-0006's Score explanation already says *what* about.
      ADR-0002 decision 8 terminates the declined Match, and decision 7's repair creates a *new*
      Match, which is assigned at creation like any other. Nothing carries, and no rule is needed
      to say so.
+
+   > **"Frozen" clarified 2026-09-22 before `/to-spec #1`.** What is frozen is the **enum value**:
+   > which of decision 4's six modes the Match carries, written once at creation. The sentence is
+   > not snapshotted per Match. No Match stores it; the frontend renders it from the value, so a
+   > rewording reaches every Match, past ones included — decision 5's "a UI change, not a
+   > migration". Decision 5's "copy the text onto the Match" describes the rejected table variant,
+   > not something this design does. A rewording may not make a value describe a different mode:
+   > that changes every past Match's Mission, which is what frozen forbids, and a new mode is a
+   > seventh value and a migration (Consequences).
 
 2. **A Mission names a mode of meeting, never a Skill.**
 
@@ -93,8 +102,8 @@ It says *how* to meet; ADR-0006's Score explanation already says *what* about.
    | `TECHNOLOGY_DISCUSSION` | Discuss a technology, tool, or approach. |
    | `ADVICE` | Share advice about a project or learning path. |
 
-   Four are the proposal's verbatim (`:139`, `:141`, `:143`, `:145`). The first two are reworded
-   from `:135` ("Teach your partner a technical concept") and `:137` ("Explain how you solved a
+   Four are the proposal's verbatim (`:143`, `:145`, `:147`, `:149`). The first two are reworded
+   from `:139` ("Teach your partner a technical concept") and `:141` ("Explain how you solved a
    project problem"), which address the Mentor and read wrong to a Mentee under decision 3. The
    rewording drops "your partner" and "you solved"; nothing else about them changes.
 
@@ -113,6 +122,17 @@ It says *how* to meet; ADR-0006's Score explanation already says *what* about.
    ADR-0008 whole: a Mission template is not "what the Student themselves could edit, plus the
    role", so a managed table means a new admin screen, against a decision that deliberately
    refused per-Match editors, for zero claimed points.
+
+   > **Corrected 2026-09-22 before `/to-spec #1`: the enum does not make the column immutable.**
+   > A Prisma enum closes the value set, and it removes the editable template row the paragraph
+   > above rejects, so no edit elsewhere can rewrite a past Match's Mission. It does not stop the
+   > Match's own column being updated: Prisma and PostgreSQL accept an `UPDATE` of an enum column
+   > like any other. "Never updated after creation" is therefore a rule, held by the absence of any
+   > write path to a Match's Mission after the insert, for anyone (decision 1) — the same way
+   > ADR-0014 d9 holds the frozen explanation state. The ADR-0007 and ADR-0002 parallels do not
+   > carry over: Prompt liveness and "unmatched" are derived and have nothing stored to update,
+   > while a Mission is a stored column. This correction adds no trigger or other database
+   > mechanism.
 
    One practical consequence worth having: the enum value is `PAIR_PROGRAMMING` and the sentence
    lives in the frontend, so **decision 4's rewording is a UI change, not a migration**. It never
@@ -136,12 +156,29 @@ It says *how* to meet; ADR-0006's Score explanation already says *what* about.
    guarded against "was measured rather than assumed, and it is not there." Do not reach for
    randomness when an ordered rule serves.
 
+   > **Index clarified 2026-09-22 before `/to-spec #1`.** The index is worked out at Match
+   > creation and never stored. Only the resulting Mission is written, as the #10 hand-off's "no
+   > extra column to store the index" already said. It counts from zero: index *i* takes the mode
+   > at position *i* mod 6 in decision 4's table, so `TECHNICAL_CONCEPT` comes first.
+   >
+   > - **The matcher's Matches** take 0, 1, 2 … in ADR-0006 step 7's selection order, inside the
+   >   one Round-open transaction (ADR-0002 d3). That order is total under ADR-0006 d9, so the
+   >   assignment is as deterministic as the matcher.
+   > - **A hand-made Match** takes the number of Match rows already in that Round, **whatever their
+   >   status**. Declined and terminated rows count, so a repair never reuses an index.
+   > - **The two paths cannot race.** The Round is invisible to every other transaction until its
+   >   matched rows commit with it, and ADR-0002 d7 needs an open Round.
+   > - **Two hand-made creations in one Round can race.** They must have outcomes equivalent to one
+   >   serial order, so each counts the other. `/to-spec #1` chooses the database mechanism.
+   >
+   > So no two Matches in a Round share an index, and the all-six guarantee above holds.
+
 7. **A Mission is text and nothing else.** No completion state, no checkbox, no status, no XP,
    and nothing in the model reads it.
 
    ADR-0010 settled that "**no action in this model completes a Match and none is to be added**",
    and a mark-done control is exactly that action arriving under another name. It would also
-   reopen the XP-timing question ADR-0010 closed by collapsing `:213`'s three line items into one
+   reopen the XP-timing question ADR-0010 closed by collapsing `:217`'s three line items into one
    transaction on Review submission.
 
    So **Problem Solver is permanently out of scope, not pending.** ADR-0010 could only park it;
@@ -170,7 +207,7 @@ theirs drift after the Round opened. It is also the Mentee's alone, leaving the 
 a supposedly shared task unwritten.
 
 **Striking Mission from the model entirely** (rejected). ADR-0011 cut Comments off the same MVP
-line at `:305`, so the precedent exists, and `en.subject.md` asks for nothing here. But ADR-0011
+line at `:314`, so the precedent exists, and `en.subject.md` asks for nothing here. But ADR-0011
 paid for that cut with a specific bill — a new entity, a third `removed_at`, a third report
 target, mutable replies under immutable testimony. A Mission costs one enum column and no
 runtime behaviour. There is nothing to cut.
@@ -180,7 +217,7 @@ An Admin composing ~15 briefs per Round is unworkable in a defense slot, and it 
 per-Match editor ADR-0008 declined.
 
 **The pair chooses their own Mission from the list** (rejected, decision 1). It adds a state to
-the Match flow that the proposal's own status flow at `:127` does not have — Matched → Accepted →
+the Match flow that the proposal's own status flow at `:131` does not have — Matched → Accepted →
 Meeting Scheduled → Completed → Review Submitted — plus a rule for what happens when the two
 disagree, and a second consent step beside accept/decline.
 

@@ -101,6 +101,15 @@ that reacts to events over a Round's lifetime.
    "flag them for the admin to handle manually" is a dead end, and an odd-sized pool
    guarantees a leftover Student every single Round.
 
+   > **Round-close boundary clarified 2026-09-23 before `/to-spec #1`.** "Open" is evaluated at
+   > the hand-made creation's logical serialization point, not when the request began, and the
+   > creation and a concurrent close of that Round must have outcomes equivalent to one serial
+   > order. **Creation first:** the Match is in the Round when the close runs, and decision 5
+   > finalises it like any other; with no Review it becomes `LAPSED` and pays nothing. **Close
+   > first:** the creation is rejected with nothing written, and it is not moved into a Round
+   > opened since, because decision 6 carries nothing over. No Match can commit into a closed
+   > Round. `/to-spec #1` chooses the database mechanism.
+
 8. **Declining terminates that Match.** Both Students drop back to unmatched for the
    Round, and only an Admin repairs it. The system does not hunt for a replacement.
 

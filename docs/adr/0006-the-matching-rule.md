@@ -41,6 +41,17 @@ about fairness lives in the order pairs are selected, where it never has to be e
 > pair filters. A role or sanction change racing automatic or manual Match creation follows
 > ADR-0008 d2's serialization rule.
 
+> **"Previously Matched" clarified 2026-09-23 before `/to-spec #1`.** Step 2 rejects a pair if
+> any `Match` row has ever joined those two Students, in either orientation and in any Round,
+> **whatever its status**: `COMPLETED`, `LAPSED`, `DECLINED` and `TERMINATED_BY_ADMIN` all count,
+> and so does an Admin's hand-made Match. It means "the pair had a Match", not "the pair completed
+> one", and it is not ADR-0014 d2's standing/repudiated partition, which only derives *unmatched*
+> within a Round. This is the rule the prototype measured — "the pair was offered, so it counts as
+> a repeat from now on — even if it gets declined" — and the one ADR-0017's "62 of roughly 174
+> legal pairs" burned assumes. A declined or terminated pair can therefore meet again only through
+> an Admin's hand-made Match, which decision 10 exempts from this test. No history entity is added:
+> the `Match` rows are the history.
+
 Two details carry weight out of proportion to their size. **Step 7 recomputes viable partners
 after every Match** — that recomputation *is* most-constrained-first; counting once up front
 gives a different and worse algorithm. And **marking both Students matched is what enforces one
@@ -180,6 +191,19 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
     > manual creation, so a blocked pair is unmatchable by an Admin exactly as it is by the
     > algorithm.
 
+    > **Concurrency boundary clarified 2026-09-23 before `/to-spec #1`.** "Check it before writing
+    > the row" does not hold the invariant by itself: two concurrent hand-made creations can each
+    > find the same Student unmatched and both commit, since no unique index reaches both sides of
+    > a Match. The "currently unmatched" test and the insert are therefore one unit, evaluated at
+    > the Match-creation transaction's logical serialization point — the point ADR-0008 d2 already
+    > uses for candidate eligibility. Two hand-made creations that share a Student must have
+    > outcomes equivalent to one serial order: the one ordered first commits, and the later one
+    > finds that Student no longer unmatched and is rejected with nothing written. No other path
+    > can race it, because only a creation adds a standing Match: the matcher's Matches commit with
+    > their Round (ADR-0002 d3), and every status transition either stays within the standing set
+    > or leaves it. ADR-0012 d6 already orders every hand-made creation in one Round for the Mission
+    > index, so one mechanism can satisfy both; `/to-spec #1` chooses it. The schema is unchanged.
+
 ## Considered options
 
 **Greedy selection** (rejected, decision 6). Simpler by five lines, and it strands Students: a
@@ -212,9 +236,9 @@ mentoring-concentration criterion by a single Match with no rotation term presen
 
 **The two are different acts, and the record said otherwise until 2026-09-19.** The proposal tags
 rotation **_(MVP)_** outright at `42_PeerConnect_Concept_Proposal-6.md:111`, and Section 15 — the
-MVP list ADR-0013 and ADR-0015 both ruled authoritative — names it again at `:293`. So cutting it
+MVP list ADR-0013 and ADR-0015 both ruled authoritative — names it again at `:297`. So cutting it
 **reduces the proposal's own MVP** and stands on the argument just given, where availability
-matching is tagged _(Version 2)_ at `:115` and merely stays where the proposal put it. The decision
+matching is tagged _(Version 2)_ at `:119` and merely stays where the proposal put it. The decision
 is unchanged; only "stay Version 2, as the locked scope cut has them" was wrong.
 
 **Hashing the tie-break to avoid favouring early-registered Students** (rejected, decision 9).

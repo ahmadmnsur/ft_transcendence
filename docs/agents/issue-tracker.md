@@ -113,6 +113,10 @@ correction. Where no ADR exists, synchronize only the applicable surfaces that e
   settled* section or inline open question the change answers gets a forward pointer. Where one
   ADR revises an earlier one, this repo's convention is a `## What this ADR changes in earlier
   records` section (ADR-0011, ADR-0015).
+* **Legal pages (`docs/legal/`)** — when the change moves what personal data is stored, who can
+  see it or how long it is kept, update `privacy-policy.md`; when it moves a conduct rule, a
+  Report reason or a sanction, update `terms-of-service.md`. They are user-facing text, so
+  correct them in place and move their *Last updated* date; git keeps the history (ADR-0018 d15).
 
 Never manufacture a missing ADR or issue just to complete the three-surface model. **Where a
 decision turns out to have no owning ticket, say so in the task report** rather than inventing one

@@ -23,6 +23,10 @@ A ticket is done when this PR merges with every box ticked. This list **is** the
       ADR, the map, or an issue? Then the affected ADR, issue and map are inspected and
       synchronized in the same task — a substantive change sitting on one surface only is not done
       (`CONTRIBUTING.md` → Records move together). A wording-only edit fires nothing.
+- [ ] **Did this change what personal data is stored, who can see it, or how long it is kept?**
+      Then `docs/legal/privacy-policy.md` is updated in this PR — and
+      `docs/legal/terms-of-service.md` too, if a conduct rule, a Report reason or a sanction moved
+      (`CONTRIBUTING.md` → Personal data moves the Privacy Policy; ADR-0018).
 
 ## Does this touch `prisma/` or `prisma.config.ts`?
 
@@ -39,6 +43,8 @@ A ticket is done when this PR merges with every box ticked. This list **is** the
         `schema.prisma` moved underneath *(your own not-yet-merged migration only — an
         already-merged migration is immutable; see CONTRIBUTING.md → Schema changes)*
   - [ ] `prisma/seed.ts` still idempotent, if touched
+  - [ ] If the schema change touches personal data, `docs/legal/privacy-policy.md` moved with it
+        (ADR-0018 d15)
   - [ ] If `prisma.config.ts` changed, its schema, migrations, datasource and seed effects are
         described and reviewed
   - [ ] `package.json` still constrains `prisma`/`@prisma/client` to the `^7` major — not
@@ -51,6 +57,9 @@ Required if this PR touches `prisma/`, `prisma.config.ts`, the Compose files or 
 - [ ] **Not applicable** — this PR touches none of them.
 - [ ] **Verified, each check in its own fresh clone** — not your working tree, and not the two
       commands back-to-back in one clone:
+  - [ ] Each started with **no container or volume left under the project's Compose name**,
+        from the other check or your working stack, so each built its database from empty.
+        Clearing that state is not setup.
   - [ ] Clone 1: **`make up`** works end-to-end.
   - [ ] Clone 2 (a *different* fresh clone): bare `docker compose up --build` works end-to-end,
         with nothing run first — no `make` target, no hand-written `.env`.

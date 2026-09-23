@@ -179,9 +179,9 @@ arms. Those three sentences are the whole shape.
    | `DECLINED` | Either Student declined (ADR-0002 d8) | **repudiated** |
    | `TERMINATED_BY_ADMIN` | A Suspension or Removal ended it (ADR-0008 d5) | **repudiated** |
 
-   **The names are the proposal's, not new ones.** `42_PeerConnect_Concept_Proposal-6.md:127`
+   **The names are the proposal's, not new ones.** `42_PeerConnect_Concept_Proposal-6.md:131`
    states a status flow outright — *"Matched → Accepted → Meeting Scheduled → Completed → Review
-   Submitted"* — and `:261` repeats it for the admin dashboard. `MATCHED`, `ACCEPTED` and
+   Submitted"* — and `:265` repeats it for the admin dashboard. `MATCHED`, `ACCEPTED` and
    `COMPLETED` are taken from it verbatim rather than translated into a parallel vocabulary.
 
    **Three of the proposal's five states are deliberately not here, and adopting its first word is
@@ -242,6 +242,18 @@ arms. Those three sentences are the whole shape.
    test rather than a string comparison, and it reads as what the rule meant all along: the Mentor
    teaches the one Skill the Mentee cares most about right now.
 
+   > **Integrity corrected 2026-09-23 before `/to-spec #1`.** "Necessarily" overstated the model. A
+   > plain foreign key on `learning_goal_student_skill_id` guarantees only that *some*
+   > `StudentSkill` row exists, so it would accept another Student's row or a `TEACH` row. The rule
+   > is a contract that must hold at every commit, whoever writes the Goal — the Student, or an
+   > Admin under ADR-0008 d8: a set Goal references a `StudentSkill` row with the **same
+   > `student_id`** and **`kind = LEARN`**, and `learning_goal_text` is never left set without that
+   > reference. Removing the Goal's Skill from the list therefore either clears the Goal or is
+   > refused. A composite reference on `(student_id, id)` can hold the ownership half in the
+   > schema, which this ADR's shape prefers where it is expressible; the `LEARN` half needs a
+   > service check or a fixed-kind column. `/to-spec #1` chooses. `CONTEXT.md`'s "never a Skill they
+   > have not listed" and ADR-0006's `+10` test are unchanged.
+
 4. **A Friendship is a directed request with an acceptance, and a Block ends one.**
    `Friendship(requester_id, addressee_id, status, created_at, responded_at)`, unique on the
    **unordered** pair via a unique index on `(LEAST(a,b), GREATEST(a,b))`.
@@ -256,11 +268,28 @@ arms. Those three sentences are the whole shape.
    ADR-0008 decision 6 scoped `removed_at` to two entities and this ADR reads that literally
    throughout.
 
+   > **Concurrency boundary clarified 2026-09-23 before `/to-spec #1`.** "Ends an existing
+   > Friendship" means the `Friendship` row, **pending or accepted**, so a request cannot outlive a
+   > Block and be accepted afterwards. "Bars a new request" and "ends" are a check and a delete: run
+   > concurrently, a request can pass its check and insert after the Block's delete found nothing to
+   > end, leaving a Block and a Friendship row between the same two Students. A Block's creation and
+   > a new request between the same pair must have outcomes equivalent to one serial order: Block
+   > first, the request is rejected; request first, the Block ends it. No Block and Friendship row
+   > between the same pair coexist at any commit. `/to-spec #1` chooses the mechanism; no entity or
+   > column is added.
+
+   > **Visibility ruled 2026-09-23 by ADR-0018 d4.** A Student's friends list is shown to that
+   > Student alone. A Block is shown only to the Student who set it; the other Student is not told.
+   > Presence still reaches accepted Friends exactly as above.
+
 5. **A Like is revocable, attributed, and may be given to one's own Post.**
    `Like(post_id, student_id, created_at)`, unique on the pair, unliking deletes the row, and who
    liked a Post is readable. Self-like is **permitted with no rule**: a Like awards no XP (ADR-0010's
    table is closed) and is not reportable (ADR-0011), so there is nothing to farm and nothing to
    moderate, and a guard would be a cross-table check bought purely for appearances.
+
+   > **Audience ruled 2026-09-23 by ADR-0018 d4.** "Who liked a Post is readable" means readable
+   > by every signed-in Student, the same audience as the Post itself.
 
 6. **No Conversation entity; `DirectMessage` carries its own read state.**
    `DirectMessage(id, sender_id, recipient_id, body, created_at, read_at NULL)`. A 1:1 thread is a
@@ -272,6 +301,22 @@ arms. Those three sentences are the whole shape.
    counts. One nullable timestamp is the difference between a chat that demonstrates and one that
    does not. Direct messages survive a **Removal**, like every other record outside the two
    soft-deleted entities.
+
+   > **Read-state scope clarified 2026-09-23 before `/to-spec #1`.** "Set in bulk when a thread is
+   > opened" covers only the messages addressed to the Student who opens it: rows whose
+   > `recipient_id` is the opener and whose `read_at` is still null. Opening a thread never touches
+   > the messages the opener sent, because their read state belongs to the other participant. A
+   > thread is read only by its two participants, so no other Student and no Admin can set
+   > `read_at`.
+
+   > **Request shape clarified 2026-09-23 by ADR-0003 d10.** "When a thread is opened" names the
+   > Student's action, not the read that loads the thread. Marking read is its own non-GET
+   > mutation, issued when the thread is opened, because no GET may change a domain row. Scope,
+   > column and count are unchanged.
+
+   > **No read receipts, 2026-09-23 by ADR-0018 d4.** `read_at` feeds its recipient's unread count
+   > and nothing else: the sender is never shown whether a message has been read. That follows the
+   > note above that read state belongs to the other participant, and the Privacy Policy promises it.
 
 7. **Streak is a stored integer on Student, recomputed in the Round-close transaction.** For every
    Student, that transaction asks whether the closing Round contained qualifying activity:
@@ -422,6 +467,14 @@ arms. Those three sentences are the whole shape.
     - **No repeated pairing** — an index on `(LEAST(mentor_id, mentee_id), GREATEST(…))` turns
       ADR-0006 step 2's no-repeats test into one index hit instead of a two-way scan.
 
+    > **Scope corrected 2026-09-23 before `/to-spec #1`: no-repeats is not a database invariant.**
+    > The bullet above describes a lookup, and the Consequences count it as a plain expression index
+    > beside the two unique ones. It must stay **non-unique**: ADR-0006 d10 exempts an Admin's
+    > hand-made Match from no-repeats, so a unique index would reject a repair the rules allow. The
+    > rule is held by the matcher's step 2, which this index only makes cheap. Three of the four
+    > items above move into the database; this one is a lookup aid. It covers every `Match` row,
+    > with no status predicate, because ADR-0006 step 2's "previously Matched" counts every status.
+
     > **Report CHECK set extended 2026-09-22 by ADR-0011.** Two row invariants were missing from
     > the historical list: a Student-target Report cannot name its reporter, and Report state must
     > agree with both attribution fields. They are database CHECKs, not service conventions. The
@@ -456,6 +509,12 @@ arms. Those three sentences are the whole shape.
     > merely named as a risk for the Admin's hand-made Match. ADR-0006 now states explicitly that a
     > manual Match requires both Students to be currently unmatched for the Round, and that the
     > service creating it must check this before writing the row, since the database will not.
+
+    > **Concurrency corrected 2026-09-23 by ADR-0006 d10.** A check before the write is not enough
+    > on its own: two concurrent hand-made creations could each pass it for the same Student and
+    > both commit. ADR-0006 d10 now makes the test and the insert one unit at the Match-creation
+    > serialization point, with creations that share a Student equivalent to one serial order. The
+    > invariant stays in the service category and the schema is unchanged.
 
     > **Report self-target correction 2026-09-22.** The paragraph above remains right about a
     > Post target: determining whether `reporter_id = Post.author_id` crosses a table and stays a
@@ -556,6 +615,11 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > **ADR-0003 now rules the column out explicitly**, so `#13` must not describe the platform as
   > recording when a Student was last online — it records only whether they are online now, and
   > that is not stored at all.
+
+  > **Discharged 2026-09-23 by ADR-0018.** `docs/legal/privacy-policy.md` restates this entity set
+  > in plain language, and it says what the audit above required: online now, never last seen. The
+  > policy now moves with this file: a PR that changes what personal data is stored, who can see it
+  > or how long it is kept updates the policy in the same PR (ADR-0018 d15).
 - **`document/en.subject.md:1280`-`:1284`'s documentation requirement is satisfied by this file**, or
   by a diagram generated from the schema it describes: tables, relationships, key fields and data
   types are all above.

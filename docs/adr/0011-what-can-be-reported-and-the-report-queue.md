@@ -8,7 +8,7 @@ the plan was scoped to a surface that did not exist.
 
 `en.subject.md` asks for **no** reporting anywhere. Its only moderation mention is Content
 moderation AI (`:694`), a Minor never claimed. Reporting is therefore entirely
-proposal-driven — `42_PeerConnect_Concept_Proposal-6.md:87`, `:91`, `:267` and `:309`, all of
+proposal-driven — `42_PeerConnect_Concept_Proposal-6.md:87`, `:91`, `:271` and `:318`, all of
 it in the proposal's own MVP — and its depth is a product judgement, not a grading one. What
 makes it non-optional is ADR-0008: without a queue, the Peer Moderator's dashboard is an empty
 screen and bullet 3 has nothing to show.
@@ -53,11 +53,11 @@ every place they could do social damage.**
 ## The decisions
 
 1. **Likes ship; Comments do not.** `:87`'s third target is a Comment, and the proposal's own
-   MVP list carries "Home feed with likes and comments" (`:305`) and "Like and comment on posts"
+   MVP list carries "Home feed with likes and comments" (`:314`) and "Like and comment on posts"
    (`:79`) — yet no ticket on this map had ever mentioned either and `CONTEXT.md` defined
    neither. The map's standing default said Version 2, the proposal's MVP said ship, and nobody
    had ruled. **A Like is one table with a unique constraint and no moderation surface**: it
-   keeps the feed from being a wall of text in a defense slot and half-satisfies `:305`. **A
+   keeps the feed from being a wall of text in a defense slot and half-satisfies `:314`. **A
    Comment is a new entity, a third `removed_at` amending ADR-0008 decision 6, a third report
    target, and mutable community content hanging off deliberately immutable testimony** — for
    zero claimed points inside a six-week budget. Recorded here rather than left implicit because
@@ -72,7 +72,7 @@ every place they could do social damage.**
    **Evidence is not reportable** either, for the reason ADR-0009 anticipated: it would place an
    item in the queue that the role built for the queue cannot open. Abuse in either routes
    through the Student report, which only an Admin sees, so neither needs a target of its own
-   and no existing visibility rule is widened. `:309` pairs "report and block" precisely because
+   and no existing visibility rule is widened. `:318` pairs "report and block" precisely because
    **Block** is the remedy a Student holds for their own inbox.
 
 3. **One `Report` table with two nullable foreign keys — `post_id` and `reported_student_id` —
@@ -83,7 +83,7 @@ every place they could do social damage.**
    UNION. The role split in decision 7 then falls out of this shape as one `WHERE` clause.
 
 4. **A report carries a small reason enum, optional capped free text, its reporter, and nothing
-   else — and it is immutable once filed.** Neither source constrains this: `:87` and `:309` are
+   else — and it is immutable once filed.** Neither source constrains this: `:87` and `:318` are
    the entire specification. The enum is deliberately tiny and non-legalistic — Harassment,
    Spam, Inappropriate content, Other — so the queue is triageable at a glance; the free text is
    where the complaint actually lives. **A report is testimony, like Private Feedback**, so
@@ -91,6 +91,12 @@ every place they could do social damage.**
    rewrite one. **Nothing is denormalised for the conflict-of-interest guards**: the Post's
    author arrives through the foreign key and the Block test is a query, so both evaluate at
    read time.
+
+   > **Coupled to the Terms of Service, 2026-09-23 by ADR-0018 d9.** Harassment, Spam and
+   > Inappropriate content are also the Terms' first three conduct rules, followed by five of
+   > PeerConnect's own. Adding, removing or renaming a reason changes
+   > `docs/legal/terms-of-service.md` in the same PR, so the rules a Report enforces stay the rules
+   > the Terms state.
 
 5. **One report per reporter per target, as a unique constraint, and the queue groups by
    target with a count.** The constraint is ADR-0007 decision 7's precedent, and it matters more
@@ -263,6 +269,11 @@ every place they could do social damage.**
     > Admin-filed report joins the same group and passes through the same conflict and visibility
     > rules as any other.
 
+    > **Corrected 2026-09-23 — ADR-0017 does not require an Admin-filed report.** Its decision 7
+    > keeps the seeded Student report *"neither targets nor is filed by"* the bootstrap Admin. With
+    > one Admin guaranteed, an Admin-filed fixture would be hidden from the only Admin who could
+    > review it. The rule that an Admin may file stands on the other grounds above.
+
 12. **The reporter learns nothing.** An honest confirmation at submit time and no status surface
     at all. The module claim refused the notification system outright, so there is no push
     channel; the only alternative was a pull-based "my reports" list, and that reports
@@ -281,7 +292,7 @@ every place they could do social damage.**
     action. Auto-Blocking on report would be worse than untidy: ADR-0006 makes **Block** a hard
     matching constraint, so filing a report would silently shrink the target's candidate pool
     and anyone could degrade a peer's matching by reporting them. The flow still offers both,
-    because `:309` pairs them and a harassed Student wants both.
+    because `:318` pairs them and a harassed Student wants both.
 
 ## Considered options
 

@@ -79,6 +79,22 @@ license pulling any other.**
    2. Counting the whole table instead would report demand from people who can never be matched, so
    the gap would name needs that do not exist.
 
+   > **Output shape pinned 2026-09-23 before `/to-spec #1`.** The proposal names *most requested*
+   > and *most available* as figures of their own, so Demand and Supply are shown in their own
+   > right, not only through the gap.
+   >
+   > - **Every Skill whose Demand or Supply is above zero appears, and no top-N applies.** The
+   >   catalogue is fixed — seeded and extended only by migration (ADR-0014 d3), twenty-seven Skills
+   >   in the demo (ADR-0017 d8) — so the full list is already bounded, and no record supports a
+   >   cut-off. A Skill at zero on both says nothing and appears nowhere.
+   > - ***Most requested*** is the Skills with `Demand > 0` by Demand descending; ***most
+   >   available*** the Skills with `Supply > 0` by Supply descending; **the gap list** every
+   >   appearing Skill by Gap descending, with its Demand and Supply beside it. A Skill only wanted
+   >   therefore heads the gap list, and one only offered sits at its foot with a negative Gap.
+   > - **Ties break on `Skill.name` ascending** in all three, the name being unique (ADR-0014 d3).
+   > - **Decision 3's sentence renders each positive-Gap row**, in gap order; its stronger form
+   >   lists every Skill meeting its predicate, in the same order.
+
    **The completion rate's denominator is closed Rounds, not all Rounds, and this is not a detail.**
    Matches in the open Round have not had their chance yet: include them and the rate falls every
    time a Round opens and climbs as it closes, with nothing about anyone's behaviour having changed.
@@ -87,6 +103,21 @@ license pulling any other.**
    closed Round terminal. Declines and administrative terminations stay in the denominator: it is an
    *overall* rate, and the outcome distribution beside it already shows the composition.
 
+   > **Series and empty denominator pinned 2026-09-23 before `/to-spec #1`.** Decision 7's *"rate
+   > over time"* and decision 4's Round-indexed series are this formula applied to **one closed
+   > Round at a time** — `COMPLETED ÷ Matches created in that Round × 100`, one point per closed
+   > Round in opening order. The overall figure stays the headline, and the closed-Round outcome
+   > distribution counts exactly the Matches in its denominator, which is the composition the
+   > sentence above means.
+   >
+   > **A closed Round can legally hold no Match**: ADR-0002 makes a Round opened with fewer than two
+   > candidates legal, *"no special case, no guard"*, and an Admin closes it like any other. Its
+   > point has nothing to divide, and neither has the headline until some closed Round holds a
+   > Match. **Either rate is then absent — no number is shown, never 0% or 100%** — on the
+   > convention the Compatibility Score already set for a number that cannot be honest: a
+   > hand-made Match carries no Score (ADR-0006 d10), since there is *"no honest number and none is
+   > shown"* (`CONTEXT.md`). The empty Round keeps its place on the Round axis, without a point.
+
    ⚠️ **"Where matches stall" cannot be a historical claim, because no status-transition history
    exists.** ADR-0014 gave `Match` a single `status` column and no transition log, so *"matches spend
    longest at X"* and *"matches most often stall at X"* — the proposal's own phrasing at Section 13 —
@@ -94,10 +125,20 @@ license pulling any other.**
    above: where Matches are stuck **right now** in the open Round, and how Matches **ended** in the
    closed ones. Label both for what they are.
 
+   > **Qualified 2026-09-23 before `/to-spec #1` — no transition *log* exists, but some transition
+   > times do.** ADR-0014 d2 carries `mentor_accepted_at` and `mentee_accepted_at`, and Rounds and
+   > Reviews carry their own times, so when a Match was accepted is recorded and a partial path
+   > through `MATCHED` and `ACCEPTED` could be pieced together. A decline or an administrative
+   > termination records no time, so no complete per-status dwell time can be. **The figure does not
+   > widen**: both halves count `status` alone and read no acceptance timestamp, and no label, axis
+   > or tooltip claims time spent in `MATCHED` or `ACCEPTED`, or a path through them. That is
+   > decision 10's *"only to the depth the module requires"*, and the same restraint decision 6
+   > shows towards a ledger it could reconstruct.
+
    **"Where matches stall" needs no translation table, and that is not an accident.** ADR-0014 took
-   three of its six status names verbatim from `42_PeerConnect_Concept_Proposal-6.md:127`'s flow —
-   `MATCHED`, `ACCEPTED`, `COMPLETED` — and `DECLINED` from the same section's prose (`:123`,
-   `:263`). Only `LAPSED` and `TERMINATED_BY_ADMIN` are ours, and they exist because Section 5's
+   three of its six status names verbatim from `42_PeerConnect_Concept_Proposal-6.md:131`'s flow —
+   `MATCHED`, `ACCEPTED`, `COMPLETED` — and `DECLINED` from the same section's prose (`:127`,
+   `:267`). Only `LAPSED` and `TERMINATED_BY_ADMIN` are ours, and they exist because Section 5's
    happy path never enumerated the two ways a Match ends badly; Section 5's own *Meeting Scheduled*
    and *Review Submitted* are absent for the reasons ADR-0014 records. **The six and the five are
    therefore not the same list** — but a Match can only *stall* in a non-terminal state, and there
@@ -111,7 +152,7 @@ license pulling any other.**
    **"Insight" is the word this module fails on, not "analytics"** — the acceptance-criteria research
    is explicit that an evaluator anchored on IV.8's *Major* dashboard (`:911`) expects more than a
    table. A sentence naming a Skill and a number is actionable, and it is precisely what
-   `42_PeerConnect_Concept_Proposal-6.md:283` says the view exists for: turning interactions into
+   `42_PeerConnect_Concept_Proposal-6.md:287` says the view exists for: turning interactions into
    "visibility into what the community actually wants to learn, which can directly inform workshops".
 
    **`MatchSkillCoverage` supports a second, stronger form that nothing else in the model could
@@ -136,6 +177,11 @@ license pulling any other.**
    > survives only while that path checks Blocks. Tracked as a seed acceptance condition on
    > [#27](https://github.com/ahmadmnsur/ft_transcendence/issues/27): *"the seeded blocked pair must
    > remain unmatched after all Admin repair paths."* The gap definition above is unchanged.
+   >
+   > **Tightened 2026-09-23 by ADR-0017 d8.** *"Exactly one active"* leaves a hole: Demand and Supply
+   > count active candidates, but coverage records every Match ever made, including one by a
+   > Student sanctioned afterwards. So no other seeded Student lists the gap Skill at all, and the seed
+   > asserts this decision's predicate — no coverage row names it — when it finishes.
 
 4. **Any historical time series in this surface is indexed by Round, never by date.** ADR-0001
    established that a **Round** is explicitly not a calendar week, and ADR-0002 made Rounds
@@ -195,6 +241,15 @@ license pulling any other.**
    on the word *dashboard*, and hand-rolling a funnel, two bar charts and a rate over time costs more
    than the dependency it avoids.
 
+   > **Clarified 2026-09-23 before `/to-spec #1` — "funnel" names decision 2's Match state and
+   > outcomes figure, and it is not drawn as a conversion funnel.** A funnel encodes how many items
+   > *passed through* each stage. This figure counts Matches by the one status each holds now or
+   > ended in: `MATCHED` and `ACCEPTED` are disjoint current counts, not one population narrowing,
+   > and the terminal counts do not say which state a Match left. A funnel shape would therefore
+   > assert the path decision 2's qualification refuses to read. The same holds for *"the funnel"*
+   > twice in Considered options. The chart form is otherwise the slice's to choose; the figure is
+   > decision 2's table.
+
 8. **Real-time updates ship; export does not.** Neither is a bullet this Minor inherits, and an
    evaluator anchored on `:911` will look for both.
 
@@ -203,6 +258,28 @@ license pulling any other.**
    and the analytics move in another. **No privileged data crosses the socket** — the event is
    outbound and content-free, and the refresh is an ordinary authenticated HTTP request carrying the
    role check, so **ADR-0003 decision 9 stands untouched** exactly as ADR-0014 decision 8 framed it.
+
+   > **Narrowed 2026-09-23 before `/to-spec #1` — "real-time" means a re-query at each Round
+   > boundary, not a live feed of every figure.** The claim above was broader than its mechanism.
+   > The dashboard re-queries on **both** of the `rounds` room's existing events, `round:opened` and
+   > `round:closed`, using each only as an invalidation signal and reading nothing from its payload.
+   > Each must be emitted only after the transaction it announces commits, or the re-query reads
+   > the state from before it.
+   >
+   > - **`round:closed` covers every closed-Round figure completely**: the completion rate, its
+   >   per-Round series and the outcome distribution. They can change at no other moment, since
+   >   ADR-0002 d5 makes every Match in a closed Round terminal and d7 lets no Match commit into one.
+   > - **`round:opened` covers the open-Round distribution and Skill coverage at the moment both
+   >   jump**, a Round opening with all its Matches at once (ADR-0002 d3). Without it, a dashboard
+   >   left open across ADR-0017's close-then-open stage flow reads *no open Round* while one is open.
+   > - **Between those events, Demand, Supply, the gap and the open-Round distribution are as of
+   >   the last load** and refresh on reload. Skill edits, role and sanction changes, accepts,
+   >   declines, Reviews, administrative terminations and hand-made Matches all move them, none is
+   >   broadcast, and **none gains an event**: the argument above was that real-time is *free*,
+   >   and an event per mutation is not.
+   >
+   > No new event, room or payload. ADR-0003 d9 and ADR-0014 d8 are unchanged, and the refresh
+   > remains ordinary authenticated HTTP carrying the role check.
 
    **Export is refused** on this map's standing habit of not paying for absolutes it does not owe.
    Export answers "can I take the data away", which neither source asks; charts and a derived insight
@@ -214,7 +291,7 @@ license pulling any other.**
    `/admin/rounds` and `/admin/reports` makes two surfaces visibly two. **A Peer Moderator is
    excluded** by ADR-0008 decision 3, which scopes that role to the Post-report queue and Remove Post
    and nothing else. **There is no Student-facing view**, the per-Student **Learning Progress** view
-   at `:229` being Version 2 and staying there.
+   at `:233` being Version 2 and staying there.
 
    **Learning Analytics reports on the community and never on an individual Student.** That is the
    line separating it from Learning Progress (per-Student, Version 2) and from the Users table
@@ -235,7 +312,7 @@ license pulling any other.**
 
     **Every row below sits on the proposal's own Version 2 list** — six tagged *(Version 2)* in
     the text, plus **Mentor Reputation**, which ADR-0013 decision 3 placed there on the proposal's
-    own grouping of it with the per-skill endorsements at `:205` and `:327`. **An MVP cut and an
+    own grouping of it with the per-skill endorsements at `:209` and `:336`. **An MVP cut and an
     untagged feature are not candidates for this test at all**: it governs pulling Version 2 work
     *in*, and says nothing about cutting MVP work *out*. That distinction is what the correction
     beneath the table turns on.
@@ -253,7 +330,7 @@ license pulling any other.**
     > **Corrected 2026-09-19 by the ticket-to-record audit: fair mentor rotation was a row in
     > this table and is not a Version 2 item at all.** The proposal tags it **_(MVP)_** outright at
     > `42_PeerConnect_Concept_Proposal-6.md:111`, and Section 15 — the MVP list this map has twice
-    > ruled authoritative, by ADR-0013 and again in the preamble above — names it at `:293`. It is
+    > ruled authoritative, by ADR-0013 and again in the preamble above — names it at `:297`. It is
     > therefore **an MVP feature this map cut**, not a Version 2 feature it declined to pull
     > forward, and **decision 10 does not reach it**: this test governs pulling V2 work *in* and
     > says nothing about cutting MVP work *out*. **The cut stands and was always argued on its
@@ -262,10 +339,10 @@ license pulling any other.**
     > the map claims its Version 2 list is mechanical rather than re-argued each time, so a row
     > that was never on that list undercut exactly the property the table exists to demonstrate.
     >
-    > **Network freshness (`:109`) and "balance experience or skill levels" (`:105`, `:293`) carry
+    > **Network freshness (`:109`) and "balance experience or skill levels" (`:105`, `:297`) carry
     > no version tag either**, and the map mislabelled both the same way; corrected there rather
     > than here, since neither was ever a row in this table. **Availability matching is genuinely
-    > Version 2** (`:115`, `:321`), so every remaining row stands unchanged.
+    > Version 2** (`:119`, `:330`), so every remaining row stands unchanged.
 
     The second half of the test matters as much as the first: **only to the depth the module
     requires.** Decision 2's reduced scope is that clause doing its work, and it is the same move

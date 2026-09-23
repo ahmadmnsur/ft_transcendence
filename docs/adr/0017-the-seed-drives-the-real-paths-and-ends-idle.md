@@ -94,6 +94,37 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    The cost is accepted and named: **the seed becomes a large artifact on the boot path**, gated
    exactly like the schema (ADR-0005 d6).
 
+   > **Scope and order pinned 2026-09-23 before `/to-spec #1`.** *"The real write paths"* covers
+   > every write the application couples to another effect: a derived value, a status
+   > transition, an award or a guard. The seed calls the application's own functions for Round
+   > open and close, Match acceptance and decline, the Admin's hand-made Match, Review submission
+   > and Evidence, Prompt publication **and answers**, Suspension and Removal, signup and Skill
+   > lists, avatar upload, Friendship request and acceptance, Block, Like, direct message and read,
+   > and Report filing and resolution. XP, Level, `BadgeAward`, Streak, Match status,
+   > `MatchSkillCoverage`, Report state, and a Friendship's deletion by a Block are therefore never
+   > written directly. Only what no runtime path creates is inserted directly: the Skill catalogue
+   > (ADR-0014 d3 has no admin screen), and the bootstrap Admin and Peer Moderator (ADR-0004 d11,
+   > ADR-0008 d12), since nothing else can create the first Admin. No application API is added for
+   > the seed.
+   >
+   > **Order, which the paths alone do not fix:**
+   >
+   > 1. The catalogue and the two bootstrap accounts, then the thirty Students and their Skill
+   >    lists.
+   > 2. Before Round 1 opens: the blocked pair's Block (decision 8). Created later, it lets the
+   >    first matcher run cover the gap Skill.
+   > 3. Each Round in turn: open; acceptances, declines and their repairs; Reviews; close. Prompts
+   >    are published in sequence between these steps, so each answer lands while its Prompt is
+   >    live. A sanction lands inside the Round decision 5 names, after that Round opens.
+   > 4. Whatever a sanction must preserve exists before it (decision 5's annotation).
+   > 5. A Post before its Likes and Reports. A Friendship before the Block meant to end it. No Block
+   >    after any Friendship or pending request the fixture means to keep, since a Block ends a
+   >    pending request as well (ADR-0014 d4).
+   > 6. The end state: no open Round, the fourth Prompt live.
+   >
+   > Transaction boundaries and batching are `/to-spec #1`'s. Decision 10's annotation states what a
+   > failed attempt must leave.
+
 3. **One fixture module, two call sites.** The suite calls `generateCohort({ size: 20, seed: 42 })`
    and the seed calls it with `size: 30`.
 
@@ -137,6 +168,24 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    empty at boot and populates when Round 5 opens live.** That is a demo beat, not a broken chart,
    and it is written here so nobody reads it as one.
 
+   > **Conditions made explicit 2026-09-23 before `/to-spec #1`. The totals do not change.** One
+   > standing Match per Student per Round caps a Round at half its pool, so 15 matcher-made Matches
+   > need 30 candidates when the Round opens.
+   >
+   > - The pool is the thirty generated Students plus the bootstrap Peer Moderator, who
+   >   participates with Skills (ADR-0008 d12). That is 31 in Rounds 1–3, and 30 in Round 4 once
+   >   the Student suspended in Round 3 has left it.
+   > - **Sixty is reachable only if the Removal lands inside Round 4, after it opens.** Removed any
+   >   earlier, Round 4 opens with 29 and caps at 14. That placement is also the only one where
+   >   Removal ends an in-progress Match, which the second `TERMINATED_BY_ADMIN` needs.
+   > - Even then, 60 needs the matcher to fill all four Rounds, and ADR-0006 measured 96–99%
+   >   coverage at 30. It is a target the deterministic run confirms, never one the seed forces:
+   >   no Match is added to reach 15. If a Round falls short, the table and the 74% are corrected
+   >   from that run.
+   > - Each repair pairs Students left unmatched by a decline in the same open Round, under every
+   >   rule a hand-made Match still carries: both active and currently unmatched, no Block between
+   >   them (ADR-0006 d10), and the Round open at creation (ADR-0002 d7).
+
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
    Both are one flag, and between them they make six settled rules visible that a clean cohort
@@ -161,6 +210,20 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > XP and Streak freeze rather than revert"*. **The fixture is unchanged**; only the claim about
    > what it shows is corrected.
 
+   > **Sequence and prerequisites pinned 2026-09-23 before `/to-spec #1`.** The Suspension lands
+   > inside Round 3 after it opens, and the Removal inside Round 4 after it opens (decision 4's
+   > annotation). Each lands while that Student's Match is in progress, so each supplies one
+   > `TERMINATED_BY_ADMIN`, and each Round close then skips that Student's Streak (ADR-0014 d7).
+   >
+   > Before the Removal, the removed Student must hold three things, or three of the six beats have
+   > nothing to show: a `COMPLETED` Match as Mentee, with its Review and Private Feedback;
+   > **Evidence** on that Review; and **an uploaded avatar**. The files go through ADR-0009's upload
+   > paths while the Student is still active.
+   >
+   > **This narrows ADR-0009's *"the seed needs no avatar images"*, and #27's input 5, by exactly
+   > one file.** Removal can only delete an avatar that exists, and a removed Student can never
+   > upload one live. Every other seeded Student keeps the default.
+
 6. **`SEED_STUDENT_PASSWORD` in `.env.example`, shared by all thirty seeded Students.**
 
    Today `.env` carries credentials for the bootstrap **Admin** and **Peer Moderator** only
@@ -179,6 +242,15 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    construction**. They must carry a Match, a Review, a Badge, a **Streak of at least 3**, and
    **Private Feedback received** — that last one because ADR-0013 decision 5's private route is
    empty for anyone who has never mentored, and it is the only surface where the rating appears.
+
+   > **Asserted rather than assumed, 2026-09-23 before `/to-spec #1`.** A deterministic cohort
+   > makes the demo Student reproducible, not certain to exist. So when the fixture completes, the
+   > seed asserts that at least one active `STUDENT` among the thirty meets every condition above,
+   > and fails loudly otherwise. That Student is the demo account. The Streak must survive Round 4's
+   > close, so they need qualifying activity in Rounds 2, 3 and 4. *"Private Feedback received"*
+   > goes back to #27's own criterion, **a rating received**: at least one Private Feedback they
+   > received carries a rating, and seeded ratings vary. Nothing here met ADR-0013's consequence
+   > (#27 input 9) before this note.
 
 7. **Four report fixtures: two open Post reports, one open Student report, one resolved.**
 
@@ -207,6 +279,20 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > pass the Peer Moderator conflict guard because it now applies to the whole group, not row by
    > row. The resolved fixture remains Admin audit history and is not expected on the Peer
    > Moderator's open queue.
+
+   > **Asserted from each role's view, 2026-09-23 before `/to-spec #1`.** The whole-group guard and
+   > the Admin self-interest rule turn on more than the reporters: the Post author, the seeded
+   > Blocks, and who is later sanctioned. One hazard is silent. **The open Student report must not
+   > target the Student this seed removes.** ADR-0011 d10 moves every open report on a removed
+   > Student to `ACTIONED` inside the Removal, so it would quietly become a second resolved fixture.
+   > When the fixture completes, the seed therefore asserts three outcomes:
+   >
+   > - the bootstrap Peer Moderator's queue shows the two-report Post group;
+   > - the bootstrap Admin's open queue shows the Student report;
+   > - the Admin's resolved audit shows the resolved report.
+   >
+   > The four-fixture count is unchanged. None needs an Admin reporter, and the Student and
+   > resolved reports cannot have the bootstrap Admin as reporter without failing these checks.
 
 8. **The Skill catalogue is the fixture's twenty-four plus three `RARE_SKILLS`, and both of
    ADR-0015's gap forms are constructed.**
@@ -241,6 +327,16 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    as ADR-0014 decision 13's note that the standing-Match rule is violable through the same path,
    and recorded for the same reason.
 
+   > **Tightened 2026-09-23 before `/to-spec #1` — "exactly one active" leaves a hole.** Demand and
+   > Supply count active candidates at the end, but `MatchSkillCoverage` records every Match ever
+   > made. If the Student suspended in Round 3 or removed in Round 4 listed the gap Skill, a Match
+   > against its other side before the sanction covers the Skill while both counts still read 1.
+   > So **no seeded Student other than the blocked pair lists the gap Skill on either list**, the
+   > bootstrap Peer Moderator included, and both of the pair stay active to the end. When the
+   > fixture completes, the seed asserts ADR-0015 decision 3's predicate for that Skill:
+   > `Demand > 0`, `Supply > 0`, and no `MatchSkillCoverage` row naming it. That includes #27's
+   > blocked-pair condition, and the plain form keeps its own assertion above.
+
    **A third, separate beat worth keeping:** suspending a Student who teaches something makes
    **Supply for that Skill visibly drop**, which is ADR-0015 decision 2's candidate-pool
    restriction demonstrating itself. It is not the stronger gap; it is its own thing.
@@ -268,6 +364,28 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     The cost is smaller than the artifact's size suggests: four matcher runs over 435 candidate
     pairs each is trivial CPU, and the whole fixture is on the order of a thousand rows. **If it
     is ever too slow, the answer is batching inside the transaction, not a Makefile target.**
+
+    > **Idempotence corrected 2026-09-23 before `/to-spec #1` — "if any Round exists, skip" is not
+    > safe after a failed attempt.** No record makes the seed atomic. Decision 2 drives application
+    > paths that each commit on their own terms, and *"batching inside the transaction"* above is a
+    > performance remark, not a commitment to one seed transaction. So an attempt that fails after
+    > Round 1 commits leaves a Round behind, and every later boot skips a half-built fixture.
+    > **The contract instead:**
+    >
+    > - A boot either finds a **completed** seed and skips, or brings the fixture to completion.
+    > - The skip test recognises completion, never the mere presence of a row such as a Round, a
+    >   Student or the bootstrap Admin.
+    > - A failed attempt fails the boot loudly, and leaves either nothing or state the next attempt
+    >   can complete or discard.
+    > - A completed seed never runs again, including over the live Rounds a demo has since added.
+    > - **Completed** means decision 1's end state, no open Round with the fourth Prompt live, plus
+    >   every end-state assertion in decisions 6, 7 and 8, and each of ADR-0010 d4's three Badges
+    >   held by at least one active Student. The last is the reason for the four Prompts.
+    >
+    > `/to-spec #1` chooses the mechanism: one transaction, a completion record, a reset-and-retry
+    > or another. ADR-0004 decisions 8 and 11 stand: the seed still runs on every boot, on both
+    > boot paths. *(The pool is 31 in Rounds 1–3, per decision 4's annotation, so those runs cover
+    > 465 pairs rather than 435; the cost claim is unaffected.)*
 
 11. **Presence cannot be seeded, and the demo script must account for it.** Presence is live,
     process-local state; it does not survive a restart, there is no column, and **nothing records

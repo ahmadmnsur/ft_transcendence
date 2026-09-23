@@ -12,7 +12,7 @@ The whole record said what it may not be. Nothing said what it is.
 
 Pricing it as a Leaderboard measure also exposed that the question underneath it was open too:
 **nothing on this map had ever decided whether Private Feedback carries a rating at all.** The
-proposal makes the star rating *optional* at `:169`, and it is the only numeric input named
+proposal makes the star rating *optional* at `:173`, and it is the only numeric input named
 anywhere, so the score's one source was itself unsettled.
 
 The shape we chose: **the rating ships as a component of Private Feedback; the aggregate does
@@ -26,27 +26,35 @@ them. **Mentor Reputation goes to Version 2, with the per-skill endorsements the
 This is the first decision on this map where the two halves of the proposal disagree outright, so
 the reading is recorded rather than assumed.
 
-- **`:169`** (Section 7, MVP): Private Feedback comprises two written answers and "an optional
+- **`:173`** (Section 7, MVP): Private Feedback comprises two written answers and "an optional
   star rating."
-- **`:171`** (Section 7, MVP): "This private layer feeds the Mentor's reputation score
+- **`:175`** (Section 7, MVP): "This private layer feeds the Mentor's reputation score
   (Section 9)."
-- **`:205`** (Section 9): the roll-up sentence, tagged **_(Version 2)_**.
-- **`:221`** (Section 10): "A single Mentor Reputation score, built from private session feedback
+- **`:209`** (Section 9): the roll-up sentence, tagged **_(Version 2)_**.
+- **`:225`** (Section 10): "A single Mentor Reputation score, built from private session feedback
   **and (from Version 2) per-skill endorsements**" — a parenthetical that defers the per-skill
   half *specifically*, which only reads sensibly if the other half is MVP.
-- **`:305`-`:315`** (Section 15, **the MVP list**): names "private feedback to the Mentor/admin"
+- **`:293`-`:320`** (Section 15, **the MVP list**): names "private feedback to the Mentor/admin"
   and "Core XP and a single participation streak." **No reputation, no rating.**
-- **`:327`** (Section 16, the V2 list): "Per-skill endorsements rolling up into Mentor
+- **`:336`** (Section 16, the V2 list): "Per-skill endorsements rolling up into Mentor
   Reputation."
-- **`:239`**: "Best Mentor (by Mentor Reputation)" is a **leaderboard category**, and `:329`
+- **`:243`**: "Best Mentor (by Mentor Reputation)" is a **leaderboard category**, and `:338`
   defers "all leaderboard categories."
 
-`:221` is the strongest citation for shipping the score and no ticket on this map had found it.
+`:225` is the strongest citation for shipping the score and no ticket on this map had found it.
 It loses to Section 15 on a precedent **ADR-0010 already set**: Section 10's bullet list is where
 the six Badges live, and the map ships **three**, because four of them turned out to be
 superlatives with no history to evaluate. This map has already ruled in writing that appearing in
 Section 10's list does not place something in MVP scope — Section 15 does that, and Section 15 is
-silent. Reading `:221` as scope now would retroactively argue the map owed all six badges.
+silent. Reading `:225` as scope now would retroactively argue the map owed all six badges.
+
+> **Precedent corrected 2026-09-23 before `/to-spec #1`.** ADR-0010 set a narrower precedent than
+> this paragraph credits it with, and it never cites Section 15. It shipped three of Section 10's
+> six Badges because four cannot be built and Section 16 defers only the *full* badge set, and it
+> classed that minimal set as reduced MVP depth, not Version 2. **Treating Section 15 as the
+> authoritative MVP list is this ADR's own reading** of the contradiction above, recorded here
+> first. ADR-0015 then adopted it, and ADR-0010's annotation credits it to this ADR. The decision
+> stands on that reading; only the attribution to ADR-0010 was wrong.
 
 ## What this ADR changes in earlier records
 
@@ -59,7 +67,7 @@ silent. Reading `:221` as scope now would retroactively argue the map owed all s
   Reputation as the Leaderboard measure is
   **strengthened, not revisited**: three of its four counts survive verbatim, and the fourth —
   "it has no formula anywhere on this map" — is now a deliberate absence rather than a gap.
-- **ADR-0008 stands unamended**, and this is why decision 4 keeps the glossary entry. Decision 8
+- **ADR-0008 stands unamended**, and this is why decision 9 keeps the glossary entry. Decision 8
   ("Never XP, Level, Streak, **Badges** or Mentor Reputation — all derived, and derived values
   have no setter") and decision 6 ("keeps their XP and **Mentor Reputation**") both name the term.
   Deleting it would have forced reference rewrites through decisions that are still correct as
@@ -73,7 +81,7 @@ silent. Reading `:221` as scope now would retroactively argue the map owed all s
 ## The decisions
 
 1. **Private Feedback carries an optional 1–5 rating in MVP.** One nullable `smallint` with a
-   `CHECK` of 1–5, on the Private Feedback row. Optional as `:169` says, not required: making it
+   `CHECK` of 1–5, on the Private Feedback row. Optional as `:173` says, not required: making it
    mandatory would override the proposal's explicit wording to serve a consumer this ADR removes.
 
 2. **Private Feedback comprises exactly three parts: two written answers and the optional
@@ -82,7 +90,7 @@ silent. Reading `:221` as scope now would retroactively argue the map owed all s
    question quantified, sitting beside the sentence that explains it.
 
 3. **The Mentor Reputation score does not ship. It is Version 2, together with the per-skill
-   endorsements `:205` calls "a more detailed view of the same number, not a second, competing
+   endorsements `:209` calls "a more detailed view of the same number, not a second, competing
    system."** Shipping the roll-up without the breakdown ships half of one number and splits a
    single proposal section across two versions; shipping neither keeps Section 9 intact as a unit.
 
@@ -114,7 +122,7 @@ silent. Reading `:221` as scope now would retroactively argue the map owed all s
    be this map's first case of withdrawing testimony ADR-0008 preserved, and it would silently
    remove something the Mentor has already read.
 
-9. **The glossary keeps the Mentor Reputation entry, marked Version 2.** See decision 4 under
+9. **The glossary keeps the Mentor Reputation entry, marked Version 2.** See the ADR-0008 entry under
    *What this ADR changes in earlier records*: three live ADR rules reference the term, and all
    three remain correct with it defined and out of scope. **Leaderboard's definition is corrected
    to XP**, which was owed regardless — "a ranking … such as XP or Mentor Reputation" offers a
@@ -122,7 +130,7 @@ silent. Reading `:221` as scope now would retroactively argue the map owed all s
 
 ## Considered options
 
-**The score ships, public on the profile** (rejected, decision 3). Where `:201` actually puts it,
+**The score ships, public on the profile** (rejected, decision 3). Where `:205` actually puts it,
 and the natural counterweight to an XP table that pays a Mentee 120 per Match against a Mentor's
 80. It is ADR-0010's privacy objection made **worse**, not better. On a Leaderboard the leak is by
 rank; on a profile a Mentor with exactly one Mentee publishes that Mentee's private rating
@@ -141,8 +149,8 @@ the screen it sits on.
 contradicts the proposal's own word "optional" in order to feed a score this ADR does not ship.
 
 **No rating in MVP** (rejected, decision 1). The third reading available, and the tidiest if the
-score is cut — with no aggregate, the rating's stated purpose at `:171` is gone. Rejected because
-`:169` puts it in Section 7, which is unambiguously MVP, and because the rating stands on its own
+score is cut — with no aggregate, the rating's stated purpose at `:175` is gone. Rejected because
+`:173` puts it in Section 7, which is unambiguously MVP, and because the rating stands on its own
 as testimony a human reads: it is the quantified form of a question Private Feedback already asks
 in words.
 

@@ -66,6 +66,13 @@ and why there is no `SESSION_SECRET`.
    > one file plus multipart framing, not a new file cap: the application remains authoritative at
    > 2 MiB for Avatar and 5 MiB for Evidence, and a maximum-size Evidence upload must reach it.
 
+   > **Logging bound 2026-09-23 by ADR-0018 d6.** The proxy's request log stays on, in nginx's
+   > standard fields, and the Privacy Policy discloses it. No log, nginx's or the API's, may
+   > contain a password, a cookie, a request body, message text or file contents. **Every
+   > service's container log is capped with rotation in the Compose file**, so the policy can say
+   > old entries are overwritten automatically; the cap's numbers are engineering defaults for
+   > `/to-spec #1`. No service, port or environment variable is added.
+
 3. **The React bundle is built in a multi-stage build and served by the proxy** in
    production. NestJS serving its own static files and terminating TLS was the two-container
    alternative; it makes TLS, caching and compression application concerns and couples a
@@ -287,6 +294,12 @@ and why there is no `SESSION_SECRET`.
     > demonstrable. **Idempotence now means "if any Round exists, skip"** rather than per-row
     > upserts.
 
+    > **Corrected 2026-09-23 by ADR-0017 decision 10.** "If any Round exists, skip" does not
+    > survive a failed first attempt, which leaves a Round behind. Idempotence now means that a boot
+    > either finds a completed seed and skips it, or brings the fixture to completion; the skip test
+    > recognises completion, and a failed attempt fails loudly. `/to-spec #1` chooses the mechanism.
+    > The seed stays on the boot path, for `make up` and bare Compose alike.
+
 12. **Kamel owns this slice in week 1, and it is a gate rather than parallel work.** Every
     vertical feature slice needs the single command working before it can start. The budget
     is roughly 3-4 days including the `README.md` "Instructions" section that `:1242`
@@ -321,6 +334,17 @@ six weeks and three developers.
   after accepting the certificate**. The third is a check, not an assumption — `:316`-`:318`
   makes a clean console mandatory and an untrusted certificate is the most likely source of
   a violation.
+
+  > **Sharpened 2026-09-23 — "the production command" is both boot paths, each from its own
+  > fresh clone.** Decision 8's 2026-09-20 note makes `make up` and bare
+  > `docker compose up --build` independent, and ADR-0016 decision 5 keeps this check on the
+  > pre-defense list. Run back-to-back in one clone, the second inherits the `.env` the first
+  > wrote and proves nothing. `CONTRIBUTING.md` → *The clean-clone check* is the procedure; the
+  > other two items are unchanged.
+
+  > **And each from an empty database, noted 2026-09-23 (ADR-0016 d5).** Clones of this project
+  > share a Compose project name, and so a Postgres volume. A check starts with no container or
+  > volume left under that name, or it reuses a database that is already migrated and seeded.
 * **The README is now on the critical path**, and carries more than this decision: `:1242`
   wants prerequisites and step-by-step instructions, and II.1.1 wants the team roster and a
   Project Management section. `README.md` does not exist yet.
@@ -367,6 +391,14 @@ six weeks and three developers.
   (`:336`). **Owned by** [**Settle the Privacy Policy and Terms of Service content**](https://github.com/ahmadmnsur/ft_transcendence/issues/13),
   which ADR-0014 unblocked and supplied with its subject matter — that ADR is the exhaustive
   list of personal data the platform holds.
+
+  > **Settled 2026-09-23 by ADR-0018.** The drafts are `docs/legal/privacy-policy.md` and
+  > `docs/legal/terms-of-service.md`: Ahmad signs them off, Kamel verifies the technical claims,
+  > and the end of week 4 stays the deadline for sign-off and live pages. **The location above
+  > stands, sharpened rather than changed**: sign-in, sign-up and the two pages are the only
+  > routes readable signed out, and the footer shows on every screen, because the signup
+  > checkbox (ADR-0018 d12) links terms a visitor has to be able to read before an account
+  > exists.
 
 * **What fixture data makes every claimed module demonstrable.** Decision 11 settles the
   mechanism and the bootstrap Admin only; the demo strategy is still open.
@@ -436,6 +468,12 @@ is the same opaque session id in the same httpOnly cookie, backed by the same se
 **OAuth adds a second way to *establish* a session, never a second credential to *carry* one**,
 so the single authorization path ADR-0003 defends survives intact.
 
+> **One binding requirement on the flow, noted 2026-09-23 (ADR-0003 d10's annotation).** The
+> callback is a GET that creates a session, which ADR-0003's JSON-only defence cannot cover. It
+> is protected by a one-time `state` bound to the initiating browser through the single session
+> cookie, never a second cookie or web storage (ADR-0018 d5's annotation), and checked before any
+> session exists. The identity mapping stays #24's.
+
 ### Not settled by this amendment
 
 * **How a 42 identity maps to a Student**, and what happens when a 42 login arrives for an
@@ -459,3 +497,9 @@ so the single authorization path ADR-0003 defends survives intact.
 > password-signup path; it also owns who registers the OAuth application. The "all three"
 > ownership sentence above is therefore historical: two questions remain, and the identity
 > question has gained this narrower account-creation branch.
+
+> **Constrained 2026-09-23 by ADR-0018 decision 7, as sharpened.** However #24 settles linking,
+> creation or rejection, a 42 login resolves to a Student only through an **immutable 42 account
+> identifier**, never through `Student.email`. So an email edit, an Admin's included, can never
+> change which Student a 42 login reaches. The "email that already holds a password account"
+> framing above describes the situation #24 must handle, not a lookup key.

@@ -177,6 +177,26 @@ done when the PR template already is one.**
    > and successful responses while violating privacy or attribution, so they meet the scope guard;
    > the tests bind outcomes, not a PostgreSQL locking technique.
 
+   > **Extended 2026-09-23 for hand-made Match creation; no new category.** The third category now
+   > covers the race that can actually break it: two concurrent hand-made creations sharing a
+   > Student admit exactly one committed Match and reject the other with nothing written (ADR-0006
+   > d10). The seventh category's Match-creation serialization also covers Round close: a creation
+   > ordered before the close is in the Round and lapses with it, and one ordered after is rejected,
+   > so no Match ever commits into a closed Round (ADR-0002 d7). Both bind outcomes, not a
+   > PostgreSQL technique.
+
+   > **Extended 2026-09-23 for no-repeats and Block versus Friendship; no new category.** The
+   > matcher category also asserts step 2's no-repeats: a pair with a prior `Match` row of any
+   > status — `DECLINED` and `TERMINATED_BY_ADMIN` included — is never proposed, while a hand-made
+   > Match may still pair it (ADR-0006 step 2, d10). The seventh category's serialization
+   > assertions also cover a Block racing a new Friendship request between the same pair: exactly
+   > one serial outcome, and never a Block and a Friendship row, pending or accepted, at once
+   > (ADR-0014 d4). Both would otherwise fail silently — a pair quietly re-offered, a blocked
+   > Student quietly able to see Presence. One precision for the second category: "the database
+   > accepts bad data" holds for seven of its eight steps. The no-repeats index is a non-unique
+   > lookup aid (ADR-0014 d13), so its absence costs speed rather than integrity; the test still
+   > asserts that the migration creates it.
+
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
    `ts-jest`/babel configuration to keep alive. One runner means **one command for decision 6 to
@@ -185,6 +205,17 @@ done when the PR template already is one.**
 
    The cost is honest and small: NestJS scaffolds with Jest, so `nest new`'s defaults get
    replaced on day one.
+
+   > **Corrected 2026-09-23 before `/to-spec #1` — the API half does not reuse Vite's transform
+   > as-is.** Vite and Vitest compile TypeScript with esbuild, which
+   > [does not support `emitDecoratorMetadata`](https://esbuild.github.io/content-types/), and
+   > NestJS's constructor injection by type depends on that metadata. NestJS's own
+   > [Vitest recipe](https://docs.nestjs.com/recipes/swc) therefore builds test files with SWC
+   > through `unplugin-swc`. So the API's Vitest configuration carries one SWC plugin: *"no second
+   > `ts-jest`/babel configuration"* stays true, *"reuses its transform"* does not hold for the
+   > backend, and the cost above is one plugin larger. **The decision is unchanged** — one runner,
+   > one command — but every category in decision 1 exercises the API, so this plugin sits on the
+   > suite's main path rather than at its edge.
 
 3. **The prototype's cohort generator is extracted into the repository as one fixture module,
    shared by the suite and by the seed.** [#9](https://github.com/ahmadmnsur/ft_transcendence/issues/9)
@@ -198,6 +229,22 @@ done when the PR template already is one.**
    decision 3 requires seeding, **`RARE_SKILLS`** — which exists to *"manufacture an unmatchable
    Student"* and is exactly the deliberately-untaught Skill ADR-0015 needs for its one graded
    insight — and **`unmatchable`**, which produces ADR-0002 decision 7's Admin-flag path.
+
+   > **Corrected 2026-09-23 before `/to-spec #1` — `SKILLS` is 24 names; the catalogue is 27.**
+   > ADR-0017 decision 8 settled the shipped catalogue as the fixture's twenty-four `SKILLS`
+   > **plus** the three `RARE_SKILLS`. The plain supply/demand gap needs a catalogue Skill that
+   > someone wants and nobody teaches, which is what `RARE_SKILLS` exists to supply, and ADR-0015's
+   > Skill lists read the whole catalogue. *"The 24-Skill catalogue"* above names `SKILLS` alone.
+   > Both lists live in this one module, so sharing it is unaffected, and so is the measured test
+   > cohort: ADR-0017 decision 3's `size: 20, seed: 42` call draws only on `SKILLS`, because
+   > `RARE_SKILLS` enter a cohort only through `unmatchable`.
+   >
+   > **What the fixture owns stops at generation**: the Skill and name lists and a deterministic
+   > cohort generator. **What reaches the database is ADR-0017's**: the catalogue rows, which active
+   > Students list a `RARE_SKILLS` Skill (asserted, its decision 8), the blocked pair behind
+   > ADR-0015's stronger gap, the Rounds, and every Review, Badge and Streak, all driven through
+   > the real write paths (its decision 2). The fixture is an input to the seed, never a second
+   > seed specification.
 
    **`prototype/compatibility-score` stays frozen and untouched** as the primary source. Drift
    between it and the fixture is one-way and expected: a prototype records what was measured, it
@@ -238,6 +285,19 @@ done when the PR template already is one.**
    > clean-clone boot while touching nothing under `prisma/**`. The Compose/Dockerfile triggers and
    > the two-independent-clone procedure are unchanged.
 
+   > **Sharpened 2026-09-23 before `/to-spec #1` — a fresh clone is not a fresh database.**
+   > Compose groups containers and named volumes by **project name**, not by directory. The
+   > `Makefile` says the base Compose file carries a default name; even without one, two default
+   > clones share a directory name, and so a project name. So the second clone reuses the first
+   > clone's Postgres volume, as does a clone beside a running working tree. Its boot then runs no
+   > migration from empty and no seed. The Postgres image also skips its first-boot setup on a
+   > non-empty data directory, so a bare path missing `POSTGRES_PASSWORD` would still pass.
+   > **Each check therefore starts with no container or volume left under the project's Compose
+   > name**, by the other check or by a working stack, so each boot path builds its database from
+   > empty. Clearing that state creates nothing a boot could rely on, so it is not the setup ADR-0004
+   > d8 forbids. `/to-spec #1` chooses how it is cleared. ADR-0004 d11's volume-wiping target,
+   > which the `Makefile` does not have yet, is one candidate.
+
 6. **Done is the merged PR, with every box in the template ticked. Nothing else is defined.**
    The template gains three checks — the suite is green, the ticket's acceptance criteria are met,
    and decision 5's boot check where it applies — beside the branch, commit, rebase,
@@ -263,6 +323,13 @@ done when the PR template already is one.**
    > `prisma.config.ts`.** This follows ADR-0005 decision 5's scope correction and decision 5
    > above's matching clean-clone trigger. Done remains the merged PR with every applicable box
    > ticked; only the Prisma box's path scope changed.
+
+   > **Amended 2026-09-23 — a fifth check, and the decision is unchanged.** *Personal data moves
+   > the Privacy Policy* (ADR-0018 d15): a PR that changes what personal data is stored, who can
+   > see it or how long it is kept updates `docs/legal/privacy-policy.md` in the same PR, and
+   > `docs/legal/terms-of-service.md` where a conduct rule or a sanction moves. It sits in the
+   > template for the same reason as the fourth check: a Done condition written only in
+   > `CONTRIBUTING.md` would be the second definition this decision refuses.
 
    **This deliberately invents no second concept.** A separately written definition of done drifts
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be
@@ -324,6 +391,12 @@ done when the PR template already is one.**
    > atomicity, serialization and authorization outcomes named there. The next proposed category
    > is the eleventh and still needs the same *does it fail silently?* argument.
 
+   > **Extended 2026-09-23 for hand-made Match creation, no-repeats and Block versus Friendship,
+   > still without adding a category.** A double-booked Student, a Match committed into a closed
+   > Round, a re-offered pair and a Friendship row beside a Block are all plausible rows behind a
+   > successful response; they are assertions in the first, third and seventh categories. The next
+   > proposed category remains the eleventh.
+
    The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
    pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet
    reversal of the schema gate. **Anything the compiler or a demo
@@ -349,6 +422,17 @@ done when the PR template already is one.**
 
    **The Compose boot is not in CI.** That is where minutes and flakiness actually bite, and
    decision 5 already put it on a human at the two moments it matters.
+
+   > **Surfaced 2026-09-23 before `/to-spec #1` — where the suite runs is not settled, and three
+   > records pull on it.** Decision 1 runs the suite against *"a real Postgres in the container
+   > that already exists"*. Since ADR-0009's 2026-09-22 correction, the eighth category runs
+   > **through nginx**. This decision runs the suite in CI but keeps the Compose boot out of it.
+   > No record publishes Postgres to the host, and none says how the workflow obtains a Postgres or
+   > the nginx envelope. **Two constraints bind the answer, and neither moves.** The Done box's
+   > `npx vitest run` is the run that must cover all ten categories, since CI is advisory evidence
+   > and decision 6 makes the template the definition. And the Compose boot stays out of CI. How
+   > the local run reaches the stack, and what the workflow provisions or leaves to that local run,
+   > is for `/to-spec #1`; see *Not settled*.
 
 9. **The two additional browsers are Firefox and Brave, and Fadel runs the pass in week 5.**
    `:576`'s list — *"Firefox, Safari, Edge, etc."* — is open, so Brave qualifies unambiguously.
@@ -388,7 +472,8 @@ done when the PR template already is one.**
 alone, and the cheapest thing on the board. Rejected because it discards something already paid
 for: ADR-0006 exists *because* it was measured, C1–C7 are already written, and #9 committed to the
 fixture surviving. It also leaves the three silent-failure categories with no detector at all, in
-a model where the failure mode is pairs quietly not forming.
+a model where the failure mode is pairs quietly not forming. *(**2026-09-23**: decision 1 listed
+**four** categories when written and lists **ten** now; see decision 7.)*
 
 **The conventional pyramid** (rejected, decision 1). Unit, integration and e2e with a coverage
 target. It is a tax every slice pays for six weeks against a bullet nobody is grading, which is
@@ -465,3 +550,6 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
   > correction, decisions 5 and 7 named as first to enforce) — the "should it turn out to be
   > available" framing is resolved. Whether to actually enable it, and whether this workflow then
   > becomes required, is still not settled by this decision or by ADR-0005.
+- **Where the suite executes, and what the advisory workflow provisions for it** *(added
+  2026-09-23; see decision 8's annotation)*. For `/to-spec #1`, bound by the Done box's run
+  covering all ten categories and by the Compose boot staying out of CI.

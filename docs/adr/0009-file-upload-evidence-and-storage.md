@@ -5,7 +5,7 @@ and its first bullet asks for "multiple file types (images, documents, etc.)". A
 images, owed anyway by `:596` under standard user management, so the image half was settled
 the moment ADR-0008 named avatar as a Student-editable field. The second type had no answer:
 **the concept proposal mentions no upload, avatar, image, file or attachment anywhere**. Its
-only "document" is the Future Learning Portfolio *export* at `:347` — a download. Both file
+only "document" is the Future Learning Portfolio *export* at `:356` — a download. Both file
 types are therefore subject-driven, not product-driven, and choosing a host for the second
 one is a product decision against a locked concept rather than a build detail.
 
@@ -30,7 +30,7 @@ authorisation structural rather than enforced.
    were live and each was more expensive (see Considered options). Evidence adds no screen, no
    role and no lifecycle: the Review form is already on the critical path, the author is
    unambiguous because only a Mentee submits a Review, and the proposal already calls the
-   record it feeds "evidence-based" at `:231`. The word is the domain's, not an invention.
+   record it feeds "evidence-based" at `:235`. The word is the domain's, not an invention.
 
 2. **Bytes live in a `bytea` column in Postgres, never on a second volume.** ADR-0004's single
    named volume stays single, so there is no way to end up with an orphaned file or a dangling
@@ -168,7 +168,7 @@ authorisation structural rather than enforced.
 ## Considered options
 
 **A Mission brief** (rejected, decision 1). The most tempting host, and the most expensive: a
-Mission has no author. The proposal's `:133`-`:145` reads as a fixed list of one-line tasks, and
+Mission has no author. The proposal's `:137`-`:149` reads as a fixed list of one-line tasks, and
 ADR-0002 made Match creation automatic at Round open, so there is no human in the loop to write
 a brief. Choosing it would have forced a Mission-authorship decision this ticket did not own.
 
@@ -205,6 +205,12 @@ it leaves a live route to failing `:542` that no amount of care in the API can c
   > **Student**, which only an Admin reads, so **the visibility rule above stands unamended**.
 - **The seed needs no avatar images.** Seeded Students carry the default avatar; one or two
   real uploads during the demo are enough to show the surface.
+
+  > **Narrowed 2026-09-23 by ADR-0017 decision 5 — one seeded avatar, and one Evidence.** The
+  > Removal fixture shows decision 6's deleted avatar beside surviving Evidence, and a removed
+  > Student can never upload. So the Student the seed removes gets an avatar and Evidence on their
+  > completed Review through decision 3's paths, before the Removal. Every other seeded Student
+  > keeps the default.
 - **Mission authorship is exposed as undecided.** Pricing the Mission-brief option found that
   nothing in the plan says who writes a Mission or when. It is not this decision's to make, but
   it can no longer be assumed away.
