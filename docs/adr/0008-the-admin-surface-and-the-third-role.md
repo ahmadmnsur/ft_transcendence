@@ -374,6 +374,12 @@ this map never made.
   > tombstone decision 6 requires, and the Admin Users table includes Removed rows as view-only so
   > decision 11's `removed` status is observable. Every read must inspect `removed_at`; whether it
   > excludes or renders a tombstone is determined by the already-set surface rule.
+
+  > **Writes aimed at a Removed Student, 2026-09-23 before `/to-spec #1`.** "Participation
+  > excludes Removed Students" covers writes as well as reads. No new Direct Message, friend
+  > request or acceptance of one of their pending requests may target a Removed Student, just as
+  > ADR-0011 already refuses a new Report against one. What exists stays readable as history:
+  > their threads, Posts and Matches render the tombstone.
 - **The Match status flow gains a requirement**: an administrative termination must be
   distinguishable from a decline (decision 5). Enumerating the statuses — including which
   count as "live" for ADR-0002 decision 6's derived *unmatched* — remains the entity-set

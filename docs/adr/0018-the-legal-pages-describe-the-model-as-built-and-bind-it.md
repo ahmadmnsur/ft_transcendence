@@ -148,6 +148,16 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    are engineering defaults for `/to-spec`. **ADR-0003 decision 10's throttle counts live in memory
    only** and are never persisted.
 
+   > **"Path" means without the query string, 2026-09-23 before `/to-spec #1`.** nginx's default
+   > request field is the whole request line, query string included. That would log the 42
+   > callback's `code` and `state` and any search terms, none of which "method and path" discloses.
+   > The referring page has the same problem: within one site, browsers send it in full, query
+   > string included, so every request made from a page whose address carries a search or a
+   > callback's parameters would log them again. The pages' promise wins: **the request log records
+   > the path and the referring page without their query strings**, and `/to-spec #1` sets the log
+   > format that does it. The other disclosed fields are unchanged. nginx's error log is a separate
+   > question, under *Not settled*.
+
 7. **From 42, PeerConnect keeps only what the identity mapping needs, and no Admin action may ever
    make a 42 login reach a Student.** ADR-0004's module-claim amendment already uses the 42 token once
    and discards it. But 42's `/v2/me` returns name, photo, campus, level, every project and grade and
@@ -215,6 +225,11 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     to terms they cannot read**, so sign-in, sign-up and the two pages are the only routes readable
     signed out, and the footer shows on every screen. **If #24 lets a 42 login create a Student, that
     path requires the same acceptance.**
+
+    > **Scoped 2026-09-23.** "An account can exist only if the box was ticked" holds for every
+    > account a person creates, through sign-up or #24's 42 path. The seed creates the only others:
+    > its demo Students and the bootstrap Admin and Peer Moderator (ADR-0004 d11, ADR-0008 d12,
+    > ADR-0017), none of which is a real person's sign-up.
 
 13. **Every settled limit is stated plainly.** Everything is kept for as long as the copy's database
     exists — no automatic deletion, no backups, and a wipe erases everything — with the exceptions
@@ -305,3 +320,8 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
 - **The rendering mechanism and the log cap's numbers** — `/to-spec`.
 - **Whether a Block can be lifted.** No record says; the pages promise neither. If `/to-spec` adds
   it, the Privacy Policy's retention list gains it.
+- **What nginx's error log may hold** *(added 2026-09-23)*. Its format is fixed: every entry about
+  a request appends the full request line and the referring page, query strings included, which
+  decision 6's annotation keeps out of the request log. Either the error log is configured so no
+  such entry is written, giving up some proxy diagnostics, or the Privacy Policy discloses it as a
+  second log that can hold them. Kamel's technical sign-off (decision 14) is the natural owner.

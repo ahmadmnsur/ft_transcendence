@@ -278,6 +278,10 @@ arms. Those three sentences are the whole shape.
    > between the same pair coexist at any commit. `/to-spec #1` chooses the mechanism; no entity or
    > column is added.
 
+   > **What a Block does not end, 2026-09-23 (ADR-0006 d10's annotation).** A Match already made
+   > between the pair stands. The blocking Student may decline it while it is in progress, and a
+   > finished Match stays history.
+
    > **Visibility ruled 2026-09-23 by ADR-0018 d4.** A Student's friends list is shown to that
    > Student alone. A Block is shown only to the Student who set it; the other Student is not told.
    > Presence still reaches accepted Friends exactly as above.
@@ -410,6 +414,11 @@ arms. Those three sentences are the whole shape.
    Storing the coverage as rows rather than as a rendered string keeps it queryable, and **that query
    is the only genuine insight the claimed analytics Minor has access to**: which Skills the platform
    actually *covers*, as opposed to which Skills Students merely list.
+
+   > **Hand-made Matches too, 2026-09-23 (ADR-0006 d10's annotation).** A hand-made Match is
+   > oriented by ADR-0006 steps 3–4, and its coverage rows are that orientation's `forward` and
+   > `reverse` sets, possibly empty. Only the Score is withheld (`NULL`). So `MatchSkillCoverage`
+   > covers every Match, whichever path made it.
 
 10. **`uuid(7)` is the identifier everywhere, and the two file tables carry a separate `uuid(4)`
     route token.** Two records want opposite things from one identifier. ADR-0006 decisions 4 and 9

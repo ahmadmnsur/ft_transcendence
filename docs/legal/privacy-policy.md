@@ -174,8 +174,8 @@ oldest entries are overwritten automatically.
 **No log ever contains a password, a cookie, the content of what you submit, message text or a
 file.**
 
-To slow down password guessing, PeerConnect counts recent sign-in attempts by network address and
-email address. Those counts live only in the server's memory and are never saved.
+To slow down password guessing, PeerConnect counts recent sign-in and sign-up attempts by network
+address and email address. Those counts live only in the server's memory and are never saved.
 
 ## How long your data is kept
 
@@ -193,7 +193,7 @@ Some things end sooner:
 - **A Skill** leaves your profile when you remove it. Past Matches keep the Skills they were made on,
   because a Match's explanation never changes.
 - **A Like** is deleted when you take it back, and **a Friendship** when either of you ends it.
-- **Online status** is never stored, and **sign-in attempt counts** live only in memory.
+- **Online status** is never stored, and **sign-in and sign-up attempt counts** live only in memory.
 
 Some things are permanent:
 

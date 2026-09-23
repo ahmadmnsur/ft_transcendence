@@ -110,6 +110,19 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > and the root `prisma.config.ts`; a personal-data change outside those paths, such as a new
    > visibility rule, is caught by the PR template's Done box rather than by widening the gate.
 
+   > **Config discovery paths gated, 2026-09-23 before `/to-spec #1`.** Prisma 7.10+ loads a root
+   > `prisma7.config.*`, then `.config/prisma7.*`, **before** this project's `prisma.config.ts`
+   > (`docs/research/prisma-7-config-governance.md`), and the `^7` range can install 7.10+. Every
+   > Prisma 7 release also loads a root **`prisma.config.js`** before it, because the loader tries
+   > extensions in the order `.js`, `.ts`, `.mjs`, `.cjs`, `.mts`, `.cts`
+   > ([`loadConfigFromFile.ts` at 7.10.0](https://github.com/prisma/prisma/blob/7.10.0/packages/config/src/loadConfigFromFile.ts)).
+   > A file added at any of those paths would silently become the active Config, redirecting
+   > schema, migrations and seed, while sitting outside the gate. Every other location Prisma 7
+   > searches ranks below `prisma.config.ts` and loads only once it is gone. So the gate, beyond
+   > the `prisma/**` and root `prisma.config.ts` named above, covers every path Prisma can discover
+   > a Config at. `prisma.config.ts` stays the only Config the project has, and a PR adding another
+   > is refused there. `/to-spec #1` may also pin the file explicitly with `--config`.
+
 6. **Three rules on migrations, which live in `CONTRIBUTING.md` and the PR template, not only
    here.** They must be visible at the moment someone is about to break them:
    - **A merged migration is immutable.** Prisma checksums applied migrations in
@@ -120,6 +133,15 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
      produce a history that applies in one order locally and another on a fresh clone.
    - **The seed is gated too.** ADR-0004 decision 11 puts an idempotent seed on the boot path;
      it is shared contention exactly like the schema.
+
+     > **What "the seed" covers, 2026-09-23.** All of the seed, wherever its code lives, not only
+     > `prisma/seed.ts`: the entry `prisma.config.ts` registers, every module that exists only for
+     > the seed, and the shared fixture module it seeds from (ADR-0016 d3, ADR-0017 d8), whose
+     > `SKILLS` and `RARE_SKILLS` become the seeded catalogue. The gate covers them wherever
+     > `/to-spec #1` places them. The application write paths the seed drives (ADR-0017 d2) stay
+     > outside it: they are application code, reviewed round-robin. A change inside this scope can
+     > break a boot from an empty database without touching `prisma/**`, so it also triggers
+     > ADR-0016 d5's clean-clone check.
 
    > **Tightened 2026-09-20 — "breaks every other developer's database" describes a blocked
    > migration command or a prompted destructive reset, not silent data corruption.** Prisma
@@ -313,6 +335,12 @@ is fragile.
 - **The repository currently fails `:306`-`:312`, a rejection criterion.** All commits are by one
   author, and the other two developers are not collaborators on the repository at all. Provisioning
   that access is tracked separately and is the most urgent item this decision surfaced.
+
+  > **Half resolved, verified 2026-09-23.** Both developers are now collaborators with write access
+  > (`UchihaKim`, `fadel-fr03`). The other half still fails: every commit on `main` is Ahmad's
+  > (44 at `2092e62`, under two author identities), so `:306`-`:312` is unmet until each of them
+  > lands a commit. Tracked on
+  > [#16](https://github.com/ahmadmnsur/ft_transcendence/issues/16), still open.
 - **Nothing here is enforced by GitHub.** Every rule is a convention three people keep. If branch
   protection turns out to be available, decisions 5 and 7 are the ones to enforce first.
 
@@ -332,6 +360,11 @@ is fragile.
 > is now **settled** — the rule lives in root `AGENTS.md`, in `docs/agents/issue-tracker.md`
 > → *Record propagation*, and in `CONTRIBUTING.md` → *Records move together*, which is decision 6's
 > own rule about where rules live applied to records.
+
+> **The block's stated reason no longer holds, 2026-09-23.** Both developers are now collaborators
+> (Consequences above), so `CODEOWNERS` auto-request has people to request. #16 stays open for its
+> other half, a commit from each, and #28 keeps its blocking edge on it; whether questions 1–3
+> still wait on that half is for #28 to rule.
 
 - **Whether `CODEOWNERS` auto-request works on this plan.** Add it; treat it as a convenience, and
   never as the mechanism.

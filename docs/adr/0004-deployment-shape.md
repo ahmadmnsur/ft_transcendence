@@ -73,6 +73,11 @@ and why there is no `SESSION_SECRET`.
    > old entries are overwritten automatically; the cap's numbers are engineering defaults for
    > `/to-spec #1`. No service, port or environment variable is added.
 
+   > **Except the query string, 2026-09-23 (ADR-0018 d6's annotation).** The request log records
+   > the path and the referring page without their query strings, so neither the 42 callback's
+   > `code` and `state` nor search terms reach it. `/to-spec #1` sets the log format. What nginx's
+   > error log may hold is open under ADR-0018's *Not settled*.
+
 3. **The React bundle is built in a multi-stage build and served by the proxy** in
    production. NestJS serving its own static files and terminating TLS was the two-container
    alternative; it makes TLS, caching and compression application concerns and couples a

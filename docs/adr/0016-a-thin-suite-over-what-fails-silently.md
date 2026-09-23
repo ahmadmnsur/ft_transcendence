@@ -285,6 +285,12 @@ done when the PR template already is one.**
    > clean-clone boot while touching nothing under `prisma/**`. The Compose/Dockerfile triggers and
    > the two-independent-clone procedure are unchanged.
 
+   > **Extended 2026-09-23, following ADR-0005 decision 6's note on what "the seed" covers.** The
+   > trigger also includes the seed wherever its code lives: the entry `prisma.config.ts` registers,
+   > every module that exists only for the seed, and decision 3's shared fixture module. A change
+   > there can break a boot from an empty database while touching nothing under `prisma/**`, which
+   > is the argument that added `prisma.config.ts` above. The two-clone procedure is unchanged.
+
    > **Sharpened 2026-09-23 before `/to-spec #1` — a fresh clone is not a fresh database.**
    > Compose groups containers and named volumes by **project name**, not by directory. The
    > `Makefile` says the base Compose file carries a default name; even without one, two default

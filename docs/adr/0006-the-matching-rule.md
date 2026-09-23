@@ -93,6 +93,20 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
    > above is unchanged and the prototype's calibration stands**; it now has a well-formed test
    > rather than a string comparison.
 
+   > **Rounding pinned 2026-09-23 before `/to-spec #1`.** `round` means **round half up on the
+   > exact value**. The weighted sum is always a dyadic rational, `70·(1 − 2⁻ᶠ) + 30·(1 − 2⁻ʳ)`,
+   > so it can be computed exactly. Five values sit exactly on a half: 22.5, 52.5, 57.5, 67.5 and
+   > 87.5. Evaluated as written in binary floating point, `0.7·cover(…)` rounds 22.5, 52.5 and 57.5
+   > **down**, while 67.5 and 87.5 round up. The exact rule gives 23, 53, 58, 68 and 88, in
+   > TypeScript, SQL and tests alike. The floor, every decision above and the prototype's
+   > conclusions are unaffected. Against the prototype's own float evaluation, **one shown Score
+   > moves**: two Skills taught and none back shows 53, or 63 with the Learning Goal bonus, not 52
+   > or 62. **And one orientation can move.** When one Student can teach the other only one Skill,
+   > and it is the other's Learning Goal, while the other can teach them two, neither being the
+   > first Student's Goal, both orientations now score 68, so the lower Student id is Mentor
+   > (decision 5); the prototype's 57 + 10 = 67 always made the Student teaching two the Mentor.
+   > 22.5 is only ever the losing orientation of a 52.5 pair, so it is never shown.
+
 2. **There is no denominator.** The obvious rule — Skills covered ÷ Skills wanted — tells a
    Student who listed one Skill they have a *100% match* and a Student who listed five a *20%
    match*, for identical teaching, and the second falls below the floor and gets no Match at all.
@@ -203,6 +217,24 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
     > their Round (ADR-0002 d3), and every status transition either stays within the standing set
     > or leaves it. ADR-0012 d6 already orders every hand-made creation in one Round for the Mission
     > index, so one mechanism can satisfy both; `/to-spec #1` chooses it. The schema is unchanged.
+
+    > **Who is Mentor on a hand-made Match, 2026-09-23 before `/to-spec #1`.** No record said, and
+    > it decides who writes the Review, the 120/80 XP split and First Mentor. The prototype, this
+    > ADR's primary source, already answers it: its `ADMIN_MATCH` scores the pair exactly as steps
+    > 3–4 do and keeps the higher-scoring orientation, the lower Student id breaking a tie. So
+    > **the Admin names the two Students, and steps 3–4 orient them**. The Match's
+    > `MatchSkillCoverage` rows are that orientation's `forward` and `reverse` sets, possibly empty.
+    > The Score computed to orient the pair is neither stored nor shown: `compatibility_score` stays
+    > `NULL`, as this decision requires.
+
+    > **A Block does not end a Match that already exists, 2026-09-23 before `/to-spec #1`.** "Can
+    > never be Matched" governs **creation**: step 2 and the hand-made path above. `CONTEXT.md` lists
+    > exactly what a Block ends, a Friendship and any request still pending, and a Match is not on
+    > that list. A Block created while the pair's Match is in progress leaves the Match standing.
+    > Direct Messages between the two are refused as with any Block, and the blocking Student's
+    > remedy is to decline the Match (ADR-0002 d8). A finished Match stays history. A Block racing a
+    > Round's opening resolves the same way: ordered first, no Match is made; ordered after, the
+    > Match exists and may be declined.
 
 ## Considered options
 

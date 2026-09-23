@@ -39,7 +39,11 @@ describing the changes", and it sits in the list that gets a project **rejected*
 * **PRs touching `prisma/` or the root `prisma.config.ts`: Kamel reviews, always.** If he is
   blocked for more than 24 hours, **Ahmad** deputises. Fadel watches for the stall rather than
   absorbing it. If the change touches personal data, that review also confirms the Privacy Policy
-  moved with it (*Personal data moves the Privacy Policy*, below).
+  moved with it (*Personal data moves the Privacy Policy*, below). **A PR that adds a Prisma Config
+  anywhere else is inside the gate too, and is refused:** Prisma 7.10+ would load a root
+  `prisma7.config.*` or `.config/prisma7.*` in preference to `prisma.config.ts`, the only Config
+  this project has, and every Prisma 7 release would load a root `prisma.config.js` in preference
+  to it (ADR-0005 d5).
 
 ## Schema changes — read this before touching `prisma/` or `prisma.config.ts`
 
@@ -49,7 +53,7 @@ gate exists to catch bad or conflicting schema, not to take authorship away from
 **You also author your own `prisma.config.ts` change; the gate holder reviews it.** Prisma 7 Config
 selects the schema, migration path, migration datasource and seed command, so changing that root
 file can affect the same shared mechanisms as changing `prisma/`. Files outside these two Prisma
-surfaces remain round-robin.
+surfaces and the seed (rule 3 below) remain round-robin.
 
 **`prisma` and `@prisma/client` are constrained to the `^7` major in `package.json` — don't let an
 install pull Prisma 8.** (`^7` is a semver range, not an exact-version pin — no exact patch/minor
@@ -107,7 +111,11 @@ data after the command above. *(ADR-0005 Consequences, added 2026-09-20.)*
 
 3. **The seed is gated exactly like the schema.**
    `prisma/seed.ts` runs on every boot (ADR-0004 decision 11) and must stay **idempotent**. It is
-   shared contention, so it goes through the same reviewer.
+   shared contention, so it goes through the same reviewer. **"The seed" is all of it, wherever it
+   lives**: the entry `prisma.config.ts` registers, every module that exists only for the seed, and
+   the **fixture module it seeds from**, whose Skill lists become the seeded catalogue. The
+   application code it drives stays round-robin. A change to any of it also needs the clean-clone
+   check below (ADR-0005 d6, ADR-0016 d5).
 
 ## Testing
 
@@ -213,8 +221,8 @@ second definition — the template *is* the definition, so it cannot drift from 
 it, and it can be checked without asking anyone.
 
 That means, every time: the suite green, the ticket's acceptance criteria met, **one completed
-review**, and — if the PR touches `prisma/`, `prisma.config.ts`, the Compose files or a Dockerfile —
-**a clean-clone boot verified**.
+review**, and — if the PR touches `prisma/`, `prisma.config.ts`, the seed (rule 3 above), the
+Compose files or a Dockerfile — **a clean-clone boot verified**.
 
 If a change to an ADR, the project map, or a GitHub issue moves a rule, acceptance criterion,
 scope, status, or resolved question, **the affected records moved together in the same task**.
