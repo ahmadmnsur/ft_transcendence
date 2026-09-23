@@ -143,6 +143,13 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
      > break a boot from an empty database without touching `prisma/**`, so it also triggers
      > ADR-0016 d5's clean-clone check.
 
+     > **Made a path check, 2026-09-23.** "Every module that exists only for the seed" leaves each
+     > file to a reviewer's judgement, so an edited seed helper outside `prisma/**` could pass as
+     > round-robin. `/to-spec #1` therefore fixes the paths where the seed's own code and the
+     > fixture module live, and `CONTRIBUTING.md` and the PR template name them beside
+     > `prisma/**`. Whether a PR is inside the gate is then read off its file list, and a new seed
+     > helper can enter only through an import added in a file already gated.
+
    > **Tightened 2026-09-20 — "breaks every other developer's database" describes a blocked
    > migration command or a prompted destructive reset, not silent data corruption.** Prisma
    > computes a checksum of each migration's SQL at apply time and stores it in

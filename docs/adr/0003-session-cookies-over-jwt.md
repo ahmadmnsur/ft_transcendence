@@ -153,6 +153,14 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     >   `/to-spec #1` chooses the framework and proxy configuration that does this. The numbers stay
     >   engineering defaults.
 
+    > **The callback exception's reach, noted 2026-09-23 for #24.** "Exactly two GET-time writes"
+    > names the callback that *creates a session*. ADR-0018 d5 later added a callback reached while
+    > a session already exists, which creates none. And if #24 lets a 42 login link an identity or
+    > create a Student, the callback would write a domain row that is not a session. The `state`
+    > check protects every callback write alike, so the defence holds either way. What this
+    > decision does not yet say is whether those writes fall inside the exception or move to a
+    > following non-GET request. #24 records which, together with its linking rule.
+
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
     rule. Email verification in particular would put SMTP deliverability on the critical path

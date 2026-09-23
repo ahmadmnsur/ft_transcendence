@@ -115,7 +115,9 @@ data after the command above. *(ADR-0005 Consequences, added 2026-09-20.)*
    lives**: the entry `prisma.config.ts` registers, every module that exists only for the seed, and
    the **fixture module it seeds from**, whose Skill lists become the seeded catalogue. The
    application code it drives stays round-robin. A change to any of it also needs the clean-clone
-   check below (ADR-0005 d6, ADR-0016 d5).
+   check below (ADR-0005 d6, ADR-0016 d5). **`/to-spec #1` fixes where the seed's code and the
+   fixture module live, and those paths are listed here beside `prisma/**`**, so a PR touching
+   one is inside the gate by its file list alone.
 
 ## Testing
 
