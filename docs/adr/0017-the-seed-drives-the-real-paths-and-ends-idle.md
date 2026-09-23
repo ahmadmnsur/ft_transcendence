@@ -125,6 +125,10 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > Transaction boundaries and batching are `/to-spec #1`'s. Decision 10's annotation states what a
    > failed attempt must leave.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §14; M28): each step is
+   > one call to an application service method in its own `SERIALIZABLE` transaction, with no
+   > batching, and §14.5 fixes the per-Round script deterministically from the matcher's output.
+
 3. **One fixture module, two call sites.** The suite calls `generateCohort({ size: 20, seed: 42 })`
    and the seed calls it with `size: 30`.
 
@@ -386,6 +390,21 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     > or another. ADR-0004 decisions 8 and 11 stand: the seed still runs on every boot, on both
     > boot paths. *(The pool is 31 in Rounds 1–3, per decision 4's annotation, so those runs cover
     > 465 pairs rather than 435; the cost claim is unaffected.)*
+
+    > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §14.9; M14): a completion
+    > record and a reset-and-retry. The record is a fixed, versioned `COMMENT ON DATABASE`, written
+    > only after every end-state assertion passes; a boot finding it skips, and a boot finding rows
+    > without it truncates the nineteen domain tables and re-runs, which is safe because the API
+    > serves only after the seed completes. The seed and fixture paths are `prisma/seed/**` and
+    > `prisma/fixtures/**` (§3.2).
+
+    > **Stale record handled, 2026-09-23 by the pre-`/to-tickets` verification**
+    > ([`docs/spec.md`](../spec.md) §14.9). A record
+    > over empty domain tables is stale and the boot seeds: Prisma's PostgreSQL reset (`migrate
+    > reset`, or `migrate dev`'s reset prompt) drops and recreates the schema but not the database,
+    > so a database comment outlives the rows it certified. Report-fixture parties are also drawn
+    > again from the start of the eligible Students, since the social graph uses 23 of the 24
+    > (§14.6–§14.7), and the demo Student is chosen outside the reserved positions.
 
 11. **Presence cannot be seeded, and the demo script must account for it.** Presence is live,
     process-local state; it does not survive a restart, there is no column, and **nothing records

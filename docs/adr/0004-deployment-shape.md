@@ -73,10 +73,19 @@ and why there is no `SESSION_SECRET`.
    > old entries are overwritten automatically; the cap's numbers are engineering defaults for
    > `/to-spec #1`. No service, port or environment variable is added.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §15.1; M12): every
+   > service's container log uses the `json-file` driver with `max-size: 10m` and `max-file: 3`, set
+   > once as a top-level `x-logging` anchor that each service references. The numbers stay
+   > engineering defaults.
+
    > **Except the query string, 2026-09-23 (ADR-0018 d6's annotation).** The request log records
    > the path and the referring page without their query strings, so neither the 42 callback's
    > `code` and `state` nor search terms reach it. `/to-spec #1` sets the log format. What nginx's
    > error log may hold is open under ADR-0018's *Not settled*.
+
+   > **Both set 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.9; M10, M11): a
+   > custom `log_format` with query-stripped path and referrer, and no request-context error entry
+   > written at all.
 
 3. **The React bundle is built in a multi-stage build and served by the proxy** in
    production. NestJS serving its own static files and terminating TLS was the two-container
@@ -305,6 +314,17 @@ and why there is no `SESSION_SECRET`.
     > recognises completion, and a failed attempt fails loudly. `/to-spec #1` chooses the mechanism.
     > The seed stays on the boot path, for `make up` and bare Compose alike.
 
+    > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §14.9, §15.5; M14): a
+    > completion record and a reset-and-retry. The record is a fixed, versioned `COMMENT ON
+    > DATABASE`, written as the seed's last statement only after every end-state assertion passes.
+    > A boot finding the current record skips the seed; an older fixture's record skips it with a
+    > warning naming `make wipe`; no record over empty domain tables runs it; and no record over
+    > existing rows truncates the nineteen domain tables (never `_prisma_migrations`) and runs it
+    > from the start, which is safe because the API serves only after the seed completes. A record
+    > over empty domain tables is stale — Prisma's PostgreSQL reset drops the schema, not the
+    > database — so that boot seeds too. Any failure exits non-zero and `api` stays down. ADR-0017
+    > d10 carries the same choice.
+
 12. **Kamel owns this slice in week 1, and it is a gate rather than parallel work.** Every
     vertical feature slice needs the single command working before it can start. The budget
     is roughly 3-4 days including the `README.md` "Instructions" section that `:1242`
@@ -448,6 +468,10 @@ silently rejected — is expensive to debug.
 ADR's own consequence that application code must not duplicate the configured origin. The
 route's path is not settled here; whatever it becomes, **the URI registered on the 42 intranet
 must match the derived value exactly**, or the flow fails at its last hop.
+
+> **Route fixed 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §5.6; M8): `GET
+> /api/auth/42/callback`, so the registered URI is `${PUBLIC_ORIGIN}/api/auth/42/callback`. Still no
+> callback variable.
 
 ### The tension with decision 8, and the rule that resolves it
 

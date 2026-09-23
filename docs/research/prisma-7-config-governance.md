@@ -62,6 +62,32 @@ backwards-compatible discovery fallback. It does mean governance should name
 the project's actual Config file rather than generalizing from the newer
 scaffold default.
 
+## The complete discovery set, from source (added 2026-09-23)
+
+Verified against `packages/config/src/loadConfigFromFile.ts` at
+[7.4.0](https://github.com/prisma/prisma/blob/7.4.0/packages/config/src/loadConfigFromFile.ts)
+(identical to 7.0.0) and
+[7.10.0](https://github.com/prisma/prisma/blob/7.10.0/packages/config/src/loadConfigFromFile.ts), and
+the `c12` loader they delegate to
+([3.1.0](https://github.com/unjs/c12/blob/v3.1.0/src/loader.ts), pinned by 7.4.0;
+[3.3.4](https://github.com/unjs/c12/blob/v3.3.4/src/loader.ts), pinned by 7.10.0). 7.10.0 was the
+newest 7.x on npm on that date.
+
+- **Every 7.x**, with no `--config`, calls `c12` with the base name `prisma` and `packageJson`,
+  `rcFile`, `dotenv`, `giget` and `extend` all off, so neither `package.json` nor an rc file is read.
+  `c12` resolves, in order, `prisma.config`, then `.config/prisma`, then `.config/prisma.config`,
+  each with the suffixes `""` and `/index` and its own extension list (`.js`, `.ts`, `.mjs`, `.cjs`,
+  `.mts`, `.cts`, then `.json`, `.jsonc`, `.json5`, `.yaml`, `.yml`, `.toml`, which Prisma then
+  rejects as an unsupported extension). So a root `prisma.config.js` wins over `prisma.config.ts`,
+  and every `.config/` form is reached only when no root `prisma.config.*` resolves.
+- **7.10+** first looks for exactly twelve files, root `prisma7.config.<ext>` then
+  `.config/prisma7.<ext>` over the six supported extensions, and falls back to the search above.
+- **`--config <file>`** is a global CLI option (`packages/cli/src/bin.ts`; also declared by
+  `migrate deploy`, `migrate dev`, `db seed` and `generate`), and a given file bypasses discovery.
+
+Every path above matches one of three file-list patterns: `/prisma.config*`, `/prisma7.config*`,
+`/.config/prisma*`.
+
 ## Explicit generation and datasource fields in Prisma 7
 
 Prisma ORM 7 separates migration and client-generation steps. The official v7

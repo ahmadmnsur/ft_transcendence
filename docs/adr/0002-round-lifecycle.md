@@ -55,6 +55,11 @@ that reacts to events over a Round's lifetime.
    > a later Suspension or Removal terminates it administratively if it is still in progress. The
    > database mechanism belongs to `/to-spec #1`.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §8.1, §8.4, §8.6;
+   > M1): each such operation is one PostgreSQL `SERIALIZABLE` transaction, retried automatically on
+   > a serialization failure, that reads inside itself everything its decision depends on; §3.6.3
+   > lists what this race reads.
+
 5. **Closing a Round finalises every Match in it.** A Match without a submitted Review
    awards no XP and contributes nothing to Streak. This needs no new rule: the glossary
    already says XP is "awarded only for completed, confirmed activity", and an unfinished
@@ -77,12 +82,22 @@ that reacts to events over a Round's lifetime.
    > `TERMINATED_BY_ADMIN`. Request start time does not grandfather a Review; `/to-spec #1` chooses
    > the database transaction or locking mechanism.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §9.2; M1): each such
+   > operation is one PostgreSQL `SERIALIZABLE` transaction, retried automatically on a
+   > serialization failure, that reads inside itself everything its decision depends on; §3.6.3
+   > lists what this race reads.
+
    > **Sanction/Round-close order clarified 2026-09-22 by ADR-0008 and ADR-0010.** For each affected
    > Student, Suspension or Removal and this Round-close transaction must have one logical order.
    > Sanction first makes the close skip both Streak mutation and Consistent Learner evaluation,
    > even if the Round contains earlier qualifying activity. Close first may update Streak and award
    > the Badge, which the later sanction preserves. The skipped Round is never replayed after
    > reinstatement; `/to-spec #1` chooses the database mechanism.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §8.7; M1): each such
+   > operation is one PostgreSQL `SERIALIZABLE` transaction, retried automatically on a
+   > serialization failure, that reads inside itself everything its decision depends on; §3.6.3
+   > lists what this race reads.
 
 6. **"Unmatched" is derived, never stored, and never carried over.** A Student is
    unmatched in a Round when the pool contains them and that Round holds no Match for them
@@ -109,6 +124,11 @@ that reacts to events over a Round's lifetime.
    > first:** the creation is rejected with nothing written, and it is not moved into a Round
    > opened since, because decision 6 carries nothing over. No Match can commit into a closed
    > Round. `/to-spec #1` chooses the database mechanism.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §8.6; M1): each such
+   > operation is one PostgreSQL `SERIALIZABLE` transaction, retried automatically on a
+   > serialization failure, that reads inside itself everything its decision depends on; §3.6.3
+   > lists what this race reads.
 
 8. **Declining terminates that Match.** Both Students drop back to unmatched for the
    Round, and only an Admin repairs it. The system does not hunt for a replacement.

@@ -157,6 +157,11 @@ every place they could do social damage.**
    > new open group if the target remains reportable and that reporter has not used their lifetime
    > slot; one ordered after target Removal is rejected and creates no row.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §12.2, §12.5; M1):
+   > each such operation is one PostgreSQL `SERIALIZABLE` transaction, retried automatically on a
+   > serialization failure, that reads inside itself everything its decision depends on; §3.6.3
+   > lists what this race reads.
+
    > **"Lifetime slot" made precise, 2026-09-22 — wording only, no rule change.** "That reporter"
    > above is whoever files the *later* report, not necessarily the filer of the row that was just
    > resolved. Decision 5's two partial unique indexes are not scoped by `OPEN` / `ACTIONED` /

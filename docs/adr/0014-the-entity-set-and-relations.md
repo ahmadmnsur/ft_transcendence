@@ -88,6 +88,17 @@ Enums: `Role`, `SkillKind`, `FriendshipStatus`, `MatchStatus`, `Mission`, `Cover
 > `/to-spec #1`. `published_at` remains descriptive metadata. No Prompt status or lifecycle entity
 > is added, and the live Prompt remains derived as the greatest committed publication order.
 
+> **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §4.3; M1–M3, M5, M6).
+> Every domain write is one `SERIALIZABLE` transaction with bounded retry.
+> `ReflectionPrompt.publication_order` is a `bigint UNIQUE`, assigned `max + 1` inside the
+> publishing transaction. **One mechanism column is added**: `Post.answer_round_id`, the Round open
+> at a Prompt answer's serialization point, which is how the answer "establishes qualifying
+> activity" (ADR-0007 d1) — a timestamp cannot stand for a serialization point. It is a nullable
+> column, not an entity or a participation row. Two notes on this table: `Session.id` is the noted
+> exception to `uuid(7)` (an opaque token's SHA-256, ADR-0003 d1); and the Learning Goal's ownership
+> half is a composite FK `(id, learning_goal_student_skill_id) → StudentSkill(student_id, id)`, its
+> `LEARN` half a service check (decision 3's note).
+
 **What is deliberately not here**, each already ruled and each worth re-reading as a set, because the
 absences are what keep this model small: no queue or enrolment entity and no candidate-pool table
 (ADR-0002 d6); no Prompt-answer entity (ADR-0007 d5); no Mission table (ADR-0012 d5); no
@@ -254,6 +265,13 @@ arms. Those three sentences are the whole shape.
    > service check or a fixed-kind column. `/to-spec #1` chooses. `CONTEXT.md`'s "never a Skill they
    > have not listed" and ADR-0006's `+10` test are unchanged.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §4.3.1, §4.3.5, §6.2; M5):
+   > the ownership half is the composite FK `(id, learning_goal_student_skill_id) →
+   > StudentSkill(student_id, id)` (`MATCH SIMPLE`, so a null Goal is unchecked), whose target is a
+   > `UNIQUE (student_id, id)` on `StudentSkill`; the `LEARN` kind and the text ⇔ reference pairing
+   > are service checks. Removing the Goal's Skill from the list **clears** both Goal columns in the
+   > same transaction, and a list edit that keeps the Skill keeps its row, and so its Goal.
+
 4. **A Friendship is a directed request with an acceptance, and a Block ends one.**
    `Friendship(requester_id, addressee_id, status, created_at, responded_at)`, unique on the
    **unordered** pair via a unique index on `(LEAST(a,b), GREATEST(a,b))`.
@@ -277,6 +295,13 @@ arms. Those three sentences are the whole shape.
    > first, the request is rejected; request first, the Block ends it. No Block and Friendship row
    > between the same pair coexist at any commit. `/to-spec #1` chooses the mechanism; no entity or
    > column is added.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §6.4, §11.2; M1): the
+   > Block and the request are each one PostgreSQL `SERIALIZABLE` transaction, retried
+   > automatically on a serialization failure. The Block reads the pair's `Friendship` rows and
+   > deletes any, pending or accepted; the request reads the pair's Block rows in both directions
+   > and is refused with `friend_request_unavailable` if one exists. So the two have one serial
+   > order, and no Block and Friendship row coexist at any commit. No entity or column is added.
 
    > **What a Block does not end, 2026-09-23 (ADR-0006 d10's annotation).** A Match already made
    > between the pair stands. The blocking Student may decline it while it is in progress, and a
@@ -359,6 +384,11 @@ arms. Those three sentences are the whole shape.
    > This is different from a duplicate or retried submission of the same event, whose event constraint
    > still admits no second event or XP. The PostgreSQL conflict/serialization mechanism is left to
    > `/to-spec #1`; the model adds no second ledger or deferred award path.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §10.4; M1, M4): every XP
+   > path updates the Student row inside a `SERIALIZABLE` transaction, so paths paying one Student
+   > serialize; a BadgeAward insert is `ON CONFLICT DO NOTHING`, and a contender that aborts is
+   > re-run whole, finds the Badge and still commits its own event and XP.
 
    > **Prompt-answer serialization clarified 2026-09-21.** ADR-0007 orders an answer against a
    > concurrent Round close. An answer ordered before the close is visible to this transaction as

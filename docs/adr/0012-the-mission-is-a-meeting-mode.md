@@ -173,6 +173,10 @@ It says *how* to meet; ADR-0006's Score explanation already says *what* about.
    >
    > So no two Matches in a Round share an index, and the all-six guarantee above holds.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §8.6, §8.10; M1): a
+   > hand-made creation counts the Round's Match rows inside its `SERIALIZABLE` transaction, so two
+   > racing creations cannot both commit the same index; the loser retries and counts the winner.
+
 7. **A Mission is text and nothing else.** No completion state, no checkbox, no status, no XP,
    and nothing in the model reads it.
 

@@ -133,6 +133,11 @@ them deliberately and settles the rest.
    > Review/Prompt event constraints so it cannot pay that event twice. This remains one atomic earning
    > transaction with no award job, backfill or ledger; `/to-spec #1` chooses the PostgreSQL mechanism.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §10.4; M1, M4): every XP
+   > path updates the Student row inside a `SERIALIZABLE` transaction, so paths paying one Student
+   > serialize; a BadgeAward insert is `ON CONFLICT DO NOTHING`, and a contender that aborts is
+   > re-run whole, finds the Badge and still commits its own event and XP.
+
 3. **`Level = min(10, 1 + floor(XP / 250))` — ten bands, the tenth terminal.** Promoted from
    prototype placeholder to decision, unchanged.
 

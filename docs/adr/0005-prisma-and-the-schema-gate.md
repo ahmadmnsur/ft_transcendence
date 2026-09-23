@@ -123,6 +123,13 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > a Config at. `prisma.config.ts` stays the only Config the project has, and a PR adding another
    > is refused there. `/to-spec #1` may also pin the file explicitly with `--config`.
 
+   > **Both, 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.2, §15.5; M16): every
+   > Prisma CLI call passes `--config prisma.config.ts`, and "every path Prisma can discover a
+   > Config at" is read off a PR's file list as three patterns, `/prisma.config*`,
+   > `/prisma7.config*` and `/.config/prisma*`: the whole discovery set of 7.0 to 7.10, verified
+   > from source in `docs/research/prisma-7-config-governance.md`. Pinning alone would not stop an
+   > unpinned run from discovering another file, so the files stay forbidden.
+
 6. **Three rules on migrations, which live in `CONTRIBUTING.md` and the PR template, not only
    here.** They must be visible at the moment someone is about to break them:
    - **A merged migration is immutable.** Prisma checksums applied migrations in
@@ -149,6 +156,13 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
      > fixture module live, and `CONTRIBUTING.md` and the PR template name them beside
      > `prisma/**`. Whether a PR is inside the gate is then read off its file list, and a new seed
      > helper can enter only through an import added in a file already gated.
+
+     > **Paths fixed 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.2, §14.1,
+     > §17.2; M15): the seed is `prisma/seed/**` — its entry `prisma/seed/main.ts`, which
+     > `prisma.config.ts` registers as the compiled `dist/prisma/seed/main.js`, every seed-only
+     > module, and the two seeded files in `prisma/seed/assets/` — and the fixture module is
+     > `prisma/fixtures/**` (`cohort.ts`). **Both sit inside `prisma/**`**, so the file-list test
+     > needs no second pattern. `CONTRIBUTING.md` rule 3 and the PR template name them.
 
    > **Tightened 2026-09-20 — "breaks every other developer's database" describes a blocked
    > migration command or a prompted destructive reset, not silent data corruption.** Prisma
@@ -294,6 +308,12 @@ is fragile.
     > above.** **`prisma-client` is ESM-first, but CommonJS remains available. The generator
     > supports `moduleFormat = "esm"` or `"cjs"`; when unspecified, the module format is inferred
     > from the environment.** `/to-spec #1` must choose the format; this ADR forces neither.
+
+    > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.3; M16, M17): the
+    > API, the seed, the fixture and the Prisma client are CommonJS (`moduleFormat = "cjs"`), the
+    > NestJS default; the SPA is ESM under Vite. `prisma`/`@prisma/client` are `^7.4.0` — still the
+    > `^7` major — because 7.4 is the first release with the `partialIndexes` preview ADR-0014
+    > takes; and every Prisma CLI call passes `--config prisma.config.ts`.
   - **This project needs a Prisma Config file at the project root (`prisma.config.ts`), and it
     must explicitly load the environment variables it uses.** Not a Prisma-wide mandate — a
     config file isn't required for every Prisma project — but this one needs it: `DATABASE_URL`

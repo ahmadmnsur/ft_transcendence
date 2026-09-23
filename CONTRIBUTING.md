@@ -45,6 +45,13 @@ describing the changes", and it sits in the list that gets a project **rejected*
   this project has, and every Prisma 7 release would load a root `prisma.config.js` in preference
   to it (ADR-0005 d5).
 
+  > **Read off the file list, 2026-09-23** ([`docs/spec.md`](docs/spec.md) §3.2, M16). "Anywhere
+  > else" is every path Prisma 7 can discover a Config at, which is three patterns: `/prisma.config*`,
+  > `/prisma7.config*` and `/.config/prisma*` (each covers every extension and the `…/index.*`
+  > directory form; `.config/prisma.*` and `.config/prisma.config.*` load once `prisma.config.ts` is
+  > gone). A PR adding any file matching one, other than the root `prisma.config.ts`, is inside the
+  > gate and refused.
+
 ## Schema changes — read this before touching `prisma/` or `prisma.config.ts`
 
 **You write your own migration. Kamel reviews it.** You own your feature DB-through-UI; the
@@ -70,6 +77,23 @@ npx prisma generate
 # 4. commit schema.prisma AND the generated migration together
 # 5. open a PR and request Kamel
 ```
+
+> **Where and how these run, 2026-09-23** ([`docs/spec.md`](docs/spec.md) §15.5–§15.6, M16). `db`
+> publishes no port and `DATABASE_URL` names the Compose host `db`, so the commands above cannot
+> reach the database from your machine. Run them inside the dev overlay's `api` container, whose
+> bind mount puts the migration and the client back in your working tree, and pin the Config as
+> every Prisma invocation does:
+>
+> ```bash
+> docker compose -f compose.yaml -f compose.dev.yaml exec api \
+>   npx prisma migrate dev --config prisma.config.ts --name <slice>_<change>
+> docker compose -f compose.yaml -f compose.dev.yaml exec api \
+>   npx prisma generate --config prisma.config.ts
+> ```
+>
+> The same holds for `npx prisma db seed` below (`make seed` wraps it). If `migrate dev` resets your
+> database, the next boot re-seeds it: the seed treats its completion record over empty tables as
+> stale (§14.9).
 
 **`migrate dev` no longer runs `prisma generate`.** Prisma 7 keeps migration and client generation
 as separate steps, so run the explicit generation command above after schema changes when the
@@ -118,6 +142,13 @@ data after the command above. *(ADR-0005 Consequences, added 2026-09-20.)*
    check below (ADR-0005 d6, ADR-0016 d5). **`/to-spec #1` fixes where the seed's code and the
    fixture module live, and those paths are listed here beside `prisma/**`**, so a PR touching
    one is inside the gate by its file list alone.
+
+   > **Paths fixed 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](docs/spec.md) §3.2, M15). The seed
+   > is `prisma/seed/**` — its entry `prisma/seed/main.ts`, which `prisma.config.ts` registers as
+   > compiled `dist/prisma/seed/main.js`, every seed-only module, and the two seeded files in
+   > `prisma/seed/assets/` — and the fixture module is `prisma/fixtures/**` (`cohort.ts`). **Both sit
+   > inside `prisma/**`**, so the gate's file-list test needs no second pattern. `prisma/seed.ts`
+   > above names the entry as it was imagined before this.
 
 ## Testing
 

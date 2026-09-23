@@ -30,10 +30,12 @@ A ticket is done when this PR merges with every box ticked. This list **is** the
 
 ## Does this touch `prisma/` or `prisma.config.ts`?
 
-Also answer **Yes** if it adds a Prisma Config anywhere else (a root `prisma7.config.*` or
-`.config/prisma7.*`, which Prisma 7.10+ would load first, or a root `prisma.config.js`, which any
-Prisma 7 would) or changes the seed anywhere it lives: a module that exists only for the seed, or
-the fixture module it seeds from, at the paths `CONTRIBUTING.md` → Schema changes, rule 3 lists.
+Also answer **Yes** if it adds a Prisma Config anywhere else — any file matching `/prisma.config*`,
+`/prisma7.config*` or `/.config/prisma*` other than `prisma.config.ts` (a root `prisma7.config.*` or
+`.config/prisma7.*` would load first on Prisma 7.10+, a root `prisma.config.js` on any Prisma 7;
+`docs/spec.md` §3.2) — or changes the seed anywhere it lives: a module that exists only for the seed, or
+the fixture module it seeds from, at the paths `CONTRIBUTING.md` → Schema changes, rule 3 lists:
+`prisma/seed/**` and `prisma/fixtures/**`, both inside `prisma/**`.
 All are inside the gate (ADR-0005 d5, d6).
 
 - [ ] **No** — round-robin review, anyone can take it.

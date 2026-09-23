@@ -66,7 +66,8 @@ When you submit a Review as a Mentee, its three parts are stored separately:
 
 **Your activity in the community**
 
-- your Posts: Public Takeaways and answers to Reflection Prompts;
+- your Posts: Public Takeaways and answers to Reflection Prompts, and for an answer, which Round
+  it counted towards for your Streak;
 - your Likes;
 - your friend requests and Friendships;
 - the Blocks you set;
@@ -146,7 +147,9 @@ to remove an offensive name — but never your password, your XP or Badges, or a
 
 PeerConnect sets **one cookie**: a random identifier for your sign-in session. It is sent only to
 PeerConnect and only over HTTPS, and page scripts cannot read it. It stops working after 30 days
-without use, or as soon as you sign out.
+without use, or as soon as you sign out. While a **Sign in with 42** is in progress, the same cookie
+holds a random identifier for that sign-in attempt instead, for at most ten minutes, until the
+attempt succeeds or fails.
 
 PeerConnect shows no cookie banner because of how it is built: its single cookie is needed for
 signing in, and it sets no other cookie. If PeerConnect stores anything else in your browser, it is
@@ -192,7 +195,8 @@ Some things end sooner:
   removed.
 - **A Skill** leaves your profile when you remove it. Past Matches keep the Skills they were made on,
   because a Match's explanation never changes.
-- **A Like** is deleted when you take it back, and **a Friendship** when either of you ends it.
+- **A Like** is deleted when you take it back, **a Friendship** when either of you ends it, and **a
+  Block** when you lift it.
 - **Online status** is never stored, and **sign-in and sign-up attempt counts** live only in memory.
 
 Some things are permanent:
@@ -230,7 +234,7 @@ In PeerConnect you can:
 - change your password, and sign out;
 - stop being matched, by removing all your Skills;
 - decline any Match;
-- Block another Student;
+- Block another Student, and lift a Block you set;
 - end a Friendship, or take back a Like;
 - delete or replace your Evidence, and remove or replace your avatar;
 - ask an Admin to remove your account (see below).

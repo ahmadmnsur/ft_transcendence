@@ -69,6 +69,11 @@ revoke XP.**
    > Suspension or Removal applies decision 5 to it if it is still in progress. `/to-spec #1`
    > chooses the database transaction or locking mechanism.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §8.1; M1): each such
+   > operation is one PostgreSQL `SERIALIZABLE` transaction, retried automatically on a
+   > serialization failure, that reads inside itself everything its decision depends on; §3.6.3
+   > lists what this race reads.
+
    > **Prompt-loop consequence made explicit 2026-09-21.** “An Admin is not [a participating
    > Student]” governs both primary loops, not matching alone. A role of `STUDENT` or
    > `PEER_MODERATOR` may answer a Reflection Prompt; `ADMIN` may publish one but may not answer.
@@ -253,6 +258,11 @@ revoke XP.**
    > concurrently
    > demote, suspend or remove each other and both succeed. The self-action guards above remain;
    > `/to-spec #1` chooses the database transaction or locking mechanism.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §12.7; M1): each
+   > role change, Suspension and Removal is one PostgreSQL `SERIALIZABLE` transaction, retried
+   > automatically on a serialization failure, that reads the set of active Admins inside itself
+   > whenever it could shrink it.
 
 10. **A Peer Moderator may not act on a report concerning their own Post, or one involving a
     Student in a mutual Block with them.** Both escalate to an Admin. The report queue is the

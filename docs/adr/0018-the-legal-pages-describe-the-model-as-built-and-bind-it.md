@@ -137,6 +137,13 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > is represented in the cookie, where its server-side state lives, its expiry and single-use
    > behaviour, and the callback's verification order.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §5.2, §5.6; M6 to M8): the
+   > cookie is `pc_session=s.<token>` for a session and `a.<token>` for an attempt; the attempt's
+   > `state`, PKCE verifier and intent live in an in-memory store for 10 minutes, one live attempt
+   > per browser (a new start deletes the one its cookie names), taken on first use; the callback
+   > checks cookie, attempt, expiry and `state` before exchanging the code, and only then issues a
+   > new session id. The Privacy Policy's cookie paragraph names the attempt identifier.
+
 6. **Logs are disclosed, kept clean and capped, and the sign-in throttle lives in memory.** nginx
    logs every request by default and Docker keeps that output on the host; saying nothing would be an
    omission an evaluator catches with `docker compose logs`. The pages disclose the request log in
@@ -157,6 +164,10 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > the path and the referring page without their query strings**, and `/to-spec #1` sets the log
    > format that does it. The other disclosed fields are unchanged. nginx's error log is a separate
    > question, under *Not settled*.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.9; M10): a custom
+   > `log_format` whose path and referrer are cut at the first `?`, with no `$request`, `$args` or
+   > cookie field.
 
 7. **From 42, PeerConnect keeps only what the identity mapping needs, and no Admin action may ever
    make a 42 login reach a Student.** ADR-0004's module-claim amendment already uses the 42 token once
@@ -318,10 +329,30 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
   [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24),
   under decision 7's constraints.
 - **The rendering mechanism and the log cap's numbers** — `/to-spec`.
+
+  > **Settled 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.5.4, §15.1; M12, M22).
+  > The pages are bundled with Vite's `?raw` and rendered by a project-owned subset renderer that
+  > fails the build on any construct it does not support, so no Markdown library is added and the
+  > map's stack is unchanged. Every service's container log is `json-file` capped at `max-size:
+  > 10m`, `max-file: 3`.
 - **Whether a Block can be lifted.** No record says; the pages promise neither. If `/to-spec` adds
   it, the Privacy Policy's retention list gains it.
+
+  > **Settled 2026-09-23 by `/to-spec #1`: it can** ([`docs/spec.md`](../spec.md) §11.3, §2.3 C1;
+  > M23). "No record says" was not quite so: ADR-0011 d7's 2026-09-22 note and ADR-0016 d1's tenth
+  > category both race a *"Block create/remove"*, a test that needs removal to exist. The blocker
+  > may delete their own Block; it restores nothing. The Privacy Policy's retention list and choices
+  > now say so.
 - **What nginx's error log may hold** *(added 2026-09-23)*. Its format is fixed: every entry about
   a request appends the full request line and the referring page, query strings included, which
   decision 6's annotation keeps out of the request log. Either the error log is configured so no
   such entry is written, giving up some proxy diagnostics, or the Privacy Policy discloses it as a
   second log that can hold them. Kamel's technical sign-off (decision 14) is the natural owner.
+
+  > **Settled 2026-09-23 by `/to-spec #1`: no such entry is written** ([`docs/spec.md`](../spec.md)
+  > §3.9; M11). The proxy's own `nginx.conf` sets the http-level `error_log` to `/dev/null`, where
+  > every entry written while handling a request goes, and keeps a main-level `error_log /dev/stderr
+  > warn` for process-level messages, which nginx writes without request context. The Privacy
+  > Policy's single disclosed request log stays exactly true; the diagnostic cost is accepted, the
+  > request log's status field still showing every 413, 502 and 504. Kamel's technical verification
+  > still applies.

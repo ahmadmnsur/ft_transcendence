@@ -218,6 +218,12 @@ be assigned nothing and never leaves the pool, and the loop never terminates.
     > or leaves it. ADR-0012 d6 already orders every hand-made creation in one Round for the Mission
     > index, so one mechanism can satisfy both; `/to-spec #1` chooses it. The schema is unchanged.
 
+    > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §8.6; M1): the
+    > hand-made creation is one PostgreSQL `SERIALIZABLE` transaction, retried automatically on a
+    > serialization failure, that reads both Students' standing Matches in the Round and the count
+    > of its Match rows before inserting, so it covers the standing-Match test and the Mission index
+    > at once.
+
     > **Who is Mentor on a hand-made Match, 2026-09-23 before `/to-spec #1`.** No record said, and
     > it decides who writes the Review, the 120/80 XP split and First Mentor. The prototype, this
     > ADR's primary source, already answers it: its `ADMIN_MATCH` scores the pair exactly as steps

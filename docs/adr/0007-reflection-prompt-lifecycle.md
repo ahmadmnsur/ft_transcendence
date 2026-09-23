@@ -80,6 +80,12 @@ follows from refusing to give either the Prompt or its answer a state machine.
    > A close ordered after an accepted answer observes that whole success; a close ordered first
    > observes none of it for the closing Round.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §4.3.15, §4.3.16,
+   > §8.12; M1 to M3): the boundary is PostgreSQL `SERIALIZABLE` with automatic retry; the durable
+   > order is `ReflectionPrompt.publication_order`, a `bigint UNIQUE` assigned `max + 1` inside the
+   > publishing transaction; and an answer establishes qualifying activity through
+   > `Post.answer_round_id`, the Round open at its serialization point, which the close reads.
+
 2. **Once one Prompt exists, there is always exactly one live.** Unlike a Round, the platform
    never sits with none. This is ADR-0002 decision 9 getting what it argued for — it rejected
    Round-scoping Prompts precisely to avoid "silencing the community feed between Rounds," and
@@ -124,6 +130,11 @@ follows from refusing to give either the Prompt or its answer a state machine.
    > BadgeAward exists. An aborted attempt commits nothing and may be retried transparently; decision
    > 7's existing `(Prompt, Student)` uniqueness prevents that retry from paying the answer twice.
    > `/to-spec #1` still chooses the PostgreSQL mechanism.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §10.4; M1, M4): both paths
+   > update the Student row inside `SERIALIZABLE` transactions, so they serialize; a BadgeAward
+   > insert is `ON CONFLICT DO NOTHING`, and a contender that aborts is re-run whole, finds the
+   > Badge and still commits its own event and XP.
 
 7. **One answer per Student per Prompt, enforced as a unique constraint on (Prompt, Student).**
    In the schema, not in a service. `document/42_PeerConnect_Concept_Proposal-6.md:229` rules

@@ -94,6 +94,11 @@ done when the PR template already is one.**
    > success. The database mechanism remains for `/to-spec #1`; the tests bind the behavior, not a
    > particular lock.
 
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.6, §3.6.4, §16.3; M1,
+   > M31): `SERIALIZABLE` transactions with automatic retry, and each race is forced
+   > deterministically through one named `checkpoint()` in the Unit of Work, a no-op in production.
+   > The tests still bind outcomes.
+
    > **Corrected 2026-09-21 by ADR-0007.** The equal-timestamp publication case remains in scope,
    > but `(published_at, id)` is no longer the expected order. The test must assert a unique,
    > durable publication order that respects completed-before-started transactions and gives
@@ -303,6 +308,10 @@ done when the PR template already is one.**
    > empty. Clearing that state creates nothing a boot could rely on, so it is not the setup ADR-0004
    > d8 forbids. `/to-spec #1` chooses how it is cleared. ADR-0004 d11's volume-wiping target,
    > which the `Makefile` does not have yet, is one candidate.
+
+   > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §15.6, §16.5; M20): `make
+   > wipe`, which is `docker compose down --volumes --remove-orphans`, run from any clone since all
+   > share the project name `peerconnect`; the procedure names the bare command too.
 
 6. **Done is the merged PR, with every box in the template ticked. Nothing else is defined.**
    The template gains three checks — the suite is green, the ticket's acceptance criteria are met,
@@ -548,6 +557,10 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
 
 - **Where test files live and what they are named.** A convention `CONTRIBUTING.md` states without
   needing a decision; the slice that writes the first test picks it.
+
+  > **Fixed 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §16.3; M19):
+  > `test/<NN>-<category>/*.test.ts`, one directory per category of decision 1, the harness in
+  > `test/harness/`.
 - **Whether the advisory workflow ever becomes a required check**, should branch protection turn
   out to be available. ADR-0005 decision 7 already names it as one of the two rules to enforce
   first if it is.
@@ -559,3 +572,12 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
 - **Where the suite executes, and what the advisory workflow provisions for it** *(added
   2026-09-23; see decision 8's annotation)*. For `/to-spec #1`, bound by the Done box's run
   covering all ten categories and by the Compose boot staying out of CI.
+
+  > **Settled 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §16.2, §16.4, §16.6; M18,
+  > M21). Locally, `npx vitest run` runs in a fresh `api` dev container on the Compose network
+  > (`make test`); the harness migrates a derived `<db>_test` database and boots the app in-process,
+  > and category 8 crosses a harness-started nginx that includes the repository's own
+  > `proxy/snippets/api.conf`, so all ten categories run. CI provisions a Postgres service container
+  > and the distribution's nginx on the runner and runs the same command — no Compose boot. CI also
+  > migrates and seeds an empty database and re-runs the seed, which is how an application change
+  > that breaks the seed is seen before the pre-defense clean-clone run.

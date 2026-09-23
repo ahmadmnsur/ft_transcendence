@@ -153,6 +153,11 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     >   `/to-spec #1` chooses the framework and proxy configuration that does this. The numbers stay
     >   engineering defaults.
 
+    > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §5.5; M9): every proxied
+    > nginx location sets `X-Real-IP` and `X-Forwarded-For` to `$remote_addr`, overwriting whatever
+    > the browser sent; the API reads the client address only from `X-Real-IP`, and Express `trust
+    > proxy` stays off.
+
     > **The callback exception's reach, noted 2026-09-23 for #24.** "Exactly two GET-time writes"
     > names the callback that *creates a session*. ADR-0018 d5 later added a callback reached while
     > a session already exists, which creates none. And if #24 lets a 42 login link an identity or
