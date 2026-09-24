@@ -60,15 +60,15 @@ Target policy: survive two Majors failing (18 − 4 = 14).
 | --- | --- | --- |
 | **Major — framework on both ends** (`:478`) | 2 | React SPA (§3.5) + NestJS API (§3.4). The two framework Minors are **not** also claimed (#7). |
 | **Major — real-time WebSockets** (`:490`) | 2 | Socket.IO: `post:created` to `feed`, `round:opened`/`round:closed` to `rounds`, per-Student `match:ready`, `dm:message`, Presence (§7). Reconnect, grace window and forced disconnect (§7.5). Room broadcast, not N unicasts (§7.4). |
-| **Major — user interaction** (`:496`) | 2 | Chat: 1:1 Direct Messages (§11.4). Profile: §6.2. Friends: request/accept/decline/end, list (§11.1, §6.4). |
-| **Major — standard user management** (`:596`) | 2 | Profile edit (§6.2); avatar with default (§9.6, §6.3); Friends with online status (Presence, §7.6); profile page (§6.2). |
+| **Major — user interaction** (`:498`) | 2 | Chat: 1:1 Direct Messages (§11.4). Profile: §6.2. Friends: request/accept/decline/end, list (§11.1, §6.4). |
+| **Major — standard user management** (`:592`) | 2 | Profile edit (§6.2); avatar with default (§9.6, §6.3); Friends with online status (Presence, §7.6); profile page (§6.2). |
 | **Major — advanced permissions** (`:622`) | 2 | Users table: view, edit, delete-by-Removal (§6.12); roles `STUDENT`/`PEER_MODERATOR`/`ADMIN` managed on the role column; three distinct views (Student: none; Peer Moderator: `/moderation`; Admin: `/admin/*`). |
 | **Minor — ORM** (`:516`) | 1 | Prisma `^7` (§3.3, §4). |
 | **Minor — advanced search** (`:534`) | 1 | `GET /api/students` with Skill filters, sort, pagination over TanStack Table (§6.2). |
 | **Minor — gamification** (`:848`) | 1 | Exactly three of `:850`: XP/Level, Badges, Leaderboard; persisted; progress bar + earn panels; `/rules` page (§10). |
-| **Minor — design system** (`:532`) | 1 | Project-owned palette, type scale, icon set and ≥ 10 reusable components (§3.5.3). |
+| **Minor — design system** (`:526`) | 1 | Project-owned palette, type scale, icon set and ≥ 10 reusable components (§3.5.3). |
 | **Minor — file upload** (`:536`) | 1 | Avatar (PNG/JPEG) and Evidence (PDF/PNG/JPEG); client + server validation; `bytea` storage behind authorised routes; preview; progress; delete (§9.5–9.6, §6.3). |
-| **Minor — OAuth 2.0** (`:620`) | 1 | Sign in with 42 (§5.6). **Identity mapping Blocked by #24.** |
+| **Minor — OAuth 2.0** (`:620`) | 1 | Sign in with 42 (§5.6). **Identity mapping and a successful sign-in Blocked by #24 (§5.6 B).** |
 | **Minor — additional browsers** (`:574`) | 1 | Firefox + Brave pass in week 5, limitations documented in `README.md` (§16.7, ADR-0016 d9). |
 | **Minor — user activity analytics** (`:642`) | 1 | `/admin/analytics` Learning Analytics (§13), a scoped V2 pull-forward (ADR-0015). |
 
@@ -271,14 +271,14 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0004 d4 | Dev overlay keeps nginx; Vite is a host process reached through `host.docker.internal`; verified bridge bind, no silent wildcard. |
 | ADR-0004 d5, d7 | `http://localhost:8081` (dev, `127.0.0.1:8081`) and `https://localhost:8443` (base, `127.0.0.1:8443` + redirect `127.0.0.1:8080`); LAN out of scope on both. |
 | ADR-0004 d6 | Self-signed certificate generated at image build; never committed. |
-| ADR-0004 d8 | `make up` and bare `docker compose up --build` both work, independently; `.env.example` first, optional `.env` second; Compose ≥ 2.24. |
+| ADR-0004 d8 | `make up` and bare `docker compose up --build` both work, independently; `.env.example` first, optional `.env` second; Compose ≥ 2.24 (`env_file.required`'s own floor — the toolchain floor is §3.3). |
 | ADR-0004 d9 | Fifteen `.env.example` entries; OAuth pair ships empty; staff and seed credentials are dev defaults with a change-it warning. |
 | ADR-0004 d10 | No `SESSION_SECRET`. |
 | ADR-0004 d11 | Boot: db healthcheck → migrate → idempotent seed, on both paths. |
 | ADR-0004 d12 | Kamel owns the infrastructure slice in week 1 as a gate, README Instructions included. |
 | ADR-0004 amendment | OAuth credentials `FT_OAUTH_CLIENT_ID`/`FT_OAUTH_CLIENT_SECRET`; redirect URI derived from `PUBLIC_ORIGIN`; platform fully usable with OAuth unconfigured; 42 token used once, discarded. |
 | ADR-0005 | Prisma `^7`; one `schema.prisma`; gate = `prisma/**`, root `prisma.config.ts`, every Config discovery path, the seed and its fixture; Kamel reviews, Ahmad deputises past 24 h; developer authors; immutable merged migrations; rebase-then-regenerate own migration; Conventional Commits; squash-merge; `<type>/<slice>-<short>` branches; explicit `prisma generate`; `prisma-client` generator with explicit output; `@prisma/adapter-pg`; Node `^20.19`/`^22.12`/`^24`; TS ≥ 5.4. |
-| ADR-0006 | Skill-only Score, `cover(n)=1−0.5ⁿ`, 0.7/0.3, +10 Mentee Learning Goal bonus, clamp, exact half-up rounding; floor 25; orientation by higher Score, tie lower id is Mentor; priority = Score − 2·max(0, ΔLevel − 2); most-constrained-first with recompute; tie-break `priority DESC, Score DESC, pair key ASC`; no-repeats over every Match row of any status; Block unconditional; hand-made Match: no Score, exempt from no-repeats only, oriented by steps 3–4, both currently unmatched, serialized; a Block does not end an existing Match. |
+| ADR-0006 | Skill-only Score, `cover(n)=1−0.5ⁿ`, 0.7/0.3, +10 Mentee Learning Goal bonus, clamp, exact half-up rounding; floor 25; orientation by higher Score, tie lower id is Mentor; priority = Score − 2·max(0, ΔLevel − 2); most-constrained-first with recompute; tie-break `priority DESC, Score DESC, pair key ASC`; no-repeats over every Match row of any status; Block unconditional; hand-made Match: no Score (`NULL`, so the 25 floor has nothing to gate), exempt from the no-repeats history check only, oriented by steps 3–4, both currently unmatched, serialized; a Block does not end an existing Match. |
 | ADR-0007 | One live Prompt = greatest durable publication order; publish-only, no edit/delete/draft/schedule; answer is the Post; one answer per (Prompt, Student) in the schema; answer + 20 XP + Knowledge Sharer + qualifying activity atomic; answer rejected after supersession; roles `STUDENT`/`PEER_MODERATOR` answer, `ADMIN` does not; answers visible immediately. |
 | ADR-0008 | One role per Student; Peer Moderator participates, Admin does not; Peer Moderator authority = open Post-report groups + Remove Post/dismiss; manual role assignment only; three sanctions; Suspension reversible, Removal final; both terminate in-progress Matches as `TERMINATED_BY_ADMIN`, delete sessions, drop sockets; soft delete on Student and Post only; Removed rows view-only, email burned; Admin edits only Student-editable fields + role; self-guards and ≥ 1 active Admin, serialized; Users table is the roles surface; seed bootstraps Admin and Peer Moderator. |
 | ADR-0009 | Evidence on the Learning Outcome; bytes in Postgres `bytea`; authenticated opaque routes; Evidence readable by the originating pair + Admins; Mentee-only mutation while active; 5 MiB / 2 MiB exact; Evidence PDF/PNG/JPEG, Avatar PNG/JPEG; server byte validation; canonical type + `nosniff`; atomic replacement; Removal deletes avatar, keeps Evidence; Suspension touches neither. |
@@ -289,7 +289,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0014 | 19 tables, 9 enums, UUIDv7 ids, `uuid(4)` file tokens; Review split across Review/PrivateFeedback/Post; six Match statuses; Skill catalogue + StudentSkill + Learning Goal reference; Friendship directed, unique unordered pair; Like revocable; DM without Conversation, `read_at` for recipient only, non-GET mark-read; Streak stored, recomputed at close skipping Suspended/Removed; outbound-only socket with three rooms; frozen explanation state; database invariants and the one service invariant. |
 | ADR-0015 | `/admin/analytics`, Admin-only; Demand/Supply/Gap over the candidate pool; completion over closed Rounds, per closed Round series, absent when zero; state now + outcomes, no dwell or funnel; Round-indexed; nothing stored; refresh on `round:opened`/`round:closed`; Recharts; no export. |
 | ADR-0016 | Vitest, one command, real Postgres, ten closed categories, shared fixture, C3/C4/C6/C7, clean-clone check in two fresh clones from an empty database, Done = merged PR with every box ticked, advisory CI, Firefox + Brave in week 5. |
-| ADR-0017 | Seed drives real write paths; four closed Rounds, ends idle; 62-Match target; suspension in Round 3, Removal in Round 4 with prerequisites; `SEED_STUDENT_PASSWORD`; four report fixtures asserted per role; 27-Skill catalogue; both gap forms; social graph; completion-based idempotence, loud failure; both boot paths; no Presence seeding. |
+| ADR-0017 | Seed drives real write paths; four closed Rounds, ends idle; 62-Match target; suspension in Round 3, Removal in Round 4 with prerequisites; `SEED_STUDENT_PASSWORD`; four Report rows in three fixture groups (two grouped on one Post, one Student, one resolved) asserted per role; 27-Skill catalogue; both gap forms; social graph; completion-based idempotence, loud failure; both boot paths; no Presence seeding. |
 | ADR-0018 | Pages describe the model as built; one cookie; the browser loads nothing from third parties (Sign in with 42 the one chosen exception); logs clean and capped; throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes, footer everywhere; acceptance checkbox validated, not stored; Removal on request only; 42 data minimisation; immutable 42 identifier as the only key; Privacy Policy moves with personal data. |
 | Map #1 | Stack: NestJS, PostgreSQL, Prisma, socket.io, React, Tailwind, TanStack, Recharts, Vitest, Docker Compose. Vertical slices DB-through-UI. |
 
@@ -304,7 +304,7 @@ Every item below was delegated to `/to-spec #1` by the record named, or is a gap
 | M3 | How an answer "establishes qualifying activity" for a Round | ADR-0007 d1 (Streak-atomicity correction) | `Post.answer_round_id`, set in the answer transaction to the Round open at its serialization point. | 4.3.16, 8.7 |
 | M4 | BadgeAward contention convergence | ADR-0010 d2, ADR-0014 d7 | Insert `ON CONFLICT DO NOTHING` inside the SSI tx; conflicts surface as serialization failures and the whole event retries. | 10.4 |
 | M5 | Learning Goal integrity | ADR-0014 d3 | Composite FK `(id, learning_goal_student_skill_id) → StudentSkill(student_id, id)`; `LEARN` kind and text pairing checked in the service; removing the Goal's Skill clears the Goal. | 4.3.1 |
-| M6 | Session id representation | ADR-0003 d1 vs ADR-0014 d10 (§2.3 C2) | 256-bit random token in the cookie; `Session.id` stores its SHA-256. | 5.2 |
+| M6 | Session id representation | ADR-0003 d1 vs ADR-0014 d10 (§2.3 R2) | 256-bit random token in the cookie; `Session.id` stores its SHA-256. | 5.2 |
 | M7 | OAuth attempt: cookie representation, store, expiry, single use, verification order | ADR-0018 d5, ADR-0003 d10 | `a.`-prefixed token in the one cookie; in-memory store; 10 minutes; one live attempt per browser (a new start deletes the one its cookie names); take-and-delete; fixed verification order; PKCE S256 in addition to `state`. | 5.6 |
 | M8 | Callback route | ADR-0004 amendment | `GET /api/auth/42/callback`; redirect URI `${PUBLIC_ORIGIN}/api/auth/42/callback`. | 5.6 |
 | M9 | Trusted client address | ADR-0003 d10 | nginx overwrites `X-Real-IP` with `$remote_addr`; the API reads only that header; Express `trust proxy` stays off. | 5.5 |
@@ -321,10 +321,10 @@ Every item below was delegated to `/to-spec #1` by the record named, or is a gap
 | M20 | Clearing Compose state before a clean-clone check | ADR-0016 d5 | `make wipe` = `docker compose down --volumes --remove-orphans`. | 16.5 |
 | M21 | Seed/boot regression detection before defense | Map #1 ⚠️ (open, unowned) | CI: `migrate deploy` from empty, then the seed from empty, then the seed again (must skip). | 16.4 |
 | M22 | Legal page rendering | ADR-0018 d14 | Markdown bundled with Vite `?raw`, rendered by a project-owned subset renderer that fails the build on unsupported syntax; no library added. | 3.5.4 |
-| M23 | Whether a Block can be lifted | ADR-0018 *Not settled* (§2.3 C1) | Yes: the blocker may delete their Block. | 11.3 |
+| M23 | Whether a Block can be lifted | ADR-0018 *Not settled* (§2.3 R1) | Yes: the blocker may delete their Block. | 11.3 |
 | M24 | Text caps | ADR-0011 final freeze and every text field | §4.3 and §6.0.3 table. | 6.0.3 |
 | M25 | Remove Post entry point | gap | Only as a report-group action. | 12.5 |
-| M26 | Response envelope and status policy | gap; `en.subject.md:316` | Refusals reachable in normal use return 200 `{ok:false}`; protocol failures keep 4xx/5xx. | 3.8 |
+| M26 | Response envelope and status policy | gap; `en.subject.md:318` | Refusals reachable in normal use return 200 `{ok:false}`; protocol failures keep 4xx/5xx. | 3.8 |
 | M27 | Socket client retry and origin handling | ADR-0003 d7 | `unauthorized` connect error is terminal → sign-in; transport failure triggers an HTTP probe; origin mismatch is terminal. | 7.5 |
 | M28 | Seed script: transaction boundaries, selection rules | ADR-0017 d2 | Each step is one application operation (one SSI tx); deterministic per-Round script in §14.5. | 14 |
 | M29 | Duplicated configuration sources | gap (user brief) | Boot-time consistency checks: `DATABASE_URL` vs `POSTGRES_*`, `PUBLIC_ORIGIN` port vs `HTTPS_PORT`; Compose defaults equal `.env.example`. | 15.4 |
@@ -336,41 +336,44 @@ Every item below was delegated to `/to-spec #1` by the record named, or is a gap
 
 ### 2.3 Contradictions and gaps resolved
 
-- **C1 — Whether a Block can be lifted.** ADR-0018 *Not settled* says *"No record says; the pages
+Items here are **R1–R7**. Bare `C` labels elsewhere (`C3`/`C4`/`C6`/`C7` in §§8, 10, 16) are the
+prototype's test criteria, not these items.
+
+- **R1 — Whether a Block can be lifted.** ADR-0018 *Not settled* says *"No record says; the pages
   promise neither."* But ADR-0011 d7 (2026-09-22) specifies *"a concurrent Block create/remove"*,
   ADR-0016 d1's tenth category *"races action against Block create/remove"*, and `CONTRIBUTING.md`
   → Testing repeats it. A required test cannot be written against an operation that does not
   exist, so the difference is buildable. ADR-0018 delegated the answer here (*"If `/to-spec` adds
   it, the Privacy Policy's retention list gains it"*). **Resolution: lifting a Block ships** (§11.3);
   the Privacy Policy's retention list and choices are updated in the same task.
-- **C2 — Session id format.** ADR-0014 makes every identifier `uuid(7)` *"unless noted"* and itself
+- **R2 — Session id format.** ADR-0014 makes every identifier `uuid(7)` *"unless noted"* and itself
   argues UUIDv7 is not opaque (d10); ADR-0003 d1 requires an **opaque** session id. **Resolution:**
   the session row is the noted exception (M6). No rule changes.
-- **C3 — Streak attribution of an answer needs a stored association.** ADR-0007 requires an answer
+- **R3 — Streak attribution of an answer needs a stored association.** ADR-0007 requires an answer
   to count for the Round open at its *serialization point*, never by request start time. A
   timestamp cannot represent a serialization point (a transaction's `now()` is its start). The
   association is stored (M3). This adds one nullable column that ADR-0014's table did not list; it
   is a mechanism column, not a new entity, rule or participation row.
-- **C4 — First Mentor's "moment it is earned".** ADR-0010 d7 puts earn panels on the screen where
+- **R4 — First Mentor's "moment it is earned".** ADR-0010 d7 puts earn panels on the screen where
   the act happened; First Mentor is earned by the Mentor during the **Mentee's** submission. The
   Mentor therefore sees it on the profile's Badge list on their next profile load, exactly as
   ADR-0010 d7 already rules for an offline Consistent Learner. No event is added.
-- **C5 — Browser-console rule versus HTTP error statuses.** Chrome logs every 4xx/5xx fetch as a
-  console error, and `en.subject.md:316` requires a clean console. **Resolution** (M26): refusals a
+- **R5 — Browser-console rule versus HTTP error statuses.** Chrome logs every 4xx/5xx fetch as a
+  console error, and `en.subject.md:318` requires a clean console. **Resolution** (M26): refusals a
   correctly built UI can reach in normal use return 200 with a typed refusal; statuses remain for
   protocol failures the UI never triggers in normal use. ADR-0009 d3's 401/403 file contract is
   unchanged.
 
-- **C6 — The one cookie's second use was missing from the Privacy Policy.** ADR-0018 d5's
+- **R6 — The one cookie's second use was missing from the Privacy Policy.** ADR-0018 d5's
   annotation lets the cookie hold a Sign-in-with-42 attempt identifier before a session exists (M7);
   the Privacy Policy described only a session identifier with a 30-day life. The ADR is the record
   and the page was stale: it is corrected in place (ADR-0018 d15).
-- **C7 — `CONTRIBUTING.md`'s Prisma commands contradicted M16.** They ran unpinned and from the
+- **R7 — `CONTRIBUTING.md`'s Prisma commands contradicted M16.** They ran unpinned and from the
   host, where `db` is unreachable. They are annotated with the pinned in-container commands (§15.6).
 
 Nothing else was found that changes the buildable result. Every other difference between records
-was already annotated in place with a winner. *(C6 and C7, and the mechanism corrections listed in
-§20, came from the pre-`/to-tickets` verification pass of 2026-09-23.)*
+was already annotated in place with a winner. *(R6 and R7, and the mechanism corrections listed in
+§20, came from the pre-`/to-tickets` verification passes of 2026-09-23 and 2026-09-24.)*
 
 ---
 
@@ -434,6 +437,14 @@ template and `CONTRIBUTING.md` already name them.
 └── docs/                      adr/, agents/, legal/, research/, spec.md
 ```
 
+The API build compiles from the repository root, so `dist/` mirrors the tree: `dist/src/main.js` and
+`dist/prisma/seed/main.js` (§14.1, §15.5). `nest-cli.json` therefore sets `entryFile: "src/main"`;
+Nest's default `dist/main.js` never exists, and the dev overlay's `nest start --watch` (§15.2) runs the
+entry file. The build copies no assets. The seed reads its two files from `prisma/seed/assets/`,
+resolved against the working directory, which is always the repository root: `/app` in every api
+image, the checkout in CI (§16.4). The api runtime image copies `prisma/` whole, which
+`migrate deploy` needs anyway.
+
 `.gitignore` covers `.env`, `node_modules/`, `dist/`, `src/generated/`, `web/dist/`. `.dockerignore`
 excludes the same plus `.git/`. **No Prisma Config file other than the root `prisma.config.ts` may
 exist anywhere** (ADR-0005 d5): nothing may sit at any path the pinned Prisma 7 CLI can discover a
@@ -477,7 +488,7 @@ goes through the map; a new runtime library needs a PR sentence saying why.**
 | Charts | Recharts 3, `/admin/analytics` only | ADR-0015 d7 |
 | Tests | Vitest (current major), `unplugin-swc` + `@swc/core` for the API, `supertest`, `socket.io-client` | ADR-0016 d2 |
 | Proxy | nginx stable, Alpine image, exact tag pinned in `proxy/Dockerfile` at scaffold | ADR-0004 |
-| Orchestration | Docker Compose ≥ 2.24 (`env_file.required`, `!override`) | ADR-0004 d8 |
+| Orchestration | Docker Compose ≥ 2.24.4 (`env_file.required` from 2.24.0; `!override`, used by the dev overlay, only from 2.24.4) | ADR-0004 d8 |
 | CI | GitHub Actions, one advisory workflow | ADR-0016 d8 |
 
 **Not in the stack, by rule:** JWT libraries, Passport, Redis or any shared store, a Markdown
@@ -573,7 +584,7 @@ wherever another Student sees them (ADR-0018 d4).
   a token, never Student data, never OAuth state (ADR-0018 d5).
 - Responsive from 360 px width upward; all layouts are Tailwind utilities.
 
-#### 3.5.3 Design system (Minor `:532`)
+#### 3.5.3 Design system (Minor `:526`)
 
 Project-owned, in `web/src/design/`: a colour palette as Tailwind theme tokens (primary, neutral,
 success, warning, danger, each with a 50–900 scale), a type scale on the system font stack (no web
@@ -625,6 +636,18 @@ TxContext = {
   (serialization failure) or `40P01` (deadlock). Up to **10 attempts**, sleeping a random 5–25 ms ×
   attempt number between them. Operations may declare additional retryable unique-violation targets
   (only `ReflectionPrompt.publication_order`, §8.12).
+- **A unique violation (`23505`) on a known constraint becomes that operation's mapped refusal
+  code.** The SSI reads of §3.6.3 pre-empt most of them and the constraints stay as the deterministic
+  backstop; when a partial or unordered index fires anyway, the Unit of Work maps it per operation:
+  `round_single_open` → `round_already_open` (§8.4); the `Student.email` unique → `email_unavailable`
+  (§6.1, §6.2); `friendship_unordered_pair` → `friendship_exists` (§6.4); the Report partial uniques →
+  `already_reported` (§12.2); the `Block` unique → `already_blocked` (§6.4); `UNIQUE Review(match_id)` →
+  `already_reviewed` (§9.2); `UNIQUE(prompt_id, author_id)` → `already_answered` (§8.12). Standing-Match
+  races have no backing constraint — the schema cannot express them (ADR-0014 d13) — so the service
+  check refuses with the existing `already_matched` and no `23505` arises. The refusal
+  vocabulary (§6.15) is unchanged and every constraint stays; only `ReflectionPrompt.publication_order`
+  is retried instead. **A `23505` on any other constraint is unexpected: it is never converted into an
+  unrelated business refusal and falls through to `internal_error`.**
 - **Exhaustion** raises `ConcurrencyExhausted` → HTTP 503 `busy_retry_later`; nothing was committed,
   so the client may retry, and every event constraint (Review per Match, answer per Prompt and
   Student, report per reporter and target, BadgeAward per Student and Badge) prevents a double
@@ -687,7 +710,7 @@ Every JSON response has one of two shapes:
 
 #### 3.8.2 Statuses and the clean console
 
-`en.subject.md:316` makes a clean console mandatory, and Chrome logs every 4xx/5xx `fetch` as a
+`en.subject.md:318` makes a clean console mandatory, and Chrome logs every 4xx/5xx `fetch` as a
 console error. So:
 
 | Situation | Status | Body |
@@ -793,7 +816,7 @@ http {
   script needs id order to equal its position order, creates Students one at a time and asserts it
   (§14.3).
 - **Times** are `timestamptz(3)`. Descriptive only: no rule orders by a timestamp where a
-  serialization point is meant (C3).
+  serialization point is meant (R3).
 - **Text** columns are `text`; their length limits are service-enforced (§6.0.3), not `varchar`.
 - **Foreign keys are `ON DELETE RESTRICT ON UPDATE RESTRICT` everywhere.** Only leaf rows are ever
   hard-deleted (`Session`, `Avatar`, `Evidence`, `StudentSkill`, `Block`, `Friendship`, `Like`), and
@@ -867,7 +890,7 @@ Legend for each table: **PK**; **columns** (type, null, default); **unique**; **
 | `expires_at` | timestamptz | no | sliding, 30 days (§5.2) |
 
 - **Index**: `student_id`. **Delete**: hard (logout, password change, Suspension, Removal, expired-row
-  purge at sign-in). No other column: the role is never stored here (ADR-0003 d5).
+  purge in the sign-up, sign-in and successful-42-callback transactions, §5.2). No other column: the role is never stored here (ADR-0003 d5).
 
 #### 4.3.3 `Avatar` — 0..1 per Student
 
@@ -1193,16 +1216,22 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   on the callback, never on an ordinary GET).
 - **Lazy renewal** (ADR-0003 d4): on any authenticated request, when `expires_at < now + 30 days −
   1 hour`, one `UPDATE "Session" SET expires_at = now + 30 days WHERE id = $1` runs and the cookie is
-  re-set. This is one of the two GET-time writes ADR-0003 d10 allows; it touches only the caller's own
+  re-set **only if that UPDATE reports one affected row**. Zero rows — the row was deleted or the
+  session revoked between the guard's read and this write — writes no cookie and renews nothing, so a
+  renewal can never resurrect a concurrently revoked session; §5.3 refuses the next request as usual.
+  This is one of the two GET-time writes ADR-0003 d10 allows; it touches only the caller's own
   session row.
 - **Logout** (`POST`) deletes that row, drops the sockets bound to it (§7.5), clears the cookie.
 
 ### 5.3 Per-request resolution and roles
 
-`SessionGuard` on every protected route: read `pc_session`; require the `s.` prefix; hash; one query
+`SessionGuard` on every protected route: read `pc_session`; **only an `s.`-prefixed value proceeds** —
+an `a.` value (§5.6's live OAuth attempt) or anything else fails with 401 `unauthenticated`
+**without clearing the cookie**, since this guard clears only a cookie it read as `s.`, so a protected
+request can never destroy an attempt in flight; then hash and run one query
 `SELECT s.student_id, st.role, st.suspended_at, st.removed_at FROM "Session" s JOIN "Student" st …
 WHERE s.id = $1 AND s.expires_at > now()`. No row, Suspended or Removed → 401 `unauthenticated`, the
-response clears the cookie, **nothing is written**. The role is read here, fresh, on every request, so
+response clears that `s.` cookie, **nothing is written**. The role is read here, fresh, on every request, so
 a role change takes effect on the next request with no session change (ADR-0003 d5–d6). `RolesGuard`
 checks the coarse role for `/api/admin/*` (`ADMIN`) and `/api/moderation/*` (`PEER_MODERATOR` or
 `ADMIN`). **A writing service re-reads role and sanction flags inside its transaction** and refuses
@@ -1219,7 +1248,10 @@ if they no longer allow the action (ADR-0011 d7); a read relies on this per-requ
   `PUT /api/admin/students/:id/avatar`, `PUT /api/reviews/:reviewId/evidence` skip the JSON rule and
   instead require `Origin` byte-equal to `PUBLIC_ORIGIN` **and** `X-PeerConnect-CSRF: 1`; absent,
   `null` or mismatched Origin, or a missing or different header → 403 `csrf_rejected`. The
-  `UploadCsrfGuard` runs **before** any multipart parsing. Delete routes stay JSON.
+  `UploadCsrfGuard` runs **before** any multipart parsing. **Precedence**: the nginx envelope
+  applies before the request reaches the API (§9.5 step 1: over-envelope → 413, the guard never
+  runs); a within-envelope request with a bad `Origin`/header fails CSRF (403) before Multer and
+  the size check ever see it. Delete routes stay JSON.
 - **CORS is never enabled** (`app.enableCors` is not called; Socket.IO has no `cors` option).
 - `SameSite=Lax` on the one cookie is load-bearing twice: it withholds the cookie from cross-site
   subresource requests, and it still sends it on 42's top-level redirect to the callback (§5.6).
@@ -1235,16 +1267,26 @@ if they no longer allow the action (ADR-0011 d7); a read relies on this per-requ
   Sign-in counts failed attempts; sign-up counts every attempt. Sliding window 15 minutes, limit 5;
   the sixth is refused with `too_many_attempts` before any credential check. **In memory only**,
   never persisted, never logged; at most 10,000 keys (oldest evicted); lost on restart (ADR-0018 d6).
+- **Layer**: enforced at the HTTP boundary, before any service call. The service methods take no
+  address and enforce no throttle themselves, so the seed and any direct service call bypass it by
+  construction — they never cross the guard — while every HTTP request crosses it, in-process tests
+  included (§16.2).
+- **Absent header**: the address part is the `X-Real-IP` value, or the empty string when absent.
+  Production never sees absent (nginx always sets it, overwriting); the harness never sends absent
+  (§16.2); `req.ip` is never a fallback.
 
 ### 5.6 Sign in with 42 (M7, M8)
 
 Two layers, kept separate.
 
-**(A) The authentication mechanism — specified and buildable now.**
+**(A) The authentication mechanism — transport and state: specified and buildable now; a successful sign-in also needs (B).**
 
 - **Enabled** iff `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` are both non-empty. Otherwise
   `GET /api/config` returns `oauth42Enabled: false`, the SPA renders no button, `POST
-  /api/auth/42/start` returns 404, and nothing fails at boot (ADR-0004 amendment).
+  /api/auth/42/start` returns 404, and nothing fails at boot (ADR-0004 amendment). **Disabled,
+  `GET /api/auth/42/callback` also returns 404 `not_found`** (§6.15): no attempt lookup, no
+  external call, no cookie mutation, no redirect — the failure-path redirect below belongs to an
+  enabled flow only.
 - **Fixed endpoints** (constants, not variables): authorize `https://api.intra.42.fr/oauth/authorize`,
   token `https://api.intra.42.fr/oauth/token`, identity `https://api.intra.42.fr/v2/me`; scope
   `public`. **Redirect URI** `${PUBLIC_ORIGIN}/api/auth/42/callback`, registered on the 42
@@ -1299,9 +1341,21 @@ in the same PR); whether a first 42 login with no linked Student **links, create
 whether link or create writes happen in the callback GET or in a following JSON `POST` (ADR-0003
 d10's annotation); whether signed-in linking exists (the `link` intent above is its mechanism if it
 does); any creation path's Terms acceptance (ADR-0018 d12); whether `password_hash` becomes nullable;
+whether the Terms' *forgotten password cannot be reset* line changes if a linked 42 login restores
+access (ADR-0018 d8); the Privacy Policy's marked 42 sentence, naming the field(s) kept (ADR-0018 d7);
 and who registers the 42 application. **Until #24 resolves, no Student has a stored 42 identifier,
-so step 8 always misses and the flow ends on the failure path**; the button, start, callback
-verification, token exchange and session issuance are all buildable and testable before it.
+so step 8 always misses and the flow ends on the failure path**. What builds and is exercisable
+without #24, with no live 42 application and no network to 42: the button/flag/disabled behaviour
+(including the disabled-callback 404 above), `start` minting (`state`, PKCE, cookie, store,
+one-live-attempt), and the callback's verification rejections of steps 1–5. Steps 6–7 (code
+exchange, `/v2/me`) and steps 8–9 (resolution, every link/create/refuse branch after a miss, and
+the session issuance only a resolved Student reaches) require a registered application and #24's
+mapping, and are not exercised until then. **No dedicated Vitest category covers OAuth**
+(ADR-0016 d7's list is closed, and OAuth's failures present loudly as 404s and redirects, not
+silent state); a full sign-in is demonstrated once #24 resolves, not suite-asserted before it.
+**Until #24 decides, a first 42 login with no linked Student produces no Student row and no
+session**: no ordinary active/password account is created as a stand-in — the link, create or
+refuse branch owned by #24 above is the only outcome.
 
 ### 5.7 Authorization matrix
 
@@ -1315,8 +1369,8 @@ verification, token exchange and session issuance are all buildable and testable
 | Be a candidate in matching | ✓ | ✓ | ✗ | ≥ 1 Skill, Active |
 | Accept / decline a Match | ✓ | ✓ | ✓ (a Match created before promotion) | participant |
 | Submit a Review | ✓ | ✓ | ✓ (pre-promotion Match) | the Mentee, status `ACCEPTED` |
-| Evidence write | ✓ | ✓ | ✓ (own Review) | the originating Mentee |
-| Evidence / Learning Outcome read | pair | pair | ✓ all | originating Match pair, or current role `ADMIN` |
+| Evidence write | ✓ | ✓ | ✓ (own Review only, as its Mentee) | the originating Mentee, whatever their current role; the Mentor and every other Admin are read-only (ADR-0009 d5, ADR-0014 d11, §9.4) |
+| Evidence / Learning Outcome read | pair | pair | ✓ all | originating Match pair, or current role `ADMIN` (ADR-0009 d4) |
 | Private Feedback read | Mentor, author | Mentor, author | ✓ all | |
 | Answer a Reflection Prompt | ✓ | ✓ | ✗ | Prompt live |
 | File a Report | ✓ | ✓ | ✓ | not self, not own Post, target not Removed |
@@ -1401,15 +1455,20 @@ included (ADR-0008 d7) · Persist `Student` (role `STUDENT`, xp 0, streak 0) and
 none · Concurrency: two sign-ups of one email → the unique index admits one; the loser gets
 `email_unavailable` · Visibility: sets the cookie.
 
-**`POST /api/auth/login`** — public · `{ email, password }` · throttle · verify (§5.1) · Persist
-`Session`, purge the Student's expired rows · Refusals `invalid_credentials`, `too_many_attempts`.
+**`POST /api/auth/login`** — public · `{ email, password }` · Validation §6.0.3 (malformed email →
+`validation_failed`) · throttle · verify (§5.1) · with a valid session → `already_signed_in` ·
+Persist `Session`, purge the Student's expired rows · Events none · Refusals `invalid_credentials`,
+`too_many_attempts` · Concurrency: none (each login inserts its own `Session` row) · Visibility:
+sets the cookie on success.
 
 **`POST /api/auth/logout`** — session · `{}` · delete the caller's row · Events `revokeSessions
-(sessionHash)` · clears the cookie.
+(sessionHash)` · clears the cookie · Refusals: a session already gone → `unauthenticated` (guard)
+· Concurrency: none (single-row delete).
 
-**`POST /api/auth/password`** — session · `{ currentPassword, newPassword }` · verify current →
-`password_incorrect` · Persist new hash; delete all the Student's sessions · Events
-`revokeSessions(studentId)` · clears the cookie.
+**`POST /api/auth/password`** — session · `{ currentPassword, newPassword }` · Validation §6.0.3
+(new password 8–128) · verify current → `password_incorrect` · Persist new hash; delete all the
+Student's sessions · Events `revokeSessions(studentId)` · clears the cookie · Concurrency:
+concurrent changes serialize on the `Student` row; each deletes all sessions.
 
 **`POST /api/auth/42/start`**, **`GET /api/auth/42/callback`** — §5.6.
 
@@ -1425,18 +1484,21 @@ none · Concurrency: two sign-ups of one email → the unique index admits one; 
 
 **`PATCH /api/me`** — session · `{ displayName?, email? }` · Rule: actor Active; a new email is
 unused (Removed rows included) → else `email_unavailable` · Persist `Student` · Concurrency: the
-unique index decides two concurrent claims.
+unique index decides two concurrent claims — the loser gets `email_unavailable` with nothing written.
 
 **`PUT /api/me/skills`** — session · `{ teach: uuid[], learn: uuid[] }` · Validation: ids in the
 catalogue, no duplicates within a list, ≤ 15 each · Rule: diff against current rows; delete removed
 rows, insert added rows, **keep rows that stay** · if the Goal's `LEARN` row is deleted, clear both
-Goal columns first (M5) · Persist `StudentSkill`, `Student` · Result `{ goalCleared }` · Effect: the
+Goal columns first (M5) · Persist `StudentSkill`, `Student` · Result `{ goalCleared }` · Events
+none · Refusals: validation breaches → `validation_failed` · Effect: the
 next Round's candidate pool only (ADR-0002 Consequences) · Concurrency: vs Round open, one serial
 order (the matcher read the lists).
 
-**`PUT /api/me/learning-goal`** — `{ skillId, text }` · Rule: `skillId` is on the actor's `LEARN`
-list → else `goal_skill_not_listed`; set the reference to that row and the text together.
-**`DELETE /api/me/learning-goal`** — `{}` · clears both.
+**`PUT /api/me/learning-goal`** — session · `{ skillId, text }` · Validation §6.0.3 (sentence
+1–200) · Rule: `skillId` is on the actor's `LEARN`
+list → else `goal_skill_not_listed`; set the reference to that row and the text together · Result
+the stored Goal · Events none · Concurrency: single-row write on the actor's `Student` row.
+**`DELETE /api/me/learning-goal`** — session · `{}` · clears both · Events none.
 
 ### 6.3 Files
 
@@ -1445,11 +1507,11 @@ list → else `goal_skill_not_listed`; set the reference to that row and the tex
 | `GET /api/files/avatars/:token` | session → else **401** | any signed-in Student; unknown token → 404; bytes with canonical `Content-Type`, `nosniff`, `Cache-Control: private, max-age=86400, immutable` |
 | `GET /api/files/evidence/:token` | session → else **401** | resolve `Evidence → Review → Match`; allow iff actor is that Match's `mentor_id` or `mentee_id`, or the actor's current role is `ADMIN` → else **403**; unknown token → 404; `Content-Disposition: inline; filename="<sanitised>"`, `nosniff`, `Cache-Control: private, no-cache` |
 
-**`PUT /api/me/avatar`** (multipart field `file`) — `UploadCsrfGuard` → session → Multer (one file,
-limit 2 MiB + 1 byte) → byte validation §9.5 · Rule: actor Active · Persist upsert `Avatar` with a new
+**`PUT /api/me/avatar`** (multipart field `file`) — `UploadCsrfGuard` → session → Multer (one file, `limits.fileSize` 2 MiB + 1 byte) → size check (`size > 2,097,152` →
+`file_too_large`) → byte validation §9.5 · Rule: actor Active · Persist upsert `Avatar` with a new
 token · Result `{ avatarUrl }` · Refusals `file_too_large`, `file_type_not_allowed`, `file_invalid` ·
 Concurrency: two uploads serialize; the later commit wins; one row.
-**`DELETE /api/me/avatar`** — `{}` · delete if present (idempotent `ok: true`).
+**`DELETE /api/me/avatar`** — session · `{}` · Rule: actor Active · delete if present (idempotent `ok: true`) · Events none.
 
 **`PUT /api/reviews/:reviewId/evidence`**, **`DELETE /api/reviews/:reviewId/evidence`** — §9.4.
 **Admin avatar** routes — §6.12.
@@ -1462,40 +1524,48 @@ Concurrency: two uploads serialize; the later commit wins; one row.
 | `GET /api/friends/requests` | `{ incoming, outgoing }` pending, Removed counterparts excluded |
 | `GET /api/blocks` | the actor's own Blocks |
 
-**`POST /api/friends/requests`** — `{ studentId }` · Rule (reads: target row; Block rows of the pair
-in both directions; Friendship rows of the pair): target exists, ≠ actor, not Removed; no Block either
+**`POST /api/friends/requests`** — session · `{ studentId }` · Rule (reads: target row; Block rows of the pair
+in both directions; Friendship rows of the pair): target exists → else `not_found`; target ≠ actor →
+else `self_action_forbidden`; target not Removed → else `student_removed`; no Block either
 way → else `friend_request_unavailable` (the same wording whoever blocked, so the other Student is not
-told); no Friendship row → else `friendship_exists` · Persist `Friendship(PENDING)` · Concurrency: vs a
-Block, one serial order (§11.2); vs the opposite request, the unordered unique index admits one.
+told); no Friendship row → else `friendship_exists` · Persist `Friendship(PENDING)` · Events none
+· Concurrency: vs a Block, one serial order (§11.2) — Block first → the request loses with
+`friend_request_unavailable`; request first → the Block deletes the pending row; vs the
+opposite request, `friendship_unordered_pair` admits one and
+the loser gets `friendship_exists` with nothing written.
 
-**`POST /api/friends/requests/:id/accept`** — `{}` · Rule: actor is the addressee, status `PENDING` →
+**`POST /api/friends/requests/:id/accept`** — session · `{}` · Rule: actor is the addressee, status `PENDING` →
 else `request_not_pending`; requester not Removed and no Block → else `friend_request_unavailable` ·
-Persist `ACCEPTED`, `responded_at`.
-**`POST /api/friends/requests/:id/decline`** — addressee; deletes the pending row.
-**`DELETE /api/friends/requests/:id`** — requester cancels a pending row.
+Persist `ACCEPTED`, `responded_at` · Events none.
+**`POST /api/friends/requests/:id/decline`** — session · addressee; deletes the pending row · Events none.
+**`DELETE /api/friends/requests/:id`** — session · requester cancels a pending row · Events none.
 Accept, decline and cancel on a request id that no longer exists (the other party cancelled,
 declined or blocked first) or is no longer `PENDING` → `request_not_pending` (200): a hard-deleted
 row is indistinguishable from an unknown one, and this is a race a correct UI reaches (§3.8.2).
-**`DELETE /api/friends/:studentId`** — `{}` · either party ends an accepted Friendship (hard delete);
-none → `not_friends`.
+**`DELETE /api/friends/:studentId`** — session · `{}` · either party ends an accepted Friendship (hard delete);
+none → `not_friends` · Events none.
 
-**`POST /api/blocks`** — `{ studentId }` · Rule (reads: target; the pair's Friendship rows): target
-exists, ≠ actor, not Removed · Persist `Block`; **delete the pair's Friendship row, pending or
+**`POST /api/blocks`** — session · `{ studentId }` · Rule (reads: target; the pair's Friendship rows): target
+exists → else `not_found`; target ≠ actor → else `self_action_forbidden`; target not Removed → else
+`student_removed` · Persist `Block`; **delete the pair's Friendship row, pending or
 accepted** · a Match in progress is untouched (ADR-0006 d10) · Refusal `already_blocked` (unique
 index) · Events none.
-**`DELETE /api/blocks/:studentId`** — `{}` · deletes the actor's own Block; `not_blocked` if none;
-restores nothing (M23, §11.3).
+**`DELETE /api/blocks/:studentId`** — session · `{}` · deletes the actor's own Block; `not_blocked` if none;
+restores nothing (M23, §11.3) · Events none.
 
 ### 6.5 Direct Messages (HTTP half; sending is §7.3)
 
 | Endpoint | Behaviour |
 | --- | --- |
 | `GET /api/messages/threads` | per peer: `StudentRef`, last message, `unreadCount` (messages to the actor with `read_at` null), `canSend` (no Block either way, peer not Removed); newest activity first |
-| `GET /api/messages/threads/:peerId?cursor` | both directions, newest first, 50 per page; **no side effect** |
+| `GET /api/messages/threads/:peerId?cursor` | session · both directions, newest first, 50 per page; unknown `peerId` → 404 `not_found`; **no side effect** |
 
-**`POST /api/messages/threads/:peerId/read`** — `{}` · Persist `read_at = now` on rows with
+**`POST /api/messages/threads/:peerId/read`** — session · `{}` · unknown `peerId` → 404
+`not_found`; a Block with the peer or a Removed peer changes nothing — the call still marks the
+actor's own inbox · Persist `read_at = now` on rows with
 `recipient_id = actor`, `sender_id = peer`, `read_at IS NULL`; never on the actor's own sent rows
-(ADR-0014 d6) · Result `{ updated }` · Events none (no read receipt).
+(ADR-0014 d6) · Result `{ updated }` · Events none (no read receipt) · Concurrency: vs a concurrent
+message, one serial order — a message ordered first is counted, one ordered after is not.
 
 ### 6.6 Rounds and Matches (Student side)
 
@@ -1504,7 +1574,7 @@ restores nothing (M23, §11.3).
 | `GET /api/rounds/current` | `{ round: { id, number, openedAt } | null }` |
 | `GET /api/matches/current` | the actor's standing Match in the open Round, else null (`MatchView`) |
 | `GET /api/matches?page` | the actor's own Match history, every status |
-| `GET /api/matches/:id` | pair or Admin → `MatchView` + `review` (Learning Outcome, Evidence metadata) + `privateFeedback` when the reader is its Mentor, its author or an Admin |
+| `GET /api/matches/:id` | pair or Admin → `MatchView` + `review` (Learning Outcome, Evidence metadata) + `privateFeedback` when the reader is its Mentor, its author or an Admin; any other authenticated non-participant → **404 `not_found`** (the invisibility §8.5 gives accept/decline) |
 
 `MatchView` = `{ id, roundNumber, status, myRole: MENTOR|MENTEE, partner: StudentRef,
 compatibilityScore | null, handMade, goalBonusApplied, coverage: { forward: Skill[], reverse:
@@ -1539,11 +1609,13 @@ reads *"Matched by an Admin"* with no number (ADR-0006 d10, CONTEXT).
 | `GET /api/posts/:id` | one Post |
 | `GET /api/posts/:id/likes` | the likers' `StudentRef`s |
 
-**`POST /api/posts/:id/like`** — `{}` · Post exists (unknown → 404) · insert `ON CONFLICT DO
-NOTHING` · `{ likeCount, likedByMe: true }`. **`DELETE /api/posts/:id/like`** — `{}` · delete if
-present. No XP, no event, not reportable (ADR-0014 d5). **A removed Post** answers every route above
+**`POST /api/posts/:id/like`** — session · `{}` · Post exists (unknown → 404) · insert `ON CONFLICT DO
+NOTHING` · `{ likeCount, likedByMe: true }`. **`DELETE /api/posts/:id/like`** — session · `{}` · delete if
+present · `{ likeCount, likedByMe: false }`. No XP, no event, not reportable (ADR-0014 d5). **A removed Post** answers every route above
 with `post_unavailable` (200), never 404: a loaded feed can still show a Post a moderator has just
-removed, so reaching it is normal use (§3.8.2).
+removed, so reaching it is normal use (§3.8.2). That includes both Like writes: `POST
+.../like` and `DELETE .../like` against a removed Post return `post_unavailable` (200) and write
+nothing — no insert, no delete.
 
 ### 6.10 Progress and the Leaderboard
 
@@ -1562,7 +1634,7 @@ removed, so reaching it is normal use (§3.8.2).
 | Endpoint | Behaviour |
 | --- | --- |
 | `GET /api/admin/students?q&role&status&sort&order&page&pageSize` | the Users table: name, email, role, status (Active/Suspended/Removed), **Removed rows included**; `q` matches name or email |
-| `GET /api/admin/students/:id` | full detail, view-only when Removed |
+| `GET /api/admin/students/:id` | the §6.2 profile plus email, role, status, avatar and the Student's Matches (§4.6); **never** their Friends, pending requests, Blocks or Direct Messages, which §4.6 keeps from Admins; view-only when Removed |
 | `PATCH /api/admin/students/:id` | `{ displayName?, email? }` — target not Removed → else `student_removed` |
 | `PUT /api/admin/students/:id/skills` | as §6.2, on the target |
 | `PUT` / `DELETE /api/admin/students/:id/learning-goal` | as §6.2, on the target |
@@ -1596,7 +1668,7 @@ Report or Direct Message (ADR-0008 d8, ADR-0018 d8). No endpoint creates a Stude
 | `unauthenticated` | 401 | no valid session on a protected route |
 | `forbidden` | 403 | role or relation forbids (never reachable from the UI's own controls) |
 | `csrf_rejected` | 403 | upload Origin/header gate |
-| `not_found` | 404 | unknown resource, disabled OAuth start |
+| `not_found` | 404 | unknown resource, disabled OAuth start or callback |
 | `payload_too_large` | 413 | transport envelope exceeded |
 | `unsupported_media_type` | 415 | mutation not JSON / upload not multipart |
 | `busy_retry_later` | 503 | Unit of Work retries exhausted; nothing committed |
@@ -1773,29 +1845,41 @@ set the actor's `*_accepted_at` if null; when both are set → `ACCEPTED`. Repea
 recorded returns the current state. Status `ACCEPTED` with the actor already accepted → idempotent
 `ok`. Any other status → `match_not_pending`. A Match created before the actor's promotion to `ADMIN`
 may still be accepted (ADR-0008 d2). Concurrent accepts by both sides both land, one transition.
+Events none · Visibility: no event; the pair reads the new status on the next load (§7.4).
 
-**`POST /api/matches/:id/decline`** — participant · status `MATCHED` or `ACCEPTED` → `DECLINED`,
+**`POST /api/matches/:id/decline`** — session · actor must be its Mentor or Mentee (otherwise 404,
+as for accept) · status `MATCHED` or `ACCEPTED` → `DECLINED`,
 `declined_by_id = actor`; else `match_not_in_progress`. Both Students become unmatched (derived);
 nothing searches for a replacement (ADR-0002 d8). A Block is not a decline; the blocking Student
-declines here if they want out (ADR-0006 d10).
+declines here if they want out (ADR-0006 d10). Events none · Visibility: as accept.
 
 **Concurrency**: accept, decline, Review, Round close, Suspension and Removal all write the Match
 row; whichever commits first wins and the others see the new status (ADR-0002 d5).
 
 ### 8.6 Hand-made Match — `POST /api/admin/rounds/current/matches`
 
-- **Auth** `ADMIN`. **Input** `{ studentIds: [a, b] }`.
-- **SSI tx** reads: the actor; the open Round → `no_open_round`; `a ≠ b` → `same_student`; both
+- **Auth** `ADMIN`. **Input** `{ studentIds: [a, b] }`. **Validation**: two UUIDs (§6.0.1:
+  malformed → 400); distinctness is the `same_student` rule below, not a shape check.
+- **SSI tx** reads: the actor (Active); the open Round → `no_open_round`; `a ≠ b` → `same_student`; both
   Students against the candidate predicate §8.1 → `not_a_candidate`; each one's Matches in this Round
   with a standing status → `already_matched`; the pair's Block rows either way → `pair_blocked`; the
   **count of all Match rows in the Round**, any status (the Mission index). `checkpoint
   ("match.handmade")`.
-- **Rule**: orient by §8.3 steps 3–4 (higher Score is Mentor, lower id on a tie). **No floor, no
-  history check** — the only exemptions (ADR-0006 d10). The Score computed to orient is neither stored
-  nor shown.
-- **Persist**: `Match(status MATCHED, compatibility_score NULL, goal_bonus_applied, mission =
-  MISSION[count mod 6])` and its coverage rows (possibly none).
+- **Rule**: orient by §8.3 steps 3–4 — score **both** orientations with §8.2's Score (Learning-Goal
+  bonus included), higher Score is Mentor, lower id on a tie — and set `goal_bonus_applied` = true
+  exactly when §8.2's bonus condition holds for the **chosen** orientation (the Mentee's Learning Goal
+  skill in the forward set), false otherwise: the same Score, orientation and goal-bonus logic the
+  matcher runs (§8.3), with no hand-made rule of its own. **No history check (no-repeats), and no
+  floor — vacuous, since the orienting Score is never stored (`NULL`)** — the only exemptions
+  (ADR-0006 d10). The Score computed to orient is neither stored nor shown; only the
+  frozen boolean survives (ADR-0014 d9).
+- **Persist**: `Match(status MATCHED, compatibility_score NULL, goal_bonus_applied = the Rule's
+  boolean, mission = MISSION[count mod 6])` and its coverage rows (possibly none). Nothing else of
+  the computation persists — not the orienting Score, not the bonus.
 - **Events**: `match:ready` to both.
+- **Failure**: any refusal above commits nothing.
+- **Result**: the created `Match` (`MatchView`, `compatibilityScore: null`).
+- **Visibility**: the pair reads it via `GET /api/matches/:id`; Admins via `GET /api/admin/matches/:id`.
 - **Concurrency**: two creations sharing a Student → one commits, the other retries and gets
   `already_matched` with nothing written (ADR-0006 d10). Creation vs close → creation first: it lapses
   with the Round; close first: `no_open_round`, not moved into a later Round (ADR-0002 d7). Creation vs
@@ -1804,7 +1888,7 @@ row; whichever commits first wins and the others see the new status (ADR-0002 d5
 ### 8.7 Closing a Round — `POST /api/admin/rounds/current/close`
 
 - **Auth** `ADMIN`. **Input** `{}`.
-- **SSI tx** reads: the actor; the open Round *R* → `no_open_round`; every Match in *R*; every
+- **SSI tx** reads: the actor (Active); the open Round *R* → `no_open_round`; every Match in *R*; every
   Student's role, flags and `streak`; per Student, **qualifying activity in *R***: a Match in *R* with
   status `COMPLETED` where they are Mentor or Mentee, **or** a Post with `prompt_id` set, `author_id`
   = them and `answer_round_id = R` (removed or not). `checkpoint("round.close")`.
@@ -1819,6 +1903,8 @@ row; whichever commits first wins and the others see the new status (ADR-0002 d5
      NOTHING`.
 - **Events**: `round:closed`.
 - **Result** `{ roundId, lapsed, streaksIncremented, streaksReset, consistentLearnerAwarded }`.
+- **Visibility**: no per-Student event besides `round:closed`; profiles and analytics read the new
+  state on the next load (§7.4, §10.7, §13).
 - **Concurrency**: a Prompt answer ordered before the close is counted (its `answer_round_id` is *R*);
   one ordered after cannot name *R*, because it read no open Round or a later one. A Suspension or
   Removal ordered before the close is skipped; ordered after, the close's Streak and Badge stand and
@@ -1858,16 +1944,20 @@ their status. The index is never stored; the value is written once. No write pat
 
 The SPA renders, from the frozen state only: the FORWARD Skills (*"<partner> can teach you …"* or
 *"You can teach <partner> …"* by role), the REVERSE Skills if any, and a Learning Goal note when
-`goalBonusApplied`. A Score is never shown without that sentence; a hand-made Match shows *"Matched
-by an Admin"* and no number. Because every matcher Match has a non-empty FORWARD set, every
+`goalBonusApplied` — the stored boolean, written at insert for a hand-made Match too (§8.6). A Score
+is never shown without that sentence; a hand-made Match shows *"Matched by an Admin"* and no number,
+the note and the number staying independent of each other. Because every matcher Match has a non-empty FORWARD set, every
 displayed Score names at least one concrete Skill and its direction (C4).
 
 ### 8.12 The Reflection Prompt lifecycle (ADR-0007)
 
-**Publish — `POST /api/admin/prompts`** — `ADMIN` · `{ question }` (1–300) · SSI reads the actor and
+**Publish — `POST /api/admin/prompts`** — `ADMIN` · `{ question }` (1–300) · SSI reads the actor
+(Active) and
 `max(publication_order)` · `checkpoint("prompt.publish")` · insert `ReflectionPrompt(question,
 published_at = ctx.now, publication_order = max + 1, or 1 for the first)`; a unique violation on
-`publication_order` is retryable for this operation only · no event · result the Prompt. **The
+`publication_order` is retryable for this operation only · no event · result the Prompt ·
+Refusals: over-long or empty question → `validation_failed` · Visibility: no event; the live Prompt
+is read on the next load (§7.4). **The
 greatest `publication_order` is the one live Prompt**; publishing closes the previous one for
 answering and nothing else. Two overlapping publications both commit with distinct values, and a
 publication that committed before another began always has the smaller value (M2). No edit, delete,
@@ -1933,7 +2023,7 @@ Evidence is the one mutable attachment.
 
 ### 9.3 Reading
 
-- `GET /api/matches/:id` (pair, Admin) and `GET /api/admin/matches/:id` return the Learning Outcome and
+- `GET /api/matches/:id` (pair, Admin; any other Student → 404, §6.6) and `GET /api/admin/matches/:id` return the Learning Outcome and
   Evidence metadata; Private Feedback is included only for its Mentor, its author and Admins.
 - `GET /api/me/feedback-received` — the Mentor's private route, newest first, ratings shown one by
   one, never averaged, a Removed author shown as the tombstone (ADR-0013 d4–d8). It is never on the
@@ -1942,16 +2032,20 @@ Evidence is the one mutable attachment.
 ### 9.4 Evidence — `PUT` / `DELETE /api/reviews/:reviewId/evidence`
 
 - **PUT** (multipart `file`), in this order: `UploadCsrfGuard` → session → pre-check that the actor
-  is the Mentee of **this Review's Match** (else 403) → Multer (one file, 5 MiB + 1 byte) → byte
-  validation §9.5 — **all before any transaction** → SSI tx re-reads `Review → Match`, confirms the
-  Mentee and that the actor is Active, then **upserts** the one `Evidence` row with a new token
-  (create or replace in one statement) → result `{ token, mime, size, filename }`.
-- **DELETE** `{}` → same authorization → SSI delete if present (idempotent).
+  is the Mentee of **this Review's Match** (else 403) → Multer (one file, `limits.fileSize` 5 MiB + 1 byte) → size check (`size >
+  5,242,880` → `file_too_large`) → byte validation §9.5 — **all before any transaction** → SSI tx re-reads `Review → Match`, confirms the
+  Mentee and that the actor is Active — **the role is not read**: a Mentee promoted to `ADMIN` after
+  the Match was created keeps the path for their own Review (ADR-0009 d5, ADR-0014 d11, the
+  standing-Match exception of ADR-0008 d2) — then **upserts** the one `Evidence` row with a new token
+  (create or replace in one statement) → result `{ token, mime, size, filename }` · Events none ·
+  Refusals `file_too_large`, `file_type_not_allowed`, `file_invalid`, plus the pre-check's 403 ·
+  Visibility: reads via `GET /api/files/evidence/:token` and the Match detail (§9.3).
+- **DELETE** `{}` → same authorization → SSI delete if present (idempotent `ok: true`) · Events none.
 - A rejected or failed replacement leaves the old Evidence untouched, because validation precedes the
   transaction and the transaction is atomic (ADR-0009 d5).
 - Allowed after the Match is `COMPLETED`, in any later Round; a later Match is irrelevant. The Mentor
-  and Admins are read-only. Suspension pauses the path (no session), reinstatement restores it,
-  Removal ends it and the row survives (ADR-0009 d5–d6).
+  and every Admin who is not this Review's Mentee are read-only (ADR-0009 d5). Suspension pauses the
+  path (no session), reinstatement restores it, Removal ends it and the row survives (ADR-0009 d5–d6).
 - **Concurrency**: put vs put vs delete on one Review → one serial order; `UNIQUE(review_id)` holds at
   every commit.
 - **Read**: `GET /api/files/evidence/:token` (§6.3). The pair means **the Mentor and Mentee of the
@@ -1962,7 +2056,11 @@ Evidence is the one mutable attachment.
 
 1. **Transport**: nginx admits 6 MiB on the three upload routes and 1 MiB on every other `/api/`
    route; a maximum-size Evidence upload must reach the API (ADR-0009 d2).
-2. **Size**: Multer's limit is the cap + 1 byte; exceeding it → `file_too_large`. Empty → `file_invalid`.
+2. **Size**: Multer's `limits.fileSize` is the documented cap + 1 byte, so a boundary payload reaches
+   the API intact and the **service**, not the parser, judges it: any file with `size >` the
+   documented cap — 2,097,152 (Avatar) / 5,242,880 (Evidence) — is rejected `file_too_large`. Exactly
+   the cap is accepted; one byte above it is `file_too_large`. A file past Multer's own limit aborts
+   the stream and takes the same `file_too_large` path. Empty → `file_invalid`.
 3. **Format from the bytes**: PNG signature `89 50 4E 47 0D 0A 1A 0A`; JPEG `FF D8 FF`; PDF `%PDF-`.
    None → `file_type_not_allowed`. **An Avatar that is a PDF → `file_type_not_allowed`.**
 4. **Complete structural validation** of the detected format, rejecting empty, malformed or
@@ -2039,6 +2137,22 @@ nothing) and still commits its own event and XP. Result: **both events and both 
 once, exactly one `BadgeAward`, no threshold missed** (ADR-0010 d2). A duplicate of the *same* event is
 stopped by that event's own constraint and pays nothing.
 
+**Under M1 no schedule puts two valid events for one Student in flight against the same Badge**, so
+the rule above holds vacuously and the `ON CONFLICT DO NOTHING` insert remains as a backstop:
+
+- **First Mentor** would need two Matches `ACCEPTED` at once with the same Mentor. That cannot
+  happen, because a Student has at most one standing Match per Round, only one Round is open, and
+  every Match in a closed Round is terminal.
+- **Consistent Learner** is written only by the one Round close.
+- **Knowledge Sharer** needs a second answer, to a *newer* Prompt, whose publication commits between
+  the two answers' reads. That makes the older answer the pivot of a read/write cycle (newer answer
+  → older answer → publication). PostgreSQL cancels the pivot (*"Canceled on identification as a
+  pivot, during write"*), and its retry re-reads liveness and is refused `prompt_not_live`
+  (ADR-0007 d1).
+
+Reproduced on PostgreSQL 17.11 on 2026-09-24 in every release order. The older answer commits only
+when no newer answer holds reads. Category 9 asserts the outcome this schedule actually has (§16.3).
+
 ### 10.5 The Leaderboard — `GET /api/leaderboard` (ADR-0010 d6)
 
 Eligible = role `STUDENT` or `PEER_MODERATOR`, `suspended_at IS NULL`, `removed_at IS NULL`. Order
@@ -2061,7 +2175,7 @@ Knowledge Sharer progress but never Streak (ADR-0002 d9). Consistent Learner is 
 - **Profile progress**: XP, Level progress bar, Streak, Badge list with dates. An open profile refetches
   `/api/me/progress` on `round:closed`, so Consistent Learner appears as soon as the close commits.
   First Mentor (earned during the Mentee's submission) and any Badge earned while the Student was away
-  appear on the next profile load (§2.3 C4).
+  appear on the next profile load (§2.3 R4).
 - **No** toast, inbox, unread flag, "seen" state or notification delivery.
 - **`/rules`**: a static page with the XP table, the ten Level bands and the Level-10 cap, and the three
   Badge conditions. No data is fetched.
@@ -2101,7 +2215,7 @@ history elsewhere shows the tombstone.
   Match: Block first, no Match; creation first, the Match stands (ADR-0006 d10). A Block racing a
   Peer Moderator's queue action: one serial order at the action (§12.5).
 
-### 11.3 Lifting a Block (M23, §2.3 C1)
+### 11.3 Lifting a Block (M23, §2.3 R1)
 
 `DELETE /api/blocks/:studentId` deletes the actor's own Block row. It restores nothing: an ended
 Friendship must be requested again; the matcher's no-repeats history is unaffected; a Block the other
@@ -2163,7 +2277,7 @@ An **open group** is the `OPEN` rows for one target (one `post_id` or one `repor
 the reading transaction's serialization point. Derived, never stored; no case entity. One action
 resolves the whole group.
 
-### 12.4 Who sees which group — `GET /api/moderation/queue`
+### 12.4 Who sees which group — `GET /api/moderation/queue` (ADR-0011 d5–d7)
 
 One `REPEATABLE READ READ ONLY` transaction; groups ordered by their oldest open row.
 
@@ -2205,8 +2319,12 @@ Admin only.
 - **Remove Post exists only as this group action** (M25): every removal is attributed through
   `resolved_by_id`, and an Admin cannot bypass the own-complaint guard by removing a Post they
   reported.
+- **Guard scope**: this guard and §12.4's hiding gate the queue read and these two resolution
+  endpoints — not §12.7's sanctions. Remove Student action-resolves **every** open report on its
+  target, a row the removing Admin filed included, attributed to that Admin (ADR-0011 d10,
+  §12.7); §12.6 then governs who sees the batch.
 
-### 12.6 Resolved audit — `GET /api/admin/reports/resolved?page` (Admin)
+### 12.6 Resolved audit — `GET /api/admin/reports/resolved?page` (Admin) (ADR-0011 d6, d8)
 
 Resolution batches — rows sharing `(target, resolved_by_id, resolved_at, state)` — newest first, each
 with the target (the Post body even if removed; the Student as `StudentRef`), the state, the resolver,
@@ -2235,6 +2353,11 @@ must stay ≥ 1 afterwards → `last_active_admin` (ADR-0008 d9).
   Private Feedback, Evidence, Direct Messages, Likes, Blocks, Reports, BadgeAwards and XP all stay,
   rendered as the tombstone (ADR-0008 d6–d7, ADR-0009 d6, ADR-0018 d3). A Student reaches it only by
   asking an Admin; there is no self-service deletion.
+- **Removal's report side effect takes no own-report exclusion** (ADR-0011 d10): *every* open Report
+  on the target — including one this Admin filed — commits `ACTIONED` with `resolved_by_id = actor`
+  in the same transaction, one `resolved_at` for the batch. Afterwards §12.6 hides that batch from
+  the removing Admin and shows it, with the attribution, to every other Admin. The §12.4 guard bars
+  queue reads and group resolutions, never this sanction, so the two rules cannot collide.
 - **Edits** (`PATCH`, Skills, Learning Goal, avatar) are allowed on Active and Suspended targets only,
   and never touch password, XP, Level, Streak, Badges or anything the Student wrote (ADR-0008 d8).
 - **Concurrency**: two Admins demoting, suspending or removing each other cannot both succeed; a
@@ -2253,9 +2376,11 @@ other Students (ADR-0018 d4).
 
 Admin only (a Peer Moderator gets 403). One `REPEATABLE READ READ ONLY` transaction. Nothing is stored
 (ADR-0015 d5): no snapshot, aggregate table, materialised view, export, date range or per-Student
-drill-down. **Always about the community, never a named Student** (ADR-0015 d9).
+drill-down. **Always about the community, never a named Student** (ADR-0015 d9). No dedicated
+Vitest category covers it: a read-only view over committed state fails loudly (wrong numbers on the
+dashboard), so the closed list (ADR-0016 d7) needs no eleventh category for it.
 
-### 13.1 Response
+### 13.1 Response (ADR-0015 d2)
 
 ```
 {
@@ -2336,9 +2461,11 @@ those events every figure is as of the last load and refreshes on reload. No oth
 prototype's `COHORT GENERATOR` block. The returned objects may drop `mentorReputation` and
 `timesMentor`, **but every random draw stays, in the same order**, so `generateCohort({ size: 20,
 seed: 42 })` reproduces the prototype's measured cohort exactly. The fixture owns generation only;
-everything that reaches the database is the seed's.
+everything that reaches the database is the seed's. The prototype's hand-built cohorts (`COHORTS`)
+are **not** fixture content: category 1's one use of `starvation` copies its four literal Students
+into `test/01-matcher/` (§16.3), leaving ADR-0016 d3's module list as it is.
 
-### 14.3 The cohort
+### 14.3 The cohort (ADR-0017 d3)
 
 - `generateCohort({ size: 30, seed: 42, unmatchable: 1 })`. Position *p* = 0…29.
 - Display name `NAMES[p mod 24]`, with a suffix " 2" for *p* ≥ 24; email
@@ -2373,7 +2500,7 @@ work or in a team project.* · *What is a mistake that taught you something impo
 piece of advice you'd give a first-year student?* · *What technology are you currently learning, and
 why?*
 
-### 14.5 The per-Round script
+### 14.5 The per-Round script (ADR-0017 d2, d4)
 
 Let `M[0..n−1]` be the matcher's Matches in selection order.
 
@@ -2415,8 +2542,9 @@ Let `M[0..n−1]` be the matcher's Matches in selection order.
 - **Target** with 15 matcher Matches a Round: Round 1 = 11 completed + 2 lapsed + 2 declined (+1
   repair completed); Round 2 = 12 + 2 + 1; Round 3 = 10 + 2 + 2 + 1 terminated (+1 repair); Round 4 =
   11 + 2 + 1 + 1 terminated. **Totals 62: 46 `COMPLETED`, 8 `LAPSED`, 6 `DECLINED`, 2
-  `TERMINATED_BY_ADMIN`; completion 74 %.** The pool is 31 (thirty plus the Peer Moderator) in Rounds
-  1–3 and 30 in Round 4. **These are targets the deterministic run confirms, never counts the seed
+  `TERMINATED_BY_ADMIN`; completion 74 %.** The pool is 31 (thirty plus the Peer Moderator) at the
+  open of Rounds 1–3 — 30 for the rest of Round 3 after *S*'s suspension inside it — and 30 in
+  Round 4. **These are targets the deterministic run confirms, never counts the seed
   forces**: no Match is added to reach 15. The seed logs the actual distribution; if the first run
   differs, ADR-0017 d4's table and the 74 % are corrected from it (a record update, not a code change).
 
@@ -2425,7 +2553,9 @@ Let `M[0..n−1]` be the matcher's Matches in selection order.
 - **Demo Student *D*** = the first Active `STUDENT` by position, outside the reserved positions,
   satisfying §14.8 check 3. "Eligible" below = Active `STUDENT`s other than *D*, *S*, *R* and the
   reserved positions, in position order: 30 − 3 reserved − *D*, *S*, *R* = **24**. The social graph
-  and message threads below take them each once, 23 in all.
+  and message threads below take 23 of the 24, each once; the one remaining eligible Student takes
+  no graph or thread part and stays available to the report fixtures, which reselect from the start
+  of the order.
 - **Accepted Friendships** (request, then accept): *D* with the next six eligible; then six pairs among
   the next twelve.
 - **A Block that ends a Friendship**: the next two eligible, *P* and *Q* — *P* requests, *Q* accepts, *P*
@@ -2440,10 +2570,10 @@ Let `M[0..n−1]` be the matcher's Matches in selection order.
 
 ### 14.7 Report fixtures (ADR-0017 d7)
 
-Parties are eligible Students (§14.6; never the bootstrap Admin, the Peer Moderator, *D*, *S*, *R* or a
+Three fixture groups comprising four Report rows. Parties are eligible Students (§14.6; never the bootstrap Admin, the Peer Moderator, *D*, *S*, *R* or a
 reserved position), taken again **from the start** of the eligible order, so a social-graph party may
 also be a report party: the graph and threads have already used 23 of the 24, and these fixtures
-need seven more parties. Each party is the first eligible Student, in position order, not already a
+need seven party-slots, filled by reuse. Each party-slot takes the first eligible Student, in position order, not already a
 party to the same fixture; a Post author is the first such Student with a Prompt-answer Post not
 used by an earlier fixture.
 The Peer Moderator is in no Block, so no party is in a Block with them, and nothing is filed by or
@@ -2516,14 +2646,16 @@ priority never fires on stage — accepted, not "fixed" by seeding XP).
 | Service | Build / image | Ports | Depends on | Healthcheck | Restart |
 | --- | --- | --- | --- | --- | --- |
 | `db` | `postgres:17-alpine`, command `postgres -c log_error_verbosity=terse -c log_min_error_statement=panic`; named volume `db-data` | none | — | `pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"` — over TCP, because on first boot the image's init server listens on the Unix socket only (`listen_addresses=''`) and would pass a socket check before `api` can connect | default (no) |
-| `api` | `./Dockerfile`, target `runtime` (base) / `dev` (overlay) | none | `db: service_healthy` | `wget -qO- http://127.0.0.1:3000/api/health`, interval 5 s, `start_period` 180 s | **no** — a failed boot stays failed and visible |
-| `proxy` | `./proxy/Dockerfile`, target `runtime` / `dev` | base `127.0.0.1:${HTTPS_PORT:-8443}:8443`, `127.0.0.1:${HTTP_PORT:-8080}:8080`; overlay `!override` → `127.0.0.1:8081:8081` | `api: service_healthy` | — | default |
+| `api` | context `.`, `dockerfile: Dockerfile`, target `runtime` (base) / `dev` (overlay) | none | `db: service_healthy` | `wget -qO- http://127.0.0.1:3000/api/health`, interval 5 s, `start_period` 180 s | **no** — a failed boot stays failed and visible |
+| `proxy` | context `.`, `dockerfile: proxy/Dockerfile`, target `runtime` / `dev` | base `127.0.0.1:${HTTPS_PORT:-8443}:8443`, `127.0.0.1:${HTTP_PORT:-8080}:8080`; overlay `!override` → `127.0.0.1:8081:8081` | `api: service_healthy` | — | default |
 
 Every service has `logging: *pc-logging` (a top-level `x-logging` anchor: `driver: json-file`,
 `options: { max-size: "10m", max-file: "3" }`, M12). Every service with container configuration
 loads `env_file: [{ path: .env.example, required: true }, { path: .env, required: false }]` in that
 order (ADR-0004 d8). The base file declares `name: peerconnect`. No fourth service exists on either
-path.
+path. **Both images build from the repository root as their build context** (`context: .` with the
+`dockerfile` paths in the table), so files outside an image's own directory — `proxy/` included —
+stay in scope on a fresh clone's build, and the `dev` targets are chosen the same way.
 
 ### 15.2 The two paths
 
@@ -2536,7 +2668,9 @@ path.
   proxies `/` and the HMR upgrade to `host.docker.internal:5173`; `api` builds target `dev`,
   bind-mounts `.:/app` with an anonymous `/app/node_modules`, runs `prisma generate` → `nest build` →
   migrate → seed → `nest start --watch`; both get `environment: { PUBLIC_ORIGIN:
-  "http://localhost:8081", NODE_ENV: development }`.
+  "http://localhost:8081", NODE_ENV: development }`. The overlay's `!override` tag exists only from
+  Compose **2.24.4** — the first docker/compose release carrying compose-go's `!override` support —
+  so that, not 2.24.0, is the toolchain floor (§3.3, §17.5).
 - **Host Vite** (not a Compose service, not started by `make dev`): `npm --prefix web run dev --
   --host <verified host-side bridge address> --port 5173 --strictPort`, with `server.hmr.clientPort =
   8081` and `server.fs.allow` including the repository root (for `docs/legal/`). The README states
@@ -2674,15 +2808,25 @@ for decorator metadata. **`npx vitest run` is the command** the Done box names.
   bind-mounted repository and an `nginx` binary (installed in the Dockerfile's `dev` target only).
 - **The harness** (`test/harness/`):
   - global setup derives the test database name `<database of DATABASE_URL>_test`, drops and recreates
-    it (`DROP DATABASE … WITH (FORCE)`), and runs `npx prisma migrate deploy --config prisma.config.ts`
-    against it; the development database is never touched;
+    it (`DROP DATABASE … WITH (FORCE)`), runs `npx prisma generate --config prisma.config.ts` first —
+    the client is gitignored (§3.2), a fresh clone has none, so nothing may import it before it exists,
+    and this is what lets `make test` run on a fresh clone — then `npx prisma migrate deploy
+    --config prisma.config.ts` against it; the development database is never touched;
   - each test file boots the real `AppModule` in-process against the test database on an ephemeral
     port, with a recording `RealtimePublisher` (the socket category boots the real gateway);
   - tables are truncated between tests; `fileParallelism: false`;
-  - **the nginx harness** starts the `nginx` binary with a generated configuration — `upstream
-    peerconnect_api { server 127.0.0.1:<app port>; }` and one server on an ephemeral loopback port that
-    includes the repository's own `proxy/snippets/api.conf` — so uploads cross the production
-    directives. A missing `nginx` binary **fails** the suite; nothing is skipped;
+  - **the nginx harness** starts the `nginx` binary with a generated configuration that carries, at
+    `http` scope, `map $http_upgrade $connection_upgrade { default upgrade; "" close; }` — the
+    snippet's `/socket.io/` location reads `$connection_upgrade` (§15.3) and nginx refuses a config
+    containing an undefined variable — then `upstream peerconnect_api { server 127.0.0.1:<app port>; }`
+    and one server on an ephemeral loopback port that includes the repository's own
+    `proxy/snippets/api.conf`, so uploads cross the production directives. Only the harness config is
+    generated; production `proxy/nginx.conf` already defines the map (§15.3) and is untouched here. A
+    missing `nginx` binary **fails** the suite; nothing is skipped;
+  - **client address**: with nothing in front of the in-process app, every request the harness sends
+    carries an explicit `X-Real-IP` (one fixed address per test; varied only where a test asserts the
+    throttle), so §5.5's key is deterministic. This is **test-only** injection — production keeps nginx
+    as the sole writer of `X-Real-IP` and the API still trusts no other source (§5.5, ADR-0003 d10);
   - `checkpoint` is bound to a barrier registry (§3.6.4).
 - **In CI**: the same `npx vitest run` on the runner, with a `postgres:17-alpine` service container and
   `nginx` installed from the distribution. No Compose, no image build (ADR-0016 d8). Postgres is never
@@ -2702,9 +2846,9 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 | 5 | `05-socket-origin` | real Socket.IO server + client, real session | Exact `PUBLIC_ORIGIN` connects; absent, `null` and mismatched `Origin` are refused with the session row still present; an HTTP long-polling request is refused; a good origin with no session gets `unauthorized`. |
 | 6 | `06-prompt-serialization` | services + checkpoint | Publication vs answer in both orders (old answer committed or refused with nothing written); two publications with an identical injected `published_at` get distinct orders and exactly one live Prompt; answer vs close in both orders (`answer_round_id` and the close's Streak agree with the order); duplicate and retried answers → one Post, one +20, Knowledge Sharer once; the answer transaction never writes `streak`; an unreviewed Match plus an answer in the Round increments Streak, no activity resets it, Suspended and Removed are skipped. |
 | 7 | `07-lifecycle-lockout` | services + checkpoint | The candidate predicate excludes `ADMIN`, Suspended, Removed and Skill-less Students; role, Suspension and Removal vs Round open and vs hand-made creation, both orders; hand-made creation vs close, both orders — never a Match in a closed Round; Block vs friend request, both orders — never a Block beside a Friendship row; a Removed row refuses every mutation and its email refuses sign-up; two Admins demoting, suspending or removing each other leave ≥ 1 active Admin. |
-| 8 | `08-files` | HTTP **through the nginx harness** | Exactly 5,242,880-byte PDF, PNG and JPEG Evidence and a 2,097,152-byte Avatar reach the API and are stored; one byte more → `file_too_large` from the API, not an nginx 413; malformed, truncated, extension-spoofed, `Content-Type`-spoofed and Avatar-PDF payloads are refused; Evidence reads anchor to the owning Review's Match (a Student paired with the uploader in another Match → 403; a Peer Moderator outside the pair → 403; inside it → 200); only the originating Mentee mutates (Mentor, Admin → 403), including after `COMPLETED`; Suspension blocks mutation and keeps the row, reinstatement restores, Removal ends mutation and keeps the row; a failed replacement leaves the old bytes; a missing or wrong `Origin` or `X-PeerConnect-CSRF` → 403 before any parsing. |
-| 9 | `09-review-xp-badges` | services + checkpoint | A duplicate or retried Review → one Review, Private Feedback, Post and XP payment; Review vs close, Decline, Suspension and Removal, both orders; a Match created before promotion completes with 80/120 XP and First Mentor, the Admin's Level and Badge still on the profile and absent only from the Leaderboard and its pin; a Review and a Prompt answer paying one Student concurrently both land; **same-Badge contention**: a Student with two answers answers Prompt *n* (held after its reads) while Prompt *n+1* is published and answered by them (held) — releasing both gives two Posts, +40 XP and exactly one Knowledge Sharer; Suspension or Removal vs close with prior qualifying activity, both orders; the pin never reintroduces an Admin, Suspended or Removed viewer. |
-| 10 | `10-reports` | services + HTTP | The two partial uniques and the Report CHECKs; two concurrent filings by one reporter on one target → one row and `already_reported`, winner unchanged; two concurrent resolutions → one winner, `already_resolved`, a losing removal leaves the Post; every row of a batch shares state, resolver and time; filing vs resolution and vs target Removal, both orders; Remove Post and Remove Student action their open rows atomically, Suspension leaves them open; a Peer Moderator sees only eligible open Post groups with no reporter identity and no resolved history, and one conflicting open reporter hides the whole group; an Admin cannot read or resolve their own-target group or any open group or resolved batch containing their own report, while another Admin can, with reporters; a stale queue read followed by demotion is refused on action; a Block create/remove racing a Peer Moderator action, both orders. |
+| 8 | `08-files` | HTTP **through the nginx harness** | Exactly 5,242,880-byte PDF, PNG and JPEG Evidence and a 2,097,152-byte Avatar reach the API and are stored; one byte more → `file_too_large` from the API's §9.5 size check (`size > cap`), not an nginx 413; malformed, truncated, extension-spoofed, `Content-Type`-spoofed and Avatar-PDF payloads are refused; Evidence reads anchor to the owning Review's Match (a Student paired with the uploader in another Match → 403; a Peer Moderator outside the pair → 403; inside it → 200); only the originating Mentee mutates (Mentor, an Admin outside the pair → 403), including after `COMPLETED` and including a Mentee promoted to `ADMIN` after the Review (→ 200); Suspension blocks mutation and keeps the row, reinstatement restores, Removal ends mutation and keeps the row; a failed replacement leaves the old bytes; a missing or wrong `Origin` or `X-PeerConnect-CSRF` → 403 before any parsing. |
+| 9 | `09-review-xp-badges` | services + checkpoint | A duplicate or retried Review → one Review, Private Feedback, Post and XP payment; Review vs close, Decline, Suspension and Removal, both orders; a Match created before promotion completes with 80/120 XP and First Mentor, the Admin's Level and Badge still on the profile and absent only from the Leaderboard and its pin; a Review and a Prompt answer paying one Student concurrently both land; **same-Badge contention, as §10.4 shows it can occur**: a Student with two answers answers Prompt *n* (held after its reads) while Prompt *n+1* is published and answered by them (held). Released in either order, or together, the answer to Prompt *n* is refused `prompt_not_live` and writes nothing (no Post, no XP). The answer to Prompt *n+1* commits one Post, +20 XP and exactly one Knowledge Sharer, so the threshold is still crossed once. The test never asserts two Posts or +40, which no serial order admits; Suspension or Removal vs close with prior qualifying activity, both orders; the pin never reintroduces an Admin, Suspended or Removed viewer. |
+| 10 | `10-reports` | services + HTTP | The two partial uniques and the Report CHECKs; two concurrent filings by one reporter on one target → one row and `already_reported`, winner unchanged; two concurrent resolutions → one winner, `already_resolved`, a losing removal leaves the Post; every row of a batch shares state, resolver and time; filing vs resolution and vs target Removal, both orders; Remove Post and Remove Student action their open rows atomically — Remove Student includes an open row the removing Admin personally filed, `ACTIONED` with `resolved_by_id` = that Admin, the batch then hidden from that Admin's own resolved audit and visible to another Admin with reporters — Suspension leaves them open; a Peer Moderator sees only eligible open Post groups with no reporter identity and no resolved history, and one conflicting open reporter hides the whole group; an Admin cannot read or resolve their own-target group or any open group or resolved batch containing their own report, while another Admin can, with reporters; a stale queue read followed by demotion is refused on action; a Block create/remove racing a Peer Moderator action, both orders. |
 
 ### 16.4 CI — one advisory workflow (ADR-0016 d8, M21)
 
@@ -2712,6 +2856,10 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 
 1. Check out; set up Node 22; `npm ci`; `npm --prefix web ci`.
 2. Load `.env.example` into the job environment, with `DATABASE_URL` pointed at the service container.
+   The `postgres:17-alpine` service is started with `.env.example`'s own `POSTGRES_USER`,
+   `POSTGRES_PASSWORD` and `POSTGRES_DB`, and only `DATABASE_URL`'s host and port change (to the
+   runner's mapped `localhost` port). Any other credentials would fail §15.4's consistency check when
+   the seed validates the environment at step 5.
 3. `npx prisma generate --config prisma.config.ts`; typecheck the API and the SPA; `npx nest build`.
 4. **Schema from empty**: `npx prisma migrate deploy --config prisma.config.ts` on the empty service
    database.
@@ -2817,7 +2965,7 @@ GitHub today. The Makefile is never a hiding place for required setup.
 ### 17.5 README — on the critical path
 
 `README.md` must exist before evaluation with: the subject's first line and the Description,
-Instructions (prerequisites: Docker Engine with Compose ≥ 2.24; Node 22 for the host Vite process; the
+Instructions (prerequisites: Docker Engine with Compose ≥ 2.24.4; Node 22 for the host Vite process; the
 `.env` model; both boot commands; the certificate interstitial; the dev overlay and the verified Vite
 bind command with its LAN restriction), Resources and AI usage sections, **Team Information**, **Project
 Management**, **Technical Stack** with justifications, **Database Schema** (§4, or a diagram generated
@@ -2857,7 +3005,8 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
    Friends' request rule and before matching's blocked-pair input.
 8. **Files** (validation, avatar, Evidence) after Reviews for Evidence.
 9. **Users table and sanctions** after Matches (termination) and Reports (auto-action).
-10. **Sign in with 42**: mechanism any time after 3; completion **Blocked by #24**.
+10. **Sign in with 42**: transport and state any time after 3; a **successful sign-in** and its
+    identity mapping **Blocked by #24**.
 11. **Legal pages rendering** any time after the SPA shell; sign-off by 2026-10-15.
 12. **The full seed** grows with each slice it drives; each seed PR is inside the gate, bumps the
     fixture version and adds its end-state assertions. It reaches ADR-0017's complete end state only
@@ -2954,8 +3103,38 @@ Rules every ticket inherits; a PR breaking one is not done.
       upstream partial-index report (§4.4). Records moved with them: forward pointers on every inline
       `/to-spec #1` delegation still lacking one (ADR-0002, 0003, 0005, 0006, 0007, 0008, 0010,
       0011, 0012, 0016, 0017, 0018); `CONTRIBUTING.md`, the PR template and the Prisma research note;
-      the Privacy Policy's cookie paragraph (§2.3 C6); map #1; #4, #5, #6, #8, #9, #11, #13, #14,
+      the Privacy Policy's cookie paragraph (§2.3 R6); map #1; #4, #5, #6, #8, #9, #11, #13, #14,
       #17, #20, #21, #24, #25, #27 and #28 commented.
+- [x] **Second pre-`/to-tickets` verification, 2026-09-24.** Mechanisms corrected: a `23505` on a
+      known constraint maps to that operation's refusal, any other falls through to `internal_error`
+      (§3.6.2); lazy renewal re-sets the cookie only on one affected row (§5.2); the session guard
+      never clears an `a.` attempt cookie (§5.3); upload precedence nginx envelope → CSRF → Multer
+      (§5.4); the throttle lives at the HTTP boundary, with a fixed rule for an absent `X-Real-IP`
+      (§5.5); Sign in with 42 split into what is exercisable before #24 and what is not, and the
+      disabled callback's 404 (§5.6, Remaining Dependencies #1); the operation template's Refusals,
+      Events, Concurrency and Visibility filled on the §6 routes, §8.5, §8.7 and §8.12; non-participant
+      Match reads → 404 (§6.6); the hand-made Match's goal flag and explanation (§8.6, §8.11); the
+      upload boundary `size > cap` (§6.3, §9.4–9.5); both images built from context `.` (§15.1); the
+      Compose floor ≥ 2.24.4 (§3.3, §15.2, §17.5); the harness's `$connection_upgrade` map,
+      `prisma generate` and explicit `X-Real-IP` (§16.2); the subject line citations (§1.3, §2.2,
+      §2.3, §3.5.3, §3.8.2); §2.3's items relabelled R1–R7. Rule-level: Removal's report side effect
+      includes an open Report the removing Admin filed, hidden afterwards from that Admin's audit
+      (§12.5, §12.7, category 10); Evidence write stays with the originating Mentee whatever their
+      current role, as ADR-0009 d5 and ADR-0014 d11 rule (§5.7, §9.4, category 8). Records moved with
+      them: ADR-0004 d8 (toolchain floor), ADR-0011 d9 and d10 (guard scope, own report), ADR-0016 d1
+      (categories 8 and 10), ADR-0018 *Not settled* (the R1 label) — each *uncommitted* until this
+      lands on `main`. *(The ADR-0016 d1 note listed here was actually written in the third pass
+      below. This pass commented on #6, #14 and #20 and annotated map #1.)*
+- [x] **Third pre-`/to-tickets` verification, 2026-09-24.** **Rule-level:** category 9's same-Badge
+      contention case asserted two Posts and +40 XP, which no serial order admits under M1. §10.4
+      now explains why two *valid* events for one Student never contend for one Badge (reproduced on
+      PostgreSQL 17.11), and §16.3 asserts the outcome that schedule actually has. **Mechanisms:**
+      the `dist/` layout, `nest-cli.json`'s `entryFile` and the seed's asset path (§3.2); where the
+      `starvation` cohort lives (§14.2); CI's Postgres credentials (§16.4); the fields of the
+      Admin's Student detail (§6.12). **Records moved with them:** ADR-0016 d1 and d7 (that
+      correction, plus the categories 8 and 10 cases above); a pointer on ADR-0010 d2;
+      `CONTRIBUTING.md` → *Testing* item 9; map #1; comments on #25 and #17. Each is *uncommitted*
+      until this lands on `main`.
 - [ ] External decisions below — they block only the tickets that name them.
 
 ---
@@ -2972,8 +3151,14 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
    acceptance on any 42 creation path; whether `password_hash` becomes nullable; whether the Terms'
    *forgotten password cannot be reset* line changes if a linked 42 login restores access; the Privacy
    Policy's marked 42 sentence; and **who registers the 42 application** — one shared application or one
-   per developer. **Blocks**: completion of Sign in with 42 (§5.6 B) and its demo. Everything else in
-   §5.6 is buildable now.
+   per developer. **Blocks**: exercising callback steps 6–7 (code exchange, `/v2/me`), which need a registered
+   42 application — who registers it is this item's — and a **successful** Sign in with 42: step 8's
+   resolution, the branches after a miss and the session issuance they lead to (§5.6 B), and its
+   demo. What builds and is exercised now, with no registered application and no network to 42: the
+   button and the enabled/disabled flag (the disabled callback's 404 included), `start` (`state`,
+   PKCE, cookie, store, one live attempt) and the callback's verification steps 1–5 with the failure
+   path. Steps 6–7 are written against §5.6 now but not exercised until an application is
+   registered; steps 8–9 wait for #24's mapping.
 2. **The residue of [#26](https://github.com/ahmadmnsur/ft_transcendence/issues/26)** (closed, a fact not
    a decision): whether 42 accepts plain `http://localhost:8081/api/auth/42/callback` as a registered
    redirect URI. It affects only exercising Sign in with 42 on the dev overlay; the base path's

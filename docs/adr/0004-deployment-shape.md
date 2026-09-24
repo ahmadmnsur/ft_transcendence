@@ -231,6 +231,12 @@ and why there is no `SESSION_SECRET`.
    > This supplies **container** variables only. Every value used while Compose parses the
    > model still needs its own `${VAR:-default}` or another `.env`-independent resolution,
    > exactly as the paragraph above requires. No variable is added to decision 9's list.
+   >
+   > **Clarified 2026-09-24 — project toolchain floor is `>= 2.24.4`.** The `2.24` above is the
+   > narrow `env_file.required` capability floor (2.24.0), not the project floor. The dev overlay
+   > uses the `!override` tag, which exists only from Compose 2.24.4 — the first docker/compose
+   > release carrying compose-go's `!override` support — so `docs/spec.md` §3.3, §15.2, §17.5 read
+   > `>= 2.24.4`.
 
 9. **`.env.example` holds** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
    `DATABASE_URL`, `NODE_ENV`, `PUBLIC_ORIGIN`, `HTTPS_PORT`, `HTTP_PORT`, `ADMIN_EMAIL`,

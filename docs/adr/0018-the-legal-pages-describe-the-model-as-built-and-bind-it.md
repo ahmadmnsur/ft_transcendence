@@ -338,7 +338,7 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
 - **Whether a Block can be lifted.** No record says; the pages promise neither. If `/to-spec` adds
   it, the Privacy Policy's retention list gains it.
 
-  > **Settled 2026-09-23 by `/to-spec #1`: it can** ([`docs/spec.md`](../spec.md) §11.3, §2.3 C1;
+  > **Settled 2026-09-23 by `/to-spec #1`: it can** ([`docs/spec.md`](../spec.md) §11.3, §2.3 R1;
   > M23). "No record says" was not quite so: ADR-0011 d7's 2026-09-22 note and ADR-0016 d1's tenth
   > category both race a *"Block create/remove"*, a test that needs removal to exist. The blocker
   > may delete their own Block; it restores nothing. The Privacy Policy's retention list and choices

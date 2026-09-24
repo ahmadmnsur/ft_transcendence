@@ -221,6 +221,11 @@ every place they could do social damage.**
    > queue, reporter identity and resolved audit history. This is the minimum rule that makes
    > decision 11's “routes to other Admins” true, keeps the own-complaint/no-feedback guards through
    > a later role change, and prevents staff misconduct from disclosing the reporter to its subject.
+   >
+   > **Scope of this guard clarified 2026-09-23 before `/to-tickets`.** The guard governs the queue
+   > read and the group-resolution endpoints; it does not carve rows out of decision 10's Removal
+   > side effect. What the removing Admin's own report then suffers, and who sees it, is settled in
+   > decision 10's annotation.
 
 10. **Removing a Post auto-resolves its open reports; a Suspension does not.** Remove Post sets
     every open report on that Post to `ACTIONED` in the same transaction, with the remover as
@@ -240,6 +245,14 @@ every place they could do social damage.**
     > remains distinct and resolves nothing automatically. The Student row remains a tombstone and
     > every Report remains durable, readable to authorized Admins with its original testimony and
     > final resolution attribution.
+    >
+    > **Own-report tension with decision 9 resolved 2026-09-23 before `/to-tickets`.** *Every open
+    > report on that Student* includes one this Admin filed: it commits `ACTIONED` in the Removal
+    > transaction with `resolved_by_id` = the removing Admin, and the resolved audit afterwards hides
+    > that batch from that Admin (decision 9) while showing it, with attribution, to every other
+    > Admin. Removal takes no action on the group, so the guard bars neither half of it: the sanction
+    > is deterministic, the guard governs queue reads and group resolutions. `docs/spec.md` §12.5,
+    > §12.7; §16.3 category 10 carries the test.
 
 11. **Any signed-in Student may file a report, never against themselves or their own Post.**
     Including a Peer Moderator, who is a full participating Student (ADR-0008 decision 2) — hence

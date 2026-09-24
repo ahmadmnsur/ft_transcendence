@@ -217,6 +217,13 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    promotion, it also proves retained XP still drives the ordinary profile Level and earned Badges
    remain normally available while only the Admin's Leaderboard row and personal-rank pin disappear.
 
+   > **Corrected 2026-09-24** ([`docs/spec.md`](docs/spec.md) §10.4, §16.3; ADR-0016 d1). Two
+   > *valid* events for one Student can't be made to contend for one Badge under `SERIALIZABLE`.
+   > The only schedule close to it has a Student answer Prompt *n* while *n+1* is published and
+   > answered. The test asserts what that schedule actually produces: the Prompt-*n* answer is
+   > refused `prompt_not_live` and writes nothing, and the Prompt-*n+1* answer commits once with
+   > +20 and exactly one Knowledge Sharer. The Review-plus-answer overlap above is unchanged.
+
 10. **Report integrity, authorization and group serialization** — asserts the two target-specific
     uniqueness rules and Report CHECKs; one winner plus an `already reported` loser for two
     concurrent filings by the same reporter against the same target, with the winning row

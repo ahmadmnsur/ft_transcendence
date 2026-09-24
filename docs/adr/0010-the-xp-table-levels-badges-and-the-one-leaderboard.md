@@ -138,6 +138,19 @@ them deliberately and settles the rest.
    > serialize; a BadgeAward insert is `ON CONFLICT DO NOTHING`, and a contender that aborts is
    > re-run whole, finds the Badge and still commits its own event and XP.
 
+   > **Noted 2026-09-24 before `/to-tickets`: the rule stands, and under that mechanism it never
+   > fires** ([`docs/spec.md`](../spec.md) §10.4). No schedule puts two *valid* events for one Student
+   > in flight against the same Badge:
+   >
+   > - First Mentor would need two `ACCEPTED` Matches with one Mentor at once.
+   > - Consistent Learner is written only by the one Round close.
+   > - Two Knowledge Sharer answers need a publication between their reads. That makes the older
+   >   answer a serialization pivot, which is cancelled and then refused as superseded on retry
+   >   (ADR-0007 d1).
+   >
+   > The conflict-safe insert stays as a backstop. ADR-0016 d1's ninth-category case is corrected to
+   > assert the outcome that schedule actually has.
+
 3. **`Level = min(10, 1 + floor(XP / 250))` — ten bands, the tenth terminal.** Promoted from
    prototype placeholder to decision, unchanged.
 

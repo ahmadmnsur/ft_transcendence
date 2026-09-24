@@ -155,6 +155,20 @@ done when the PR template already is one.**
    > Badge and assert that both event records and XP increments commit exactly once, exactly one
    > BadgeAward remains, and neither the threshold nor valid XP is lost when the uniqueness contender
    > converges or retries. The test binds the observable result, not a PostgreSQL technique.
+   >
+   > > **Corrected 2026-09-24 before `/to-tickets` — this case cannot be forced; the category asserts
+   > > what the schedule does.** Under the transaction mechanism `/to-spec #1` chose
+   > > ([`docs/spec.md`](../spec.md) §10.4; M1), two *valid* earning events for one Student are never
+   > > in flight against the same Badge. First Mentor would need two simultaneously `ACCEPTED`
+   > > Matches with one Mentor, and Consistent Learner comes only from the one Round close. Knowledge
+   > > Sharer needs a second answer to a newer Prompt published between the two answers' reads, which
+   > > makes the older answer the pivot of a read/write cycle: PostgreSQL cancels it, and its retry is
+   > > refused as superseded (ADR-0007 d1). Reproduced on PostgreSQL 17.11 in every release order. So
+   > > "both event records and XP increments commit" is never observable, and the requirement above
+   > > is satisfied vacuously. ADR-0010 d2's rule is unchanged and holds. The ninth category instead
+   > > asserts that schedule's one outcome: the older answer is refused with nothing written, and the
+   > > newer answer commits once with its +20 and exactly one Knowledge Sharer, so the threshold is not
+   > > missed (spec §16.3 category 9). Still the ninth category.
 
    > **Extended 2026-09-22 for Admin history visibility; still the ninth category.** The
    > completion-after-promotion case asserts that the Admin's XP remains stored and drives the
@@ -201,6 +215,16 @@ done when the PR template already is one.**
    > accepts bad data" holds for seven of its eight steps. The no-repeats index is a non-unique
    > lookup aid (ADR-0014 d13), so its absence costs speed rather than integrity; the test still
    > asserts that the migration creates it.
+
+   > **Two cases made explicit 2026-09-24 before `/to-tickets`; no new category**
+   > ([`docs/spec.md`](../spec.md) §16.3). The **eighth** category's "only the originating active
+   > Mentee may mutate" includes a Mentee promoted to `ADMIN` after the Review, who keeps the path
+   > for that Review (ADR-0009 d5, ADR-0014 d11), while an Admin outside the pair stays refused. The
+   > **tenth** category's Remove Student case includes an open row the removing Admin filed
+   > themselves: that row commits `ACTIONED` and is attributed to that Admin. The batch is then
+   > hidden from that Admin's own resolved audit and shown to another Admin with its reporters
+   > (ADR-0011 d9–d10 annotations). Both follow rules already recorded; they bind the outcome, not a
+   > technique.
 
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
@@ -394,6 +418,10 @@ done when the PR template already is one.**
    > contender must not turn a distinct valid earning event into lost XP: both events commit once, one
    > BadgeAward survives and the threshold cannot be missed. The next proposed category remains the
    > tenth.
+   >
+   > > **Corrected 2026-09-24**: no valid pair of events can be made to contend for one Badge under
+   > > the chosen mechanism. See decision 1's matching correction for what the ninth category asserts
+   > > instead. Still no new category.
 
    > **Extended 2026-09-22 for Admin history visibility, still without adding a category.** The
    > role filter must remove only the Leaderboard row and pin while retained XP/Level and BadgeAwards
