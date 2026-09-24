@@ -95,6 +95,17 @@ npx prisma generate
 > database, the next boot re-seeds it: the seed treats its completion record over empty tables as
 > stale (§14.9).
 
+> **Read the generated SQL before step 4, 2026-09-24** ([`docs/spec.md`](docs/spec.md) §4.4,
+> §17.2). Eight schema objects exist only as hand-written SQL, because Prisma cannot represent them:
+> five `CHECK` constraints (`post_exactly_one_origin`, `report_exactly_one_target`,
+> `report_no_self_student`, `report_state_attribution`, `private_feedback_rating_range`) and three
+> indexes (`friendship_unordered_pair`, `round_single_open`, `match_pair_history`). When
+> `migrate dev` emits a statement that drops or alters any of them, or drops and recreates an
+> unchanged Report partial unique index (`report_one_per_reporter_post`,
+> `report_one_per_reporter_student`), **delete that statement before committing**. Kamel checks for
+> it at the gate, and test category 2 fails the suite if any of the ten is missing after
+> `migrate deploy`, but getting the migration right is the author's job first.
+
 **`migrate dev` no longer runs `prisma generate`.** Prisma 7 keeps migration and client generation
 as separate steps, so run the explicit generation command above after schema changes when the
 generated client needs updating. *(ADR-0005 Consequences, added 2026-09-20.)*
@@ -159,6 +170,13 @@ the suite is thin on purpose and stays that way — see
 **Vitest, one runner, one command.** Integration tests against a real Postgres in the container
 that already exists. No unit/integration/e2e pyramid, and no coverage target.
 
+> **How it runs, 2026-09-24** ([`docs/spec.md`](docs/spec.md) §16.2, §16.4). The command is
+> `npx vitest run`; locally, run it as **`make test`**, which starts a fresh dev-overlay `api`
+> container beside `db`. The suite creates its own `<database>_test` database and never touches your
+> development data. It runs `prisma generate` first, so it works on a fresh clone. The file-upload
+> tests go through a real `nginx` using the repository's own `proxy/snippets/api.conf`. CI runs the
+> same command on the runner.
+
 **The closed list of what is covered:**
 
 1. **The matcher** — matching is atomic, so there is no correction window, and a regression shows
@@ -172,6 +190,10 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    the database accepts bad data and says nothing; without the last, the no-repeats test silently
    becomes a scan. The Report checks cover its target, Student self-reporting, and
    state/attribution tuple.
+
+   > **Also asserted, 2026-09-24** ([`docs/spec.md`](docs/spec.md) §4.4, §16.3). Both Report partial
+   > unique indexes exist by name after `migrate deploy` — declared natively today, raw SQL if the
+   > preview fallback is ever taken — so the category checks ten named objects, not eight.
 
 3. **At most one standing Match per Student per Round** — the one invariant the schema cannot
    hold, violable through an Admin's hand-made Match. Two concurrent hand-made creations sharing a
@@ -205,6 +227,11 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
    access; preserves Evidence through Suspension and Removal; keeps failed replacement atomic; and
    rejects upload mutations without the exact Origin and `X-PeerConnect-CSRF: 1` header.
 
+   > **Made explicit 2026-09-24** ([`docs/spec.md`](docs/spec.md) §9.4, §16.3; ADR-0009 d5,
+   > ADR-0016 d1). "The owning Review's Match" decides writes whatever the writer's current role:
+   > a Mentee promoted to `ADMIN` after the Review still creates, replaces and deletes that Review's
+   > Evidence, while the Mentor and every Admin outside the pair get 403.
+
 9. **Review, XP and Badge transaction integrity** — asserts one atomic Review/status/Takeaway/
    Private Feedback/XP/Badge success under duplicate or retried submission; serial outcomes against
    Round close, Decline, Suspension and Removal; completion of a Match that predates promotion to
@@ -237,6 +264,13 @@ that already exists. No unit/integration/e2e pyramid, and no coverage target.
     another Admin retains reporter-visible audit access. The action request must re-run
     session/current-role/sanction authorization after a stale queue read, and a Block create/remove
     race proves the conflict guard is evaluated at the action serialization point.
+
+    > **Scope made explicit 2026-09-24** ([`docs/spec.md`](docs/spec.md) §12.5, §12.7, §16.3;
+    > ADR-0011 d9–d10). The Admin guard above covers the queue read and the two resolve endpoints,
+    > not Users-table sanctions. Remove Student actions **every** open report on its target, one the
+    > removing Admin filed included, attributed to that Admin; the batch is then hidden from that
+    > Admin's resolved audit and shown to another Admin with its reporters. The test asserts that
+    > case.
 
 **Adding a test outside that list needs an argument.** The rule is *does it fail silently?* —
 anything the compiler or a demo step would catch is not tested. Ten categories, closed until
@@ -338,6 +372,13 @@ boot reuses a database that is already migrated and seeded, and proves nothing a
 empty. Clearing that state is not setup ([ADR-0016](docs/adr/0016-a-thin-suite-over-what-fails-silently.md)
 d5).
 
+> **The command and the pass line, 2026-09-24** ([`docs/spec.md`](docs/spec.md) §16.5, M20). Clear
+> with **`make wipe`** (`docker compose down --volumes --remove-orphans`) from any clone, before each
+> check; every clone shares the project name `peerconnect`. A check passes when `api` turns healthy
+> with the seed logging completion from an empty database, `https://localhost:8443` shows the
+> sign-in page after the certificate warning, the bootstrap Admin and the demo Student can sign in,
+> `/admin/rounds` shows four closed Rounds and none open, and the console is clean.
+
 **Check 1 — project entry point:**
 
 ```bash
@@ -385,3 +426,8 @@ Compose-level defaults. `make up` copies `.env.example` into place when `.env` i
 Compose ignores the absent optional file — see
 [ADR-0004](docs/adr/0004-deployment-shape.md). Develop through nginx at
 `http://localhost:8081`, published as `127.0.0.1:8081`; LAN access is outside the contract.
+
+> **Toolchain floor, 2026-09-24** ([ADR-0004](docs/adr/0004-deployment-shape.md) d8;
+> [`docs/spec.md`](docs/spec.md) §3.3): Docker Compose **≥ 2.24.4**. The optional `env_file` needs
+> 2.24.0, but the dev overlay's `!override` tag exists only from 2.24.4. Check with
+> `docker compose version`.

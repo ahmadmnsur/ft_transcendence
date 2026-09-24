@@ -136,6 +136,13 @@ follows from refusing to give either the Prompt or its answer a state machine.
    > insert is `ON CONFLICT DO NOTHING`, and a contender that aborts is re-run whole, finds the
    > Badge and still commits its own event and XP.
 
+   > **Noted 2026-09-24 before `/to-tickets`: under that mechanism the contention case never fires**
+   > ([`docs/spec.md`](../spec.md) §10.4). Two answers by one Student reach one Badge only if a
+   > publication commits between their reads. The older answer is then a serialization pivot:
+   > PostgreSQL cancels it, and its retry is refused as superseded under decision 1. That refusal is
+   > supersession, not the lost Badge insert the annotation above forbids, so the requirement stands
+   > and is met vacuously; the conflict-safe insert stays as a backstop. Same pointer as ADR-0010 d2.
+
 7. **One answer per Student per Prompt, enforced as a unique constraint on (Prompt, Student).**
    In the schema, not in a service. `document/42_PeerConnect_Concept_Proposal-6.md:229` rules
    out farming XP "through meaningless activity," and resubmitting to the same Prompt is

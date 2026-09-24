@@ -302,7 +302,7 @@ Every item below was delegated to `/to-spec #1` by the record named, or is a gap
 | M1 | Serialization for every "one serial order" contract | ADR-0002 d4/d5/d7, 0006 d10, 0007 d1, 0008 d2/d9, 0009 d5, 0010 d2, 0011 d6/d7, 0012 d6, 0014 d4 | Every domain write runs in a `SERIALIZABLE` transaction via one Unit of Work with bounded automatic retry; each operation lists what it must read inside the transaction. | 3.6 |
 | M2 | Durable Prompt publication order | ADR-0007 d1, ADR-0014 | `ReflectionPrompt.publication_order BIGINT UNIQUE`, assigned `max + 1` inside the publishing SSI tx. | 4.3.15, 8.12 |
 | M3 | How an answer "establishes qualifying activity" for a Round | ADR-0007 d1 (Streak-atomicity correction) | `Post.answer_round_id`, set in the answer transaction to the Round open at its serialization point. | 4.3.16, 8.7 |
-| M4 | BadgeAward contention convergence | ADR-0010 d2, ADR-0014 d7 | Insert `ON CONFLICT DO NOTHING` inside the SSI tx; conflicts surface as serialization failures and the whole event retries. | 10.4 |
+| M4 | BadgeAward contention convergence | ADR-0010 d2, ADR-0014 d7 | Insert `ON CONFLICT DO NOTHING` inside the SSI tx; conflicts surface as serialization failures and the whole event retries. A backstop no schedule reaches under M1 (§10.4). | 10.4 |
 | M5 | Learning Goal integrity | ADR-0014 d3 | Composite FK `(id, learning_goal_student_skill_id) → StudentSkill(student_id, id)`; `LEARN` kind and text pairing checked in the service; removing the Goal's Skill clears the Goal. | 4.3.1 |
 | M6 | Session id representation | ADR-0003 d1 vs ADR-0014 d10 (§2.3 R2) | 256-bit random token in the cookie; `Session.id` stores its SHA-256. | 5.2 |
 | M7 | OAuth attempt: cookie representation, store, expiry, single use, verification order | ADR-0018 d5, ADR-0003 d10 | `a.`-prefixed token in the one cookie; in-memory store; 10 minutes; one live attempt per browser (a new start deletes the one its cookie names); take-and-delete; fixed verification order; PKCE S256 in addition to `state`. | 5.6 |
@@ -438,12 +438,13 @@ template and `CONTRIBUTING.md` already name them.
 ```
 
 The API build compiles from the repository root, so `dist/` mirrors the tree: `dist/src/main.js` and
-`dist/prisma/seed/main.js` (§14.1, §15.5). `nest-cli.json` therefore sets `entryFile: "src/main"`;
-Nest's default `dist/main.js` never exists, and the dev overlay's `nest start --watch` (§15.2) runs the
-entry file. The build copies no assets. The seed reads its two files from `prisma/seed/assets/`,
-resolved against the working directory, which is always the repository root: `/app` in every api
-image, the checkout in CI (§16.4). The api runtime image copies `prisma/` whole, which
-`migrate deploy` needs anyway.
+`dist/prisma/seed/main.js` (§14.1, §15.5). The build tsconfig sets `"rootDir": "."` explicitly, so
+the layout never depends on which files the build happens to include. `nest-cli.json` therefore sets
+`entryFile: "src/main"`; Nest's default `dist/main.js` never exists, and the dev overlay's
+`nest start --watch` (§15.2) runs the entry file. The build copies no assets. The seed reads its two
+files from `prisma/seed/assets/`, resolved against the working directory, which is always the
+repository root: `/app` in every api image, the checkout in CI (§16.4). The api runtime image copies
+`prisma/` whole, which `migrate deploy` needs anyway.
 
 `.gitignore` covers `.env`, `node_modules/`, `dist/`, `src/generated/`, `web/dist/`. `.dockerignore`
 excludes the same plus `.git/`. **No Prisma Config file other than the root `prisma.config.ts` may
@@ -2153,6 +2154,12 @@ the rule above holds vacuously and the `ON CONFLICT DO NOTHING` insert remains a
 Reproduced on PostgreSQL 17.11 on 2026-09-24 in every release order. The older answer commits only
 when no newer answer holds reads. Category 9 asserts the outcome this schedule actually has (§16.3).
 
+**The argument rests on three facts**: a Student holds at most one in-progress Match; only Round close
+writes Streak; an answer needs its Prompt live. No test exercises the `ON CONFLICT` backstop, so **a
+new Badge, a new earning path, or a change to any of the three facts re-runs this argument before it
+ships**. If a real contention schedule appears, the backstop becomes load-bearing and category 9 gains
+the case.
+
 ### 10.5 The Leaderboard — `GET /api/leaderboard` (ADR-0010 d6)
 
 Eligible = role `STUDENT` or `PEER_MODERATOR`, `suspended_at IS NULL`, `removed_at IS NULL`. Order
@@ -2847,7 +2854,7 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 | 6 | `06-prompt-serialization` | services + checkpoint | Publication vs answer in both orders (old answer committed or refused with nothing written); two publications with an identical injected `published_at` get distinct orders and exactly one live Prompt; answer vs close in both orders (`answer_round_id` and the close's Streak agree with the order); duplicate and retried answers → one Post, one +20, Knowledge Sharer once; the answer transaction never writes `streak`; an unreviewed Match plus an answer in the Round increments Streak, no activity resets it, Suspended and Removed are skipped. |
 | 7 | `07-lifecycle-lockout` | services + checkpoint | The candidate predicate excludes `ADMIN`, Suspended, Removed and Skill-less Students; role, Suspension and Removal vs Round open and vs hand-made creation, both orders; hand-made creation vs close, both orders — never a Match in a closed Round; Block vs friend request, both orders — never a Block beside a Friendship row; a Removed row refuses every mutation and its email refuses sign-up; two Admins demoting, suspending or removing each other leave ≥ 1 active Admin. |
 | 8 | `08-files` | HTTP **through the nginx harness** | Exactly 5,242,880-byte PDF, PNG and JPEG Evidence and a 2,097,152-byte Avatar reach the API and are stored; one byte more → `file_too_large` from the API's §9.5 size check (`size > cap`), not an nginx 413; malformed, truncated, extension-spoofed, `Content-Type`-spoofed and Avatar-PDF payloads are refused; Evidence reads anchor to the owning Review's Match (a Student paired with the uploader in another Match → 403; a Peer Moderator outside the pair → 403; inside it → 200); only the originating Mentee mutates (Mentor, an Admin outside the pair → 403), including after `COMPLETED` and including a Mentee promoted to `ADMIN` after the Review (→ 200); Suspension blocks mutation and keeps the row, reinstatement restores, Removal ends mutation and keeps the row; a failed replacement leaves the old bytes; a missing or wrong `Origin` or `X-PeerConnect-CSRF` → 403 before any parsing. |
-| 9 | `09-review-xp-badges` | services + checkpoint | A duplicate or retried Review → one Review, Private Feedback, Post and XP payment; Review vs close, Decline, Suspension and Removal, both orders; a Match created before promotion completes with 80/120 XP and First Mentor, the Admin's Level and Badge still on the profile and absent only from the Leaderboard and its pin; a Review and a Prompt answer paying one Student concurrently both land; **same-Badge contention, as §10.4 shows it can occur**: a Student with two answers answers Prompt *n* (held after its reads) while Prompt *n+1* is published and answered by them (held). Released in either order, or together, the answer to Prompt *n* is refused `prompt_not_live` and writes nothing (no Post, no XP). The answer to Prompt *n+1* commits one Post, +20 XP and exactly one Knowledge Sharer, so the threshold is still crossed once. The test never asserts two Posts or +40, which no serial order admits; Suspension or Removal vs close with prior qualifying activity, both orders; the pin never reintroduces an Admin, Suspended or Removed viewer. |
+| 9 | `09-review-xp-badges` | services + checkpoint | A duplicate or retried Review → one Review, Private Feedback, Post and XP payment; Review vs close, Decline, Suspension and Removal, both orders; a Match created before promotion completes with 80/120 XP and First Mentor, the Admin's Level and Badge still on the profile and absent only from the Leaderboard and its pin; a Review and a Prompt answer paying one Student concurrently both land; **the one same-Badge race that can be staged (§10.4)**: a Student with two answers answers Prompt *n* (held after its reads) while Prompt *n+1* is published and answered by them (held). Released in either order, or together, the answer to Prompt *n* is refused `prompt_not_live` and writes nothing (no Post, no XP). The answer to Prompt *n+1* commits one Post, +20 XP and exactly one Knowledge Sharer, so the threshold is still crossed once. The test never asserts two Posts or +40: no serial order consistent with both held reads admits them. An older answer can still commit — category 6's "old answer committed" order — but only when no newer answer by the same Student has read first; Suspension or Removal vs close with prior qualifying activity, both orders; the pin never reintroduces an Admin, Suspended or Removed viewer. |
 | 10 | `10-reports` | services + HTTP | The two partial uniques and the Report CHECKs; two concurrent filings by one reporter on one target → one row and `already_reported`, winner unchanged; two concurrent resolutions → one winner, `already_resolved`, a losing removal leaves the Post; every row of a batch shares state, resolver and time; filing vs resolution and vs target Removal, both orders; Remove Post and Remove Student action their open rows atomically — Remove Student includes an open row the removing Admin personally filed, `ACTIONED` with `resolved_by_id` = that Admin, the batch then hidden from that Admin's own resolved audit and visible to another Admin with reporters — Suspension leaves them open; a Peer Moderator sees only eligible open Post groups with no reporter identity and no resolved history, and one conflicting open reporter hides the whole group; an Admin cannot read or resolve their own-target group or any open group or resolved batch containing their own report, while another Admin can, with reporters; a stale queue read followed by demotion is refused on action; a Block create/remove racing a Peer Moderator action, both orders. |
 
 ### 16.4 CI — one advisory workflow (ADR-0016 d8, M21)
@@ -2920,7 +2927,7 @@ boxes when inside the gate; the **clean-clone** boxes when §16.5 applies.
 
 ## 17. Team gates and process
 
-### 17.1 Roles (CONTRIBUTING)
+### 17.1 Roles (CONTRIBUTING; ADR-0004 d12, ADR-0005 d3, ADR-0016 d9–d10)
 
 | | Role | Also |
 | --- | --- | --- |
@@ -3126,7 +3133,8 @@ Rules every ticket inherits; a PR breaking one is not done.
       lands on `main`. *(The ADR-0016 d1 note listed here was actually written in the third pass
       below. This pass commented on #6, #14 and #20 and annotated map #1.)*
 - [x] **Third pre-`/to-tickets` verification, 2026-09-24.** **Rule-level:** category 9's same-Badge
-      contention case asserted two Posts and +40 XP, which no serial order admits under M1. §10.4
+      contention case asserted two Posts and +40 XP, which no serial order consistent with its two held
+      reads admits under M1. §10.4
       now explains why two *valid* events for one Student never contend for one Badge (reproduced on
       PostgreSQL 17.11), and §16.3 asserts the outcome that schedule actually has. **Mechanisms:**
       the `dist/` layout, `nest-cli.json`'s `entryFile` and the seed's asset path (§3.2); where the
@@ -3135,6 +3143,17 @@ Rules every ticket inherits; a PR breaking one is not done.
       correction, plus the categories 8 and 10 cases above); a pointer on ADR-0010 d2;
       `CONTRIBUTING.md` → *Testing* item 9; map #1; comments on #25 and #17. Each is *uncommitted*
       until this lands on `main`.
+- [x] **Records follow-up, 2026-09-24.** No rule changed. **Wording**: category 9 and the third
+      entry above now name which serial orders are excluded (those consistent with both held reads);
+      §10.4 states when its argument must be re-run; M4 is marked a backstop; §17.1 cites where its
+      extra roles come from. **Mechanism**: §3.2 pins `rootDir`. **Records moved**: pointers on
+      ADR-0007 d6 and ADR-0014 d7, the same as ADR-0010 d2's (they carry the same contention
+      requirement), with matching comments on their owning tickets #11 and #10 and the map #1 note
+      extended; `CONTRIBUTING.md` → *Schema changes* (raw objects in generated migrations),
+      *Testing* (how the suite runs; items 2, 8 and 10), *The clean-clone check* (`make wipe` and
+      the pass criteria), *Environment* (Compose ≥ 2.24.4). ADR-0011's second-pass annotations keep
+      their 2026-09-23 date, the date #14, #20 and the map record. Each is *uncommitted* until this
+      lands on `main`.
 - [ ] External decisions below — they block only the tickets that name them.
 
 ---

@@ -390,6 +390,14 @@ arms. Those three sentences are the whole shape.
    > serialize; a BadgeAward insert is `ON CONFLICT DO NOTHING`, and a contender that aborts is
    > re-run whole, finds the Badge and still commits its own event and XP.
 
+   > **Noted 2026-09-24 before `/to-tickets`: the contention outcome above is never reached**
+   > ([`docs/spec.md`](../spec.md) §10.4). No schedule puts two valid events for one Student in
+   > flight against one Badge: First Mentor would need two `ACCEPTED` Matches with one Mentor at
+   > once, Consistent Learner is written only by the one Round close, and two Knowledge Sharer
+   > answers need a publication between their reads, which makes the older answer a pivot that is
+   > cancelled and then refused as superseded (ADR-0007 d1). The rule stands; the unique pair and the
+   > conflict-safe insert remain the backstop. Same pointer as ADR-0010 d2.
+
    > **Prompt-answer serialization clarified 2026-09-21.** ADR-0007 orders an answer against a
    > concurrent Round close. An answer ordered before the close is visible to this transaction as
    > qualifying activity; one ordered after it cannot contribute to the closed Round, regardless
