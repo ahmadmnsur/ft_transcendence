@@ -337,6 +337,14 @@ done when the PR template already is one.**
    > wipe`, which is `docker compose down --volumes --remove-orphans`, run from any clone since all
    > share the project name `peerconnect`; the procedure names the bare command too.
 
+   > **Pass criteria staged, 2026-09-24 before `/to-tickets`** ([`docs/spec.md`](../spec.md) §16.5
+   > step 6). The trigger above is unchanged, and so is the rule that every such merge is checked. What
+   > a check must show was the finished platform's pass line — sign-in, the demo Student, four closed
+   > Rounds — which no PR before the seed's end state could meet, starting with ADR-0004 d12's week-1
+   > gate. That line binds in full from the PR that completes the seed; before it, a criterion counts
+   > from the PR whose slice creates it. The PR template's clean-clone box lists the criteria checked,
+   > so decision 6's Done stays checkable without asking anyone.
+
 6. **Done is the merged PR, with every box in the template ticked. Nothing else is defined.**
    The template gains three checks — the suite is green, the ticket's acceptance criteria are met,
    and decision 5's boot check where it applies — beside the branch, commit, rebase,
@@ -374,6 +382,13 @@ done when the PR template already is one.**
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be
    "done" with a red suite. Making the template the definition also keeps it **checkable
    without asking anyone**, which is the property `/to-tickets` actually needs.
+
+   > **The suite box binds from the first test file, 2026-09-24 before `/to-tickets`**
+   > ([`docs/spec.md`](../spec.md) §16.8). `npx vitest run` exits 1 when it finds no test file, so
+   > before the first one lands no PR can show a green suite, starting with ADR-0004 d12's week-1
+   > gate. Until a branch holds a test file, the box is *not applicable*; from the PR that adds the
+   > first, it binds on every PR. `passWithNoTests` is never set: it would excuse a broken test path
+   > as well as an empty suite. The definition above is unchanged: a red suite still never passes.
 
 7. **A test is added only for something that fails silently, and decision 1's list is closed until
    someone argues a fourth category.**
@@ -476,6 +491,13 @@ done when the PR template already is one.**
    > and decision 6 makes the template the definition. And the Compose boot stays out of CI. How
    > the local run reaches the stack, and what the workflow provisions or leaves to that local run,
    > is for `/to-spec #1`; see *Not settled*.
+
+   > **The workflow is placed and grows by steps, 2026-09-24 before `/to-tickets`**
+   > ([`docs/spec.md`](../spec.md) §16.4, §18). `ci.yml` lands with ADR-0004 d12's week-1 gate.
+   > Each step is added by the PR that creates what it needs, rather than made to tolerate an early
+   > failure: the seed-idempotence step with the seed's completion record, and the suite step with
+   > the first test file. The decision above is unchanged — one advisory workflow on every pull
+   > request.
 
 9. **The two additional browsers are Firefox and Brave, and Fadel runs the pass in week 5.**
    `:576`'s list — *"Firefox, Safari, Edge, etc."* — is open, so Brave qualifies unambiguously.

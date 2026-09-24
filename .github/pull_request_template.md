@@ -15,7 +15,10 @@
 A ticket is done when this PR merges with every box ticked. This list **is** the definition
 (ADR-0016) — there isn't a second one.
 
-- [ ] **Suite green** — `npx vitest run`
+- [ ] **Suite green** — `npx vitest run`. *Not applicable* only while the branch holds no
+      `test/<NN>-<category>/*.test.ts` file yet (Vitest exits 1 with nothing to run, and
+      `passWithNoTests` is never set); from the PR that adds the first one, always
+      (`docs/spec.md` §16.8)
 - [ ] **The ticket's acceptance criteria are met**, each one, not "mostly"
 - [ ] **Added no test outside the closed list?** If you did, say why it fails *silently* —
       anything the compiler or a demo step catches is not tested (`CONTRIBUTING.md` → Testing)
@@ -39,7 +42,8 @@ the fixture module it seeds from, at the paths `CONTRIBUTING.md` → Schema chan
 All are inside the gate (ADR-0005 d5, d6).
 
 - [ ] **No** — round-robin review, anyone can take it.
-- [ ] **Yes** — **request Kamel** (or Ahmad, if Kamel is blocked >24h), and confirm:
+- [ ] **Yes** — **request Kamel** (or Ahmad, if Kamel is blocked >24h **or Kamel authored this
+      PR** — nobody reviews their own PR), and confirm:
   - [ ] `schema.prisma` and the generated migration are committed **together**
   - [ ] If `schema.prisma` changed, `npx prisma generate` was run explicitly to update the client
   - [ ] Migration named `<slice>_<change>`
@@ -74,6 +78,12 @@ Compose files or a Dockerfile.
   - [ ] Clone 1: **`make up`** works end-to-end.
   - [ ] Clone 2 (a *different* fresh clone): bare `docker compose up --build` works end-to-end,
         with nothing run first — no `make` target, no hand-written `.env`.
+  - [ ] **Criteria checked on each clone** (`docs/spec.md` §16.5): list them here. The full pass
+        line — sign-in, the demo Student, four closed Rounds on `/admin/rounds`, a clean console —
+        is required from the PR that completes the seed's four-Round end state. Before that, list
+        the ones whose slices have merged (§16.5 step 6); the first infrastructure PR's are both
+        boot paths up from an empty database, a healthy `api`, the bundle served at
+        `https://localhost:8443` with 8080 redirecting, and a clean console.
   ADR-0004 d8 requires both, and the second only proves the Makefile is not hiding required setup
   if it runs against a clone the Makefile has never touched. A bad migration breaks every other
   developer's database; two checks now beat finding out in the final fortnight.

@@ -277,7 +277,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0004 d11 | Boot: db healthcheck → migrate → idempotent seed, on both paths. |
 | ADR-0004 d12 | Kamel owns the infrastructure slice in week 1 as a gate, README Instructions included. |
 | ADR-0004 amendment | OAuth credentials `FT_OAUTH_CLIENT_ID`/`FT_OAUTH_CLIENT_SECRET`; redirect URI derived from `PUBLIC_ORIGIN`; platform fully usable with OAuth unconfigured; 42 token used once, discarded. |
-| ADR-0005 | Prisma `^7`; one `schema.prisma`; gate = `prisma/**`, root `prisma.config.ts`, every Config discovery path, the seed and its fixture; Kamel reviews, Ahmad deputises past 24 h; developer authors; immutable merged migrations; rebase-then-regenerate own migration; Conventional Commits; squash-merge; `<type>/<slice>-<short>` branches; explicit `prisma generate`; `prisma-client` generator with explicit output; `@prisma/adapter-pg`; Node `^20.19`/`^22.12`/`^24`; TS ≥ 5.4. |
+| ADR-0005 | Prisma `^7`; one `schema.prisma`; gate = `prisma/**`, root `prisma.config.ts`, every Config discovery path, the seed and its fixture; Kamel reviews, Ahmad deputises past 24 h and reviews any gated PR Kamel authors (d3's 2026-09-24 annotation); developer authors; immutable merged migrations; rebase-then-regenerate own migration; Conventional Commits; squash-merge; `<type>/<slice>-<short>` branches; explicit `prisma generate`; `prisma-client` generator with explicit output; `@prisma/adapter-pg`; Node `^20.19`/`^22.12`/`^24`; TS ≥ 5.4. |
 | ADR-0006 | Skill-only Score, `cover(n)=1−0.5ⁿ`, 0.7/0.3, +10 Mentee Learning Goal bonus, clamp, exact half-up rounding; floor 25; orientation by higher Score, tie lower id is Mentor; priority = Score − 2·max(0, ΔLevel − 2); most-constrained-first with recompute; tie-break `priority DESC, Score DESC, pair key ASC`; no-repeats over every Match row of any status; Block unconditional; hand-made Match: no Score (`NULL`, so the 25 floor has nothing to gate), exempt from the no-repeats history check only, oriented by steps 3–4, both currently unmatched, serialized; a Block does not end an existing Match. |
 | ADR-0007 | One live Prompt = greatest durable publication order; publish-only, no edit/delete/draft/schedule; answer is the Post; one answer per (Prompt, Student) in the schema; answer + 20 XP + Knowledge Sharer + qualifying activity atomic; answer rejected after supersession; roles `STUDENT`/`PEER_MODERATOR` answer, `ADMIN` does not; answers visible immediately. |
 | ADR-0008 | One role per Student; Peer Moderator participates, Admin does not; Peer Moderator authority = open Post-report groups + Remove Post/dismiss; manual role assignment only; three sanctions; Suspension reversible, Removal final; both terminate in-progress Matches as `TERMINATED_BY_ADMIN`, delete sessions, drop sockets; soft delete on Student and Post only; Removed rows view-only, email burned; Admin edits only Student-editable fields + role; self-guards and ≥ 1 active Admin, serialized; Users table is the roles surface; seed bootstraps Admin and Peer Moderator. |
@@ -1438,8 +1438,11 @@ refuse branch owned by #24 above is the only outcome.
 | Avatar file | ≤ 2,097,152 bytes, PNG/JPEG |
 | Evidence file | ≤ 5,242,880 bytes, PDF/PNG/JPEG; filename ≤ 255 |
 
-All strings are trimmed; empty after trimming is invalid; control characters other than a newline in
-multi-line fields are rejected.
+All strings are trimmed; a field whose minimum above is 1 is invalid when empty after trimming;
+control characters other than a newline in multi-line fields are rejected. **Search `q` — on both
+search routes, §6.2 and §6.12 — is the one string whose minimum is 0**: absent, or empty after
+trimming, it applies no text filter and is never `validation_failed`, so clearing the search box is
+ordinary use (§3.8.2).
 
 ### 6.1 Configuration, session and authentication
 
@@ -1479,7 +1482,7 @@ concurrent changes serialize on the `Student` row; each deletes all sessions.
 | --- | --- | --- |
 | `GET /api/skills` | session | the catalogue, by name |
 | `GET /api/me` | session | own profile with email, role, status, Skills, Goal, XP, Level, Streak, Badges, progress |
-| `GET /api/students/:id` | session | profile per §4.6; tombstone if Removed; email only to self or Admin |
+| `GET /api/students/:id` | session | profile per §4.6; tombstone if Removed; **never an email, for any viewer** — email is never on a profile (§4.6, ADR-0018 d4): the owner reads their own on `GET /api/me`, Admins on `GET /api/admin/students/:id` (§6.12) |
 | `GET /api/students/:id/posts?cursor` | session | their non-removed Posts |
 | `GET /api/students?q&teaches&wants&hasGoal&sort&order&page&pageSize` | session | **Advanced search**: excludes Removed, includes Suspended and Admins; `q` matches display name only (`ILIKE`, wildcards escaped), never email; `teaches`/`wants` are Skill ids; `hasGoal` boolean; `sort ∈ name, xp, joined` (default `name`), `order ∈ asc, desc`; ties `id ASC`; returns `StudentRef` + Skills + Level + XP and `total` |
 
@@ -1575,7 +1578,7 @@ message, one serial order — a message ordered first is counted, one ordered af
 | `GET /api/rounds/current` | `{ round: { id, number, openedAt } | null }` |
 | `GET /api/matches/current` | the actor's standing Match in the open Round, else null (`MatchView`) |
 | `GET /api/matches?page` | the actor's own Match history, every status |
-| `GET /api/matches/:id` | pair or Admin → `MatchView` + `review` (Learning Outcome, Evidence metadata) + `privateFeedback` when the reader is its Mentor, its author or an Admin; any other authenticated non-participant → **404 `not_found`** (the invisibility §8.5 gives accept/decline) |
+| `GET /api/matches/:id` | the pair only — its Mentor or Mentee, whatever their current role (a Match made before promotion stays readable here) → `MatchView` + `review` (Learning Outcome, Evidence metadata) + `privateFeedback` (once the Review exists; the Mentor it is about and its author are exactly the pair); any other authenticated caller, **an Admin outside the pair included** → **404 `not_found`** (the invisibility §8.5 gives accept/decline). Admins read every Match through `GET /api/admin/matches/:id` (§6.13), because `MatchView` is written from one participant's side |
 
 `MatchView` = `{ id, roundNumber, status, myRole: MENTOR|MENTEE, partner: StudentRef,
 compatibilityScore | null, handMade, goalBonusApplied, coverage: { forward: Skill[], reverse:
@@ -1655,9 +1658,14 @@ Report or Direct Message (ADR-0008 d8, ADR-0018 d8). No endpoint creates a Stude
 | `POST /api/admin/rounds/current/close` | close the open Round (§8.7) |
 | `GET /api/admin/rounds/:id` | its Matches (pair, status, Score or hand-made, Mission); for the open Round also `unmatched` (§8.9) |
 | `POST /api/admin/rounds/current/matches` | hand-made Match `{ studentIds: [a, b] }` (§8.6) |
-| `GET /api/admin/matches/:id` | full Match with Learning Outcome, Private Feedback, Evidence metadata |
+| `GET /api/admin/matches/:id` | full Match: `AdminMatchView` + `review` (Learning Outcome, Evidence metadata) + `privateFeedback`, for any Match |
 | `GET /api/admin/prompts` | Prompt history |
 | `POST /api/admin/prompts` | publish (§8.12) |
+
+`AdminMatchView` = `{ id, roundNumber, status, mentor: StudentRef, mentee: StudentRef,
+compatibilityScore | null, handMade, goalBonusApplied, coverage: { forward: Skill[], reverse: Skill[] },
+mission, mentorAccepted, menteeAccepted, declinedBy: StudentRef | null }` — both participants named,
+where `MatchView` names one side's partner (§6.6).
 
 ### 6.14 Admin — Learning Analytics — `GET /api/admin/analytics` (§13)
 
@@ -1879,7 +1887,8 @@ row; whichever commits first wins and the others see the new status (ADR-0002 d5
   the computation persists — not the orienting Score, not the bonus.
 - **Events**: `match:ready` to both.
 - **Failure**: any refusal above commits nothing.
-- **Result**: the created `Match` (`MatchView`, `compatibilityScore: null`).
+- **Result**: the created Match as `AdminMatchView` (§6.13, `compatibilityScore: null`) — the Admin is
+  not one of the pair, so a `MatchView` has no side to be written from.
 - **Visibility**: the pair reads it via `GET /api/matches/:id`; Admins via `GET /api/admin/matches/:id`.
 - **Concurrency**: two creations sharing a Student → one commits, the other retries and gets
   `already_matched` with nothing written (ADR-0006 d10). Creation vs close → creation first: it lapses
@@ -2024,8 +2033,10 @@ Evidence is the one mutable attachment.
 
 ### 9.3 Reading
 
-- `GET /api/matches/:id` (pair, Admin; any other Student → 404, §6.6) and `GET /api/admin/matches/:id` return the Learning Outcome and
-  Evidence metadata; Private Feedback is included only for its Mentor, its author and Admins.
+- `GET /api/matches/:id` (the pair only; any other caller, an Admin outside the pair included → 404,
+  §6.6) and `GET /api/admin/matches/:id` (Admins, any Match) return the Learning Outcome and Evidence
+  metadata; Private Feedback is included only for its Mentor, its author and Admins — the pair on the
+  first route, Admins on the second.
 - `GET /api/me/feedback-received` — the Mentor's private route, newest first, ratings shown one by
   one, never averaged, a Removed author shown as the tombstone (ADR-0013 d4–d8). It is never on the
   profile page (ADR-0013 d5).
@@ -2539,13 +2550,16 @@ Let `M[0..n−1]` be the matcher's Matches in selection order.
   that Match.
 - **Lapses**: `M[n−1]` — both accept, no Review; `M[n−2]` — only the Mentor accepts. Both become
   `LAPSED` at close.
-- **Reviews** (step h and repairs), with *k* the 0-based submission order: *learned* = *"How {first
-  FORWARD Skill} works in practice."*; *can now do* = *"I can use {first FORWARD Skill} on my own
-  project."*; Private Feedback *"Very useful — we covered {Skill} end to end."* / *"Clear
-  explanations; more worked examples would help."*; rating `[5, 4, 5, 3, null, 4, 5, 2][k mod 8]`;
-  Takeaway *"Learned {Skill} with a peer this Round."* ({Skill} = *"a new topic"* when FORWARD is
-  empty). Prompt answers are fixed sentences in the seed module chosen by position; their wording
-  carries no rule.
+- **Reviews** (step h and repairs), with *k* the 0-based submission order across the whole seed —
+  a repair's Review is submitted at step d, then step h's in selection order: *learned* = *"How
+  {Skill} works in practice."*; *can now do* = *"I can use {Skill} on my own project."*; Private
+  Feedback *"Very useful — we covered {Skill} end to end."* / *"Clear explanations; more worked
+  examples would help."*; rating `[5, 4, 5, 3, null, 4, 5, 2][k mod 8]`; Takeaway *"Learned {Skill}
+  with a peer this Round."* **In all four sentences {Skill} is one value**: the name of the Match's
+  FORWARD Skill that sorts first by `Skill.name` ascending, or *"a new topic"* when FORWARD is empty.
+  An empty FORWARD set is not hypothetical: a hand-made repair may cover nothing (§8.6), and a replay
+  of this script over the fixture pairs both repairs with no Skill covered either way. Prompt answers
+  are fixed sentences in the seed module chosen by position; their wording carries no rule.
 - **Target** with 15 matcher Matches a Round: Round 1 = 11 completed + 2 lapsed + 2 declined (+1
   repair completed); Round 2 = 12 + 2 + 1; Round 3 = 10 + 2 + 2 + 1 terminated (+1 repair); Round 4 =
   11 + 2 + 1 + 1 terminated. **Totals 62: 46 `COMPLETED`, 8 `LAPSED`, 6 `DECLINED`, 2
@@ -2618,19 +2632,29 @@ about the Admin.
   'peerconnect:seed:complete:fixture-v<N>'`, written as the very last statement, only after every
   assertion passed. It lives in the database's own catalogue, so it survives restarts and dies with the
   volume, and it is outside every Prisma model. `<N>` is the fixture version, bumped by any PR that
-  changes the fixture.
+  changes the fixture. **A marker certifies exactly the fixture at version `<N>`**: every step and
+  every §14.8 assertion that version implements, all of them passed. While the seed is being built
+  slice by slice (§18 item 12), a version implements only the steps and assertions whose slices have
+  merged; from the PR that completes ADR-0017's end state onward, `<N>` implements all of §14.4–§14.8.
 - **At start** the seed reads it (`SELECT shobj_description(oid, 'pg_database') FROM pg_database
   WHERE datname = current_database()`):
   - a marker and **every domain table empty** → the marker is stale: the schema was reset under a
     surviving database, as `prisma migrate reset` or `migrate dev`'s reset prompt does (Prisma's
     PostgreSQL reset drops and recreates the schema, not the database, so a database comment
-    survives it) → run from step 1, which rewrites the marker;
+    survives it) → **clear it first** (`COMMENT ON DATABASE <current database> IS NULL`, the run's
+    first write), then run from step 1, which writes the current marker at the end. Clearing first
+    is what keeps a failure during this run on the truncate-and-retry path below: left in place, the
+    stale marker would sit over the failed run's rows, and the next boot would read it as *complete*
+    and serve a partial fixture;
   - otherwise, a marker for the **current** version → log *seed already complete*, exit 0;
   - otherwise, a marker for an **older** version → log a warning naming `make wipe`, exit 0 — a
     completed seed never runs again, including over Rounds a demo added (ADR-0017 d10);
   - **no marker and every domain table empty** → run;
   - **no marker and any domain table non-empty** → the previous attempt failed: `TRUNCATE` the nineteen
     domain tables in one statement (never `_prisma_migrations`), then run from step 1.
+- **The invariant**: a marker is present only over the fixture it certifies. The seed writes it last,
+  after every assertion, and clears a stale one before its own first write, so no failure at any
+  point leaves a marker above rows it does not certify.
 - **Why truncation is safe**: the API serves only after the seed has completed (§15.5), so a database
   without a marker can hold nothing but a failed attempt's rows.
 - **Failure is loud**: any refusal, error or failed assertion logs the step and reason and exits 1, the
@@ -2870,10 +2894,19 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 3. `npx prisma generate --config prisma.config.ts`; typecheck the API and the SPA; `npx nest build`.
 4. **Schema from empty**: `npx prisma migrate deploy --config prisma.config.ts` on the empty service
    database.
-5. **Seed from empty**: `npx prisma db seed --config prisma.config.ts` — the whole fixture through the
-   real write paths, ending with §14.8's assertions; any failure fails the step.
+5. **Seed from empty**: `npx prisma db seed --config prisma.config.ts` — the fixture at its current
+   version (§14.9) through the real write paths, ending with the §14.8 assertions that version
+   implements; any failure fails the step.
 6. **Seed idempotence**: run the seed again; it must log *already complete* and exit 0.
 7. Install `nginx`; `npx vitest run` (the suite uses its own `_test` database).
+
+**The workflow grows with the slices, as the seed does.** A step that cannot pass before its
+prerequisite exists is added by the PR that creates the prerequisite, never made conditional or
+tolerant: `ci.yml` lands with the infrastructure gate (§18 item 1) carrying steps 1–5; step 6 is added
+by the PR that lands the seed skeleton's completion record (§18 item 3), since the week-1 seed entry
+writes none and a second run could not log *already complete*; step 7 is added by the PR that adds the
+first test file (§16.8). Vitest's `passWithNoTests` is never set: an empty run fails, so a broken test
+path can never pass as green.
 
 It stays advisory: branch protection is available on this plan and not enabled; making the workflow a
 required check is an open governance decision (#28, ADR-0005 d7). The Compose boot is not in CI.
@@ -2893,6 +2926,19 @@ or `proxy/Dockerfile`, and before defense:
    database; `https://localhost:8443` shows the sign-in page after the interstitial; the bootstrap Admin
    and the demo Student (`SEED_STUDENT_PASSWORD`) can sign in; `/admin/rounds` shows four closed Rounds
    and none open; the console is clean.
+6. **Which of those apply to a given PR.** Step 5 is the final contract: it binds in full before
+   defense and on every qualifying PR from the one that completes ADR-0017's end state (§18 item 12)
+   onward. Before that, a criterion applies from the PR whose slice creates its surface, and a PR
+   inside §16.5's trigger lists the criteria it could check in its clean-clone box. The ones that
+   bind from the first PR, the infrastructure gate's (§18 item 1), are the same on both clones:
+   both boot paths come up from an empty database with no step run first; the §15.5 chain runs in
+   order and `api` turns healthy only after it — `migrate deploy`, then the seed entry, which at that
+   stage may do no more than log completion, then `main.js`; `https://localhost:8443` serves the
+   bundle's `index.html` after the interstitial, and port 8080 redirects to it; the console is
+   clean. The seed logging completion of the fixture version as it stands (§14.9) and the bootstrap
+   Admin's sign-in join from §18 item 3; the sign-in page from the SPA's sign-in slice; the demo
+   Student's sign-in and four closed Rounds from item 12. Four closed Rounds is never required of a
+   PR that precedes the slices producing them.
 
 ### 16.6 Detecting a seed or boot regression before defense — four distinct layers
 
@@ -2923,6 +2969,14 @@ together** if a rule, criterion, scope, status or resolved question changed; **P
 Terms) moved with any change to stored personal data, its visibility or retention; the **schema-gate**
 boxes when inside the gate; the **clean-clone** boxes when §16.5 applies.
 
+**The suite box binds from the first test file.** `npx vitest run` exits 1 when it finds no test
+file, so no PR before the first `test/<NN>-<category>/*.test.ts` can show it green — the
+infrastructure gate's among them. Until a PR's branch holds at least one such file, the box is ticked
+*not applicable*; from the PR that adds the first one — at the latest §18 item 4, category 1 — the
+suite must pass, on every PR after it. The test harness (§18 item 2) adds no test of its own: each of
+the ten categories needs the slice it covers. `passWithNoTests` is never set (§16.4), so this is the
+only way an empty suite is excused, and it ends for good with the first test file.
+
 ---
 
 ## 17. Team gates and process
@@ -2943,7 +2997,8 @@ boxes when inside the gate; the **clean-clone** boxes when §16.5 applies.
   and `/.config/prisma*`. A PR adding any file matching one other than `prisma.config.ts` is inside
   the gate and refused. The application code the seed drives stays round-robin.
 - **Kamel reviews; Ahmad deputises when Kamel is blocked more than 24 hours**; Fadel watches for the
-  stall. The developer authors the migration.
+  stall. The developer authors the migration. **When the gate holder authors a gated PR, Ahmad
+  reviews it** — nobody reviews their own PR (§17.4), and Ahmad is already the gate's deputy.
 - **Rules**: a merged migration is immutable (fix forward); rebase onto `main` before merging and
   regenerate only your own unmerged migration; `schema.prisma` and its migration are committed
   together; `npx prisma generate` is run explicitly; migrations are named `<slice>_<change>`; the seed
@@ -2951,7 +3006,11 @@ boxes when inside the gate; the **clean-clone** boxes when §16.5 applies.
   `@prisma/client` stay in the `^7` major; a personal-data change moves the Privacy Policy in the same
   PR.
 - The week-1 infrastructure gate (ADR-0004 d12) and the schema gate are sequential, not concurrent
-  (ADR-0005 d3).
+  (ADR-0005 d3). **One overlap is unavoidable**: the week-1 boot chain (§15.5) needs the Prisma
+  scaffolding — `prisma.config.ts`, a `prisma/schema.prisma` with its generator and datasource, and
+  the seed entry `prisma/seed/main.ts` — all inside the gate, and Kamel authors it. That PR is
+  therefore reviewed by Ahmad under the rule above. It adds no feature table and no migration: those
+  arrive with their slices, which is the sense in which week 1 writes no schema.
 
 ### 17.3 Records move together
 
@@ -2996,15 +3055,23 @@ module-contingency dates are discharged (#7).
 Internal ordering `/to-tickets` should encode as blocking edges; product decisions are already made.
 
 1. **Infrastructure gate** (Kamel, week 1): Compose files, both Dockerfiles, nginx files, `.env.example`,
-   boot command, env validation, `/api/health`, Makefile, README Instructions. Gates every slice.
+   boot command, env validation, `/api/health`, Makefile, `.github/workflows/ci.yml` with §16.4's
+   steps 1–5, README Instructions. Gates every slice. The boot command brings the Prisma scaffolding
+   into this PR (`prisma.config.ts`, `prisma/schema.prisma` with no feature table, a seed entry that
+   only logs completion), so it is a gated PR its gate holder authored: **Ahmad reviews it** (§17.2).
+   Its Done has no suite to run yet (§16.8).
+   The `Makefile` already on `main` predates this document — no `wipe` or `test` target, and an
+   unpinned `seed` (M16) — so this slice rewrites it to §15.6 rather than extending it. Its clean-clone
+   check passes on §16.5 step 6's first-PR criteria.
 2. **Core** (Unit of Work with retry, `checkpoint` and `afterCommit`; envelope and exception filter;
    guards; logger; `RealtimePublisher` port) and the **test harness** (test DB, in-process app, nginx
    harness). Gate every slice.
 3. **Accounts and sessions** (`Student`, `Session`, sign-up, sign-in, sign-out, password change,
    throttle) and the **seed skeleton** (catalogue, bootstrap accounts, completion record, truncation
-   logic). Gate every signed-in feature.
+   logic), whose PR adds CI step 6 (§16.4). Gate every signed-in feature.
 4. **Fixture port + matcher engine + category 1** (Fadel, week 2, independent of the database layer for
-   the pure part).
+   the pure part). If no earlier PR has added a test file, this one adds the first: from it the Done
+   box's suite must be green and CI gains step 7 (§16.4, §16.8).
 5. **Profiles and Skills** → **Rounds and Matches** (open, accept, decline, hand-made, close without
    Streak) → **Reviews** → **XP, Badges, Streak at close, Leaderboard** → **Learning Analytics**.
 6. **Prompts** → **feed and Likes** → **Reports and moderation**.
@@ -3154,6 +3221,59 @@ Rules every ticket inherits; a PR breaking one is not done.
       the pass criteria), *Environment* (Compose ≥ 2.24.4). ADR-0011's second-pass annotations keep
       their 2026-09-23 date, the date #14, #20 and the map record. Each is *uncommitted* until this
       lands on `main`.
+- [x] **Landed on `main`, 2026-09-24.** The second and third verification passes above landed at
+      `3e61133`, the records follow-up at `8562a95`. Every *uncommitted* marker in those three
+      entries — and on map #1 and in the issue comments they cite (#6, #10, #11, #14, #17, #20, #25)
+      — is on `main`; map #1 records the same.
+- [x] **Fourth pre-`/to-tickets` verification, 2026-09-24** (an independent adversarial review, each
+      finding re-verified against the records before any change). **Rule-level:** none — every
+      correction makes a mechanism satisfy a settled rule. **Mechanisms corrected:** the seed clears a
+      stale completion record before its first write, so a failed re-run after a schema reset can no
+      longer be read as complete (§14.9; ADR-0017 d10's contract); what a completion record certifies
+      while the seed is still being built, and which clean-clone pass criteria bind before the full
+      fixture exists, so the first infrastructure PR has a satisfiable Done (§14.9, §16.5 step 6,
+      §18 item 1); one `{Skill}` value for all four seed Review sentences, ordered by name, with the
+      empty-FORWARD fallback both hand-made repairs need (§14.5); `GET /api/matches/:id` is the
+      pair's only, and Admins read — and the hand-made Match returns — the new `AdminMatchView`
+      (§6.6, §6.13, §8.6, §9.3); no profile response carries an email, as §4.6 and ADR-0018 d4 rule
+      (§6.2); an empty search `q` is no filter rather than `validation_failed` (§6.0.3); the
+      pre-spec `Makefile` is replaced, not extended (§18 item 1). **Checked and left unchanged:**
+      the seed's per-Round targets — a replay of §14.3–§14.8 over the fixture gives 15 matcher
+      Matches in each Round and exactly 62 = 46 / 8 / 6 / 2 (74 %), with *S*, *R* and the demo
+      Student all found; a proposed `Report.resolution_batch_id`, rejected: two resolutions of one
+      target by one Admin sharing a millisecond need three serialized transactions inside it, and
+      the only effect would be a merged audit row. **Records moved:** ADR-0017 d10 and ADR-0004 d11
+      annotated; `CONTRIBUTING.md` → *The clean-clone check*; the Privacy Policy (a sign-in session
+      records its expiry, not when it was made); map #1 (this pass, the landed waves above, and #26
+      moved from *Open* to *Decisions so far*, which its resolution comment had claimed); #6, #13,
+      #25, #26 and #27 commented. Each is *uncommitted* until this lands on `main`.
+- [x] **Recheck of the fourth verification, 2026-09-24** (a second independent review of the
+      corrected record). Eight of its fixes held. **Two were incomplete and are completed:** the PR
+      template gains the clean-clone box §16.5 step 6 refers to, where a PR lists the criteria it
+      checked, with ADR-0016 d5 annotated to match; and the Privacy Policy's two HTTPS claims now
+      name the one exception, a developer's local build served over plain HTTP to the same computer
+      (ADR-0004 d5). **One record caught up with a settled rule:** `CONTEXT.md` → *Report* says a
+      Removal closes every open Report about the removed Student, one the removing Admin filed
+      included (ADR-0011 d10, §12.7). **Checked and left unchanged:** an established socket outliving
+      its session's 30-day expiry — ADR-0003 rejected re-validating the session on every socket
+      event, §5.8 records the consequence, and every revocation (logout, password change, Suspension,
+      Removal) still drops the socket at once; the Privacy Policy's *"other records also carry the
+      time they were made"*, which covers the records about a Student listed above it — the Skill
+      catalogue is not one, and a Match's covered Skills belong to the Match record, which is timed.
+      **Records moved:** the PR template, ADR-0016 d5, `CONTEXT.md`, the Privacy Policy; map #1; #13
+      and #25 commented. Each is *uncommitted* until this lands on `main`.
+- [x] **What staging the pass line exposed, 2026-09-24.** Three things the first PRs could not
+      meet. **Mechanisms:** the Done box's suite binds from the first test file, not before, because
+      `npx vitest run` exits 1 with nothing to run, and `passWithNoTests` is never the answer
+      (§16.8); `ci.yml` is placed in §18 item 1 and grows by steps, step 6 arriving with the seed's
+      completion record and step 7 with the first test file, and step 5 seeds the fixture at its
+      current version (§16.4, §18 items 1, 3, 4). **Rule-level (review):** the week-1 boot chain puts
+      Kamel's own PR inside the schema gate — `prisma.config.ts`, a `schema.prisma` with no feature
+      table, the seed entry — so **when the gate holder authors a gated PR, Ahmad reviews it**, and
+      ADR-0005 d3's "in week 1 nobody writes schema" is read as feature schema (§17.2, §18 item 1).
+      **Records moved:** ADR-0005 d3 and ADR-0016 d6 and d8 annotated; `CONTRIBUTING.md` (*Review*,
+      *Done*); the PR template (the suite box, and the gate box's reviewer); map #1; #8, #25 and #28
+      commented. Each is *uncommitted* until this lands on `main`.
 - [ ] External decisions below — they block only the tickets that name them.
 
 ---

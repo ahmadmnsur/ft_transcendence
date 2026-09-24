@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 23 September 2026
+**42 PeerConnect** · Last updated: 24 September 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -86,7 +86,7 @@ Who or what you reported, the reason you chose, anything you wrote, and how staf
 
 One record for each browser you are signed in on: whose it is, and when it expires.
 
-Records also carry the time they were made.
+Other records also carry the time they were made; a sign-in session records only when it expires.
 
 **What PeerConnect does not record: when you were last online.** Your Friends can see whether you are
 online *now*. That status lives only in the running server's memory, is never saved, and resets
@@ -146,7 +146,8 @@ to remove an offensive name — but never your password, your XP or Badges, or a
 ## Cookies and your browser
 
 PeerConnect sets **one cookie**: a random identifier for your sign-in session. It is sent only to
-PeerConnect and only over HTTPS, and page scripts cannot read it. It stops working after 30 days
+PeerConnect and only over HTTPS — or, on a developer's local build, over a connection that never
+leaves that computer — and page scripts cannot read it. It stops working after 30 days
 without use, or as soon as you sign out. While a **Sign in with 42** is in progress, the same cookie
 holds a random identifier for that sign-in attempt instead, for at most ten minutes, until the
 attempt succeeds or fails.
@@ -210,7 +211,8 @@ Some things are permanent:
 ## How your data is protected
 
 - Your password is salted and hashed, so nobody can see it, Admins included.
-- Every connection to PeerConnect uses HTTPS.
+- Every connection to PeerConnect uses HTTPS. The one exception is a developer's local build, which
+  serves plain HTTP and only to the same computer, so its traffic never crosses a network.
 - Page scripts cannot read your session cookie, and changing your password signs you out everywhere.
 - Files are never public: each request for an avatar or an Evidence file is checked against who is
   allowed to see it.

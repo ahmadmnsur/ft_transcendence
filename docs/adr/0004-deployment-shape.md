@@ -331,6 +331,12 @@ and why there is no `SESSION_SECRET`.
     > database — so that boot seeds too. Any failure exits non-zero and `api` stays down. ADR-0017
     > d10 carries the same choice.
 
+    > **Stale record cleared before the re-run, 2026-09-24 before `/to-tickets`**
+    > ([`docs/spec.md`](../spec.md) §14.9; ADR-0017 d10's annotation). "That boot seeds too" now clears
+    > the stale record as its first write. Left in place, a re-run that failed partway would leave it
+    > above partial rows and the next boot would skip them as complete. The boot sequence and the
+    > idempotence requirement above are unchanged.
+
 12. **Kamel owns this slice in week 1, and it is a gate rather than parallel work.** Every
     vertical feature slice needs the single command working before it can start. The budget
     is roughly 3-4 days including the `README.md` "Instructions" section that `:1242`

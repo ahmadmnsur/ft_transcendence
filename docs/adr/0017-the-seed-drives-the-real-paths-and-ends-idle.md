@@ -406,6 +406,17 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     > again from the start of the eligible Students, since the social graph uses 23 of the 24
     > (§14.6–§14.7), and the demo Student is chosen outside the reserved positions.
 
+    > **Stale record cleared first, 2026-09-24 before `/to-tickets`** ([`docs/spec.md`](../spec.md)
+    > §14.9). The note above re-runs the seed over a stale record but left the record in place until
+    > the run's end, so a run that failed partway left the old record above partial rows, and the next
+    > boot read that as *completed* and skipped — the exact state this decision's contract forbids (*"a
+    > failed attempt … leaves either nothing or state the next attempt can complete or discard"*;
+    > *"the skip test recognises completion"*). The seed now clears a stale record as its first write,
+    > so a failure lands on the ordinary no-record truncate-and-retry path, and a record is only ever
+    > present above the fixture it certifies. The contract above is unchanged; only the mechanism
+    > now meets it. While the seed is built slice by slice, a record certifies the fixture version
+    > that wrote it, and the four-Round end state binds from the PR that completes it (§14.9, §16.5).
+
 11. **Presence cannot be seeded, and the demo script must account for it.** Presence is live,
     process-local state; it does not survive a restart, there is no column, and **nothing records
     when a Student was last online** (ADR-0003, `CONTEXT.md`). Every seeded Student therefore

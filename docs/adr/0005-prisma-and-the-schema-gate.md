@@ -81,6 +81,18 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    feature slice is still waiting on the single command to work. The deputy matters as much as
    the holder — a single gate with no fallback is not a gate, it is a stall.
 
+   > **Week 1 does touch the gate, and the holder does not review himself, 2026-09-24 before
+   > `/to-tickets`** ([`docs/spec.md`](../spec.md) §17.2, §18 item 1). ADR-0004 d11's boot chain —
+   > migrate, then seed — is the week-1 gate's work, and it cannot run without the Prisma
+   > scaffolding: the root `prisma.config.ts`, a `prisma/schema.prisma` with its generator and
+   > datasource, and the seed entry `prisma/seed/main.ts`. All three sit inside decision 5's gate,
+   > and Kamel authors them. **"In week 1 nobody writes schema" holds for feature schema** — no
+   > table and no migration lands before its slice — **but not for the scaffolding**, so the two
+   > gates meet once, in that PR. **Rule: when the gate holder authors a gated PR, Ahmad reviews
+   > it**, as the deputy this decision already names; nobody reviews their own PR (decision 7's
+   > one completed review by another member). The holder, the deputy and the 24-hour rule are
+   > otherwise unchanged.
+
 4. **The developer authors the migration; the gate holder reviews it.** This is the decision
    most likely to be quietly reversed under deadline pressure, so the reason is recorded: the
    map settled at charting that **each developer owns their feature DB-through-UI**. A gate

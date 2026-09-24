@@ -52,6 +52,12 @@ describing the changes", and it sits in the list that gets a project **rejected*
   > gone). A PR adding any file matching one, other than the root `prisma.config.ts`, is inside the
   > gate and refused.
 
+  > **When Kamel authors a gated PR, Ahmad reviews it, 2026-09-24** ([`docs/spec.md`](docs/spec.md)
+  > §17.2; ADR-0005 d3). Nobody reviews their own PR. The first such PR is Kamel's week-1
+  > infrastructure PR: its boot command needs `prisma.config.ts`, `prisma/schema.prisma` (generator
+  > and datasource, no feature table yet) and the seed entry `prisma/seed/main.ts`, all inside the
+  > gate.
+
 ## Schema changes — read this before touching `prisma/` or `prisma.config.ts`
 
 **You write your own migration. Kamel reviews it.** You own your feature DB-through-UI; the
@@ -298,6 +304,13 @@ That means, every time: the suite green, the ticket's acceptance criteria met, *
 review**, and — if the PR touches `prisma/`, `prisma.config.ts`, the seed (rule 3 above), the
 Compose files or a Dockerfile — **a clean-clone boot verified**.
 
+> **"The suite green" starts with the first test, 2026-09-24** ([`docs/spec.md`](docs/spec.md)
+> §16.8). `npx vitest run` exits 1 when there is no test file to run, so a PR that lands before the
+> first `test/<NN>-<category>/*.test.ts` — the week-1 infrastructure PR among them — ticks that box
+> *not applicable*. From the PR that adds the first test file it is required on every PR. Nobody
+> sets Vitest's `passWithNoTests`: it would also let a broken test path pass as green. CI's own
+> steps are added the same way, as their prerequisites land (§16.4).
+
 If a change to an ADR, the project map, or a GitHub issue moves a rule, acceptance criterion,
 scope, status, or resolved question, **the affected records moved together in the same task**.
 
@@ -378,6 +391,15 @@ d5).
 > with the seed logging completion from an empty database, `https://localhost:8443` shows the
 > sign-in page after the certificate warning, the bootstrap Admin and the demo Student can sign in,
 > `/admin/rounds` shows four closed Rounds and none open, and the console is clean.
+
+> **That pass line is the final one, 2026-09-24** ([`docs/spec.md`](docs/spec.md) §16.5 step 6). It
+> binds in full before defense and on every PR from the one that completes the seed's four-Round end
+> state. Before that, a criterion counts from the PR whose slice creates it: the infrastructure
+> gate's own PR passes when both boot paths come up from an empty database with nothing run first,
+> the boot chain runs to a healthy `api`, `https://localhost:8443` serves the bundle after the
+> certificate warning with port 8080 redirecting to it, and the console is clean. List in the PR's
+> clean-clone box which criteria you checked. Nobody is asked for four closed Rounds before the code
+> that makes them exists.
 
 **Check 1 — project entry point:**
 
