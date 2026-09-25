@@ -3088,6 +3088,28 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
     names the demo Student.
 13. **Browser pass** (week 5) after features exist.
 
+> **Sequenced on review of the ticket plan, 2026-09-24** (`docs/ticket-plan.md`; issues #29–#73; *uncommitted*). No
+> rule moves. Four orderings this list left open are fixed:
+>
+> - **Item 4's fixture port comes before item 3's seed skeleton.** The catalogue the skeleton
+>   inserts is the fixture module's `SKILLS` plus `RARE_SKILLS` (ADR-0017 d8), so the seed-skeleton
+>   PR (#37) is blocked by the fixture-port PR (#34). The port is a pure copy and needs item 1 only. The pure
+>   matcher engine (#35) needs item 1 and the port only.
+> - **Item 4's category 1 is the engine part.** Category 1's seam is *pure engine + services + DB*
+>   (§16.3). Week 2 ships the engine-level assertions. The service and DB assertions land with the
+>   slices that create their seams — Rounds and Matches (#48), hand-made Matches (#49), Reviews
+>   (#52), and Suspension/Removal (#66) — and ADR-0016 d10 is annotated to match.
+> - **`Post` gets its own gated PR (#51), after Rounds and before item 5's Reviews and item 6's
+>   Prompts.** `Post` references `ReflectionPrompt`, `Review` and `Round`, and §4.4 writes
+>   `post_exactly_one_origin` in the migration that creates the table. So one migration creates
+>   `ReflectionPrompt`, `Review` and `Post`, with no behaviour, and Reviews and Prompts stay parallel.
+>   That migration creates the three tables one PR ahead of the slices that write them: the one
+>   exception to §17.2's *"those arrive with their slices"*. Prompts also waits on Rounds, for the
+>   `answer_round_id` foreign key (§4.3.16).
+> - **Item 9 splits by its own two reasons.** The Users table and roles (#65) follow Matches, and the
+>   hand-made, XP and Leaderboard slices whose cases their tests carry. Only the sanctions (#66) follow
+>   Reports, for Remove Student's auto-action (§12.7).
+
 ---
 
 ## 19. Implementation constraints and invariants
@@ -3274,6 +3296,42 @@ Rules every ticket inherits; a PR breaking one is not done.
       **Records moved:** ADR-0005 d3 and ADR-0016 d6 and d8 annotated; `CONTRIBUTING.md` (*Review*,
       *Done*); the PR template (the suite box, and the gate box's reviewer); map #1; #8, #25 and #28
       commented. Each is *uncommitted* until this lands on `main`.
+- [x] **Sequenced on review of the ticket plan, 2026-09-24.** No rule moves. Four orderings §18
+      left open are fixed:
+      - the fixture port precedes the seed skeleton, because the catalogue is the fixture's Skill
+        lists (ADR-0017 d8);
+      - category 1's week-2 part is its engine part, and its service and DB assertions land with
+        Rounds and Matches, hand-made Matches, Reviews, and Suspension/Removal;
+      - `Post` gets its own gated PR after Rounds, so §4.4's CHECK sits in the creating migration
+        and Reviews and Prompts stay parallel;
+      - §18 item 9 splits by its own reasons: the Users table and roles follow Matches, and only
+        the sanctions follow Reports.
+
+      **Records moved:** the §18 note; ADR-0016 d10 annotated; #25 commented; map #1 noted. Each
+      is *uncommitted* until this lands on `main`. The §18 note and the ADR-0016 d10 annotation
+      cite `docs/ticket-plan.md`, which is committed on publication, and they name the issues of
+      the tickets they describe (#29–#73).
+- [x] **The ticket plan's readiness review, 2026-09-25.** No rule moves. Three corrections:
+      - The legal-page sign-off is blocked by #24, because ADR-0018 *Consequences* makes it wait on
+        #24's field. Remaining Dependencies 1 is annotated. The sign-off's 2026-10-15 date is
+        unchanged.
+      - Category 1's C6 across fresh databases sits with Reviews, and the Reviews ticket's six-Round
+        run asserts all of §16.3's C3, C4, C6 and C7.
+      - A hand-made Match refusing a blocked pair sits with hand-made Matches.
+
+      **Records moved:** ADR-0016 d10 annotated to match; a correction and an addendum on #25;
+      Remaining Dependencies 1 annotated. Each is *uncommitted* until this lands on `main`.
+- [x] **Tickets published, 2026-09-25.** The 45 tickets of `docs/ticket-plan.md` are GitHub issues
+      #29–#73, in dependency order (T01 is #29, T45 is #73).
+      - Each is a sub-issue of map #1, labelled `ticket`.
+      - Each has a native blocked-by edge for every edge in the plan, plus #24 on the legal sign-off
+        (#69) and the identity-mapping ticket (#70).
+      - Only the owners the records name are assigned: Kamel on #29; Fadel on #34, #35 and #72;
+        Ahmad and Kamel on #69.
+      - The plan is committed with the records.
+
+      **Records moved:** the §18 note and the ADR-0016 d10 annotation name the issues; map #1
+      noted. Each is *uncommitted* until this lands on `main`.
 - [ ] External decisions below — they block only the tickets that name them.
 
 ---
@@ -3298,6 +3356,12 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
    PKCE, cookie, store, one live attempt) and the callback's verification steps 1–5 with the failure
    path. Steps 6–7 are written against §5.6 now but not exercised until an application is
    registered; steps 8–9 wait for #24's mapping.
+
+   > **Sequenced on the ticket plan's readiness review, 2026-09-25** (*uncommitted*). #24 also
+   > blocks the legal-page sign-off (#69): item 3 below and ADR-0018 *Consequences* make sign-off wait
+   > on #24's field for the Privacy Policy's 42 sentence. The sign-off's 2026-10-15 date is
+   > unchanged, and no build ticket beyond the successful sign-in waits on #24.
+
 2. **The residue of [#26](https://github.com/ahmadmnsur/ft_transcendence/issues/26)** (closed, a fact not
    a decision): whether 42 accepts plain `http://localhost:8081/api/auth/42/callback` as a registered
    redirect URI. It affects only exercising Sign in with 42 on the dev overlay; the base path's

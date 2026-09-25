@@ -531,6 +531,26 @@ done when the PR template already is one.**
     the pattern ADR-0005 decision 3 set for the schema gate — *"a single gate with no fallback is
     not a gate, it is a stall."*
 
+    > **Week-2 scope fixed on review of the ticket plan, 2026-09-24** ([`docs/spec.md`](../spec.md)
+    > §16.3, §18; `docs/ticket-plan.md`, *uncommitted*). Category 1's seam is *pure engine +
+    > services + DB*, and most of its assertions need Rounds, Reviews, hand-made Matches or a
+    > Suspension, none of which exist in week 2. **Fadel's week-2 matcher tests (#35) are category 1's
+    > engine part**: §8.2's arithmetic and its five halves; C3, C7 and C6 over
+    > `generateCohort({ size: 20, seed: 42 })` across six engine Rounds; no-repeats and blocked
+    > pairs as engine inputs; most-constrained-first on `starvation`. **The service and DB
+    > assertions land with the tickets that create their seams**, which are unassigned:
+    > - C4, the prior-`DECLINED` pair, and a blocked pair never proposed by Round open, with
+    >   Rounds and Matches (#48);
+    > - the hand-made exemptions, and a hand-made Match refusing a blocked pair, with hand-made
+    >   Matches (#49);
+    > - the six-Round run with every Match accepted and reviewed through the services, asserting
+    >   C3, C4, C6 across fresh databases and C7 over it (§16.3), with Reviews (#52);
+    > - the prior-`TERMINATED_BY_ADMIN` pair with Suspension and Removal (#66).
+    >
+    > The fixture port is its own PR (#34), blocked by the infrastructure gate only (#29), and the seed
+    > skeleton waits on it for the catalogue (ADR-0017 d8). The owner, the deputy and the category
+    > are unchanged.
+
 ## Considered options
 
 **No suite at all, manual demo checklist only** (rejected, decision 1). Defensible on the subject
