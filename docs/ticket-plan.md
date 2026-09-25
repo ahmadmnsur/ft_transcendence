@@ -1,7 +1,7 @@
 # 42 PeerConnect — Ticket plan
 
 **Status: revision 7, published 2026-09-25 as GitHub issues #29–#73. Committed with the records.**
-Produced by `/to-tickets` from `docs/spec.md` (locked, at `cb5116c`), the ADRs, `CONTEXT.md`,
+Built from `docs/spec.md` (locked, at `cb5116c`), the ADRs, `CONTEXT.md`,
 `CONTRIBUTING.md`, the PR template and map #1. It adds no rule, product decision or requirement:
 every acceptance criterion cites the spec section it comes from.
 
