@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+
+reviews:
+  profile: chill
+  # Advisory only: the one completed review from another member is still required (CONTRIBUTING.md).
+  request_changes_workflow: false
+  # Keep the PR description as the author wrote it; the summary goes in the review comment.
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: ["main"]
+    ignore_title_keywords: ["WIP", "wip"]
+
+  path_filters:
+    - "!**/dist/**"
+    - "!**/node_modules/**"
+    - "!**/package-lock.json"
+    - "!src/generated/**"
+    - "!document/**"
+
+  path_instructions:
+    - path: "prisma/**"
+      instructions: |
+        Inside the schema gate (CONTRIBUTING.md, ADR-0005). Check:
+        - A migration directory that already exists on main must not be edited; fixes go forward in a new migration.
+        - Generated SQL must not drop or alter the hand-written objects: CHECK constraints
+          post_exactly_one_origin, report_exactly_one_target, report_no_self_student,
+          report_state_attribution, private_feedback_rating_range; indexes friendship_unordered_pair,
+          round_single_open, match_pair_history; nor drop and recreate an unchanged
+          report_one_per_reporter_post / report_one_per_reporter_student.
+        - schema.prisma changes ship with their migration in the same PR.
+        - The seed (prisma/seed/**, prisma/fixtures/**) stays idempotent: it runs on every boot.
+        - New or changed personal data must come with an update to docs/legal/privacy-policy.md.
+    - path: "{prisma.config*,prisma7.config*,.config/prisma*}"
+      instructions: "Inside the schema gate. The root prisma.config.ts is the only Prisma Config; any other file matching /prisma.config*, /prisma7.config* or /.config/prisma* is refused."
+    - path: "src/**/*.ts"
+      instructions: "NestJS API. Flag logging of passwords, tokens or request bodies (ADR-0018) and any call to a third-party origin."
+    - path: "web/src/**"
+      instructions: "Frontend. Flag anything fetched from a third party (fonts, CDNs, analytics) and any cookie other than the session cookie (ADR-0018)."
+    - path: "{Dockerfile,compose*.yaml,proxy/**}"
+      instructions: "Changes here require a clean-clone boot check before merge; remind the author if the PR description does not mention it."
+    - path: "docs/adr/**"
+      instructions: "ADR history is annotated, never rewritten. Flag edits that change existing decision text instead of adding a dated note."
+
+  tools:
+    gitleaks:
+      enabled: true
+    hadolint:
+      enabled: true
+    actionlint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: false
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: "Conventional Commits: feat:, fix:, chore:, docs:, test: or refactor: followed by a short imperative summary."
+    description:
+      mode: warning
+    docstrings:
+      mode: "off"
+    custom_checks:
+      - name: "Schema gate"
+        mode: warning
+        instructions: "If the PR touches prisma/**, or any file matching prisma.config*, prisma7.config* or .config/prisma*, pass only if Kamel is a requested reviewer, or Ahmad when Kamel is the author or the PR description says Kamel has been blocked for more than 24 hours. Otherwise pass."
+      - name: "Privacy Policy moves with personal data"
+        mode: warning
+        instructions: "If the PR changes what personal data about a Student is stored, who can see it, or how long it is kept, pass only if docs/legal/privacy-policy.md is also changed. Otherwise pass."
+
+  # No bot-authored commits in the history.
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CONTRIBUTING.md"
+      - "AGENTS.md"
+  learnings:
+    scope: local
+  issues:
+    scope: local
