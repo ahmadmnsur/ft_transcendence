@@ -1,0 +1,19 @@
+x-dev-environment: &pc-dev-environment
+  PUBLIC_ORIGIN: "http://localhost:8081"
+  NODE_ENV: development
+
+services:
+  api:
+    build:
+      target: dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment: *pc-dev-environment
+
+  proxy:
+    build:
+      target: dev
+    ports: !override ["127.0.0.1:8081:8081"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    environment: *pc-dev-environment
