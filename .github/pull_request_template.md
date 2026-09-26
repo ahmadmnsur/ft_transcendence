@@ -16,7 +16,7 @@
 - [ ] **Suite green** (`npx vitest run`) — *n/a* only until the first `test/<NN>-<category>/*.test.ts` exists (§16.8)
 - [ ] **Every acceptance criterion** of the ticket met
 - [ ] **No test outside the closed list** — or say why it fails silently (`CONTRIBUTING.md` → Testing)
-- [ ] **Records synchronized** — if an ADR, the map or an issue changed meaning, all of them moved together (`CONTRIBUTING.md` → Records move together)
+- [ ] **Records synchronized** — if this changed a rule, criterion, scope, status or resolved question in an ADR, the map or an issue, every one of those that exists moved with it (`CONTRIBUTING.md` → Records move together)
 - [ ] **Personal data** — if what is stored, who sees it or how long it is kept changed, `docs/legal/privacy-policy.md` is updated here, plus `terms-of-service.md` if a conduct rule, Report reason or sanction moved (ADR-0018)
 
 ## Schema gate
