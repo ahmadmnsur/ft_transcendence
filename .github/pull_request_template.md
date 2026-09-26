@@ -30,7 +30,7 @@
   - [ ] No merged migration edited — fix forward
   - [ ] Rebased after the last schema change on `main`, and regenerated if it moved
   - [ ] Seed still idempotent; personal data → Privacy Policy moved
-  - [ ] Any `prisma.config.ts` change described; no second Prisma Config file
+  - [ ] Any `prisma.config.ts` change described, with its effect on schema, migrations, datasource and seed; no second Prisma Config file
   - [ ] `prisma`/`@prisma/client` still `^7`
 
 ## Clean-clone boot
