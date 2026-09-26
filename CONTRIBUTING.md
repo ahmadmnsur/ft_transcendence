@@ -33,7 +33,8 @@ on merge (verified 2026-09-27). Every PR lands on `main` as exactly one commit.
 ## After a merge
 
 **A merged branch is finished. Never push to it again.** `main` already holds its squashed
-commit, so new work on the old branch conflicts with its own history.
+commit, so a later PR from the old branch would carry those commits a second time and can hit the
+same merge conflicts again.
 
 * **A bug in merged work gets a new branch off `main` and a new PR.** Title it `fix: …`; in the
   description, name the PR that introduced the bug (`Fixes a regression from #42`) and write
