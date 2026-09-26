@@ -22,9 +22,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-          TITLE: ${{ github.event.pull_request.title }}
-          BODY: ${{ github.event.pull_request.body }}
         run: |
+          # Read the title and description live, not from the event: runs can finish out of order,
+          # and a re-run must judge the description as it is now.
+          TITLE=$(gh api "repos/$REPO/pulls/$PR" --jq '.title')
+          BODY=$(gh api "repos/$REPO/pulls/$PR" --jq '.body // ""')
           pattern='summary by coderabbit|auto-generated comment|co-authored-by:.*(\[bot\]|claude|anthropic|copilot|openai|codex|coderabbit)|generated with \[?claude|noreply@anthropic\.com'
           failed=0
 

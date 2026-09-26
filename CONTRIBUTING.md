@@ -32,8 +32,9 @@ on merge (verified 2026-09-27). Every PR lands on `main` as exactly one commit.
   (`.github/workflows/no-bot-text.yml`) fails a PR whose title or description carries a review
   bot's summary, a `Generated with` line or a `Co-authored-by:` line naming a bot or an AI tool,
   or that has a commit authored by a bot. A ruleset on `main` requires it to pass before merging
-  (since 2026-09-27). Fix the description or drop the commit, and it re-runs. Repository admins
-  can bypass it, and GitHub asks them to confirm each time.
+  (since 2026-09-27). Fix the description or drop the commit; editing re-runs it, and if an older
+  failed run still blocks the merge, use *Re-run jobs* on it. Repository admins can bypass it,
+  and GitHub asks them to confirm each time.
 * **Rebasing your own branch is unaffected.** `git rebase main` before merging works as before;
   only the merge button changed.
 
