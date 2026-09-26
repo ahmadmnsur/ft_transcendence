@@ -1,0 +1,51 @@
+# Keeps bot and AI text out of main. Squash-merge builds the commit on main from the PR title and
+# description, and GitHub adds a Co-authored-by line for every other author of a branch commit, so
+# those three are what this checks. A ruleset on main makes it required (CONTRIBUTING.md → Merging).
+name: no-bot-text
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  no-bot-text:
+    name: No bot or AI text
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the PR title, description and commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          pattern='summary by coderabbit|auto-generated comment|co-authored-by:.*(\[bot\]|claude|anthropic|copilot|openai|codex|coderabbit)|generated with \[?claude|noreply@anthropic\.com'
+          failed=0
+
+          if printf '%s\n%s\n' "$TITLE" "$BODY" | grep -Ein "$pattern"; then
+            echo "::error::The PR title or description contains bot or AI text. It would become the commit on main; remove it."
+            failed=1
+          fi
+
+          commits=$(gh api --paginate "repos/$REPO/pulls/$PR/commits" \
+            --jq '.[] | [.sha[0:7], (.author.login // "-"), .commit.author.email, (.commit.message | gsub("\n"; " "))] | join("\u001f")')
+          while IFS=$'\x1f' read -r sha login email message; do
+            [ -z "$sha" ] && continue
+            if [[ "$login" == *"[bot]" || "$email" == *"[bot]"* ]]; then
+              echo "::error::Commit $sha was authored by a bot ($login $email). Squash-merge would credit it on main; drop the commit."
+              failed=1
+            fi
+            if printf '%s\n' "$message" | grep -Eiq "$pattern"; then
+              echo "::error::Commit $sha's message contains bot or AI text; reword it."
+              failed=1
+            fi
+          done <<< "$commits"
+
+          [ "$failed" -eq 0 ] && echo "Clean: no bot or AI text in the title, description or commits."
+          exit "$failed"

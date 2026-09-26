@@ -268,6 +268,16 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > merged branch is never reused, a bug in merged work gets a new `fix:` branch and PR off
    > `main`, and a bad merge is undone with GitHub's **Revert**, never a force-push.
 
+   > **Annotated 2026-09-27 — a first ruleset on `main`: one required check, nothing else.** The
+   > ruleset requires the *No bot or AI text* check (`.github/workflows/no-bot-text.yml`) to pass
+   > before a PR merges: it fails on a review bot's summary, a `Generated with` line or a
+   > `Co-authored-by:` naming a bot or AI tool in the PR title or description, which squash-merge
+   > turns into the commit, and on any branch commit authored by a bot. Repository admins can
+   > bypass it. **This is the only platform rule it adds**: reviews, branch naming and CI stay
+   > conventions, so the open question of enabling the rest of branch protection is untouched.
+   > GitHub's commit-message rules would check the commit itself, but they need the Enterprise
+   > plan; the API refused them on this Pro account.
+
 8. **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`), satisfying `:310`'s "clear
    commit messages describing the changes" with no tooling.
 

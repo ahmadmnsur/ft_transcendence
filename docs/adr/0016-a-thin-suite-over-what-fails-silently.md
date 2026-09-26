@@ -499,6 +499,13 @@ done when the PR template already is one.**
    > the first test file. The decision above is unchanged — one advisory workflow on every pull
    > request.
 
+   > **Annotated 2026-09-27 — a second workflow exists, and it is required; this one is not.**
+   > `.github/workflows/no-bot-text.yml` checks only a PR's title, description and commit authors
+   > for bot or AI text, and a ruleset on `main` requires it (ADR-0005 d7's 2026-09-27 annotation).
+   > It installs, builds and tests nothing. **"One advisory CI workflow" still describes `ci.yml`**,
+   > which stays the only workflow that tests anything and stays advisory; whether it becomes a
+   > required check remains open (*Not settled*).
+
 9. **The two additional browsers are Firefox and Brave, and Fadel runs the pass in week 5.**
    `:576`'s list — *"Firefox, Safari, Edge, etc."* — is open, so Brave qualifies unambiguously.
 
