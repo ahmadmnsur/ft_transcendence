@@ -259,6 +259,15 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > contribution from all members**, so that exposure now rests on the PR trail alone — which is
    > what this decision argued the trail was for, but it is no longer checked at merge time.
 
+   > **Annotated 2026-09-27 — squash-merge and branch deletion are now enforced by GitHub.** The
+   > repository settings allow **squash merging only** (merge commits and rebase merging are off),
+   > take the squash commit's title from the **PR title** and its body from the **PR
+   > description**, and **delete the head branch on merge** (verified via `gh api`). "No rule here
+   > is enforced by the platform" no longer holds for those two rules; review and branch naming
+   > remain conventions, and branch protection is still not enabled. `CONTRIBUTING.md` → *Merging* and *After a merge* carry the working rules: a
+   > merged branch is never reused, a bug in merged work gets a new `fix:` branch and PR off
+   > `main`, and a bad merge is undone with GitHub's **Revert**, never a force-push.
+
 8. **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`), satisfying `:310`'s "clear
    commit messages describing the changes" with no tooling.
 
