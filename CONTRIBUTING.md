@@ -15,7 +15,35 @@ Three developers, six weeks, one database. This file is the short version of
 
 * Branch off `main`. Keep branches **short-lived** — the rebase rule below assumes it.
 * Name them `<type>/<slice>-<short>`, e.g. `feat/matching-round-open`, `fix/session-expiry`.
-* One PR per slice increment. **Squash-merge**, then delete the branch.
+* One PR per slice increment. **Squash-merge**; GitHub then deletes the branch (*Merging*, below).
+
+## Merging
+
+**Squash and merge is the only merge button, and GitHub enforces it.** Merge commits and rebase
+merging are turned off in the repository settings, and the head branch is deleted automatically
+on merge (verified 2026-09-27). Every PR lands on `main` as exactly one commit.
+
+* **The PR title becomes that commit's subject, and the PR description becomes its body.**
+  Nothing from the branch's own commits (`wip`, `fix typo`, bot trailers) reaches `main`. So the
+  title follows Conventional Commits (CodeRabbit warns when it doesn't), and the description says
+  what changed and why: it is the permanent record.
+* **Rebasing your own branch is unaffected.** `git rebase main` before merging works as before;
+  only the merge button changed.
+
+## After a merge
+
+**A merged branch is finished. Never push to it again.** `main` already holds its squashed
+commit, so new work on the old branch conflicts with its own history.
+
+* **A bug in merged work gets a new branch off `main` and a new PR.** Title it `fix: …`; in the
+  description, name the PR that introduced the bug (`Fixes a regression from #42`) and write
+  `Closes #N` if an issue tracks it. Main then reads as the change, followed by its fix.
+* **Need to look at the old branch?** The merged PR keeps every commit and comment, and has a
+  **Restore branch** button. Your local copy is not touched by the auto-delete. Read it; don't
+  build on it.
+* **A merge broke `main` badly?** Click **Revert** on the merged PR. That opens a PR undoing the
+  whole change; it needs its review like any other. Merge it, then redo the work on a new branch.
+  **Never force-push `main`**: a revert is a new commit and keeps everyone else's clone intact.
 
 ## Commits
 
