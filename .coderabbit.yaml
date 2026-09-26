@@ -39,8 +39,8 @@ reviews:
         - schema.prisma changes ship with their migration in the same PR.
         - The seed (prisma/seed/**, prisma/fixtures/**) stays idempotent: it runs on every boot.
         - New or changed personal data must come with an update to docs/legal/privacy-policy.md.
-    - path: "prisma.config.ts"
-      instructions: "Inside the schema gate. Any other Prisma Config file (/prisma.config*, /prisma7.config*, /.config/prisma*) is refused."
+    - path: "{prisma.config*,prisma7.config*,.config/prisma*}"
+      instructions: "Inside the schema gate. The root prisma.config.ts is the only Prisma Config; any other file matching /prisma.config*, /prisma7.config* or /.config/prisma* is refused."
     - path: "src/**/*.ts"
       instructions: "NestJS API. Flag logging of passwords, tokens or request bodies (ADR-0018) and any call to a third-party origin."
     - path: "web/src/**"
@@ -75,7 +75,7 @@ reviews:
     custom_checks:
       - name: "Schema gate"
         mode: warning
-        instructions: "If the PR touches prisma/** or prisma.config.ts, pass only if Kamel is a requested reviewer (or Ahmad when Kamel is the author). Otherwise pass."
+        instructions: "If the PR touches prisma/**, or any file matching prisma.config*, prisma7.config* or .config/prisma*, pass only if Kamel is a requested reviewer, or Ahmad when Kamel is the author or the PR description says Kamel has been blocked for more than 24 hours. Otherwise pass."
       - name: "Privacy Policy moves with personal data"
         mode: warning
         instructions: "If the PR changes what personal data about a Student is stored, who can see it, or how long it is kept, pass only if docs/legal/privacy-policy.md is also changed. Otherwise pass."
