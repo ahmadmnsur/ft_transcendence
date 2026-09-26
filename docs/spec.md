@@ -3025,8 +3025,11 @@ document is reported, not silently coded around.
 
 Trunk-based; branches `<type>/<slice>-<short>` off `main`, short-lived; one PR per slice increment;
 squash-merge; Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`); every PR
-needs one completed review from another member; round-robin outside the gate. Nothing is enforced by
-GitHub today. The Makefile is never a hiding place for required setup.
+needs one completed review from another member; round-robin outside the gate. GitHub enforces
+squash-only merging and deletes the head branch on merge (since 2026-09-27; ADR-0005 d7's annotation);
+review and branch naming remain conventions, and branch protection is not enabled. A merged branch is
+never reused: a fix is a new PR off `main`, and a bad merge is undone with a revert (`CONTRIBUTING.md`
+→ *After a merge*). The Makefile is never a hiding place for required setup.
 
 ### 17.5 README — on the critical path
 
