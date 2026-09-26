@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, and Node 22.12 or newer. Docker runs the three services. Node on the host runs only the Vite development server used by the dev overlay.
+Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, and Node 22 (22.12 or a later 22.x release). Docker runs the three services. Node on the host runs only the Vite development server used by the dev overlay.
 
 ### The `.env` model
 
@@ -115,5 +115,6 @@ make logs
 # docker compose logs -f
 
 make env
-# copy .env.example to .env when absent
+# test -f .env || cp .env.example .env
+# (stops with "missing .env.example" if that file is absent)
 ```
