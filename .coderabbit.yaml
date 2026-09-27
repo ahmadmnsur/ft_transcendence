@@ -2,7 +2,10 @@
 language: en-US
 
 reviews:
-  profile: chill
+  # Only the most important findings become line comments on the files.
+  profile: quiet
+  # Line comments carry the finding only, without a block of instructions for a code generator.
+  enable_prompt_for_ai_agents: false
   # Advisory only: the one completed review from another member is still required (CONTRIBUTING.md).
   request_changes_workflow: false
   # Never write a summary into the PR description: squash-merge makes the description the
@@ -83,6 +86,8 @@ reviews:
 
   # No bot-authored commits in the history.
   finishing_touches:
+    autofix:
+      enabled: false
     docstrings:
       enabled: false
     unit_tests:
