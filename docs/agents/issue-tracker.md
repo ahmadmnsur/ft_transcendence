@@ -37,8 +37,8 @@ Run `gh issue view <number> --comments`.
 
 **A settled decision is represented across three surfaces**: its **ADR** in `docs/adr/`, the
 **GitHub issue that owns it**, and the **map** (`wayfinder:map`, `#1`). A correction that lands on
-one and stops is the failure this section exists to stop — three record audits found the same miss,
-and it is a workflow gap rather than a diligence one, because nothing walked the graph.
+one and stops is the failure this section exists to stop. It is a workflow gap, not a diligence one:
+it happens when nobody walks from the changed record to the others.
 
 **The mapping is neither complete nor one-to-one**, so synchronize the surfaces that exist rather
 than inventing one to match. Open research, prototype and task tickets routinely precede any ADR
@@ -88,7 +88,7 @@ gh issue view <n> --comments --json body,comments \
 Where no ADR exists, **do not invent one**. Synchronize the issue, map, or other applicable
 surfaces that do exist.
 
-**Issue → the ADRs it *answers*.** The direction that failed hardest in the audits: an ADR still
+**Issue → the ADRs it *answers*.** The direction most often missed: an ADR still
 pointing at a question the ticket has since settled. ADRs carry these under a
 `## Not settled by this decision` heading **and inline**, so sweep for the phrasing, not the
 heading:
@@ -117,6 +117,10 @@ correction. Where no ADR exists, synchronize only the applicable surfaces that e
   see it or how long it is kept, update `privacy-policy.md`; when it moves a conduct rule, a
   Report reason or a sanction, update `terms-of-service.md`. They are user-facing text, so
   correct them in place and move their *Last updated* date; git keeps the history (ADR-0018 d15).
+
+**Edits that ride on a PR** are marked *(uncommitted)* on the map and on each issue until the PR
+merges. Then each gets `Landed on main at <sha>`, naming the squash commit, or a withdrawn note if
+the PR closes unmerged (`AGENTS.md` → *Local and GitHub stay in step*).
 
 Never manufacture a missing ADR or issue just to complete the three-surface model. **Where a
 decision turns out to have no owning ticket, say so in the task report** rather than inventing one

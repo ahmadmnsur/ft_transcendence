@@ -3021,7 +3021,9 @@ issue is synchronized across every surface that exists, in the same task; ADRs a
 rewritten; the legal pages are corrected in place with a new *Last updated* date (`AGENTS.md`,
 `docs/agents/issue-tracker.md`, ADR-0018 d15). **This document is inside that rule**: a correction to a
 rule stated here updates the ADR it cites, and an implementation discovery that contradicts this
-document is reported, not silently coded around.
+document is reported, not silently coded around. Record edits posted to the map or an issue before
+their PR merges are marked *(uncommitted)*, and get `Landed on main at <sha>` once it merges or a
+withdrawn note if it closes unmerged (`CONTRIBUTING.md` → *Records move together*, since 2026-09-27).
 
 ### 17.4 Process (ADR-0005 d7–d8)
 
@@ -3033,7 +3035,12 @@ review and branch naming remain conventions. The only ruleset on `main` requires
 text* check (`.github/workflows/no-bot-text.yml`, since 2026-09-27; admins can bypass): no review-bot
 summary, `Generated with` line or bot/AI `Co-authored-by:` in the PR title or description, and no
 bot-authored commit. A merged branch is never reused: a fix is a new PR off `main`, and a bad merge is
-undone with a revert (`CONTRIBUTING.md` → *After a merge*). The Makefile is never a hiding place for required setup.
+undone with a revert (`CONTRIBUTING.md` → *After a merge*). Each ticket is implemented on its own
+branch, and its issue shows where the work stands: claimed when work starts, its body edited when the
+work changes the ticket, linked and closed by the PR's `Closes #<n>`; it is not commented on after every
+push. A rebased work branch is pushed with `--force-with-lease`; `main` is never force-pushed
+(`CONTRIBUTING.md` → *Branching*, *Merging*, since 2026-09-27; ADR-0005 d7's annotation). These stay
+conventions. The Makefile is never a hiding place for required setup.
 
 ### 17.5 README — on the critical path
 
