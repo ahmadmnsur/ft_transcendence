@@ -32,11 +32,14 @@ if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+commit' && [ "$branch" = "main"
   block "you are on main. Every ticket is implemented on its own branch: git switch -c <type>/<slice>-<short> (AGENTS.md)."
 fi
 
-if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+push'; then
-  if printf '%s' "$cmd" | grep -Eq '(:|[[:space:]])(refs/heads/)?main([[:space:]"]|$)' \
-     || { [ "$branch" = "main" ] && ! printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+push[^"]*[[:space:]][A-Za-z0-9._/-]+[[:space:]]+[A-Za-z0-9._/-]+'; }; then
+# Judge each `git push` on its own, up to the next ; & | or line break, so `--base main` elsewhere
+# on the line does not count.
+while IFS= read -r push; do
+  [ -z "$push" ] && continue
+  if printf '%s' "$push" | grep -Eq '(:|[[:space:]])(refs/heads/)?main([[:space:]"]|$)' \
+     || { [ "$branch" = "main" ] && ! printf '%s' "$push" | grep -Eq 'push([[:space:]]+-[^[:space:]]+)*[[:space:]]+[A-Za-z0-9._/-]+[[:space:]]+[A-Za-z0-9._/-]+'; }; then
     block "pushing to main. Changes reach main only through a reviewed, squash-merged PR (AGENTS.md)."
   fi
-fi
+done < <(printf '%s' "$cmd" | grep -Eo 'git[[:space:]]+push[^;&|\\]*')
 
 exit 0
