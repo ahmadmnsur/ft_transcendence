@@ -1,0 +1,65 @@
+name: peerconnect
+
+x-logging: &pc-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-env-file: &pc-env-file
+  - path: .env.example
+    required: true
+  - path: .env
+    required: false
+
+services:
+  db:
+    image: postgres:17-alpine
+    command: postgres -c log_error_verbosity=terse -c log_min_error_statement=panic
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    env_file: *pc-env-file
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *pc-logging
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: *pc-env-file
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 180s
+    restart: "no"
+    # The boot chain runs as PID 1, which ignores SIGTERM without a handler; an init forwards it.
+    init: true
+    logging: *pc-logging
+
+  proxy:
+    build:
+      context: .
+      dockerfile: proxy/Dockerfile
+      target: runtime
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${HTTPS_PORT:-8443}:8443"
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+    env_file: *pc-env-file
+    logging: *pc-logging
+
+volumes:
+  db-data:

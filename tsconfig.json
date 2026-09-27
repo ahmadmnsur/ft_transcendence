@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2023",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "./dist",
+    "types": ["node"]
+  },
+  "include": ["src/**/*", "prisma/**/*", "prisma.config.ts"],
+  "exclude": ["node_modules", "dist", "web", "src/generated"]
+}
