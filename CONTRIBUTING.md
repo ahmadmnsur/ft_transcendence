@@ -16,6 +16,13 @@ Three developers, six weeks, one database. This file is the short version of
 * Branch off `main`. Keep branches **short-lived** — the rebase rule below assumes it.
 * Name them `<type>/<slice>-<short>`, e.g. `feat/matching-round-open`, `fix/session-expiry`.
 * One PR per slice increment. **Squash-merge**; GitHub then deletes the branch (*Merging*, below).
+* **One ticket, one branch.** Assign yourself on the issue before starting, and never mix two
+  tickets on a branch.
+* **The issue follows the code, every push.** After each push of ticket work, comment on its issue
+  with what the push did: which acceptance criteria are now met and what is still open. If the work
+  changes the ticket itself (a criterion, the scope, a blocker), edit the issue body too. The PR
+  says `Closes #<n>`, and the issue gets a comment linking the PR. Anyone opening the issue should
+  see where the work really stands without reading the branch.
 
 ## Merging
 

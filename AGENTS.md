@@ -56,6 +56,22 @@ the work (`document/en.subject.md:306`-`:312`). Anything you publish must read a
 The repository, the issues and the PRs must never contradict each other or overwrite each other's
 changes.
 
+**The ticket's issue follows the code, every push.** Anyone opening the issue on GitHub must see
+where the work really stands without reading the branch. So in the same task as each push of
+ticket work:
+
+1. **Starting**: assign yourself and comment `Started on <branch>`.
+2. **After every push**: comment on the issue with what the push did, in a line or two: which
+   acceptance criteria are now met, what is still open, anything found on the way. Name the
+   criteria by their number in the issue.
+3. **When the work changes the ticket** (a criterion turns out wrong, the scope grows or shrinks, a
+   blocker appears): update the issue body itself, not only a comment, re-reading it first, and
+   apply *Record propagation* below if the change reaches an ADR or the map. The code and the issue
+   must never disagree about what the ticket is.
+4. **Opening the PR**: `Closes #<n>` in its description, and a comment on the issue linking the
+   PR. Merging then closes the issue by itself.
+5. **If the PR closes unmerged**: comment why, and reopen or unassign the issue.
+
 * **Start from the latest state.** `git fetch` before branching; rebase onto `origin/main` before
   opening or updating a PR. Re-read an issue, the map (`#1`) or a PR description **immediately
   before editing it**: other people edit them too, and a body written from an old copy silently
