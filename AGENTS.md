@@ -89,9 +89,9 @@ every push: the PR already shows every push, and `Closes #<n>` links it on the i
   2. **After merge**: add `Landed on main at <sha>` beside them, naming the squash commit, on the
      map and on each issue touched. Nothing may keep saying *(uncommitted)* once it is on `main`.
   3. **If the PR closes unmerged**: annotate those updates as withdrawn (annotate, never delete).
-* **Never force-push `main` or rewrite its history** unless Ahmad asks for it explicitly. Your own
-  work branch is different: after rebasing it onto `origin/main`, push it with
-  `git push --force-with-lease`. Never force-push someone else's branch.
+* **Never force-push `main` or rewrite its history.** Your own work branch is different: after
+  rebasing it onto `origin/main`, push it with `git push --force-with-lease`. Never force-push
+  someone else's branch.
 * Never commit secrets: `.env` stays untracked; only `.env.example` is committed.
 
 ## Project rules that are easy to miss

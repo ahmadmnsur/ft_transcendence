@@ -31,7 +31,8 @@ merged() {
   case $state in
     MERGED) say "PR #$n was merged as $sha on main${issues:+ and closes ${issues% }}. If it carried record notes marked (uncommitted) on the map or an issue, add 'Landed on main at $sha' beside each; progress comments need nothing. Then update local main: git switch main && git pull (AGENTS.md → Local and GitHub stay in step)." ;;
     OPEN) say "PR #$n is not merged yet${auto:+: auto-merge waits for its checks and review}. Its (uncommitted) notes stay as they are until it lands on main." ;;
-    *) say "PR ${pr:+#$pr }was merged, but its squash commit could not be looked up. Find it with gh pr view <n> --json mergeCommit, then add 'Landed on main at <sha>' beside every record note the PR marked (uncommitted) (AGENTS.md → Local and GitHub stay in step)." ;;
+    CLOSED) say "PR #$n was closed without merging. Annotate its (uncommitted) record notes as withdrawn, never delete them (AGENTS.md → Local and GitHub stay in step)." ;;
+    *) say "The state of PR ${pr:+#$pr }could not be looked up. Check it with gh pr view <n> --json state,mergeCommit; if it merged, add 'Landed on main at <sha>' beside every record note it marked (uncommitted) (AGENTS.md → Local and GitHub stay in step)." ;;
   esac
 }
 
