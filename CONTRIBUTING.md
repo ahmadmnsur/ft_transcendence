@@ -387,6 +387,11 @@ forward pointer. Either way, fix the map's line if the change moved the decision
 **Not done until it is synchronized.** A substantive change sitting on one surface only is not
 done, whatever else the PR ticks.
 
+**The loop closes after the merge.** Issue and map updates posted before the PR merges are marked
+*(uncommitted)*. Once it merges, add `Landed on main at <sha>` beside them, naming the squash
+commit, so no record keeps calling a change pending once it is on `main`. If the PR closes
+unmerged, annotate them as withdrawn instead.
+
 **A wording or formatting edit that leaves the meaning intact fires none of this** — the threshold
 is there so the rule stays worth keeping.
 

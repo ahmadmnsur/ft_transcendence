@@ -70,16 +70,21 @@ ticket work:
    must never disagree about what the ticket is.
 4. **Opening the PR**: `Closes #<n>` in its description, and a comment on the issue linking the
    PR. Merging then closes the issue by itself.
-5. **If the PR closes unmerged**: comment why, and reopen or unassign the issue.
+5. **After the merge**: close the loop on every *(uncommitted)* note the PR carried (see below),
+   then `git switch main && git pull`.
+6. **If the PR closes unmerged**: comment why, and reopen or unassign the issue.
 
 * **Start from the latest state.** `git fetch` before branching; rebase onto `origin/main` before
   opening or updating a PR. Re-read an issue, the map (`#1`) or a PR description **immediately
   before editing it**: other people edit them too, and a body written from an old copy silently
   erases their change. Prefer a comment to rewriting a body.
-* **A docs change and its issue/map sync ship together.** When a PR changes an ADR, `CONTEXT.md`,
-  `CONTRIBUTING.md` or `docs/spec.md` in a way record propagation covers, post the issue and map
-  updates in the same task, say they land with the PR (`Lands with #<pr>`), and list them in the
-  PR description. If the PR closes unmerged, withdraw those updates.
+* **A docs change and its issue/map sync ship together, in three steps.** Local Markdown,
+  `origin/main` and the issues/map must end up saying the same thing:
+  1. **Before merge**: post the issue and map updates in the same task as the change, each marked
+     *(uncommitted)*, and list them in the PR description.
+  2. **After merge**: add `Landed on main at <sha>` beside them, naming the squash commit, on the
+     map and on each issue touched. Nothing may keep saying *(uncommitted)* once it is on `main`.
+  3. **If the PR closes unmerged**: annotate those updates as withdrawn (annotate, never delete).
 * **Never force-push `main` or rewrite published history** unless Ahmad asks for it explicitly.
 * Never commit secrets: `.env` stays untracked; only `.env.example` is committed.
 
