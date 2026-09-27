@@ -2910,7 +2910,7 @@ first test file (§16.8). Vitest's `passWithNoTests` is never set: an empty run 
 path can never pass as green.
 
 It stays advisory: making the workflow a required check is an open governance decision (#28, ADR-0005
-d7). The one ruleset on `main` requires only the *No bot or AI text* check (§17.4), which tests nothing.
+d7). The only required check on `main` is *No bot or AI text* (§17.4), which tests nothing.
 The Compose boot is not in CI.
 
 ### 16.5 Clean-clone boot verification (ADR-0004 d8, ADR-0016 d5)
@@ -3031,10 +3031,11 @@ Trunk-based; branches `<type>/<slice>-<short>` off `main`, short-lived; one PR p
 squash-merge; Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`); every PR
 needs one completed review from another member; round-robin outside the gate. GitHub enforces
 squash-only merging and deletes the head branch on merge (since 2026-09-27; ADR-0005 d7's annotation);
-review and branch naming remain conventions. The only ruleset on `main` requires the *No bot or AI
-text* check (`.github/workflows/no-bot-text.yml`, since 2026-09-27; admins can bypass): no review-bot
+review and branch naming remain conventions. Two rulesets guard `main` (since 2026-09-27). One requires
+the *No bot or AI text* check (`.github/workflows/no-bot-text.yml`; admins can bypass): no review-bot
 summary, `Generated with` line or bot/AI `Co-authored-by:` in the PR title or description, and no
-bot-authored commit. A merged branch is never reused: a fix is a new PR off `main`, and a bad merge is
+bot-authored commit. The other takes changes only through a squash-merged PR and refuses a direct push,
+a force-push or deleting `main`, with no bypass for anyone; it requires no approving review. A merged branch is never reused: a fix is a new PR off `main`, and a bad merge is
 undone with a revert (`CONTRIBUTING.md` → *After a merge*). Each ticket is implemented on its own
 branch, and its issue shows where the work stands: claimed when work starts, its body edited when the
 work changes the ticket, linked and closed by the PR's `Closes #<n>`; it is not commented on after every
@@ -3388,8 +3389,8 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
 5. **[#28 — repository governance](https://github.com/ahmadmnsur/ft_transcendence/issues/28) (open)**:
    `CODEOWNERS` (which must map `/prisma/`, `/prisma.config*`, `/prisma7.config*` and
    `/.config/prisma*`, §3.2 — the seed paths now sit inside `prisma/**`); squashing migrations before
-   defense; long-lived branches; and whether to enable branch protection and make CI a required check
-   (ADR-0005 d7, ADR-0016 *Not settled*).
+   defense; long-lived branches; and whether to enforce reviews and make CI a required check
+   (ADR-0005 d7, ADR-0016 *Not settled*). A PR into `main` has been required since 2026-09-27.
 6. **The demo script's running order** (ADR-0017 *Not settled*): a rehearsal question for whoever
    presents. The demo Student's identity is not a decision; §14.8 selects it deterministically and the
    first run records it.

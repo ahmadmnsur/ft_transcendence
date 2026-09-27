@@ -30,6 +30,10 @@ Three developers, six weeks, one database. This file is the short version of
 merging are turned off in the repository settings, and the head branch is deleted automatically
 on merge (verified 2026-09-27). Every PR lands on `main` as exactly one commit.
 
+* **`main` takes changes only through a PR, and GitHub enforces it.** A ruleset on `main` refuses
+  a direct push, a force-push and deleting the branch, for everyone, admins included (since
+  2026-09-27). Work on your own branch and open a PR. It requires no approving review; the review
+  rule below is still ours to keep.
 * **The PR title becomes that commit's subject, and the PR description becomes its body.**
   The branch's own commit messages (`wip`, `fix typo`) do not reach `main`; GitHub only adds a
   `Co-authored-by:` line for each other person who authored a branch commit. So the title follows
@@ -80,6 +84,10 @@ describing the changes", and it sits in the list that gets a project **rejected*
   > (Free personal accounts cannot; Pro, Team and Enterprise Cloud can). The mechanism is available;
   > nobody has turned it on. Until that happens, this rule is still a convention, not a
   > platform-enforced one. See ADR-0005 decision 7.
+
+  > **Annotated 2026-09-27 — a PR is now required, a review is not.** A ruleset makes every change
+  > to `main` go through a PR (*Merging*, above), but it asks for no approving review. This rule
+  > is still a convention. See ADR-0005 decision 7.
 * **PRs outside the Prisma gate: round-robin.** Anyone reviews anyone.
 * **PRs touching `prisma/` or the root `prisma.config.ts`: Kamel reviews, always.** If he is
   blocked for more than 24 hours, **Ahmad** deputises. Fadel watches for the stall rather than

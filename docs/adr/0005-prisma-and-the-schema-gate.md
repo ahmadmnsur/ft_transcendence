@@ -289,6 +289,15 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > none of this. `CONTRIBUTING.md` → *Branching*, *Merging* and *Records move together* carry
    > the working rules.
 
+   > **Annotated 2026-09-27 — `main` takes changes only through a pull request, and GitHub enforces
+   > it.** A second ruleset on `main`, *main: changes only through a pull request*, requires every
+   > change to arrive as a squash-merged PR and blocks force-pushes and deleting the branch. **It
+   > has no bypass, admins included**: before it, the owner's admin role could still push straight
+   > to `main`, and nothing but the three of us stopped anyone. "PRs mandatory by convention" is now
+   > platform-enforced. **It requires no approving review**, so review, branch naming and CI stay
+   > conventions and those parts of the open branch-protection question stay open (#28). The first
+   > ruleset is unchanged, so admins can still bypass the *No bot or AI text* check.
+
 8. **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`), satisfying `:310`'s "clear
    commit messages describing the changes" with no tooling.
 
@@ -418,6 +427,10 @@ is fragile.
   > protection on a private repository owned by a personal account. Enabling it remains a decision
   > nobody has made. Until it is, this bullet's first sentence still holds: nothing here is
   > enforced by GitHub.
+
+  > **Annotated 2026-09-27 — part of decision 7 is now enforced.** GitHub enforces squash-only
+  > merging, the *No bot or AI text* check, and PR-only changes to `main` with no bypass (decision
+  > 7's 2026-09-27 annotations). Decision 5's gate and all review stay conventions.
 
 ## Not settled by this decision
 
