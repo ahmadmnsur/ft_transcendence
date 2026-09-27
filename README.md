@@ -46,7 +46,13 @@ The production proxy uses a self-signed certificate generated at image build tim
 
 ### Dev overlay and host Vite
 
-`make dev` brings up the base services plus the overlay only. It does not start Vite. Run Vite on the host as a separate step:
+`make dev` brings up the base services plus the overlay only. It does not start Vite. Run Vite on the host as a separate step. From a fresh clone, install the web dependencies first:
+
+```bash
+npm --prefix web ci
+```
+
+Then start Vite:
 
 ```bash
 npm --prefix web run dev -- --host <address> --port 5173 --strictPort
@@ -87,6 +93,23 @@ sudo iptables -I INPUT -i <LAN interface> -p tcp --dport 5173 -j REJECT
 Test it from a second machine on the LAN: `sudo ip route add <address>/32 via <host LAN address>`, then `curl -m 3 http://<address>:5173/` must fail; remove the route after. On the reference machine the HMR check and the bind check passed, the LAN zone (`FedoraWorkstation`) carries the reject rule at runtime and permanently, and a phone on the same Wi-Fi could not reach `http://<host LAN address>:5173`. A phone cannot add a route, so the routed test itself was not run there; the zone rule covers that case, because it rejects TCP 5173 arriving on the LAN interface whatever the destination address. The Vite configuration sets `server.hmr.clientPort` to 8081 and allows the repository root for file serving. Do not set `server.host` in the configuration and do not pass a bare `--host` flag.
 
 LAN restriction: never bind Vite to `0.0.0.0`, `::` or a bare `--host` without an address. A bridge address alone is not proof of isolation on a routed LAN, so check from another machine on the same network that Vite is not reachable there, and use the host firewall if needed. Vite must never be a separately reachable LAN service.
+
+### After a dependency change
+
+The dev overlay's `api` keeps `/app/node_modules` in an anonymous volume, and `up` reuses that volume from the previous container. After a change to the root `package.json` or `package-lock.json`, a new dependency stays missing until the volume is replaced. Stop the stack before starting the overlay again:
+
+```bash
+docker compose down
+make dev
+```
+
+or replace the volume in one step:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml up --build -V
+```
+
+After a change to `web/package.json` or `web/package-lock.json`, run `npm --prefix web ci` again before starting host Vite.
 
 ### Makefile targets
 
