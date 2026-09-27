@@ -433,6 +433,7 @@ template and `CONTRIBUTING.md` already name them.
 ├── Makefile                   convenience only (§15.6)
 ├── .env.example               the fifteen entries (§15.4); `.env` gitignored
 ├── .github/workflows/ci.yml   the one advisory workflow (§16.4)
+├── .github/workflows/no-bot-text.yml  the required bot/AI-text check on PRs (§17.4)
 ├── README.md                  critical path (§17.5)
 └── docs/                      adr/, agents/, legal/, research/, spec.md
 ```
@@ -490,7 +491,7 @@ goes through the map; a new runtime library needs a PR sentence saying why.**
 | Tests | Vitest (current major), `unplugin-swc` + `@swc/core` for the API, `supertest`, `socket.io-client` | ADR-0016 d2 |
 | Proxy | nginx stable, Alpine image, exact tag pinned in `proxy/Dockerfile` at scaffold | ADR-0004 |
 | Orchestration | Docker Compose ≥ 2.24.4 (`env_file.required` from 2.24.0; `!override`, used by the dev overlay, only from 2.24.4) | ADR-0004 d8 |
-| CI | GitHub Actions, one advisory workflow | ADR-0016 d8 |
+| CI | GitHub Actions, one advisory workflow; plus one required check that tests nothing (§17.4) | ADR-0016 d8 |
 
 **Not in the stack, by rule:** JWT libraries, Passport, Redis or any shared store, a Markdown
 library (M22), an icon or font package fetched from a CDN, analytics SDKs, `mkcert`, Caddy.
@@ -2908,8 +2909,9 @@ writes none and a second run could not log *already complete*; step 7 is added b
 first test file (§16.8). Vitest's `passWithNoTests` is never set: an empty run fails, so a broken test
 path can never pass as green.
 
-It stays advisory: branch protection is available on this plan and not enabled; making the workflow a
-required check is an open governance decision (#28, ADR-0005 d7). The Compose boot is not in CI.
+It stays advisory: making the workflow a required check is an open governance decision (#28, ADR-0005
+d7). The one ruleset on `main` requires only the *No bot or AI text* check (§17.4), which tests nothing.
+The Compose boot is not in CI.
 
 ### 16.5 Clean-clone boot verification (ADR-0004 d8, ADR-0016 d5)
 
@@ -3027,9 +3029,11 @@ Trunk-based; branches `<type>/<slice>-<short>` off `main`, short-lived; one PR p
 squash-merge; Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`); every PR
 needs one completed review from another member; round-robin outside the gate. GitHub enforces
 squash-only merging and deletes the head branch on merge (since 2026-09-27; ADR-0005 d7's annotation);
-review and branch naming remain conventions, and branch protection is not enabled. A merged branch is
-never reused: a fix is a new PR off `main`, and a bad merge is undone with a revert (`CONTRIBUTING.md`
-→ *After a merge*). The Makefile is never a hiding place for required setup.
+review and branch naming remain conventions. The only ruleset on `main` requires the *No bot or AI
+text* check (`.github/workflows/no-bot-text.yml`, since 2026-09-27; admins can bypass): no review-bot
+summary, `Generated with` line or bot/AI `Co-authored-by:` in the PR title or description, and no
+bot-authored commit. A merged branch is never reused: a fix is a new PR off `main`, and a bad merge is
+undone with a revert (`CONTRIBUTING.md` → *After a merge*). The Makefile is never a hiding place for required setup.
 
 ### 17.5 README — on the critical path
 

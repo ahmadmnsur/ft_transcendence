@@ -24,9 +24,17 @@ merging are turned off in the repository settings, and the head branch is delete
 on merge (verified 2026-09-27). Every PR lands on `main` as exactly one commit.
 
 * **The PR title becomes that commit's subject, and the PR description becomes its body.**
-  Nothing from the branch's own commits (`wip`, `fix typo`, bot trailers) reaches `main`. So the
-  title follows Conventional Commits (CodeRabbit warns when it doesn't), and the description says
-  what changed and why: it is the permanent record.
+  The branch's own commit messages (`wip`, `fix typo`) do not reach `main`; GitHub only adds a
+  `Co-authored-by:` line for each other person who authored a branch commit. So the title follows
+  Conventional Commits (CodeRabbit warns when it doesn't), and the description says what changed
+  and why: it is the permanent record.
+* **No bot or AI text reaches `main`, and GitHub enforces it.** The *No bot or AI text* check
+  (`.github/workflows/no-bot-text.yml`) fails a PR whose title or description carries a review
+  bot's summary, a `Generated with` line or a `Co-authored-by:` line naming a bot or an AI tool,
+  or that has a commit authored by a bot. A ruleset on `main` requires it to pass before merging
+  (since 2026-09-27). Fix the description or drop the commit; editing re-runs it, and if an older
+  failed run still blocks the merge, use *Re-run jobs* on it. Repository admins can bypass it,
+  and GitHub asks them to confirm each time.
 * **Rebasing your own branch is unaffected.** `git rebase main` before merging works as before;
   only the merge button changed.
 
@@ -322,6 +330,10 @@ first rules to enforce if it is.
 > turned on.** The account is GitHub Pro, which supports branch protection on a private repository.
 > CI's advisory status is unchanged by this correction — nobody has decided to make it a required
 > check, and this paragraph does not decide that now. See ADR-0005 decision 7.
+
+> **Annotated 2026-09-27 — one required check now exists, and it is not CI.** A ruleset on `main`
+> requires *No bot or AI text* (*Merging*, above), a separate workflow that reads only the PR's
+> title, description and commit authors. `ci.yml` is untouched by it and stays advisory.
 
 ## Done
 

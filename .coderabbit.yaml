@@ -5,9 +5,10 @@ reviews:
   profile: chill
   # Advisory only: the one completed review from another member is still required (CONTRIBUTING.md).
   request_changes_workflow: false
-  # Keep the PR description as the author wrote it; the summary goes in the review comment.
-  high_level_summary: true
-  high_level_summary_in_walkthrough: true
+  # Never write a summary into the PR description: squash-merge makes the description the
+  # commit body on main. Typing "@coderabbitai summary" in a description would still add one.
+  high_level_summary: false
+  high_level_summary_in_walkthrough: false
   poem: false
   review_status: true
   collapse_walkthrough: true
