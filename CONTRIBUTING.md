@@ -18,11 +18,11 @@ Three developers, six weeks, one database. This file is the short version of
 * One PR per slice increment. **Squash-merge**; GitHub then deletes the branch (*Merging*, below).
 * **One ticket, one branch.** Assign yourself on the issue before starting, and never mix two
   tickets on a branch.
-* **The issue follows the code, every push.** After each push of ticket work, comment on its issue
-  with what the push did: which acceptance criteria are now met and what is still open. If the work
-  changes the ticket itself (a criterion, the scope, a blocker), edit the issue body too. The PR
-  says `Closes #<n>`, and the issue gets a comment linking the PR. Anyone opening the issue should
-  see where the work really stands without reading the branch.
+* **The issue shows where the work stands.** Anyone opening it should see that without reading the
+  branch. Update it when something changes, not after every push (the PR already shows each push):
+  comment `Started on <branch>` when you start; edit the issue body when the work changes the
+  ticket itself (a criterion, the scope, a blocker); and write `Closes #<n>` in the PR, which shows
+  the PR on the issue and closes the issue on merge.
 
 ## Merging
 
@@ -43,7 +43,8 @@ on merge (verified 2026-09-27). Every PR lands on `main` as exactly one commit.
   failed run still blocks the merge, use *Re-run jobs* on it. Repository admins can bypass it,
   and GitHub asks them to confirm each time.
 * **Rebasing your own branch is unaffected.** `git rebase main` before merging works as before;
-  only the merge button changed.
+  only the merge button changed. Push the rebased branch with `git push --force-with-lease`; never
+  force-push `main` or someone else's branch.
 
 ## After a merge
 
@@ -387,10 +388,12 @@ forward pointer. Either way, fix the map's line if the change moved the decision
 **Not done until it is synchronized.** A substantive change sitting on one surface only is not
 done, whatever else the PR ticks.
 
-**The loop closes after the merge.** Issue and map updates posted before the PR merges are marked
-*(uncommitted)*. Once it merges, add `Landed on main at <sha>` beside them, naming the squash
-commit, so no record keeps calling a change pending once it is on `main`. If the PR closes
-unmerged, annotate them as withdrawn instead.
+**The loop closes after the merge.** Record edits posted to the map or an issue before their PR
+merges (a rule, criterion, scope, status or resolved question moved) are marked *(uncommitted)*.
+Once it merges, add `Landed on main at <sha>` beside them, naming the squash commit, so no record
+keeps calling a change pending once it is on `main`. If the PR closes unmerged, annotate them as
+withdrawn instead. Progress comments on a ticket (*Branching*, above) are not record edits and
+need no such note.
 
 **A wording or formatting edit that leaves the meaning intact fires none of this** — the threshold
 is there so the rule stays worth keeping.

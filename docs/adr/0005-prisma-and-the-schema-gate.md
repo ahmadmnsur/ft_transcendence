@@ -278,6 +278,17 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > GitHub's commit-message rules would check the commit itself, but they need the Enterprise
    > plan; the API refused them on this Pro account.
 
+   > **Annotated 2026-09-27 — one ticket per branch, and the issue shows where the work stands.**
+   > Two conventions join this decision's. **Each ticket is implemented on its own branch**, never
+   > mixed with another. **Its issue shows where the work stands without reading the branch**:
+   > claimed when work starts, its body edited when the work changes the ticket, and linked and
+   > closed by the PR's `Closes #<n>`. It is updated at those points, not after every push, since
+   > the PR already shows each push. Record edits posted to the map or an issue before their PR
+   > merges are marked *(uncommitted)* and get `Landed on main at <sha>` after it. A rebased work
+   > branch is pushed with `--force-with-lease`; `main` is still never force-pushed. GitHub enforces
+   > none of this. `CONTRIBUTING.md` → *Branching*, *Merging* and *Records move together* carry
+   > the working rules.
+
 8. **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`), satisfying `:310`'s "clear
    commit messages describing the changes" with no tooling.
 

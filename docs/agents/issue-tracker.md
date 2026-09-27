@@ -118,6 +118,10 @@ correction. Where no ADR exists, synchronize only the applicable surfaces that e
   Report reason or a sanction, update `terms-of-service.md`. They are user-facing text, so
   correct them in place and move their *Last updated* date; git keeps the history (ADR-0018 d15).
 
+**Edits that ride on a PR** are marked *(uncommitted)* on the map and on each issue until the PR
+merges. Then each gets `Landed on main at <sha>`, naming the squash commit, or a withdrawn note if
+the PR closes unmerged (`AGENTS.md` → *Local and GitHub stay in step*).
+
 Never manufacture a missing ADR or issue just to complete the three-surface model. **Where a
 decision turns out to have no owning ticket, say so in the task report** rather than inventing one
 — an unowned decision is a finding, and silence about it is how it stays unowned.
