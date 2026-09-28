@@ -419,6 +419,10 @@ is fragile.
   > (44 at `2092e62`, under two author identities), so `:306`-`:312` is unmet until each of them
   > lands a commit. Tracked on
   > [#16](https://github.com/ahmadmnsur/ft_transcendence/issues/16), still open.
+
+  > **Kamel's commit landed, annotated 2026-09-28.** `main` gained its first commit from Kamel on
+  > 2026-09-27: `77bef58`, the squash-merge of #81, the infrastructure gate (#29). Still failing:
+  > Fadel has no commit on `main`, so `:306`-`:312` stays unmet and #16 stays open.
 - **Nothing here is enforced by GitHub.** Every rule is a convention three people keep. If branch
   protection turns out to be available, decisions 5 and 7 are the ones to enforce first.
 
