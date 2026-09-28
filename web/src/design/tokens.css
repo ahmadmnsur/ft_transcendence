@@ -1,0 +1,114 @@
+@theme static {
+  /* Only the project palette exists: the default palette is switched off.
+     Static so every step is emitted: the palette overview reads them back. */
+  --color-*: initial;
+  /* Only the project type scale exists: the default sizes are switched off. */
+  --text-*: initial;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Primary: deep lagoon teal. Calm and precise; the colour of action. */
+  --color-primary-50: #eefaf8;
+  --color-primary-100: #d4f1ee;
+  --color-primary-200: #abe3de;
+  --color-primary-300: #72cfc8;
+  --color-primary-400: #38b3ad;
+  --color-primary-500: #209693;
+  --color-primary-600: #1c7978;
+  --color-primary-700: #1c6262;
+  --color-primary-800: #1c5050;
+  --color-primary-900: #1e4344;
+
+  /* Neutral: warm paper grey. Warmth comes from the ground, not decoration. */
+  --color-neutral-50: #faf9f6;
+  --color-neutral-100: #f1eee8;
+  --color-neutral-200: #e2ddd2;
+  --color-neutral-300: #cfc7b4;
+  --color-neutral-400: #b6ab93;
+  --color-neutral-500: #998d75;
+  --color-neutral-600: #7a6f5d;
+  --color-neutral-700: #695f51;
+  --color-neutral-800: #575046;
+  --color-neutral-900: #49443d;
+
+  /* Success: pine green. */
+  --color-success-50: #ecfdf4;
+  --color-success-100: #d0f7e2;
+  --color-success-200: #a6eec8;
+  --color-success-300: #6fe1a8;
+  --color-success-400: #36cf86;
+  --color-success-500: #15ad6c;
+  --color-success-600: #0b8c58;
+  --color-success-700: #0c7048;
+  --color-success-800: #0e5b3c;
+  --color-success-900: #0d4c34;
+
+  /* Warning: amber. Always paired with warning-900 text, never white. */
+  --color-warning-50: #fffaeb;
+  --color-warning-100: #fff0c6;
+  --color-warning-200: #ffe488;
+  --color-warning-300: #ffd149;
+  --color-warning-400: #ffbc20;
+  --color-warning-500: #f99607;
+  --color-warning-600: #dd6f02;
+  --color-warning-700: #b74e06;
+  --color-warning-800: #94390c;
+  --color-warning-900: #7a2e0e;
+
+  /* Danger: brick red. */
+  --color-danger-50: #fef3f2;
+  --color-danger-100: #fde4e2;
+  --color-danger-200: #fbcdc9;
+  --color-danger-300: #f6a5a0;
+  --color-danger-400: #ef6f66;
+  --color-danger-500: #e14b41;
+  --color-danger-600: #cb352c;
+  --color-danger-700: #ab2a24;
+  --color-danger-800: #8e2622;
+  --color-danger-900: #772522;
+
+  /* Type runs on the system stack; nothing is downloaded. */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* Fixed type scale, ratio 1.2. Product UI keeps one size per element.
+     Line height tightens as size grows. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.35rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.62rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.944rem;
+  --text-3xl--line-height: 2.25rem;
+}
+
+/*
+ * Pairs below meet WCAG AA (checked by hand against the computed ratios):
+ * white on primary-600/700/800/900, success-700/800/900,
+ *   danger-600/700/800/900, neutral-600/700/800/900;
+ * primary-600/700/800/900, success-700/800/900, danger-600/700/800/900,
+ *   neutral-600/700/800/900 on white;
+ * warning-900 on warning-50/100/200; success-900 on success-50/100;
+ *   danger-900 on danger-50/100; primary-900 on primary-50/100.
+ * Warning-500/600 never carry white text; amber tints always carry
+ * warning-900 text.
+ * Form boundaries use neutral-500, 3.27:1 on white and 3.11:1 on
+ * neutral-50, meeting 3:1 non-text contrast.
+ */
+
+@layer base {
+  ::selection {
+    background-color: var(--color-primary-200);
+    color: var(--color-primary-900);
+  }
+}

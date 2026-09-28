@@ -1,1 +1,12 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import './design/tokens.css';
+
+body {
+  background-color: var(--color-neutral-50);
+  color: var(--color-neutral-900);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 2px;
+}
