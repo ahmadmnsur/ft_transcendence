@@ -7,7 +7,7 @@ export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-export function TextField({ label, hint, error, id, 'aria-describedby': extraDescribedBy, className = '', ...rest }: TextFieldProps): React.JSX.Element {
+export function TextField({ label, hint, error, id, 'aria-describedby': extraDescribedBy, 'aria-invalid': ariaInvalid, className = '', ...rest }: TextFieldProps): React.JSX.Element {
   const { fieldId, hintId, errorId } = useFieldIds('field');
   const resolvedId = id ?? fieldId;
   return (
@@ -15,7 +15,7 @@ export function TextField({ label, hint, error, id, 'aria-describedby': extraDes
       <input
         id={resolvedId}
         {...rest}
-        aria-invalid={error ? true : undefined}
+        aria-invalid={error ? true : ariaInvalid}
         aria-describedby={mergeDescribedBy(describedBy(hint, error, hintId, errorId), extraDescribedBy)}
         className={`${controlClass(Boolean(error))} ${className}`.trim()}
       />

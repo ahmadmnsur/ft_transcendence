@@ -7,7 +7,7 @@ export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   error?: string;
 }
 
-export function TextArea({ label, hint, error, id, rows = 4, 'aria-describedby': extraDescribedBy, className = '', ...rest }: TextAreaProps): React.JSX.Element {
+export function TextArea({ label, hint, error, id, rows = 4, 'aria-describedby': extraDescribedBy, 'aria-invalid': ariaInvalid, className = '', ...rest }: TextAreaProps): React.JSX.Element {
   const { fieldId, hintId, errorId } = useFieldIds('area');
   const resolvedId = id ?? fieldId;
   return (
@@ -16,7 +16,7 @@ export function TextArea({ label, hint, error, id, rows = 4, 'aria-describedby':
         id={resolvedId}
         rows={rows}
         {...rest}
-        aria-invalid={error ? true : undefined}
+        aria-invalid={error ? true : ariaInvalid}
         aria-describedby={mergeDescribedBy(describedBy(hint, error, hintId, errorId), extraDescribedBy)}
         className={`${controlClass(Boolean(error))} ${className}`.trim()}
       />

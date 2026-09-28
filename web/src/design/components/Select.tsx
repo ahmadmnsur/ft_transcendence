@@ -7,7 +7,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
 }
 
-export function Select({ label, hint, error, id, children, 'aria-describedby': extraDescribedBy, className = '', ...rest }: SelectProps): React.JSX.Element {
+export function Select({ label, hint, error, id, children, 'aria-describedby': extraDescribedBy, 'aria-invalid': ariaInvalid, className = '', ...rest }: SelectProps): React.JSX.Element {
   const { fieldId, hintId, errorId } = useFieldIds('select');
   const resolvedId = id ?? fieldId;
   return (
@@ -15,7 +15,7 @@ export function Select({ label, hint, error, id, children, 'aria-describedby': e
       <select
         id={resolvedId}
         {...rest}
-        aria-invalid={error ? true : undefined}
+        aria-invalid={error ? true : ariaInvalid}
         aria-describedby={mergeDescribedBy(describedBy(hint, error, hintId, errorId), extraDescribedBy)}
         className={`${controlClass(Boolean(error))} ${className}`.trim()}
       >
