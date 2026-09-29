@@ -530,6 +530,12 @@ done when the PR template already is one.**
     genuinely self-contained pieces of week-2 work, against a file that already exists. **A real
     commit from Fadel in week 2 is worth more than the day it costs.**
 
+    > **Annotated 2026-09-28 — Kamel's first commit has landed; Fadel's has not.** Kamel's first
+    > commit reached `main` on 2026-09-27 as `77bef58` (#81, the infrastructure gate), so "none from
+    > Kamel or Fadel" no longer holds for Kamel. Fadel still has none, so this decision's reason
+    > stands: the fixture port (#34) is planned as Fadel's first commit. Tracked on
+    > [#16](https://github.com/ahmadmnsur/ft_transcendence/issues/16).
+
     Kamel is excluded deliberately: ADR-0005 decision 3 only holds because his infrastructure gate
     and his schema gate are *sequential*, and week 2 is where they meet.
 
