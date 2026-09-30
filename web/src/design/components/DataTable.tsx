@@ -43,6 +43,9 @@ export interface DataTableProps<TData> {
   emptyIcon?: ReactNode;
   // A way forward from an empty page, such as a button that clears the filters.
   emptyAction?: ReactNode;
+  // Pass loading until the rows and total for the page have arrived, including
+  // the first load: with no total yet every page looks out of range, and the
+  // table would correct a page read from the URL back to 1.
   loading?: boolean;
   // Shown in place of the rows when the page failed to load.
   error?: string;

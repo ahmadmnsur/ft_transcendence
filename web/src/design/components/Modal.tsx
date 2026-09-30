@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, type ReactNode, type RefObject, type SyntheticEvent } from 'react';
 import { CloseIcon } from '../icons/CloseIcon';
 import { IconButton } from './IconButton';
 
@@ -17,6 +17,10 @@ export interface ModalProps {
   // The actions, right-aligned; a destructive one can take className="mr-auto"
   // to sit apart at the start.
   footer?: ReactNode;
+  // Where focus starts: the first field of a form, or the safe button of a
+  // confirm. Left out, the browser starts on the first control, the Close
+  // button.
+  initialFocusRef?: RefObject<HTMLElement | null>;
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -29,7 +33,7 @@ const widths: Record<NonNullable<ModalProps['size']>, string> = {
 // A native modal <dialog>: the browser makes the page behind it inert, keeps
 // focus inside, sends Escape to the topmost dialog only, and returns focus
 // when it closes. The open prop stays the source of truth.
-export function Modal({ open, title, description, onClose, children, footer, size = 'md' }: ModalProps): React.JSX.Element {
+export function Modal({ open, title, description, onClose, children, footer, initialFocusRef, size = 'md' }: ModalProps): React.JSX.Element {
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -37,16 +41,31 @@ export function Modal({ open, title, description, onClose, children, footer, siz
   // follows is not reported back as the user closing it.
   const closingRef = useRef(false);
   const openRef = useRef(open);
+  const startRef = useRef(initialFocusRef);
+  // The recovery timer runs after the render that set it up, so it reads
+  // the latest props through these refs.
   useLayoutEffect(() => {
     openRef.current = open;
+    startRef.current = initialFocusRef;
   });
+
+  // Shows the dialog and moves focus to where the caller wants it to start.
+  // autoFocus cannot do this: React focuses the element while the dialog is
+  // still closed, and showModal() then moves focus again.
+  function reveal(dialog: HTMLDialogElement): void {
+    dialog.showModal();
+    // This runs only while the content is mounted, so the target is set.
+    // Read through a ref, so the effect below leaves it out.
+    startRef.current?.current?.focus();
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!open || !dialog) return;
     let cancelled = false;
     const show = (): void => {
-      if (!cancelled && !dialog.open) dialog.showModal();
+      if (cancelled || dialog.open) return;
+      reveal(dialog);
     };
     // React runs a nested dialog's effect before its parent's. When both open
     // in one render, the nested one waits so it lands above its parent.
@@ -88,7 +107,7 @@ export function Modal({ open, title, description, onClose, children, footer, siz
         // a second Escape in a row. If the caller kept it open, show it again.
         const dialog = event.currentTarget;
         setTimeout(() => {
-          if (openRef.current && dialog.isConnected && !dialog.open) dialog.showModal();
+          if (openRef.current && dialog.isConnected && !dialog.open) reveal(dialog);
         }, 0);
       }}
       onMouseDown={(event) => {
@@ -106,9 +125,9 @@ export function Modal({ open, title, description, onClose, children, footer, siz
                 {title}
               </h2>
               {description != null ? (
-                <p id={descriptionId} className="mt-1 text-sm text-ink-muted">
+                <div id={descriptionId} className="mt-1 text-sm text-ink-muted">
                   {description}
-                </p>
+                </div>
               ) : null}
             </div>
             <IconButton label="Close dialog" size="sm" onClick={onClose}>

@@ -100,6 +100,7 @@ export function FileDrop({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLButtonElement>(null);
   const replaceRef = useRef<HTMLButtonElement>(null);
+  const keepRef = useRef<HTMLButtonElement>(null);
   // Set when the user picks or removes a file, since either swaps the control they were on.
   const moveFocus = useRef(false);
   const baseId = `filedrop-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -120,8 +121,11 @@ export function FileDrop({
   const isPdf = valueType === 'application/pdf';
 
   // A new value or error from the caller replaces the size and type message,
-  // so the latest problem is the one shown.
+  // so the latest problem is the one shown. A new value also ends a pending
+  // confirm: the confirm asks about the file it was opened for, and that file
+  // is gone.
   if (!sameValue(lastProps.value, value) || lastProps.error !== error) {
+    if (!sameValue(lastProps.value, value)) setConfirmingDelete(false);
     setLastProps({ value, error });
     setCheckError(null);
   }
@@ -197,6 +201,9 @@ export function FileDrop({
   function onDrop(event: DragEvent<HTMLDivElement>): void {
     event.preventDefault();
     setDragging(false);
+    // The confirm names the file it was opened for: while it is open a drop
+    // takes nothing, so that file cannot be swapped before it is answered.
+    if (confirmingDelete) return;
     const candidate = event.dataTransfer.files?.[0];
     if (candidate) take(candidate);
   }
@@ -216,6 +223,12 @@ export function FileDrop({
       className={`min-w-0 ${className}`.trim()}
       onDragOver={(event) => {
         event.preventDefault();
+        // While the confirm is open drops are refused, but the default is
+        // still prevented so the browser does not open the file in the tab.
+        if (confirmingDelete) {
+          event.dataTransfer.dropEffect = 'none';
+          return;
+        }
         setDragging(true);
       }}
       onDragLeave={(event) => {
@@ -328,9 +341,10 @@ export function FileDrop({
           title="Delete this file?"
           description={`${value.name} will be deleted. This cannot be undone.`}
           onClose={() => setConfirmingDelete(false)}
+          initialFocusRef={keepRef}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
+              <Button ref={keepRef} variant="secondary" onClick={() => setConfirmingDelete(false)}>
                 Keep file
               </Button>
               <Button

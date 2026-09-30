@@ -181,6 +181,7 @@ export function Showcase(): React.JSX.Element {
   const [upload, setUpload] = useState<File | null>(null);
   const [saved, setSaved] = useState<File | StoredFile | null>(evidenceOnServer);
   const emailRef = useRef<HTMLInputElement>(null);
+  const keepMatchRef = useRef<HTMLButtonElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
   const bannersRef = useRef<HTMLDivElement>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -393,9 +394,10 @@ export function Showcase(): React.JSX.Element {
             title="Decline this match?"
             description="Declining ends the match for both of you. It cannot be undone."
             onClose={() => setConfirmOpen(false)}
+            initialFocusRef={keepMatchRef}
             footer={
               <>
-                <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+                <Button ref={keepMatchRef} variant="secondary" onClick={() => setConfirmOpen(false)}>
                   Keep match
                 </Button>
                 <Button
@@ -475,7 +477,7 @@ export function Showcase(): React.JSX.Element {
               maxBytes={5 * 1024 * 1024}
               value={saved}
               onChange={setSaved}
-              error={saved === evidenceOnServer ? 'The server refused this file.' : undefined}
+              error={saved === evidenceOnServer ? 'The new file could not be uploaded, so the saved one is kept.' : undefined}
             />
           </div>
           <div className="min-w-0">

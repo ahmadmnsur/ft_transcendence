@@ -1,4 +1,3 @@
-import { useEffect, useEffectEvent } from 'react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ChevronRightIcon } from '../icons/ChevronRightIcon';
 import { countPages, type PageCountProps } from './pages';
@@ -37,15 +36,12 @@ const numberClass = (active: boolean): string =>
 export function Pagination(props: PaginationProps): React.JSX.Element {
   const { page, onPageChange, label = 'Pagination', className = '' } = props;
   const count = countPages(props);
+  // A page that does not exist is shown as the nearest real one, but the
+  // caller is not told: before its total arrives every page looks out of
+  // range, and a page read from the URL would be lost. The caller, which knows
+  // when its total is real, corrects the page itself, as DataTable does.
   const safePage = Number.isFinite(page) ? Math.min(Math.max(Math.floor(page), 1), count) : 1;
   const items = pageItems(safePage, count);
-
-  // A page that does not exist, such as one read from a bad URL, is shown as
-  // the nearest real one, and the caller is told so it loads that page too.
-  const settle = useEffectEvent((next: number) => onPageChange(next));
-  useEffect(() => {
-    if (safePage !== page) settle(safePage);
-  }, [page, safePage]);
 
   function go(next: number): void {
     const clamped = Math.min(Math.max(next, 1), count);
