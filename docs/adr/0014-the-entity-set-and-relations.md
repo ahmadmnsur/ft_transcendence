@@ -1,5 +1,13 @@
 # The entity set: nineteen tables, a Review split across three homes, and one invariant the schema cannot hold
 
+> **Under revision 2026-09-30: tables change with the move to Supabase.**
+> The team settled on 2026-09-30 that Supabase provides PeerConnect's database, file storage and
+> login, with Socket.IO kept ([Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85)).
+> The bytes of the two byte tables (decision 12) move to Supabase Storage. Whether `Session` and
+> `Student.password_hash` stay, and whether the count of nineteen tables changes, is still open:
+> [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) settles which tables, columns and constraints, after [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91) and [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).
+> The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+
 `document/en.subject.md:373` requires "a clear schema and well-defined relations", and `:1280`-`:1284`
 requires the schema to be *documented* — tables, relationships, key fields and data types. Twelve
 tickets have decided what this platform does; none of them has said what tables it has. This ADR is
@@ -488,6 +496,9 @@ arms. Those three sentences are the whole shape.
 12. **The bytes live in two dedicated tables, not in columns on Student and Review.**
     `Avatar(student_id unique, token, bytes, mime, size, uploaded_at)` and
     `Evidence(review_id unique, token, bytes, mime, size, filename, uploaded_at)`.
+
+    > **Under revision 2026-09-30** (see the note at the top): the bytes move to Supabase Storage. [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96)
+    > settles what these two tables keep.
 
     > **Stored metadata clarified 2026-09-22 by ADR-0009.** `mime` and `size` are server-derived
     > facts about validated bytes, never trusted upload metadata. The accepted sets are Evidence

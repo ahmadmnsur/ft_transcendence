@@ -1,5 +1,14 @@
 # The legal pages describe the model as built, and bind it
 
+> **Under revision 2026-09-30: PeerConnect's data moves to a shared Supabase project.**
+> The team settled on 2026-09-30 that Supabase provides PeerConnect's database, file storage and
+> login, with Socket.IO kept ([Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85)).
+> That changes what the pages say about there being no central server, data "stored in that
+> copy's own database, on that computer", backups, and the one cookie.
+> [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) settles the new text,
+> before the sign-off on 2026-10-15; decision 15 keeps the pages moving with the model.
+> The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+
 `document/en.subject.md:320` requires a **Privacy Policy** and **Terms of Service** "with relevant
 content"; `:323`-`:330` require them to be easily accessible from the application, to contain content
 appropriate to *this* project, and not to be placeholder or empty pages; `:336` makes missing or
@@ -61,6 +70,9 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    the rest: a student project by Ahmad, Kamel and Fadel, listed by 42 login; not run or endorsed by
    42; each copy run by whoever started it, its data on that machine, its Admins that copy's staff
    accounts; a fresh copy holding only the fictional Students ADR-0017 seeds.
+
+   > **Under revision 2026-09-30** (see the note at the top): with a shared Supabase project, a copy's data may
+   > no longer live only on the machine that runs it. [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) settles what this section says.
 
    > **Wording corrected 2026-09-23.** *"Only the fictional Students ADR-0017 seeds"* reads as
    > though a fresh copy had no staff accounts. **A fresh copy contains only seeded demo accounts
@@ -253,6 +265,10 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     off-platform under campus rules. **Changes carry a last-updated date and no notice** — the
     notification system was refused (#7) — and **the wording claims no legal effect from continued
     use**, since nothing the project can establish would support one.
+
+    > **Under revision 2026-09-30** (see the note at the top): "kept for as long as the copy's database exists"
+    > and "no backups" depend on where the data lives, and Supabase may keep backups we cannot restore
+    > ([Find out what Supabase's free plan means for PeerConnect](https://github.com/ahmadmnsur/ft_transcendence/issues/89)). [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) settles the new text.
 
     > **Two layers, clarified 2026-09-23.** "Whoever runs a copy can read everything, Direct Messages
     > included" and the Direct Message promise do not conflict. **In the application**, a Direct

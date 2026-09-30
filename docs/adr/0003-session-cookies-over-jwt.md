@@ -1,5 +1,15 @@
 # Session cookies over JWT, and a single authorization path
 
+> **Under revision 2026-09-30: login moves to Supabase Auth.**
+> The team settled on 2026-09-30 that Supabase provides PeerConnect's database, file storage and
+> login, with Socket.IO kept ([Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85)).
+> Supabase Auth hashes passwords with bcrypt, not argon2id (decision 3), and issues its own tokens.
+> Which decisions below survive is settled by
+> [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91) (the cookie, the check on
+> each request and on the socket handshake, CSRF) and
+> [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) (passwords, sign-out, Suspension, Removal).
+> The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+
 The subject mandates email-and-password authentication with hashed, salted storage
 (`document/en.subject.md:377`) and HTTPS for every browser-to-backend connection (`:383`),
 and **nothing else**. In particular it never mentions JWT: zero occurrences of "JWT" or
@@ -37,6 +47,9 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
 3. **argon2id for passwords**, via `@node-rs/argon2` (prebuilt binaries, so the container
    build needs no native toolchain), at the OWASP floor of m = 19 MiB, t = 2, p = 1. The
    salt is generated and embedded by the library, which is what satisfies "salted" at `:377`.
+
+   > **Under revision 2026-09-30** (see the note at the top): Supabase Auth hashes passwords with bcrypt.
+   > [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) settles what replaces this decision.
 
 4. **Sliding expiry, 30 days of inactivity, renewed lazily.** `expires_at` is only rewritten
    when it is more than an hour old, so an authenticated request is not also a database
