@@ -2,40 +2,69 @@ import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { CloseIcon } from '../icons/CloseIcon';
 import { FileIcon } from '../icons/FileIcon';
 import { UploadIcon } from '../icons/UploadIcon';
+import { Button } from './Button';
+import { buttonClasses } from './buttonClasses';
+import { FieldMessages } from './field';
+import { IconButton } from './IconButton';
+import { Modal } from './Modal';
 import { ProgressBar } from './ProgressBar';
 
+// The file types the server accepts; Avatar takes the two images, Evidence all three.
+export type FileType = 'image/png' | 'image/jpeg' | 'application/pdf';
+
+// A file already on the server, such as saved Evidence.
+export interface StoredFile {
+  name: string;
+  type: FileType;
+  size?: number;
+  // Where the file can be read, for the image or PDF preview.
+  previewUrl?: string;
+}
+
 export interface FileDropProps {
-  accept: Array<string>;
+  accept: Array<FileType>;
   maxBytes: number;
-  onSelect: (file: File) => void;
-  onClear?: () => void;
+  // What the field shows. The caller owns it: set it to the File passed to
+  // onChange, to the stored record after an upload, or to null to empty it.
+  // A new value or error replaces the size and type message; to clear that
+  // message without either, as a form reset does, give FileDrop a new key.
+  value: File | StoredFile | null;
+  // A file that passed the checks below, or null when the user removes it.
+  onChange: (file: File | null) => void;
+  // The caller's own error, such as the server refusing the upload.
+  error?: string;
   progress?: number;
   label?: string;
   hint?: string;
+  className?: string;
 }
 
-const typeNames: Record<string, string> = {
-  'image/png': 'PNG',
-  'image/jpeg': 'JPEG',
-  'image/gif': 'GIF',
-  'image/webp': 'WebP',
-  'application/pdf': 'PDF',
+const fileTypes: Record<FileType, { name: string; extensions: Array<string> }> = {
+  'image/png': { name: 'PNG', extensions: ['png'] },
+  'image/jpeg': { name: 'JPEG', extensions: ['jpg', 'jpeg'] },
+  'application/pdf': { name: 'PDF', extensions: ['pdf'] },
 };
 
-function typeName(mime: string): string {
-  return typeNames[mime] ?? mime.split('/')[1]?.toUpperCase() ?? mime;
+function extensionOf(name: string): string {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
+}
+
+function typeOfExtension(extension: string): FileType | undefined {
+  return (Object.keys(fileTypes) as Array<FileType>).find((type) => fileTypes[type].extensions.includes(extension));
+}
+
+// A picked file's type: its extension when the name has one; a name without
+// one makes no claim, so the type the browser declared decides.
+function typeOfFile(file: File): FileType | undefined {
+  const extension = extensionOf(file.name);
+  if (extension) return typeOfExtension(extension);
+  return file.type in fileTypes ? (file.type as FileType) : undefined;
 }
 
 function joinNames(names: Array<string>): string {
   if (names.length <= 2) return names.join(' or ');
   return `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
-}
-
-function matchesType(file: File, accept: Array<string>): boolean {
-  return accept.some((pattern) => {
-    if (pattern.endsWith('/*')) return file.type.startsWith(pattern.slice(0, -1));
-    return file.type === pattern;
-  });
 }
 
 function formatBytes(bytes: number): string {
@@ -44,62 +73,125 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / (1024 * 1024)).toFixed(1))} MB`;
 }
 
+// Stored files compare by content: a screen may build the record afresh on
+// every render, and that is not a new value.
+function sameValue(a: File | StoredFile | null, b: File | StoredFile | null): boolean {
+  if (a === b) return true;
+  if (!a || !b || a instanceof File || b instanceof File) return false;
+  return a.name === b.name && a.type === b.type && a.size === b.size && a.previewUrl === b.previewUrl;
+}
+
+function typeOfValue(value: File | StoredFile): FileType | undefined {
+  return value instanceof File ? typeOfFile(value) : value.type;
+}
+
 export function FileDrop({
   accept,
   maxBytes,
-  onSelect,
-  onClear,
+  value,
+  onChange,
+  error,
   progress,
   label = 'Attach a file',
   hint,
+  className = '',
 }: FileDropProps): React.JSX.Element {
+  const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const inputId = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const hintId = `filedrop-${inputId}-hint`;
-  const errorId = `filedrop-${inputId}-error`;
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<{ file: File; url: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const dropRef = useRef<HTMLButtonElement>(null);
+  const replaceRef = useRef<HTMLButtonElement>(null);
+  // Set when the user picks or removes a file, since either swaps the control they were on.
+  const moveFocus = useRef(false);
+  const baseId = `filedrop-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const labelId = `${baseId}-label`;
+  const actionId = `${baseId}-action`;
+  const hintId = `${baseId}-hint`;
+  const errorId = `${baseId}-error`;
+  const [checkError, setCheckError] = useState<string | null>(null);
+  // Removing a stored file deletes it on the server, so it is confirmed first;
+  // a picked file that is not saved yet is removed at once.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [objectUrl, setObjectUrl] = useState<{ file: File; url: string } | null>(null);
   const [dragging, setDragging] = useState(false);
-  const acceptedNames = joinNames(accept.map(typeName));
+  const [lastProps, setLastProps] = useState({ value, error });
+  const acceptedNames = joinNames(accept.map((type) => fileTypes[type].name));
+  const valueType = value ? typeOfValue(value) : undefined;
+  const isImage = valueType === 'image/png' || valueType === 'image/jpeg';
+  const isPdf = valueType === 'application/pdf';
 
-  // The only place preview URLs are created or revoked.
+  // A new value or error from the caller replaces the size and type message,
+  // so the latest problem is the one shown.
+  if (!sameValue(lastProps.value, value) || lastProps.error !== error) {
+    setLastProps({ value, error });
+    setCheckError(null);
+  }
+  const shownError = checkError ?? error;
+
+  // The only place object URLs are created or revoked. Only a picked image
+  // gets one: the page's security policy frames same-origin URLs only, so a PDF
+  // previews once it is stored and has a file URL.
+  const pickedImage = value instanceof File && isImage;
   useEffect(() => {
-    if (!file || !file.type.startsWith('image/')) {
-      setPreview(null);
+    if (!(value instanceof File) || !pickedImage) {
+      setObjectUrl(null);
       return;
     }
-    const url = URL.createObjectURL(file);
-    setPreview({ file, url });
+    const url = URL.createObjectURL(value);
+    setObjectUrl({ file: value, url });
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [value, pickedImage]);
 
+  // After a pick or a remove, the control the user was on is gone; focus goes
+  // to the one that replaced it, unless it has already moved elsewhere.
+  useEffect(() => {
+    if (!moveFocus.current) return;
+    moveFocus.current = false;
+    const active = document.activeElement;
+    if (active && active !== document.body && !rootRef.current?.contains(active)) return;
+    (value ? replaceRef.current : dropRef.current)?.focus();
+  }, [value]);
+
+  // The server's file checks, repeated here for quick feedback: not empty, an
+  // accepted type, a declared type that agrees with the extension, and the size
+  // cap. Only the server reads the bytes, so it still has the last word, and a
+  // file that claims no type at all (no extension, nothing declared) is left to it.
   function check(candidate: File): string | null {
     if (candidate.size === 0) return 'This file is empty.';
-    if (!matchesType(candidate, accept)) {
-      const rejected = candidate.type ? `${typeName(candidate.type)} files are not accepted. ` : 'This file type is not accepted. ';
-      return `${rejected}Use ${acceptedNames}.`;
+    const extension = extensionOf(candidate.name);
+    const type = typeOfFile(candidate);
+    const declared = candidate.type === 'application/octet-stream' ? '' : candidate.type;
+    if (extension !== '' || declared !== '') {
+      if (!type || !accept.includes(type)) {
+        const rejected = extension ? `${extension.toUpperCase()} files are` : 'This file type is';
+        return `${rejected} not accepted. Use ${acceptedNames}.`;
+      }
+      if (declared !== '' && declared !== type) return `This file is named .${extension} but is not a ${fileTypes[type].name} file.`;
     }
-    if (candidate.size > maxBytes) return `File is ${formatBytes(candidate.size)}; the limit is ${formatBytes(maxBytes)}.`;
+    if (candidate.size > maxBytes) {
+      const size = formatBytes(candidate.size);
+      const limit = formatBytes(maxBytes);
+      // Rounding can print both as the same number, so a file just over the cap says so.
+      return size === limit ? `This file is just over the ${limit} limit.` : `This file is ${size}, over the ${limit} limit.`;
+    }
     return null;
   }
 
   function take(candidate: File): void {
     const problem = check(candidate);
-    if (problem) {
-      setError(problem);
-      return;
-    }
-    setError(null);
-    setFile(candidate);
-    onSelect(candidate);
+    setCheckError(problem);
+    if (problem) return;
+    moveFocus.current = true;
+    onChange(candidate);
   }
 
-  function clear(): void {
-    setFile(null);
-    setError(null);
-    if (inputRef.current) inputRef.current.value = '';
-    onClear?.();
+  function browse(): void {
+    inputRef.current?.click();
+  }
+
+  function remove(): void {
+    setCheckError(null);
+    moveFocus.current = true;
+    onChange(null);
   }
 
   function onDrop(event: DragEvent<HTMLDivElement>): void {
@@ -109,11 +201,19 @@ export function FileDrop({
     if (candidate) take(candidate);
   }
 
-  const isPdf = file?.type === 'application/pdf';
+  let url: string | undefined;
+  if (value instanceof File) url = objectUrl?.file === value ? objectUrl.url : undefined;
+  else url = value?.previewUrl;
+
+  // A progress bar's value is not read out as it changes, so the upload is
+  // announced in quarter steps through a status region that stays mounted.
+  const step = progress !== undefined && Number.isFinite(progress) ? Math.min(Math.max(Math.floor(progress / 25) * 25, 0), 100) : undefined;
+  const uploadStatus = value && step !== undefined ? `Uploading ${value.name}: ${step}%` : '';
 
   return (
     <div
-      className="min-w-0"
+      ref={rootRef}
+      className={`min-w-0 ${className}`.trim()}
       onDragOver={(event) => {
         event.preventDefault();
         setDragging(true);
@@ -123,86 +223,133 @@ export function FileDrop({
       }}
       onDrop={onDrop}
     >
-      <p id={`filedrop-${inputId}-label`} className="mb-1 block text-sm font-medium text-neutral-800">
+      <p id={labelId} className="mb-1 block text-sm font-medium text-ink">
         {label}
       </p>
-      {!file ? (
-        <div
-          role="button"
-          tabIndex={0}
-          aria-labelledby={`filedrop-${inputId}-label`}
-          aria-describedby={error ? `${hintId} ${errorId}` : hintId}
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              inputRef.current?.click();
-            }
-          }}
+      {!value ? (
+        <button
+          ref={dropRef}
+          type="button"
+          onClick={browse}
+          aria-labelledby={`${labelId} ${actionId}`}
+          aria-describedby={shownError ? `${hintId} ${errorId}` : hintId}
           className={[
-            'flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
-            dragging ? 'border-primary-600 bg-primary-50' : 'border-neutral-500 bg-white hover:border-neutral-600 hover:bg-neutral-50',
+            'flex w-full min-w-0 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors duration-150 focus-ring',
+            dragging
+              ? 'border-primary-600 bg-primary-50'
+              : shownError
+                ? 'border-danger-600 bg-surface hover:border-danger-700 hover:bg-canvas'
+                : 'border-line-strong bg-surface hover:border-neutral-600 hover:bg-canvas',
           ].join(' ')}
         >
-          <span aria-hidden="true" className="text-neutral-600">
+          <span aria-hidden="true" className="text-ink-subtle">
             <UploadIcon size={24} />
           </span>
-          <span className="text-sm text-neutral-800">
-            Drag a file here, or <span className="font-semibold text-primary-700 underline underline-offset-2">browse</span>
+          <span id={actionId} className="text-sm text-ink">
+            {/* A phone cannot drag a file, so a touch screen is only offered the picker. */}
+            <span className="pointer-coarse:hidden">
+              Drag a file here, or <span className="font-semibold text-link underline underline-offset-2">browse</span>
+            </span>
+            <span className="hidden font-semibold text-link underline underline-offset-2 pointer-coarse:inline">Choose a file</span>
           </span>
-          <span id={hintId} className="max-w-full break-words text-xs text-neutral-700">
+          <span id={hintId} className="max-w-full text-xs text-ink-muted">
             {hint ?? `${acceptedNames}, up to ${formatBytes(maxBytes)}`}
           </span>
-        </div>
+        </button>
       ) : (
         <div
-          className={`flex min-w-0 items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3 ${dragging ? 'ring-2 ring-primary-600' : ''}`}
+          role="group"
+          aria-labelledby={labelId}
+          aria-describedby={shownError ? errorId : undefined}
+          className={`min-w-0 rounded-xl border p-3 ${dragging ? 'border-primary-600 bg-primary-50' : shownError ? 'border-danger-600 bg-surface' : 'border-line bg-surface'}`}
         >
-          {preview && preview.file === file ? (
-            <img src={preview.url} alt={`Preview of ${file.name}`} className="h-12 w-12 shrink-0 rounded-lg bg-neutral-100 object-cover" />
-          ) : (
-            <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600">
-              {isPdf ? <FileIcon size={24} /> : <UploadIcon size={24} />}
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-neutral-900">{file.name}</p>
-            <p className="text-xs tabular-nums text-neutral-700">{formatBytes(file.size)}</p>
-            {progress !== undefined ? (
-              <div className="mt-1">
-                <ProgressBar value={progress} max={100} label={`Upload progress for ${file.name}`} />
-              </div>
-            ) : null}
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            {isImage && url ? (
+              <img src={url} alt={`Preview of ${value.name}`} className="h-12 w-12 shrink-0 rounded-lg bg-surface-muted object-cover" />
+            ) : (
+              <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted">
+                <FileIcon size={24} />
+              </span>
+            )}
+            <div className="min-w-0 flex-1 basis-40">
+              <p className="text-sm font-medium text-ink wrap-anywhere">{value.name}</p>
+              {value.size !== undefined ? <p className="text-xs tabular-nums text-ink-muted">{formatBytes(value.size)}</p> : null}
+              {progress !== undefined ? (
+                <ProgressBar value={progress} max={100} label={`Upload progress for ${value.name}`} className="mt-1" />
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button ref={replaceRef} type="button" onClick={browse} aria-label={`Replace ${value.name}`} className={buttonClasses({ variant: 'ghost', size: 'sm' })}>
+                Replace
+              </button>
+              {value instanceof File ? (
+                <IconButton label={`Remove ${value.name}`} size="sm" onClick={remove}>
+                  <CloseIcon size={16} />
+                </IconButton>
+              ) : (
+                <Button variant="danger-ghost" size="sm" aria-label={`Delete ${value.name}`} onClick={() => setConfirmingDelete(true)}>
+                  Delete
+                </Button>
+              )}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={clear}
-            aria-label={`Remove ${file.name}`}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-700 transition-colors duration-150 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
-          >
-            <CloseIcon size={16} />
-          </button>
+          {isPdf && url && !(value instanceof File) ? (
+            <div className="mt-3 min-w-0">
+              <iframe src={url} title={`Preview of ${value.name}`} className="h-72 w-full rounded-lg border border-line bg-surface-muted" />
+              <a
+                href={url}
+                download={value.name}
+                className="mt-2 inline-block text-sm font-semibold text-link underline underline-offset-2 focus-ring wrap-anywhere"
+              >
+                Download {value.name}
+              </a>
+            </div>
+          ) : null}
         </div>
       )}
       <input
         ref={inputRef}
-        id={inputId}
         type="file"
-        accept={accept.join(',')}
+        accept={accept.flatMap((type) => [type, ...fileTypes[type].extensions.map((extension) => `.${extension}`)]).join(',')}
         tabIndex={-1}
         aria-hidden="true"
         onChange={(event) => {
           const candidate = event.target.files?.[0];
+          // Cleared at once so picking the same file again still fires a change.
+          event.target.value = '';
           if (candidate) take(candidate);
         }}
         className="sr-only"
       />
-      {error ? (
-        <p id={errorId} role="alert" className="mt-1 text-xs font-medium text-danger-700">
-          {error}
-        </p>
+      {value && !(value instanceof File) ? (
+        <Modal
+          open={confirmingDelete}
+          size="sm"
+          title="Delete this file?"
+          description={`${value.name} will be deleted. This cannot be undone.`}
+          onClose={() => setConfirmingDelete(false)}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
+                Keep file
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  remove();
+                }}
+              >
+                Delete
+              </Button>
+            </>
+          }
+        />
       ) : null}
+      <p role="status" className="sr-only">
+        {uploadStatus}
+      </p>
+      <FieldMessages error={shownError} hintId={hintId} errorId={errorId} announce />
     </div>
   );
 }

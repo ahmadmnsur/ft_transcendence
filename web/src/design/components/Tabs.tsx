@@ -8,22 +8,31 @@ export interface TabItem {
 
 export interface TabsProps {
   items: TabItem[];
-  defaultIndex?: number;
-  onChange?: (index: number) => void;
-  ariaLabel: string;
+  // The selected item's id. Leave it out to let Tabs keep its own selection.
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (id: string) => void;
+  // Names the tab list.
+  label: string;
+  className?: string;
 }
 
-export function Tabs({ items, defaultIndex = 0, onChange, ariaLabel }: TabsProps): React.JSX.Element {
+export function Tabs({ items, value, defaultValue, onValueChange, label, className = '' }: TabsProps): React.JSX.Element {
   const base = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const [active, setActive] = useState(defaultIndex);
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const current = Math.min(active, items.length - 1);
+  const [ownValue, setOwnValue] = useState(defaultValue);
+  const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const wanted = value !== undefined ? value : ownValue;
+  // An id that names no item, such as a stale URL parameter, falls back to the first tab.
+  const current = items.some((item) => item.id === wanted) ? wanted : items[0]?.id;
 
   function select(index: number): void {
-    const next = (index + items.length) % items.length;
-    setActive(next);
-    onChange?.(next);
-    tabRefs.current[next]?.focus();
+    const next = items[(index + items.length) % items.length];
+    if (!next) return;
+    if (value === undefined) setOwnValue(next.id);
+    // Compared with the id asked for, not the tab shown, so choosing the
+    // fallback tab still corrects a stale id such as an old URL parameter.
+    if (next.id !== wanted) onValueChange?.(next.id);
+    tabRefs.current.get(next.id)?.focus();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number): void {
@@ -43,15 +52,16 @@ export function Tabs({ items, defaultIndex = 0, onChange, ariaLabel }: TabsProps
   }
 
   return (
-    <div className="min-w-0">
-      <div role="tablist" aria-label={ariaLabel} className="flex gap-1 overflow-x-auto border-b border-neutral-200">
+    <div className={`min-w-0 ${className}`.trim()}>
+      <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-line">
         {items.map((item, index) => {
-          const selected = index === current;
+          const selected = item.id === current;
           return (
             <button
               key={item.id}
               ref={(node) => {
-                tabRefs.current[index] = node;
+                if (node) tabRefs.current.set(item.id, node);
+                else tabRefs.current.delete(item.id);
               }}
               type="button"
               role="tab"
@@ -62,11 +72,10 @@ export function Tabs({ items, defaultIndex = 0, onChange, ariaLabel }: TabsProps
               onClick={() => select(index)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={[
-                'shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
+                'shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150 focus-ring-inset',
                 selected
                   ? 'border-primary-600 text-primary-700'
-                  : 'border-transparent text-neutral-700 hover:border-neutral-300 hover:text-neutral-900',
+                  : 'border-transparent text-ink-muted hover:border-neutral-300 hover:text-ink',
               ].join(' ')}
             >
               {item.label}
@@ -74,8 +83,8 @@ export function Tabs({ items, defaultIndex = 0, onChange, ariaLabel }: TabsProps
           );
         })}
       </div>
-      {items.map((item, index) => {
-        const selected = index === current;
+      {items.map((item) => {
+        const selected = item.id === current;
         return (
           <div
             key={item.id}
@@ -84,7 +93,7 @@ export function Tabs({ items, defaultIndex = 0, onChange, ariaLabel }: TabsProps
             aria-labelledby={`${base}-tab-${item.id}`}
             tabIndex={0}
             hidden={!selected}
-            className="min-w-0 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
+            className="min-w-0 py-3 focus-ring"
           >
             {selected ? item.content : null}
           </div>

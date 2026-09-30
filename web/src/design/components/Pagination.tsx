@@ -1,19 +1,15 @@
+import { useEffect, useEffectEvent } from 'react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ChevronRightIcon } from '../icons/ChevronRightIcon';
+import { countPages, type PageCountProps } from './pages';
 
-export interface PaginationProps {
+export type PaginationProps = PageCountProps & {
   page: number;
-  pageCount?: number;
-  total?: number;
-  pageSize?: number;
   onPageChange: (page: number) => void;
-}
-
-function resolvePageCount({ pageCount, total, pageSize }: Pick<PaginationProps, 'pageCount' | 'total' | 'pageSize'>): number {
-  if (pageCount !== undefined) return Math.max(pageCount, 1);
-  if (total !== undefined && pageSize) return Math.max(Math.ceil(total / pageSize), 1);
-  return 1;
-}
+  // Names the navigation landmark; give each Pagination on a page its own.
+  label?: string;
+  className?: string;
+};
 
 function pageItems(page: number, count: number): Array<number | 'gap'> {
   if (count <= 7) return Array.from({ length: count }, (_, i) => i + 1);
@@ -22,7 +18,9 @@ function pageItems(page: number, count: number): Array<number | 'gap'> {
   const out: Array<number | 'gap'> = [];
   let previous = 0;
   for (const n of sorted) {
-    if (n - previous > 1) out.push('gap');
+    // A gap that would hide a single page shows that page instead.
+    if (n - previous === 2) out.push(previous + 1);
+    else if (n - previous > 2) out.push('gap');
     out.push(n);
     previous = n;
   }
@@ -31,16 +29,23 @@ function pageItems(page: number, count: number): Array<number | 'gap'> {
 
 const numberClass = (active: boolean): string =>
   [
-    'inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-medium transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
-    active ? 'bg-primary-600 text-white' : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
+    'relative inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-medium transition-colors duration-150 focus-ring pointer-coarse:min-w-11',
+    'pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:-inset-y-1',
+    active ? 'bg-primary-600 text-white' : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
   ].join(' ');
 
 export function Pagination(props: PaginationProps): React.JSX.Element {
-  const { page, onPageChange } = props;
-  const count = resolvePageCount(props);
-  const safePage = Math.min(Math.max(page, 1), count);
+  const { page, onPageChange, label = 'Pagination', className = '' } = props;
+  const count = countPages(props);
+  const safePage = Number.isFinite(page) ? Math.min(Math.max(Math.floor(page), 1), count) : 1;
   const items = pageItems(safePage, count);
+
+  // A page that does not exist, such as one read from a bad URL, is shown as
+  // the nearest real one, and the caller is told so it loads that page too.
+  const settle = useEffectEvent((next: number) => onPageChange(next));
+  useEffect(() => {
+    if (safePage !== page) settle(safePage);
+  }, [page, safePage]);
 
   function go(next: number): void {
     const clamped = Math.min(Math.max(next, 1), count);
@@ -48,21 +53,21 @@ export function Pagination(props: PaginationProps): React.JSX.Element {
   }
 
   const stepClass =
-    'inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-neutral-700 transition-colors duration-150 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent';
+    'relative inline-flex h-9 items-center justify-center gap-1 rounded-lg px-2 text-sm font-medium text-ink-muted pointer-coarse:min-w-11 transition-colors duration-150 hover:bg-surface-muted hover:text-ink focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:-inset-y-1';
 
   return (
-    <nav aria-label="Pagination" className="flex min-w-0 flex-wrap items-center justify-center gap-1">
+    <nav aria-label={label} className={`flex min-w-0 flex-wrap items-center justify-center gap-1 ${className}`.trim()}>
       <button type="button" onClick={() => go(safePage - 1)} disabled={safePage <= 1} aria-label="Go to previous page" className={stepClass}>
         <ChevronLeftIcon size={16} />
         <span className="hidden sm:inline">Previous</span>
       </button>
-      <p className="px-1 text-sm tabular-nums text-neutral-700 sm:hidden">
+      <p className="px-1 text-sm tabular-nums text-ink-muted sm:hidden">
         Page {safePage} of {count}
       </p>
       <div className="hidden items-center gap-1 sm:flex">
         {items.map((item, index) =>
           item === 'gap' ? (
-            <span key={`gap-${index}`} aria-hidden="true" className="px-1 text-sm text-neutral-600">
+            <span key={`gap-${index}`} aria-hidden="true" className="px-1 text-sm text-ink-subtle">
               …
             </span>
           ) : (

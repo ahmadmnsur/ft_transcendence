@@ -1,35 +1,44 @@
-import type { HTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 import { CloseIcon } from '../icons/CloseIcon';
+import { IconButton } from './IconButton';
 
-export interface SkillChipProps extends HTMLAttributes<HTMLSpanElement> {
+export interface SkillChipProps extends Omit<ComponentProps<'span'>, 'children'> {
   name: string;
   variant: 'teach' | 'learn';
+  // The caller removes the chip and moves focus to a neighbour, since the
+  // button that was pressed goes with it.
   onRemove?: () => void;
 }
 
+// Teach is filled and learn is outlined, so the two read apart without colour.
+// Screen readers hear the difference too.
 const tones: Record<SkillChipProps['variant'], string> = {
-  teach: 'bg-primary-100 text-primary-900',
-  learn: 'bg-neutral-100 text-neutral-800',
+  teach: 'border-transparent bg-primary-100 text-primary-900',
+  learn: 'border-line-strong bg-surface text-ink',
+};
+
+const spoken: Record<SkillChipProps['variant'], string> = {
+  teach: 'Can teach: ',
+  learn: 'Wants to learn: ',
 };
 
 export function SkillChip({ name, variant, onRemove, className = '', ...rest }: SkillChipProps): React.JSX.Element {
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-1 rounded-full py-1 pl-3 pr-1 text-sm font-medium ${tones[variant]} ${className}`.trim()}
+      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 pl-3 pr-1 text-sm font-medium ${tones[variant]} ${className}`.trim()}
       {...rest}
     >
-      <span className="truncate">{name}</span>
+      <span className="min-w-0 wrap-anywhere">
+        <span className="sr-only">{spoken[variant]}</span>
+        {name}
+      </span>
       {onRemove ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Remove ${name}`}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-150 hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-1"
-        >
+        // The negative margin keeps a chip with a remove button as tall as one without.
+        <IconButton label={`Remove ${name}`} size="xs" tone="inherit" onClick={onRemove} className="-my-0.5">
           <CloseIcon size={14} />
-        </button>
+        </IconButton>
       ) : (
-        <span className="w-1 shrink-0" aria-hidden="true" />
+        <span className="w-2 shrink-0" aria-hidden="true" />
       )}
     </span>
   );

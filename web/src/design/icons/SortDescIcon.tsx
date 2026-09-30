@@ -3,8 +3,8 @@ import { IconBase, type IconProps } from './IconBase';
 export function SortDescIcon({ size, ...rest }: IconProps): React.JSX.Element {
   return (
     <IconBase size={size} {...rest}>
-      <path d="M12 5v14" />
-      <path d="m19 12-7 7-7-7" />
+      <path d="M12 4.5v15" />
+      <path d="m7 14.5 5 5 5-5" />
     </IconBase>
   );
 }

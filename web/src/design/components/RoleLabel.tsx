@@ -1,6 +1,6 @@
-import type { HTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 
-export type RoleLabelProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children'>;
+export type RoleLabelProps = Omit<ComponentProps<'span'>, 'children'>;
 
 export function RoleLabel({ className = '', ...rest }: RoleLabelProps): React.JSX.Element {
   return (

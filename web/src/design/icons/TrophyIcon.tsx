@@ -3,12 +3,11 @@ import { IconBase, type IconProps } from './IconBase';
 export function TrophyIcon({ size, ...rest }: IconProps): React.JSX.Element {
   return (
     <IconBase size={size} {...rest}>
-      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-      <path d="M4 22h16" />
-      <path d="M10 14.7V17c0 .6-.5 1-1 1.2-1.1.5-2 2-2 3.8" />
-      <path d="M14 14.7V17c0 .6.5 1 1 1.2 1.1.5 2 2 2 3.8" />
-      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+      <path d="M8 3.5h8v7a4 4 0 0 1-8 0Z" />
+      <path d="M8 5.5H5v3a3 3 0 0 0 3 3.5" />
+      <path d="M16 5.5h3v3a3 3 0 0 1-3 3.5" />
+      <path d="M12 14.5v3" />
+      <path d="M10 17.5h4l1.5 3h-7Z" />
     </IconBase>
   );
 }

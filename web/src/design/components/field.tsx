@@ -1,62 +1,109 @@
-import { useId, type ReactNode } from 'react';
+import { useId, type AriaAttributes, type ReactNode } from 'react';
 
-interface FieldShellProps {
-  label: string;
-  fieldId: string;
+interface FieldOptions {
+  id?: string;
+  hint?: string;
+  error?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: AriaAttributes['aria-invalid'];
+}
+
+interface Field {
+  controlProps: {
+    id: string;
+    'aria-invalid': AriaAttributes['aria-invalid'];
+    'aria-describedby': string | undefined;
+  };
+  hintId: string;
+  errorId: string;
+}
+
+// Ids and aria wiring for one form control. The caller's id wins, their
+// aria-invalid holds while there is no error, and their aria-describedby is
+// kept after ours.
+export function useField(prefix: string, options: FieldOptions): Field {
+  const { id, hint, error, 'aria-describedby': extraDescribedBy, 'aria-invalid': ariaInvalid } = options;
+  const base = `${prefix}-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const hintId = `${base}-hint`;
+  const errorId = `${base}-error`;
+  const ownDescribedBy = error ? errorId : hint ? hintId : undefined;
+  const describedBy = [ownDescribedBy, extraDescribedBy].filter(Boolean).join(' ');
+  return {
+    controlProps: {
+      id: id ?? base,
+      'aria-invalid': error ? true : ariaInvalid,
+      'aria-describedby': describedBy === '' ? undefined : describedBy,
+    },
+    hintId,
+    errorId,
+  };
+}
+
+interface FieldMessagesProps {
   hint?: string;
   error?: string;
   hintId: string;
   errorId: string;
+  // Only errors that answer something the user just did are announced. A
+  // form's field errors are not, or several would be read out at once: after
+  // a refused submit the screen moves focus to the first field in error, which
+  // reads its error, or shows a Banner that sums them up.
+  announce?: boolean;
+  className?: string;
+}
+
+// The hint, or the error in its place.
+export function FieldMessages({ hint, error, hintId, errorId, announce = false, className = '' }: FieldMessagesProps): React.JSX.Element | null {
+  const errorLine = error ? (
+    <p id={errorId} className={`mt-1 text-xs font-medium text-ink-danger ${className}`.trim()}>
+      {error}
+    </p>
+  ) : null;
+  const hintLine =
+    !error && hint ? (
+      <p id={hintId} className={`mt-1 text-xs text-ink-muted ${className}`.trim()}>
+        {hint}
+      </p>
+    ) : null;
+  if (!announce) return errorLine ?? hintLine;
+  // The alert region stays mounted, so an error that appears in it is read out.
+  return (
+    <>
+      {hintLine}
+      <div role="alert">{errorLine}</div>
+    </>
+  );
+}
+
+interface FieldShellProps {
+  label: string;
+  controlId: string;
+  hint?: string;
+  error?: string;
+  hintId: string;
+  errorId: string;
+  className?: string;
   children: ReactNode;
 }
 
-export function FieldShell({ label, fieldId, hint, error, hintId, errorId, children }: FieldShellProps): React.JSX.Element {
+export function FieldShell({ label, controlId, hint, error, hintId, errorId, className = '', children }: FieldShellProps): React.JSX.Element {
   return (
-    <div className="min-w-0">
-      <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-neutral-800">
+    <div className={`min-w-0 ${className}`.trim()}>
+      <label htmlFor={controlId} className="mb-1 block text-sm font-medium text-ink">
         {label}
       </label>
       {children}
-      {hint && !error ? (
-        <p id={hintId} className="mt-1 text-xs text-neutral-700">
-          {hint}
-        </p>
-      ) : null}
-      {error ? (
-        <p id={errorId} role="alert" className="mt-1 text-xs font-medium text-danger-700">
-          {error}
-        </p>
-      ) : null}
+      <FieldMessages hint={hint} error={error} hintId={hintId} errorId={errorId} />
     </div>
   );
 }
 
-export function describedBy(hint: string | undefined, error: string | undefined, hintId: string, errorId: string): string | undefined {
-  if (error) return errorId;
-  if (hint) return hintId;
-  return undefined;
-}
-
-export function mergeDescribedBy(...ids: Array<string | undefined>): string | undefined {
-  const merged = ids.filter((id): id is string => Boolean(id)).join(' ');
-  return merged === '' ? undefined : merged;
-}
-
-export function useFieldIds(prefix: string): { fieldId: string; hintId: string; errorId: string } {
-  const raw = useId();
-  const id = `${prefix}-${raw.replace(/[^a-zA-Z0-9]/g, '')}`;
-  return { fieldId: id, hintId: `${id}-hint`, errorId: `${id}-error` };
-}
-
 export const controlClass = (invalid: boolean): string =>
   [
-    'w-full rounded-lg border bg-white px-3 py-2 text-sm text-neutral-900',
-    'placeholder:text-neutral-700',
-    'transition-colors duration-150',
-    'hover:border-neutral-600',
-    'focus-visible:border-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30',
-    'disabled:cursor-not-allowed disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-neutral-600 disabled:hover:border-neutral-200',
-    invalid
-      ? 'border-danger-600 focus-visible:border-danger-600 focus-visible:ring-danger-600/30'
-      : 'border-neutral-500',
+    // 16 px on phones, where iOS zooms the page into any smaller field it focuses.
+    'w-full rounded-lg border bg-surface px-3 py-2 text-base text-ink sm:text-sm',
+    'placeholder:text-ink-subtle',
+    'transition-colors duration-150 focus-ring',
+    'disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-muted disabled:text-ink-muted disabled:hover:border-line',
+    invalid ? 'border-danger-600 hover:border-danger-700' : 'border-line-strong hover:border-neutral-600',
   ].join(' ');

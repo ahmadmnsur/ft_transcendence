@@ -74,8 +74,9 @@
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
-  /* Fixed type scale, ratio 1.2. Product UI keeps one size per element.
-     Line height tightens as size grows. */
+  /* Fixed type scale. The small sizes sit on whole pixels (12, 14, 16, 18);
+     from lg upward each step is 1.2 times the last. Product UI keeps one size
+     per element. Line height tightens as size grows. */
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;
@@ -92,6 +93,24 @@
   --text-3xl--line-height: 2.25rem;
 }
 
+/* Role tokens: what screens and components name. Each points at one palette
+   step, so changing a role changes every screen at once. The 50-900 scale
+   stays for colours that belong to one component's own variants. */
+@theme static {
+  --color-canvas: var(--color-neutral-50);
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-neutral-100);
+  --color-surface-sunken: var(--color-neutral-200);
+  --color-line: var(--color-neutral-200);
+  --color-line-strong: var(--color-neutral-500);
+  --color-ink: var(--color-neutral-900);
+  --color-ink-muted: var(--color-neutral-700);
+  --color-ink-subtle: var(--color-neutral-600);
+  --color-ink-danger: var(--color-danger-700);
+  --color-link: var(--color-primary-700);
+  --color-focus: var(--color-primary-600);
+}
+
 /*
  * Pairs below meet WCAG AA (checked by hand against the computed ratios):
  * white on primary-600/700/800/900, success-700/800/900,
@@ -102,13 +121,58 @@
  *   danger-900 on danger-50/100; primary-900 on primary-50/100.
  * Warning-500/600 never carry white text; amber tints always carry
  * warning-900 text.
- * Form boundaries use neutral-500, 3.27:1 on white and 3.11:1 on
- * neutral-50, meeting 3:1 non-text contrast.
+ * In roles: ink, ink-muted and ink-subtle (4.93:1) on surface; ink and
+ * ink-muted on canvas and surface-muted. Ink-subtle drops to 4.26:1 on
+ * surface-muted, so it carries no text there. Ink-danger (6.8:1) and link
+ * (7.06:1) on surface stay above 5.6:1 on every tint they sit on.
+ * Form boundaries use line-strong (neutral-500), 3.27:1 on white and
+ * 3.11:1 on neutral-50, meeting 3:1 non-text contrast. The focus ring
+ * (primary-600) is 5.18:1 on white.
  */
 
+/* The one focus indicator. An outline, not a box-shadow ring, so it stays
+   visible in forced-colours mode. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+/* The same ring drawn just inside the element, for a control in a strip that
+   scrolls, such as a tab list, which would clip a ring drawn outside it. */
+@utility focus-ring-inset {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+}
+
 @layer base {
+  /* A long unbroken word, such as a name or a file name, wraps instead of
+     running out of its box at narrow widths. */
+  :root {
+    overflow-wrap: break-word;
+    /* The browser's own surfaces take the palette too: native controls such
+       as checkboxes, the text caret, and scrollbars (the thumb at 3:1). */
+    accent-color: var(--color-primary-700);
+    caret-color: var(--color-focus);
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  /* Buttons show the pointer, as links do; Tailwind's reset gives them the arrow. */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
   ::selection {
     background-color: var(--color-primary-200);
     color: var(--color-primary-900);
+  }
+
+  /* Holds the page still while any modal dialog is open, however many. */
+  :root:has(dialog:modal) {
+    overflow: hidden;
   }
 }

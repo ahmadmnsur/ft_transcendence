@@ -1,10 +1,9 @@
-import { IconBase } from './IconBase';
-import type { IconProps } from './IconBase';
+import { IconBase, type IconProps } from './IconBase';
 
-export function CloseIcon(props: IconProps): React.JSX.Element {
+export function CloseIcon({ size, ...rest }: IconProps): React.JSX.Element {
   return (
-    <IconBase {...props}>
-      <path d="M6 6l12 12M18 6 6 18" />
+    <IconBase size={size} {...rest}>
+      <path d="m7 7 10 10M17 7 7 17" />
     </IconBase>
   );
 }

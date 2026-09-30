@@ -1,9 +1,9 @@
-import { useState, type ImgHTMLAttributes } from 'react';
+import { useState, type ComponentProps } from 'react';
 import defaultAvatarUrl from '../assets/default-avatar.svg';
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-export interface AvatarProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'alt'> {
+export interface AvatarProps extends Omit<ComponentProps<'img'>, 'src' | 'alt'> {
   src?: string | null;
   alt: string;
   size?: AvatarSize;
@@ -32,7 +32,7 @@ export function Avatar({ src, alt, size = 'md', onError, loading = 'lazy', class
         onError?.(event);
       }}
       loading={loading}
-      className={`shrink-0 rounded-full bg-neutral-200 object-cover ${dims[size]} ${className}`.trim()}
+      className={`shrink-0 rounded-full bg-surface-sunken object-cover ${dims[size]} ${className}`.trim()}
     />
   );
 }
