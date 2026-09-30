@@ -9,6 +9,13 @@
 > before the sign-off on 2026-10-15; decision 15 keeps the pages moving with the model.
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
 
+> **The one cookie stays, 2026-09-30.** [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)
+> keeps PeerConnect's own session: the one cookie is still `pc_session`, set by PeerConnect's
+> server (decision 5), and the browser never talks to Supabase. Decision 5's one exception is still
+> Sign in with 42; whether that sign-in passes through Supabase's address is for
+> [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93). What the pages say about Supabase is still for
+> [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) to settle.
+
 `document/en.subject.md:320` requires a **Privacy Policy** and **Terms of Service** "with relevant
 content"; `:323`-`:330` require them to be easily accessible from the application, to contain content
 appropriate to *this* project, and not to be placeholder or empty pages; `:336` makes missing or

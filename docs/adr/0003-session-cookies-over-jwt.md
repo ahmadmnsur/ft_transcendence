@@ -10,6 +10,18 @@
 > [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) (passwords, sign-out, Suspension, Removal).
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
 
+> **Settled in part 2026-09-30 by [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91):
+> PeerConnect keeps its own session.** Supabase Auth holds the account and checks the password;
+> PeerConnect's `Session` row, behind the one `pc_session` cookie, decides who is signed in. The
+> browser never talks to Supabase, and resolving the session on a request or a socket handshake
+> never calls Supabase Auth. Decisions 1, 2, 4, 5, 7, 8 and 9, and decision 10's CSRF defence,
+> stand as written; decisions 1 and 5 carry a note each. Signing a Student out at once is still
+> deleting their `Session` rows (decision 6). Still with
+> [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92): decision 3, what decision 6's events also do in Supabase Auth,
+> decision 10's throttle and its one generic refusal, and decision 11. Still with
+> [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): what Sign in with 42 does with the cookie and its callback
+> (the notes on decisions 1 and 10 about it).
+
 The subject mandates email-and-password authentication with hashed, salted storage
 (`document/en.subject.md:377`) and HTTPS for every browser-to-backend connection (`:383`),
 and **nothing else**. In particular it never mentions JWT: zero occurrences of "JWT" or
@@ -32,6 +44,15 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > attempt; a successful callback replaces it with a newly issued session id. Its attributes are
    > unchanged, and `SameSite=Lax` is what carries it to the callback, a cross-site top-level GET
    > from 42. `Strict` would drop it.
+
+   > **Held through the move to Supabase, 2026-09-30 by [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91).**
+   > "No JWT anywhere in the product" still holds for the browser and for every session check. If
+   > sign-in checks the password through Supabase Auth's password grant ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)
+   > decides), the access token it returns is a JWT that lives only inside that one sign-in
+   > request on PeerConnect's server: it is used once to sign that Supabase Auth session out, and is
+   > never stored, logged or sent to the browser; the refresh token is dropped with it. If that
+   > sign-out fails, the sign-in still succeeds. "Session" alone still means PeerConnect's
+   > `Session` row; Supabase's is always written "Supabase Auth session".
 
 2. **One origin.** The React bundle, the HTTP API and the socket.io endpoint are served from
    the same scheme, host and port as the browser sees them, behind a single reverse proxy.
@@ -66,6 +87,13 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > the check costs one condition in a query already reading the Student row, and it is what
    > makes "suspended and removed are indistinguishable at the authentication layer" a rule
    > the code enforces rather than an intention.
+
+   > **Kept inside PeerConnect's tables, 2026-09-30 by [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91).**
+   > This query reads PeerConnect's own tables only, never Supabase's `auth` tables, and resolving a
+   > session, on a request or a socket handshake, never calls Supabase Auth. So the Suspension and
+   > Removal flags it refuses on stay in PeerConnect's tables, whatever
+   > [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) does with Supabase bans; a ban there would only stop the
+   > password check.
 
 6. **What kills a session:** logout deletes that row; a password change or a moderation
    **Suspension** deletes *every* row for that Student. A **role change deletes nothing** —
