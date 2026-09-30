@@ -4,6 +4,20 @@
 > The module-claim decision claimed OAuth 2.0, which falsifies one sentence of **decision 9**
 > and adds two variables. Decision 9's text below stands as originally written.
 
+> **Under revision 2026-09-30: the database moves to Supabase.**
+> The team settled on 2026-09-30 that Supabase provides PeerConnect's database, file storage and
+> login, with Socket.IO kept ([Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85)).
+> There is one team Supabase project, plus a local Supabase stack on each developer's machine for
+> branch work; only code merged into `main` runs against the team project. The `.env` with real
+> keys is handed to the evaluator at the defense, and `.env.example` gains every Supabase variable.
+> What replaces the `db` service (decision 1), decision 9's list and the boot chain (decision 11),
+> and whether both boot paths still hold (decision 8), is settled by
+> [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101). There is still no public
+> deployment of the application, and hosting it stays outside that map; but the team project is
+> hosted infrastructure that must be kept available, since a free project with too little activity
+> for a week is paused ([Find out what Supabase's free plan means for PeerConnect](https://github.com/ahmadmnsur/ft_transcendence/issues/89)).
+> The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+
 The subject's entire requirement for deployment is `document/en.subject.md:314` — a
 containerisation solution (Docker, Podman, or equivalent) that runs with a **single
 command** — plus HTTPS for every browser-to-backend connection (`:383`), credentials in a
@@ -19,6 +33,10 @@ single command works from a clean clone. Hosting earns zero module points — th
 majors are out of scope — so a public host would buy a domain, DNS, certificate renewal,
 real secret management and a second environment to keep alive for six weeks, against
 nothing the subject asks for.
+
+> **Qualified 2026-09-30** (see the note at the top): "no deployed environment" still means no public
+> deployment of the application. The shared Supabase project is hosted infrastructure, though, and a
+> free project can pause; [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) decides how it stays available.
 
 > **Qualified 2026-09-20 — the portability claim above is too broad.** The deployment
 > contract is a clean clone using the supported Docker Compose setup, at
@@ -36,6 +54,9 @@ and why there is no `SESSION_SECRET`.
 1. **Three services:** **`proxy`** (nginx), **`api`** (NestJS), **`db`** (Postgres).
    Microservices are out of scope and a fourth container for static files would only front
    files the proxy already serves.
+
+   > **Under revision 2026-09-30** (see the note at the top): the database moves to Supabase.
+   > [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) settles what replaces the `db` service.
 
 2. **The proxy is what makes single origin structural.** ADR-0003 requires the bundle, the
    HTTP API and the socket.io endpoint to share one scheme, host and port; with a proxy in
@@ -244,6 +265,9 @@ and why there is no `SESSION_SECRET`.
    admin password must be changed for any shared use. This project has no third-party
    secrets to hold.
 
+   > **Under revision 2026-09-30** (see the note at the top): `.env.example` gains every Supabase variable;
+   > [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) settles the list.
+
    > **Consolidated 2026-09-20 — the authoritative list is fifteen entries, and it is here.**
    > The ten above are what this decision settled; five were added by three later decisions,
    > and until now a writer of `.env.example` had to assemble them from the narration below.
@@ -295,6 +319,9 @@ and why there is no `SESSION_SECRET`.
     seed creates exactly one bootstrap **Admin** from `.env`. Without it a fresh machine
     produces a platform where nobody can open a **Round**, so there is no **Match** and
     nothing to demonstrate.
+
+    > **Under revision 2026-09-30** (see the note at the top): [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) settles what the boot chain does
+    > once the database is Supabase's, including against the team project.
 
     > **Clarified 2026-09-20 — "from `.env`" describes the original `make up` path, not the
     > seed's only source.** The seed reads the resolved container environment. Bare Compose

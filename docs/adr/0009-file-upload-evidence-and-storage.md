@@ -1,5 +1,14 @@
 # File upload: Evidence on the Learning Outcome, and every byte in Postgres
 
+> **Under revision 2026-09-30: the bytes move to Supabase Storage.**
+> The team settled on 2026-09-30 that Supabase provides PeerConnect's database, file storage and
+> login, with Socket.IO kept ([Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85)).
+> Decision 2 no longer holds: avatar and Evidence bytes go to Supabase Storage, not a `bytea`
+> column. The access rules of decisions 3–7 stand. How files are stored, served, replaced and
+> deleted, and what a crash can leave behind, is settled by
+> [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).
+> The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+
 `document/en.subject.md:536`-`:548` claims a Minor for a file upload and management system,
 and its first bullet asks for "multiple file types (images, documents, etc.)". Avatars are
 images, owed anyway by `:596` under standard user management, so the image half was settled
@@ -40,6 +49,9 @@ authorisation structural rather than enforced.
    directory would have left one nginx `location` between the project and a failed
    access-control bullet. At a seed of ~30 Students under the caps in decision 5, the database
    bloat this trades away is not a real cost.
+
+   > **Under revision 2026-09-30** (see the note at the top): the bytes move to Supabase Storage, so this
+   > decision no longer holds. [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94) settles how files are stored, served, replaced and deleted.
 
    > **Proxy envelope corrected 2026-09-22, extending ADR-0004 decision 2.** nginx defaults
    > `client_max_body_size` to 1 MiB, below both file caps. The locations proxying avatar and
