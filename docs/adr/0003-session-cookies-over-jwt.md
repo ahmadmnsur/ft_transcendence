@@ -86,15 +86,16 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) settles what replaces this decision.
 
    > **Replaced 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** Supabase Auth hashes every
-   > password with bcrypt at cost 10 and a salt per hash, and neither is a setting. argon2id cannot
-   > be kept: Supabase's admin update takes only a plain password, so the first change would turn
-   > an imported argon2id hash into bcrypt. OWASP's Password Storage Cheat Sheet accepts bcrypt
-   > where argon2id is not available, *"with a work factor of 10 or more and with a password limit
-   > of 72 bytes"*, and `en.subject.md:377`'s "hashed and salted" is met. So a password is **at
-   > least 8 characters and at most 72 bytes** in UTF-8 (an accented or Arabic letter counts 2),
-   > with no composition rule. The frontend checks both, and the API checks them again before it
-   > calls Supabase Auth; the project's own minimum length is set to 8 too. PeerConnect no longer
-   > hashes or stores a password: `Student.password_hash` goes, and `@node-rs/argon2` with it.
+   > password it sets with bcrypt at cost 10 and a salt per hash, and neither is a setting.
+   > argon2id cannot be kept. Supabase's admin create accepts an imported argon2id hash and checks
+   > it as argon2id, but its admin update takes only a plain password, so the first change would
+   > turn that hash into bcrypt. OWASP's Password Storage Cheat Sheet allows bcrypt for legacy
+   > systems, *"with a work factor of 10 or more and with a password limit of 72 bytes"*, and
+   > `en.subject.md:377`'s "hashed and salted" is met. So a password is **at least 8 characters
+   > and at most 72 bytes** in UTF-8 (an accented or Arabic letter counts 2), with no composition
+   > rule. The frontend checks both, and the API checks them again before it calls Supabase Auth;
+   > the Supabase project's own minimum length is set to 8 too. PeerConnect no longer hashes or
+   > stores a password: `Student.password_hash` goes, and `@node-rs/argon2` with it.
 
 4. **Sliding expiry, 30 days of inactivity, renewed lazily.** `expires_at` is only rewritten
    when it is more than an hour old, so an authenticated request is not also a database
@@ -143,11 +144,16 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > 3. set the new password with Supabase's admin update, by id;
    > 4. delete every session again.
    >
-   > A `password_version` number on the Student replaces the hash this decision's race check
-   > re-read. Sign-in reads it before asking Supabase Auth and creates the session only if it is
-   > unchanged, and steps 2 and 4 each raise it. So a sign-in with the old password is either
-   > deleted or refused. Step 4 catches a sign-in that lands between steps 2 and 3, while the old
-   > password still works. Step 2 makes a crash before step 3 safe: signed out everywhere,
+   > A `password_version` number on the Student replaces the hash that this decision's race check
+   > re-read (`docs/spec.md` §5.1 and §3.6.3). Sign-in reads it before asking Supabase Auth, then
+   > re-reads it and creates the session only if it is unchanged, in the same `SERIALIZABLE`
+   > transaction. Steps 2 and 4 are each one `SERIALIZABLE` transaction that raises it and deletes
+   > the sessions. The change reads the number before step 1 too, and step 2 refuses with
+   > `password_incorrect` if it moved since then, so two password changes cannot both go through.
+   >
+   > So a sign-in with the old password is either deleted or refused, unless the change crashes
+   > between steps 3 and 4. Step 4 catches a sign-in that lands between steps 2 and 3, while the
+   > old password still works. Step 2 makes a crash before step 3 safe: signed out everywhere,
    > password unchanged. A crash between steps 3 and 4 leaves the new password set and at most a
    > session created in that gap. That is accepted.
 
@@ -253,13 +259,16 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > **Throttle kept, one generic refusal replaced, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).**
     > The throttle stands as written. Sign-in now says what is wrong, checked in this order:
     > 1. No Student holds the email: "No account uses this email."
-    > 2. Supabase Auth refuses the password: "Wrong password" (`password_incorrect`).
-    > 3. Only after the right password, Suspended or Removed, each with its own message.
+    > 2. Supabase Auth refuses the password: "Wrong password." (`password_incorrect`)
+    > 3. Only after the right password, Suspended: "Your account is suspended. Contact an Admin."
+    > 4. Only after the right password, Removed: "This account was removed and can't sign in
+    >    again."
     >
     > A sanction is therefore told only to someone who holds the password, never to someone who
     > only knows the email. Saying that an email has no account discloses nothing new, because
     > sign-up's `email_unavailable` already answers that for any email, Removed rows included. For
-    > the same reason the dummy hash that evened out the timing for unknown emails is dropped.
+    > the same reason the dummy hash that evened out the timing for unknown emails
+    > (`docs/spec.md` §5.1) is dropped.
     >
     > Two answers come from Supabase Auth itself:
     > - A Supabase 429, from its shared per-IP bucket (accepted by [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)),

@@ -185,7 +185,8 @@ revoke XP.**
    > Supabase Auth: no ban, no delete. Each stays one PeerConnect transaction, and the flags it
    > sets are what sign-in and session resolution refuse on. A Supabase ban would add a second
    > write that can fail halfway, and Supabase answers `user_banned` before it checks the password,
-   > which would tell anyone who knows the email. The two still behave the same once signed in.
+   > which would tell anyone who knows the email. The two stay indistinguishable to the
+   > authentication layer: neither can be signed in, and session resolution refuses both alike.
    > "They diverge only at login" now includes the message: after the right password, sign-in
    > tells the Student which one applies (ADR-0003 d10's note).
 
@@ -293,8 +294,10 @@ revoke XP.**
    > whenever it could shrink it.
 
    > **Held through the move to Supabase, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** The
-   > guards read PeerConnect's own flags, unchanged, and nothing in PeerConnect deletes a Supabase
-   > Auth user, so no action inside the platform can leave an active Admin unable to sign in. A
+   > guards read PeerConnect's own flags, unchanged, and nothing in PeerConnect deletes a Student's
+   > Supabase Auth user, so no action inside the platform can leave an active Admin unable to sign
+   > in. The one delete PeerConnect makes is at sign-up: the Supabase Auth user of a concurrent
+   > duplicate that lost to the unique email, which never became a Student. A
    > member of the Supabase project could still delete one in Supabase's dashboard, outside the
    > platform, as direct SQL always could. Who may do that is for
    > [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97). No repair code is added.
