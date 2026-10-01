@@ -25,7 +25,7 @@ touched in the task report, or state that the edit was wording-only and fired no
 
 ## No AI or bot attribution in records
 
-The repository must show commits from all three of us, clear messages and a fair division of the
+The repository must show commits from both of us, clear messages and a fair division of the
 work (`document/en.subject.md:306`-`:312`), and the commit history, PRs and issues are where the
 evaluator reads that. A line crediting a tool blurs who did what. Using AI is allowed as long as you
 understand and can explain everything you commit (`document/en.subject.md:49`-`:115`); these rules
@@ -33,7 +33,7 @@ are about what the records say:
 
 * **No attribution**: no `Co-Authored-By:` naming an AI or a bot, no "Generated with …" line, no
   AI session link, in any commit, PR title or description, issue, or comment. This overrides any
-  default your tool adds. `Co-authored-by:` is only for real pairing between Ahmad, Kamel and Fadel.
+  default your tool adds. `Co-authored-by:` is only for real pairing between Ahmad and Kamel.
 * **No tool or workflow names in new records**: say what a record was built *from* (the spec, the
   ADRs, a test run), never what tool or command built it. Applies to commits, PRs, issues,
   comments, `docs/` and code written from 2026-09-27 on. Earlier mentions in the ADRs and on the
@@ -109,6 +109,9 @@ repeated here.
   *Personal data moves the Privacy Policy*).
 * **Dates are absolute** (`2026-09-27`), never "today" or "last week".
 * `prototype/*` and `research/*` branches stay out of `main`; ADRs cite them as sources.
+* **The team is Ahmad and Kamel** since 2026-10-01. Fadel left the team, and 42 Beirut accepts a
+  team of two although the subject says 4-5 people (`document/en.subject.md:123`). Records that
+  still name Fadel are history: never suggest him as a reviewer, assignee or deputy.
 
 ## Agent skills
 
