@@ -542,6 +542,12 @@ so the single authorization path ADR-0003 defends survives intact.
 > cookie, never a second cookie or web storage (ADR-0018 d5's annotation), and checked before any
 > session exists. The identity mapping stays #24's.
 
+> **The same holds for Supabase Auth, 2026-09-30 by [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91).**
+> If sign-in checks the password through Supabase Auth's password grant, the access token it
+> returns is a JWT, used once on the server to sign that Supabase Auth session out, then dropped
+> with its refresh token, never stored, logged or sent to the browser (ADR-0003 decision 1's note).
+> Like 42's token above, it helps establish a session and never carries one.
+
 ### Not settled by this amendment
 
 * **How a 42 identity maps to a Student**, and what happens when a 42 login arrives for an
