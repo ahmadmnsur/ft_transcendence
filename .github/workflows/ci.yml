@@ -46,3 +46,5 @@ jobs:
       - run: npx nest build
       - run: npx prisma migrate deploy --config prisma.config.ts
       - run: npx prisma db seed --config prisma.config.ts
+      - run: sudo apt-get update && sudo apt-get install -y nginx
+      - run: npx vitest run
