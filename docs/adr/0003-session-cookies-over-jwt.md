@@ -260,9 +260,9 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > The throttle stands as written. Sign-in now says what is wrong, checked in this order:
     > 1. No Student holds the email: "No account uses this email."
     > 2. Supabase Auth refuses the password: "Wrong password." (`password_incorrect`)
-    > 3. Only after the right password, Suspended: "Your account is suspended. Contact an Admin."
-    > 4. Only after the right password, Removed: "This account was removed and can't sign in
+    > 3. Only after the right password, Removed: "This account was removed and can't sign in
     >    again."
+    > 4. Only after the right password, Suspended: "Your account is suspended. Contact an Admin."
     >
     > A sanction is therefore told only to someone who holds the password, never to someone who
     > only knows the email. Saying that an email has no account discloses nothing new, because
