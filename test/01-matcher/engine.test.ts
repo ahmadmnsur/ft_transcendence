@@ -41,7 +41,7 @@ describe('most-constrained-first', () => {
     // Literals from the `starvation` entry of COHORTS in
     // compatibility-score-PROTOTYPE.html (goal defaults to null there).
     // Levels via levelOf(xp): s0 → 5, s1 → 6, s2 → 2, s3 → 3.
-    // (s0,s1): (4,2) → 88 either orientation check: reverse (2,4) → 81,
+    // (s0,s1): (4,2) → 88, reverse (2,4) → 81,
     //   so s0 mentors. (s0,s2): (2,0) → 53, reverse (0,2) → 23, s0 mentors.
     // (s1,s3): (1,0) → 35, reverse (0,1) → 15, s1 mentors. Every other pair
     // scores 0 and is discarded. Viable counts: s0:2, s1:2, s2:1, s3:1, so
@@ -281,31 +281,43 @@ describe('six rounds over generateCohort({ size: 20, seed: 42 })', () => {
     // Same input again from scratch → deep-equal output.
     expect(sixRounds().rounds).toEqual(first.rounds);
 
-    // Same Round with shuffled inputs (arrays reversed, tuples swapped)
-    // → deep-equal output. Fixed permutation, no randomness.
+    // Same Round with its first two Matches blocked → deep-equal output
+    // under either shuffle. Fixed permutations, no randomness. The blocked
+    // pairs come from this Round's own unblocked output, so blocking must
+    // change the Round.
     const roundIndex = 2;
     const history: UnorderedPair[] = [];
     for (let k = 0; k < roundIndex; k++) {
       for (const m of first.rounds[k]) history.push([m.mentorId, m.menteeId]);
     }
-    const blocked: UnorderedPair[] = [
-      ['s0', 's1'],
-      ['s2', 's3'],
-    ];
+    const blocked: UnorderedPair[] = first.rounds[roundIndex]
+      .slice(0, 2)
+      .map((m): UnorderedPair => [m.mentorId, m.menteeId]);
     const candidates = cohort();
     const base = runMatcher({ candidates, history, blocked });
-    const shuffled = runMatcher({
+    // Non-vacuous: the blocked Round differs and both blocked pairs are gone.
+    expect(base).not.toEqual(first.rounds[roundIndex]);
+    const baseKeys = new Set(
+      base.map((m) => pairKey(m.mentorId, m.menteeId)),
+    );
+    for (const [x, y] of blocked) {
+      expect(baseKeys.has(pairKey(x, y))).toBe(false);
+    }
+    // `reordered` reverses each input array, tuples kept as given; `swapped`
+    // keeps array order and swaps every tuple. Separate because changing both
+    // at once cancels out for an engine that reads a tuple in candidate order.
+    const reordered = runMatcher({
       candidates: candidates.slice().reverse(),
-      history: history
-        .slice()
-        .reverse()
-        .map(([x, y]): UnorderedPair => [y, x]),
-      blocked: blocked
-        .slice()
-        .reverse()
-        .map(([x, y]): UnorderedPair => [y, x]),
+      history: history.slice().reverse(),
+      blocked: blocked.slice().reverse(),
     });
-    expect(shuffled).toEqual(base);
+    expect(reordered).toEqual(base);
+    const swapped = runMatcher({
+      candidates,
+      history: history.map(([x, y]): UnorderedPair => [y, x]),
+      blocked: blocked.map(([x, y]): UnorderedPair => [y, x]),
+    });
+    expect(swapped).toEqual(base);
   });
 
   it('excludes history and blocked pairs, in either tuple order', () => {
