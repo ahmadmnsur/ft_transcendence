@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { generateCohort, levelOf, type CohortStudent } from '../../prisma/fixtures/cohort';
-import { runMatcher, type Candidate, type MatcherInput, type UnorderedPair } from '../../src/matching/engine';
+import {
+  runMatcher,
+  type Candidate,
+  type MatcherInput,
+  type MatcherMatch,
+  type UnorderedPair,
+} from '../../src/matching/engine';
 
 function candidate(
   id: string,
@@ -117,38 +123,53 @@ describe('most-constrained-first', () => {
     ]);
   });
 
-  it('lets priority beat score when the level gap penalty reorders', () => {
-    // (a,b): f = 4 ({K1..K4}), r = 2 ({R1,R2}) → 88; reverse (2,4) → 81,
-    // so a mentors. Gap |1 − 10| = 9 → priority 88 − 2·7 = 74.
-    // (a,c): f = 3 ({K1..K3}), r = 2 ({R1,R2}) → 84; reverse (2,3) → 79,
+  it('applies the Level-gap penalty, and breaks an equal priority on Score', () => {
+    // (a,b): f = 3 ({K1..K3}), r = 2 ({R1,R2}) → 84; reverse (2,3) → 79,
     // so a mentors. Gap 0 → priority 84.
-    // (b,c): b mentors, (1,0) → 35, priority 35 − 14 = 21. All three have
-    // two viable partners, so the lower id a chooses, and takes (a,c):
-    // the 84-score pair beats the 88-score pair on priority.
+    // (a,c): f = 4 ({K1..K4}), r = 2 ({R1,R2}) → 88; reverse (2,4) → 81,
+    // so a mentors. a is Level 1, so priority 88 − 2·max(0, (c's Level − 1) − 2).
+    // (b,c): c mentors, (1,0) → 35. All three have two viable partners, so
+    // the lower id a chooses between (a,b) and (a,c):
+    // - c at Level 4, gap 3: 86 > 84, (a,c). Without the 2-Level allowance,
+    //   88 − 2·3 = 82 would hand it to (a,b).
+    // - c at Level 5, gap 4: 84 = 84, the greater Score takes it: (a,c).
+    //   Without the Score step, the smaller pair key would take (a,b).
+    // - c at Level 6, gap 5: 82 < 84, (a,b), although (a,c) scores higher.
+    //   At 1 per Level, 88 − 3 = 85 would hand it to (a,c).
     // Reverse id order: input order must not stand in for the id tie-breaks.
-    const input: MatcherInput = {
+    const input = (cLevel: number): MatcherInput => ({
       candidates: [
-        candidate('c', ['R1', 'R2'], ['K1', 'K2', 'K3', 'Q1'], 1),
-        candidate('b', ['R1', 'R2', 'Q1'], ['K1', 'K2', 'K3', 'K4'], 10),
+        candidate('c', ['R1', 'R2', 'Q1'], ['K1', 'K2', 'K3', 'K4'], cLevel),
+        candidate('b', ['R1', 'R2'], ['K1', 'K2', 'K3', 'Q1'], 1),
         candidate('a', ['K1', 'K2', 'K3', 'K4'], ['R1', 'R2'], 1),
       ],
       history: [],
       blocked: [],
+    });
+    const aMentorsB: MatcherMatch = {
+      mentorId: 'a',
+      menteeId: 'b',
+      score: 84,
+      goalBonusApplied: false,
+      forward: ['K1', 'K2', 'K3'],
+      reverse: ['R1', 'R2'],
+      index: 0,
     };
-    expect(runMatcher(input)).toEqual([
-      {
-        mentorId: 'a',
-        menteeId: 'c',
-        score: 84,
-        goalBonusApplied: false,
-        forward: ['K1', 'K2', 'K3'],
-        reverse: ['R1', 'R2'],
-        index: 0,
-      },
-    ]);
+    const aMentorsC: MatcherMatch = {
+      mentorId: 'a',
+      menteeId: 'c',
+      score: 88,
+      goalBonusApplied: false,
+      forward: ['K1', 'K2', 'K3', 'K4'],
+      reverse: ['R1', 'R2'],
+      index: 0,
+    };
+    expect(runMatcher(input(4))).toEqual([aMentorsC]);
+    expect(runMatcher(input(5))).toEqual([aMentorsC]);
+    expect(runMatcher(input(6))).toEqual([aMentorsB]);
   });
 
-  it('breaks a priority and score tie on the smaller pair key', () => {
+  it('breaks a priority and Score tie on the smaller pair key', () => {
     // Every pair scores 35 with priority 35 and no level gap: (x,y) and
     // (x,z) are x mentors (1,0), reverses are (0,1) → 15; (y,z) is y
     // mentors (1,0), reverse (0,1) → 15. All counts are 2, so the lower id
@@ -172,6 +193,45 @@ describe('most-constrained-first', () => {
         forward: ['T1'],
         reverse: [],
         index: 0,
+      },
+    ]);
+
+    // The lower ids differ. Each edge is one Skill taught one way, so it
+    // scores (1,0) → 35 with its reverse (0,1) → 15, at equal Levels:
+    // a→m, a→p, a→q, m→z, z→p, z→q. Every other pair scores 0.
+    // Counts a:3, m:2, p:2, q:2, z:3, so m chooses between (a,m) and (m,z),
+    // equal on priority and Score: ('a','m') < ('m','z'), so a mentors m.
+    // Recounted, p:1, q:1, z:2: p takes its only pair, z mentors p, and q
+    // is left unmatched.
+    const lowerIdsDiffer: MatcherInput = {
+      candidates: [
+        candidate('z', ['zp', 'zq'], ['mz']),
+        candidate('q', [], ['aq', 'zq']),
+        candidate('p', [], ['ap', 'zp']),
+        candidate('m', ['mz'], ['am']),
+        candidate('a', ['am', 'ap', 'aq'], []),
+      ],
+      history: [],
+      blocked: [],
+    };
+    expect(runMatcher(lowerIdsDiffer)).toEqual([
+      {
+        mentorId: 'a',
+        menteeId: 'm',
+        score: 35,
+        goalBonusApplied: false,
+        forward: ['am'],
+        reverse: [],
+        index: 0,
+      },
+      {
+        mentorId: 'z',
+        menteeId: 'p',
+        score: 35,
+        goalBonusApplied: false,
+        forward: ['zp'],
+        reverse: [],
+        index: 1,
       },
     ]);
   });
