@@ -1,5 +1,11 @@
 # The admin surface: a third role, three sanctions, and soft-deleted Students and Posts
 
+> **Annotated 2026-10-02 for the move to Supabase.** [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) settled
+> that each Student's password is kept by a Supabase Auth user with the Student's own id, which
+> holds no real email, and that no sanction writes to Supabase Auth. Decisions 5, 7, 8, 9 and 12
+> carry notes. The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records
+> what the move changes.
+
 The claimed **advanced permissions** module asks for three things: user CRUD, roles
 management, and different views per role. Only the third was paid for. ADR-0003 decision 5
 makes a role change *propagate* immediately, but propagating a role change is not the same
@@ -175,6 +181,15 @@ revoke XP.**
    > resolves those explicitly. This changes no sanction count and preserves the distinction
    > between Suspension and Removal.
 
+   > **On Supabase, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** Neither sanction writes to
+   > Supabase Auth: no ban, no delete. Each stays one PeerConnect transaction, and the flags it
+   > sets are what sign-in and session resolution refuse on. A Supabase ban would add a second
+   > write that can fail halfway, and Supabase answers `user_banned` before it checks the password,
+   > which would tell anyone who knows the email. The two stay indistinguishable to the
+   > authentication layer: neither can be signed in, and session resolution refuses both alike.
+   > "They diverge only at login" now includes the message: after the right password, sign-in
+   > tells the Student which one applies (ADR-0003 d10's note).
+
 6. **Soft delete on Student and Post — those two entities only.** A `removed_at` on `Student`
    and a `removed_at` on `Post`. **No other entity gets one**: **Match**, **Review**, **Round**
    and **Reflection Prompt** are untouched, because a Prompt is never deleted and a Post is
@@ -222,6 +237,14 @@ revoke XP.**
    > Policy says plainly that Removal is final and is not erasure, and lists what it keeps. The
    > mechanism and its Admin-only authority are unchanged.
 
+   > **The email still burns on Supabase, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** Supabase
+   > Auth never holds the real email, so `Student.email`'s unique index alone burns it, as above.
+   > The removed Student's Supabase Auth user, with its password hash, is kept as well, never
+   > deleted. Deleting it would save about a kilobyte, but sign-in could then no longer check a
+   > removed person's password: it would have to tell anyone who types that email about the
+   > Removal, or tell the owner their password is wrong. The kept hash is one more thing Removal
+   > keeps, for [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) to list.
+
 8. **An Admin may edit only what the Student themselves could edit, plus the role.** Display
    name, email, avatar, **Learning Goal**, **Skills**. Never XP, Level, Streak, **Badges** or
    Mentor Reputation — all derived, and derived values have no setter by construction. Never
@@ -241,6 +264,12 @@ revoke XP.**
    > sign in as any Student and read their Direct Messages, which the Privacy Policy promises no
    > Admin can do. A forgotten password is therefore unrecoverable, and the Terms of Service say
    > so, together with this decision's edit authority.
+
+   > **An email edit stays one PeerConnect transaction, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).**
+   > Supabase Auth logs a Student in by their id, not their email, so changing the email, by the
+   > Student or by an Admin, writes `Student.email` alone. Supabase Auth is not touched and no mail
+   > can be sent. The password is still absent from this list: Supabase's admin update, which a
+   > password change uses, is never offered as an Admin action.
 
 9. **Three guards against locking the platform out.** An Admin may not change their own role;
    may not suspend or remove themselves; and the last remaining Admin may not be demoted or
@@ -263,6 +292,15 @@ revoke XP.**
    > role change, Suspension and Removal is one PostgreSQL `SERIALIZABLE` transaction, retried
    > automatically on a serialization failure, that reads the set of active Admins inside itself
    > whenever it could shrink it.
+
+   > **Held through the move to Supabase, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** The
+   > guards read PeerConnect's own flags, unchanged, and nothing in PeerConnect deletes a Student's
+   > Supabase Auth user, so no action inside the platform can leave an active Admin unable to sign
+   > in. The one delete PeerConnect makes is at sign-up: the Supabase Auth user of a concurrent
+   > duplicate that lost to the unique email, which never became a Student. A
+   > member of the Supabase project could still delete one in Supabase's dashboard, outside the
+   > platform, as direct SQL always could. Who may do that is for
+   > [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97). No repair code is added.
 
 10. **A Peer Moderator may not act on a report concerning their own Post, or one involving a
     Student in a mutual Block with them.** Both escalate to an Admin. The report queue is the
@@ -330,6 +368,12 @@ revoke XP.**
     > supplies the throwaway localhost defaults as the required first `env_file`; optional,
     > gitignored `.env` is loaded later and overrides it. The two moderator variables and
     > their values are unchanged, and the bootstrap Peer Moderator exists on both boot paths.
+
+    > **Created through Supabase Auth, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** The seed makes
+    > both accounts the way sign-up makes every account: Supabase's admin create with the `.env`
+    > password, then the `Student` row with its role. The four variables are unchanged.
+    > `ADMIN_PASSWORD` and `MODERATOR_PASSWORD` must now also fit ADR-0003 d3's note: 8 characters
+    > to 72 bytes.
 
 ## Considered options
 
