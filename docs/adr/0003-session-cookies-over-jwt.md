@@ -22,6 +22,15 @@
 > [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): what Sign in with 42 does with the cookie and its callback
 > (the notes on decisions 1 and 10 about it).
 
+> **Settled 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92): the accounts.** Each Student has one
+> Supabase Auth user with the Student's own id. It keeps only the password: its login is
+> `<id>@peerconnect.invalid`, a reserved name that can never receive mail, and the real email stays
+> in `Student.email` alone. Decision 1's password grant is used. Decision 3 is replaced (bcrypt, by
+> Supabase Auth). Decision 6 now says what its events do in Supabase Auth. Decision 10's throttle
+> stands and its one generic refusal is replaced. Decision 11 stands. Each carries a note. Still with
+> [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): what Sign in with 42 does with the cookie and its callback,
+> and whether a Student it creates has a Supabase Auth user.
+
 The subject mandates email-and-password authentication with hashed, salted storage
 (`document/en.subject.md:377`) and HTTPS for every browser-to-backend connection (`:383`),
 and **nothing else**. In particular it never mentions JWT: zero occurrences of "JWT" or
@@ -54,6 +63,10 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > sign-out fails, the sign-in still succeeds. "Session" alone still means PeerConnect's
    > `Session` row; Supabase's is always written "Supabase Auth session".
 
+   > **The password grant is used, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** Sign-in checks
+   > the password through it, and so does a password change's check of the current password, so
+   > the note above applies to both.
+
 2. **One origin.** The React bundle, the HTTP API and the socket.io endpoint are served from
    the same scheme, host and port as the browser sees them, behind a single reverse proxy.
    This is a hard constraint on the deployment shape, not a preference: it keeps the session
@@ -71,6 +84,17 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
 
    > **Under revision 2026-09-30** (see the note at the top): Supabase Auth hashes passwords with bcrypt.
    > [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) settles what replaces this decision.
+
+   > **Replaced 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** Supabase Auth hashes every
+   > password with bcrypt at cost 10 and a salt per hash, and neither is a setting. argon2id cannot
+   > be kept: Supabase's admin update takes only a plain password, so the first change would turn
+   > an imported argon2id hash into bcrypt. OWASP's Password Storage Cheat Sheet accepts bcrypt
+   > where argon2id is not available, *"with a work factor of 10 or more and with a password limit
+   > of 72 bytes"*, and `en.subject.md:377`'s "hashed and salted" is met. So a password is **at
+   > least 8 characters and at most 72 bytes** in UTF-8 (an accented or Arabic letter counts 2),
+   > with no composition rule. The frontend checks both, and the API checks them again before it
+   > calls Supabase Auth; the project's own minimum length is set to 8 too. PeerConnect no longer
+   > hashes or stores a password: `Student.password_hash` goes, and `@node-rs/argon2` with it.
 
 4. **Sliding expiry, 30 days of inactivity, renewed lazily.** `expires_at` is only rewritten
    when it is more than an hour old, so an authenticated request is not also a database
@@ -107,6 +131,25 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > session for that Student and triggers decision 8's live-socket disconnection. Both sanctions
    > are rejected during session resolution under decision 5; they differ only in that Suspension
    > may be lifted while Removal is final.
+
+   > **What these events do in Supabase Auth, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).**
+   > Logout, Suspension, reinstatement and Removal write nothing there. Signing out stays deleting
+   > `Session` rows, and a Suspended or Removed Student keeps their Supabase Auth user: no ban, no
+   > delete. PeerConnect's own flags do the refusing.
+   >
+   > A password change is the one event that writes to Supabase Auth, in this order:
+   > 1. check the current password through Supabase Auth;
+   > 2. delete every session of the Student;
+   > 3. set the new password with Supabase's admin update, by id;
+   > 4. delete every session again.
+   >
+   > A `password_version` number on the Student replaces the hash this decision's race check
+   > re-read. Sign-in reads it before asking Supabase Auth and creates the session only if it is
+   > unchanged, and steps 2 and 4 each raise it. So a sign-in with the old password is either
+   > deleted or refused. Step 4 catches a sign-in that lands between steps 2 and 3, while the old
+   > password still works. Step 2 makes a crash before step 3 safe: signed out everywhere,
+   > password unchanged. A crash between steps 3 and 4 leaves the new password set and at most a
+   > session created in that gap. That is accepted.
 
 7. **The socket authenticates by the same cookie**, which same-origin socket.io replays on
    every handshake, including every reconnect. There is no token to pass, refresh, or
@@ -207,6 +250,26 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > decision does not yet say is whether those writes fall inside the exception or move to a
     > following non-GET request. #24 records which, together with its linking rule.
 
+    > **Throttle kept, one generic refusal replaced, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).**
+    > The throttle stands as written. Sign-in now says what is wrong, checked in this order:
+    > 1. No Student holds the email: "No account uses this email."
+    > 2. Supabase Auth refuses the password: "Wrong password" (`password_incorrect`).
+    > 3. Only after the right password, Suspended or Removed, each with its own message.
+    >
+    > A sanction is therefore told only to someone who holds the password, never to someone who
+    > only knows the email. Saying that an email has no account discloses nothing new, because
+    > sign-up's `email_unavailable` already answers that for any email, Removed rows included. For
+    > the same reason the dummy hash that evened out the timing for unknown emails is dropped.
+    >
+    > Two answers come from Supabase Auth itself:
+    > - A Supabase 429, from its shared per-IP bucket (accepted by [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)),
+    >   answers `too_many_attempts` and is not counted as the Student's failure.
+    > - Supabase Auth unreachable answers `busy_retry_later`, never `invalid_credentials`.
+    >
+    > Sign-up never uses Supabase's public `/signup` or its bucket. Accounts are created through
+    > the admin API with the secret key, and the project's public sign-up is switched off, so no
+    > account can be made except through PeerConnect.
+
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
     rule. Email verification in particular would put SMTP deliverability on the critical path
@@ -218,6 +281,13 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > could set one could sign in as any Student and read their Direct Messages, which the
     > Privacy Policy promises no Admin can do. ADR-0008 decision 8's editable fields already
     > omitted the password; the omission is now deliberate.
+
+    > **Stands, 2026-10-02 by [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).** Supabase Auth sends no mail on
+    > PeerConnect's paths: accounts are created already confirmed through the admin API, and its
+    > users hold no real email. Password reset by email is ruled out of scope on
+    > [Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85) as a later effort, in which PeerConnect would send the email itself and
+    > Supabase Auth would only set the new password. The admin update a password change uses is
+    > never offered as an Admin action (ADR-0018 d8).
 
 **The numbers in decisions 3, 4 and 10 are engineering defaults, not citations.** The subject
 sets no figure for session length, renewal threshold or rate limit. Change them freely; the
