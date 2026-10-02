@@ -74,11 +74,8 @@ export class Refusal extends Error {
 
 // A protocol failure with its §6.15 code.
 export class ApiError extends HttpException {
-  constructor(
-    readonly code: ErrorCode,
-    message: string = PROTOCOL_ERRORS[code].message,
-  ) {
-    super(message, PROTOCOL_ERRORS[code].status);
+  constructor(readonly code: ErrorCode) {
+    super(PROTOCOL_ERRORS[code].message, PROTOCOL_ERRORS[code].status);
   }
 }
 
