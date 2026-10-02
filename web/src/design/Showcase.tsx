@@ -13,6 +13,7 @@ import { FileDrop, type StoredFile } from './components/FileDrop';
 import { IconButton } from './components/IconButton';
 import { Modal } from './components/Modal';
 import { Pagination } from './components/Pagination';
+import { PersonName } from './components/PersonName';
 import { ProgressBar } from './components/ProgressBar';
 import { RoleLabel } from './components/RoleLabel';
 import { Select } from './components/Select';
@@ -313,6 +314,7 @@ export function Showcase(): React.JSX.Element {
       <Section id="form-fields" title="Form fields">
         <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
           <TextField label="Display name" placeholder="e.g. amina" hint="Shown on your profile." />
+          <TextField label="Display name, Arabic" defaultValue="فاطمة الزهراء" hint="Aligns right as it is typed." />
           <TextField ref={emailRef} label="Email" type="email" placeholder="you@example.com" error="Enter a valid email address." defaultValue="not-an-email" />
           <TextArea label="Why this skill matters" hint="One or two sentences." placeholder="e.g. I want to read other students' C code with confidence." />
           <Select label="Round" defaultValue="3">
@@ -364,6 +366,19 @@ export function Showcase(): React.JSX.Element {
                 <SkillChip key={skill} name={skill} variant="teach" onRemove={() => removeSkill(skill)} />
               ))}
             </div>
+          </Card>
+          <Card title="Names in any script">
+            <ul className="flex flex-col gap-2 text-sm text-ink">
+              <li>
+                <PersonName name="يوسف حداد" />: 3 likes
+              </li>
+              <li>
+                Liked by <PersonName name="فاطمة الزهراء" />, <PersonName name="Lina Farouk" /> and 2 others
+              </li>
+              <li className="inline-flex flex-wrap items-center gap-2">
+                <PersonName name="سارة ناصر" /> <RoleLabel />
+              </li>
+            </ul>
           </Card>
         </div>
       </Section>

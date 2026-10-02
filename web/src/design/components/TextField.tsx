@@ -11,7 +11,7 @@ export function TextField({ label, hint, error, id, 'aria-describedby': describe
   const { controlProps, hintId, errorId } = useField('field', { id, hint, error, 'aria-describedby': describedBy, 'aria-invalid': invalid });
   return (
     <FieldShell label={label} controlId={controlProps.id} hint={hint} error={error} hintId={hintId} errorId={errorId} className={className}>
-      <input {...rest} {...controlProps} className={controlClass(Boolean(error))} />
+      <input dir="auto" {...rest} {...controlProps} className={controlClass(Boolean(error))} />
     </FieldShell>
   );
 }

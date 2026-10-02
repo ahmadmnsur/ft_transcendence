@@ -11,7 +11,7 @@ export function TextArea({ label, hint, error, id, rows = 4, 'aria-describedby':
   const { controlProps, hintId, errorId } = useField('area', { id, hint, error, 'aria-describedby': describedBy, 'aria-invalid': invalid });
   return (
     <FieldShell label={label} controlId={controlProps.id} hint={hint} error={error} hintId={hintId} errorId={errorId} className={className}>
-      <textarea rows={rows} {...rest} {...controlProps} className={`${controlClass(Boolean(error))} resize-y`} />
+      <textarea rows={rows} dir="auto" {...rest} {...controlProps} className={`${controlClass(Boolean(error))} resize-y`} />
     </FieldShell>
   );
 }
