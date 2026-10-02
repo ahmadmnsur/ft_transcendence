@@ -4,10 +4,14 @@ type Level = 'log' | 'warn' | 'error';
 
 // The call frames of a V8 stack, without its `<name>: <message>` header: a
 // Prisma or driver message can embed argument values (§3.9). The header is cut
-// by its exact text when known and intact, so a message line shaped like a
-// frame never passes; then only the trailing frame lines are kept.
-function frames(stack: string, header = ''): string[] {
-  const lines = (stack.startsWith(header) ? stack.slice(header.length) : stack).split('\n');
+// by its exact text when it matches. When it does not (Node's
+// `<name> [<code>]: <message>`, or a name set after the stack was read), the
+// header still spans as many lines as the message, so that many are dropped.
+// Then only the trailing frame lines are kept.
+function frames(stack: string, header = '', message = ''): string[] {
+  const lines = stack.startsWith(header)
+    ? stack.slice(header.length).split('\n')
+    : stack.split('\n').slice(message.split('\n').length);
   let first = lines.length;
   while (first > 0 && /^\s+at /.test(lines[first - 1])) first--;
   return lines.slice(first).map((line) => line.trim());
@@ -21,7 +25,7 @@ export function errorFields(err: unknown): { error: string; code: string | null;
   return {
     error: err.constructor.name,
     code: typeof code === 'string' && /^P\d{4}$/.test(code) ? code : null,
-    stack: frames(err.stack ?? '', Error.prototype.toString.call(err)),
+    stack: frames(err.stack ?? '', Error.prototype.toString.call(err), String(err.message)),
   };
 }
 

@@ -22,6 +22,11 @@ function isUpload(request: Request): boolean {
   );
 }
 
+// The media type of the body, without parameters, lower-cased.
+function mediaType(request: Request): string {
+  return (request.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
+}
+
 // Every mutation outside the upload routes carries Content-Type
 // application/json, which a cross-site form cannot send (§5.4).
 @Injectable()
@@ -30,15 +35,14 @@ export class JsonMutationGuard implements CanActivate {
     if (context.getType() !== 'http') return true;
     const request = context.switchToHttp().getRequest<Request>();
     if (!MUTATIONS.has(request.method) || isUpload(request)) return true;
-    const mediaType = (request.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
-    if (mediaType !== 'application/json') throw new ApiError('unsupported_media_type');
+    if (mediaType(request) !== 'application/json') throw new ApiError('unsupported_media_type');
     return true;
   }
 }
 
-// An upload carries Origin byte-equal to PUBLIC_ORIGIN and X-PeerConnect-CSRF: 1.
-// Guards run before interceptors, so this refuses before Multer parses
-// anything (§5.4).
+// An upload carries Origin byte-equal to PUBLIC_ORIGIN and X-PeerConnect-CSRF: 1,
+// else 403; then a multipart body, else 415 (§3.8.2, ADR-0009). Guards run
+// before interceptors, so this refuses before Multer parses anything (§5.4).
 @Injectable()
 export class UploadCsrfGuard implements CanActivate {
   constructor(private readonly config: AppConfig) {}
@@ -53,6 +57,7 @@ export class UploadCsrfGuard implements CanActivate {
     ) {
       throw new ApiError('csrf_rejected');
     }
+    if (mediaType(request) !== 'multipart/form-data') throw new ApiError('unsupported_media_type');
     return true;
   }
 }

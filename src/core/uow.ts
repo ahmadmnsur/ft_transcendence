@@ -99,15 +99,14 @@ export class UnitOfWork {
           effects.push(effect);
         },
       };
+      let result: T;
       try {
-        const result = await this.active.run(op.name, () =>
+        result = await this.active.run(op.name, () =>
           this.prisma.$transaction((tx) => work(tx, ctx), {
             isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             ...LIMITS,
           }),
         );
-        this.flush(op.name, effects);
-        return result;
       } catch (err) {
         const constraint = uniqueViolation(err);
         const retry =
@@ -122,6 +121,9 @@ export class UnitOfWork {
         if (refusal !== undefined) throw new Refusal(refusal.code, refusal.message);
         throw err;
       }
+      // Committed: nothing from here on may retry the work or fail the request.
+      this.flush(op.name, effects);
+      return result;
     }
   }
 
@@ -150,7 +152,11 @@ export class UnitOfWork {
   // request: every event is an invalidation a reload also recovers (§3.7).
   private flush(operation: string, effects: Array<() => void>): void {
     const report = (err: unknown): void => {
-      this.logger.entry('error', { operation, afterCommit: true, ...errorFields(err) });
+      try {
+        this.logger.entry('error', { operation, afterCommit: true, ...errorFields(err) });
+      } catch {
+        // A failed log line must not fail a committed request.
+      }
     };
     for (const effect of effects) {
       try {
