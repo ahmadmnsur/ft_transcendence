@@ -669,6 +669,19 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > unique indexes and the no-repeats expression index. If the `partialIndexes` preview feature is
   > declined, ADR-0011's two target-specific unique indexes raise that count to **ten**. The earlier
   > “six or eight” and “there is no fourth” paragraphs remain as history, not the operative count.
+
+  > **Count revised 2026-10-02 by [Settle what the database stores in French and
+  > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95).** A ninth hand-written step
+  > joins the eight, in the migration that creates `Student`:
+  > `ALTER TABLE "Student" ALTER COLUMN display_name TYPE text COLLATE "und-x-icu";`. It holds no
+  > invariant. It gives display names the same collation on every stack: the hosted Supabase
+  > database's default, `C.UTF-8`, sorts by code point (`Zineb` before `ahmad`, `Élodie` after
+  > `zineb`), a local stack's default may differ, and Prisma's `orderBy` cannot name a collation.
+  > Two stacks on different ICU versions can still order some names differently, and an ICU
+  > upgrade under one database can shift its order, which PostgreSQL then reports as a collation
+  > version mismatch. Prisma does not represent the step, so it falls under the same gate rule as
+  > the other eight. The working count is **nine**, or **eleven** if the `partialIndexes` preview
+  > feature is declined.
 - **The seed gains an input that was not on the map's list: the Skill catalogue.** Without it no
   Student can list anything, no Match can form and the matcher has no inputs — it joins the bootstrap
   Admin, the Peer Moderator and the one Reflection Prompt as something without which nothing is

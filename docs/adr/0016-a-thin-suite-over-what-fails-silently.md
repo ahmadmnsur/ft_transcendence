@@ -66,6 +66,14 @@ done when the PR template already is one.**
      > five CHECKs and three expression indexes. The two added CHECKs reject a Student self-report
      > and a Report state/attribution mismatch. They extend this existing migration category; they
      > do not create a separate test category.
+
+     > **Count corrected 2026-10-02 by [Settle what the database stores in French and
+     > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95).** The working set is now
+     > **nine**: the ninth step sets `Student.display_name`'s collation to `und-x-icu` (ADR-0014's
+     > *Consequences*, count note of 2026-10-02). If a migration stops setting it, names fall back
+     > to the database's default order, code point on the hosted project, and nothing says so, so
+     > this category asserts the column's collation too. It extends this category; it does not
+     > create a new one.
    - **At most one standing Match per Student per Round** — the one invariant ADR-0014 decision 13
      records as **not expressible in the schema**, violable through an Admin's hand-made Match
      (ADR-0002 decision 7). If anything in this model earns a test, it is the rule nothing else
@@ -215,6 +223,12 @@ done when the PR template already is one.**
    > accepts bad data" holds for seven of its eight steps. The no-repeats index is a non-unique
    > lookup aid (ADR-0014 d13), so its absence costs speed rather than integrity; the test still
    > asserts that the migration creates it.
+
+   > **Precision extended 2026-10-02 by [Settle what the database stores in French and
+   > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95).** With the ninth step,
+   > "the database accepts bad data" holds for seven of nine. The no-repeats index aids lookup and
+   > the `display_name` collation sets sort order, so their absence costs speed or order rather
+   > than integrity; the test still asserts both.
 
    > **Two cases made explicit 2026-09-24 before `/to-tickets`; no new category**
    > ([`docs/spec.md`](../spec.md) §16.3). The **eighth** category's "only the originating active
