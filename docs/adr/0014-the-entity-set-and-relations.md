@@ -20,6 +20,25 @@
 > copy of the real email. [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) still records the column change and
 > whether the count of nineteen tables moves.
 
+> **`Student.display_name_search` joins, 2026-10-02.** [Settle what the database stores in French
+> and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95) adds no translation columns,
+> but `Student` gains one column: the display name folded for search (lower case, NFKD, combining
+> marks dropped, `ة` → `ه`, `ى` → `ي`, no tatweel), so `احمد` finds `أحمد` and `helene` finds
+> `Hélène`. One function, `foldName` in `src/shared/`, folds both the stored name and the search
+> text, and one helper, `nameFields`, returns both fields; every path that writes a name saves
+> them together. The schema does not hold the copy's agreement with `display_name`: like decision
+> 13's rule that a Takeaway `Post`'s author is its Review's Mentee, it is a service rule, held by
+> `nameFields`. Name search
+> matches the column with Prisma `contains` on `foldName(q)`, in place of `ILIKE` on the display
+> name. It is plain Prisma and adds no raw-SQL step; the count stays at the nine of the
+> *Consequences* count note of 2026-10-02. The API never returns the column. It is a copy of the
+> display name and follows it everywhere, Removal included, so it is no new kind of personal data
+> and the Privacy Policy is unchanged; [Settle what the Privacy Policy and Terms say about
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) confirms the wording.
+> [Settle which tables change for
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) still records the column
+> change and whether the count of nineteen tables moves.
+
 `document/en.subject.md:373` requires "a clear schema and well-defined relations", and `:1280`-`:1284`
 requires the schema to be *documented* — tables, relationships, key fields and data types. Twelve
 tickets have decided what this platform does; none of them has said what tables it has. This ADR is
@@ -636,6 +655,12 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   Skill-taught, Skill-wanted, Learning Goal presence) as a bounded dropdown, and sorting and paging
   are TanStack over `Student`. This is the cheapest claimed point on the list and it is now
   specified.
+
+  > **Two mechanisms added 2026-10-02 by [Settle what the database stores in French and
+  > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95).** Name search matches a
+  > folded copy of the display name (the top note of 2026-10-02), and the name sort relies on the
+  > column collation of the ninth raw-SQL step (the count note of 2026-10-02 below). The filters,
+  > paging and the rest of this bullet stand.
 - **The user activity analytics Minor is not.** Decision 9 gives it the one aggregate the model could
   not otherwise produce, but nothing has decided what the dashboard *shows* or what counts as an
   insight — and `#17` set the precedent that an unmet module bullet nobody owns means the point is
@@ -669,6 +694,21 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > unique indexes and the no-repeats expression index. If the `partialIndexes` preview feature is
   > declined, ADR-0011's two target-specific unique indexes raise that count to **ten**. The earlier
   > “six or eight” and “there is no fourth” paragraphs remain as history, not the operative count.
+
+  > **Count revised 2026-10-02 by [Settle what the database stores in French and
+  > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95).** A ninth hand-written step
+  > joins the eight, in the migration that creates `Student`:
+  > `ALTER TABLE "Student" ALTER COLUMN display_name TYPE text COLLATE "und-x-icu";`. It holds no
+  > invariant. It gives display names the same collation on every stack: the hosted Supabase
+  > database's default, `C.UTF-8`, sorts by code point (`Zineb` before `ahmad`, `Élodie` after
+  > `zineb`), a local stack's default may differ, and Prisma's `orderBy` cannot name a collation.
+  > Two stacks on different ICU versions can still order some names differently, and an ICU
+  > upgrade under one database can shift its order, which PostgreSQL then reports as a collation
+  > version mismatch. Prisma does not represent the step, so it falls under
+  > [`docs/spec.md`](../spec.md) §4.4's gate rule for generated migrations, as the other eight do:
+  > a later `ALTER COLUMN … TYPE` silently puts the column back on the database default, which
+  > test category 2 catches. The working count is **nine**, or **eleven** if the `partialIndexes`
+  > preview feature is declined.
 - **The seed gains an input that was not on the map's list: the Skill catalogue.** Without it no
   Student can list anything, no Match can form and the matcher has no inputs — it joins the bootstrap
   Admin, the Peer Moderator and the one Reflection Prompt as something without which nothing is

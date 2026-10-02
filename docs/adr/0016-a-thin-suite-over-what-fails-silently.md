@@ -66,6 +66,14 @@ done when the PR template already is one.**
      > five CHECKs and three expression indexes. The two added CHECKs reject a Student self-report
      > and a Report state/attribution mismatch. They extend this existing migration category; they
      > do not create a separate test category.
+
+     > **Count corrected 2026-10-02 by [Settle what the database stores in French and
+     > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95).** The working set is now
+     > **nine**: the ninth step sets `Student.display_name`'s collation to `und-x-icu` (ADR-0014's
+     > *Consequences*, count note of 2026-10-02). If a migration stops setting it, names fall back
+     > to the database's default order, code point on the hosted project, and nothing says so, so
+     > this category asserts the column's collation too. It extends this category; it does not
+     > create a new one.
    - **At most one standing Match per Student per Round** — the one invariant ADR-0014 decision 13
      records as **not expressible in the schema**, violable through an Admin's hand-made Match
      (ADR-0002 decision 7). If anything in this model earns a test, it is the rule nothing else
@@ -216,6 +224,12 @@ done when the PR template already is one.**
    > lookup aid (ADR-0014 d13), so its absence costs speed rather than integrity; the test still
    > asserts that the migration creates it.
 
+   > **Precision extended 2026-10-02 by [Settle what the database stores in French and
+   > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95).** With the ninth step,
+   > "the database accepts bad data" holds for seven of nine. The no-repeats index aids lookup and
+   > the `display_name` collation sets sort order, so their absence costs speed or order rather
+   > than integrity; the test still asserts both.
+
    > **Two cases made explicit 2026-09-24 before `/to-tickets`; no new category**
    > ([`docs/spec.md`](../spec.md) §16.3). The **eighth** category's "only the originating active
    > Mentee may mutate" includes a Mentee promoted to `ADMIN` after the Review, who keeps the path
@@ -225,6 +239,21 @@ done when the PR template already is one.**
    > hidden from that Admin's own resolved audit and shown to another Admin with its reporters
    > (ADR-0011 d9–d10 annotations). Both follow rules already recorded; they bind the outcome, not a
    > technique.
+
+   > **Extended 2026-10-02 — name search adds the eleventh silent-failure category**
+   > ([Settle what the database stores in French and
+   > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95)). `display_name_search`, the
+   > folded copy of the display name (ADR-0014's top note of 2026-10-02), agrees with
+   > `display_name` only because every write path saves both through `nameFields`; the schema cannot
+   > hold it. A path that skips the helper raises no error: the Student is simply not found under
+   > their new name, and no demo step searches a renamed Student by plain letters. So
+   > `11-name-search` writes a name through each path the suite runs that sets one (sign-up, the
+   > Student's own edit, the Admin edit, and any path added later) and asserts that searching its
+   > plain form (`helene`, `احمد`, `فاطمه`) finds the Student, and that after a rename to a name
+   > whose folded form does not contain the old folded form, the old one no longer does. The suite does not run the seed, so the
+   > seed's two directly inserted bootstrap accounts are checked by the seed's own end-state
+   > assertions instead. It binds the outcome, not the fold's technique;
+   > [`docs/spec.md`](../spec.md) §16.3 and §14.8 hold the exact assertions once updated.
 
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
@@ -455,6 +484,10 @@ done when the PR template already is one.**
    > successful response; they are assertions in the first, third and seventh categories. The next
    > proposed category remains the eleventh.
 
+   > **Extended 2026-10-02 — name search supplies the eleventh category** (decision 1's note of
+   > 2026-10-02). The next proposed category is the twelfth and still needs the same *does it fail
+   > silently?* argument.
+
    The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
    pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet
    reversal of the schema gate. **Anything the compiler or a demo
@@ -491,6 +524,9 @@ done when the PR template already is one.**
    > and decision 6 makes the template the definition. And the Compose boot stays out of CI. How
    > the local run reaches the stack, and what the workflow provisions or leaves to that local run,
    > is for `/to-spec #1`; see *Not settled*.
+   >
+   > *Eleven categories since 2026-10-02 (decision 7's note of that date); the new one runs on the
+   > same harness.*
 
    > **The workflow is placed and grows by steps, 2026-09-24 before `/to-tickets`**
    > ([`docs/spec.md`](../spec.md) §16.4, §18). `ci.yml` lands with ADR-0004 d12's week-1 gate.
@@ -664,3 +700,6 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
   > and the distribution's nginx on the runner and runs the same command — no Compose boot. CI also
   > migrates and seeds an empty database and re-runs the seed, which is how an application change
   > that breaks the seed is seen before the pre-defense clean-clone run.
+  >
+  > *Eleven categories since 2026-10-02 (decision 7's note of that date); the new one runs on the
+  > same harness, locally and in CI.*
