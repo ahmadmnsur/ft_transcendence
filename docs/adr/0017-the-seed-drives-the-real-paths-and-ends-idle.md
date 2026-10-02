@@ -417,6 +417,15 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     > now meets it. While the seed is built slice by slice, a record certifies the fixture version
     > that wrote it, and the four-Round end state binds from the PR that completes it (§14.9, §16.5).
 
+    > **On the team project, 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** `make up` now runs
+    > on the hosted team project when `.env` holds its values, and this decision holds there
+    > unchanged: the seed runs once, at the first boot, and never again, so the Rounds a demo adds
+    > stay. One remedy does not reach it: when the fixture changes, the boot's warning names
+    > `make wipe`, which empties only local volumes. A separate reset command empties the team
+    > project so the next boot seeds it afresh; Kamel runs it only when the seed's data changes,
+    > never as part of `make up` (ADR-0004 d11's note). On the fallback, the local stack a fresh
+    > clone boots, nothing changes.
+
 11. **Presence cannot be seeded, and the demo script must account for it.** Presence is live,
     process-local state; it does not survive a restart, there is no column, and **nothing records
     when a Student was last online** (ADR-0003, `CONTEXT.md`). Every seeded Student therefore

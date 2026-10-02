@@ -18,6 +18,17 @@
 > for a week is paused ([Find out what Supabase's free plan means for PeerConnect](https://github.com/ahmadmnsur/ft_transcendence/issues/89)).
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
 
+> **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101): `make up` runs on the team
+> project.** When `.env` holds the team project's values, `make up` runs PeerConnect on it: work on
+> `main`, and the defense, where the evaluator is handed that `.env`. With no `.env`, a **fallback**
+> starts instead: Supabase's own Postgres, Auth, Storage and gateway inside Compose, with the local
+> values in `.env.example`. The fallback keeps a fresh clone and bare `docker compose up --build`
+> working (decision 8), and it is where branch work that changes the database runs. Wrong or
+> unusable values stop the boot and name the value; the boot never switches to the fallback by
+> itself. Decisions 1, 8, 9 and 11 and the first Consequence carry a note each. One sentence above
+> is narrowed: besides `main`, a branch whose testing only reads data may run against the team
+> project (decision 8's note).
+
 The subject's entire requirement for deployment is `document/en.subject.md:314` — a
 containerisation solution (Docker, Podman, or equivalent) that runs with a **single
 command** — plus HTTPS for every browser-to-backend connection (`:383`), credentials in a
@@ -38,6 +49,12 @@ nothing the subject asks for.
 > deployment of the application. The shared Supabase project is hosted infrastructure, though, and a
 > free project can pause; [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) decides how it stays available.
 
+> **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** Kamel, the project's Owner, keeps it
+> active and checks it before each defense. Only he can resume it: Ahmad stays a Developer. There is
+> no keep-alive job and no paid plan. A paused project answers `540`, and the boot check (decision
+> 8's note) stops `make up` with that message. If it is paused on defense day anyway, the last resort
+> is to run without `.env`, on the fallback.
+
 > **Qualified 2026-09-20 — the portability claim above is too broad.** The deployment
 > contract is a clean clone using the supported Docker Compose setup, at
 > `https://localhost:8443`; "deployment" means its single command works from that clone.
@@ -57,6 +74,16 @@ and why there is no `SESSION_SECRET`.
 
    > **Under revision 2026-09-30** (see the note at the top): the database moves to Supabase.
    > [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) settles what replaces the `db` service.
+
+   > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101): the fallback replaces `db`.**
+   > `db` becomes Supabase's Postgres image, and three Supabase services join it: **Auth**,
+   > **Storage**, whose files live in a named volume, and Supabase's **gateway**, which serves both
+   > under one `SUPABASE_URL` as the team project does, so the `api` has one code path. That makes
+   > six services, pinned to the versions in Supabase's own Docker setup. Studio, Realtime
+   > (Socket.IO stays), Edge Functions, the image resizer and the pooler are left out; whether
+   > Storage still needs Supabase's REST service is checked when it is built. The four start on
+   > both targets and sit unused when `.env` points at the team project. Only `proxy` publishes a
+   > port, so nothing of the fallback is reachable from outside the machine.
 
 2. **The proxy is what makes single origin structural.** ADR-0003 requires the bundle, the
    HTTP API and the socket.io endpoint to share one scheme, host and port; with a proxy in
@@ -259,6 +286,25 @@ and why there is no `SESSION_SECRET`.
    > release carrying compose-go's `!override` support — so `docs/spec.md` §3.3, §15.2, §17.5 read
    > `>= 2.24.4`.
 
+   > **Both boot paths still hold, settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** From a
+   > fresh clone, `make up` and bare `docker compose up --build` boot on the fallback with
+   > `.env.example`'s values, so nothing above moves. A `.env` holding the team project's values,
+   > later in the same order of sources, points the `api` at the team project instead.
+   >
+   > **Wrong values stop the boot and say which.** The `api` checks, before it serves anything, that
+   > every value is present and well formed, then that the database, Supabase Auth and Supabase
+   > Storage accept them. A failure ends the boot with the value named, for example
+   > `Supabase check failed: Auth rejected SUPABASE_SECRET_KEY (401)` or
+   > `Supabase check failed: https://<ref>.supabase.co answered 540: the project is paused`. The
+   > boot never falls back by itself: an evaluator who believes they are on the team project must
+   > never be quietly on an empty local copy. To use the fallback on purpose, remove `.env`.
+   >
+   > **Which branch runs where.** Branch work whose testing changes the database, a migration or
+   > written data, runs on the fallback; branch work that only reads data may use the team project.
+   > The team values pass between members privately and are never committed. `.gitignore` gains
+   > `.env.*` with `!.env.example`, so a second file such as `.env.team` cannot be committed by
+   > mistake.
+
 9. **`.env.example` holds** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
    `DATABASE_URL`, `NODE_ENV`, `PUBLIC_ORIGIN`, `HTTPS_PORT`, `HTTP_PORT`, `ADMIN_EMAIL`,
    `ADMIN_PASSWORD` — with a header comment saying these are development defaults and the
@@ -267,6 +313,21 @@ and why there is no `SESSION_SECRET`.
 
    > **Under revision 2026-09-30** (see the note at the top): `.env.example` gains every Supabase variable;
    > [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) settles the list.
+
+   > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** The `api` reads three new
+   > entries: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` for the password grant, and
+   > `SUPABASE_SECRET_KEY` for admin create, admin update and Storage. The web bundle reads none of
+   > them, so there is still no `VITE_` entry ([Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)). In `.env.example`
+   > they hold the fallback's values and `DATABASE_URL` points at the fallback's Postgres; the team
+   > project's values go in `.env` only. The fallback's containers also need a fixed local signing
+   > secret and the keys made from it. Like `POSTGRES_PASSWORD`, these are development defaults that
+   > work only against the fallback. The PR that writes `.env.example` fixes their exact names and
+   > brings the count below up to date.
+   >
+   > `ADMIN_PASSWORD`, `MODERATOR_PASSWORD` and `SEED_STUDENT_PASSWORD` are now Supabase Auth
+   > passwords, so each must be 8 characters to 72 bytes
+   > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)); today's defaults fit. The `.env` handed to the evaluator holds the team
+   > project's database password and secret key, and it is not rotated after a defense.
 
    > **Consolidated 2026-09-20 — the authoritative list is fifteen entries, and it is here.**
    > The ten above are what this decision settled; five were added by three later decisions,
@@ -322,6 +383,34 @@ and why there is no `SESSION_SECRET`.
 
     > **Under revision 2026-09-30** (see the note at the top): [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) settles what the boot chain does
     > once the database is Supabase's, including against the team project.
+
+    > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101): the chain is the same on both
+    > targets.** Migrations, then the seed. On the team project, `prisma migrate deploy` and the
+    > `api` share one `DATABASE_URL`, the **session pooler**
+    > (`aws-<n>-eu-central-1.pooler.supabase.com:5432`). The direct connection is IPv6-only on the
+    > free plan, and the transaction pooler drops the lock `prisma migrate` holds. A test on the
+    > team project on 2026-10-03 ran two colliding `SERIALIZABLE` transactions and a deadlock through
+    > it: `40001` (*"could not serialize access due to concurrent update"*) and `40P01` (*"deadlock
+    > detected"*) came back unchanged, so the Unit of Work's retry works through the pooler.
+    >
+    > **The connection is encrypted and verified.** The same test found that Node does not trust the
+    > pooler's certificate (`SELF_SIGNED_CERT_IN_CHAIN`): Supabase signs it with its own certificate
+    > authority. Left alone, the driver either refuses it (`sslmode=require` verifies in
+    > node-postgres) or, with no TLS setting in the URL, connects unencrypted. So the `api` and
+    > `prisma migrate` verify against Supabase's CA certificate, a public file from the project's SSL
+    > configuration; the build wires it in. The project also enforces SSL on incoming connections, so
+    > an unencrypted connection is refused and the boot check names it.
+    >
+    > The seed runs once on the team project, at its first boot, and every later boot skips it, so
+    > the data a demo adds stays (ADR-0017 d10). When the seed's fixture changes, the boot's
+    > warning names `make wipe`, which cannot reach a hosted project. A separate reset command, for
+    > example `make reset-team`, empties the team project so the next boot seeds it afresh. Kamel
+    > runs it only when the seed's data changes, never as part of `make up`; how it removes the
+    > seeded Supabase Auth users and files is
+    > [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98)'s. Once the application is public, which
+    > is outside this record, that command would delete real accounts, and the seeded Students share
+    > one known password: hosting revisits both. `make wipe` removes only the local volumes, the
+    > fallback's database and files, and never touches the team project.
 
     > **Clarified 2026-09-20 — "from `.env`" describes the original `make up` path, not the
     > seed's only source.** The seed reads the resolved container environment. Bare Compose
@@ -409,6 +498,12 @@ six weeks and three developers.
   > **And each from an empty database, noted 2026-09-23 (ADR-0016 d5).** Clones of this project
   > share a Compose project name, and so a Postgres volume. A check starts with no container or
   > volume left under that name, or it reuses a database that is already migrated and seeded.
+
+  > **One more run before each defense, 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** The checks
+  > above run on the fallback, from fresh clones, unchanged. Before each defense the handed `.env`
+  > is tried as well: `make up` boots on the team project, the bootstrap Admin signs in, one sign-up
+  > succeeds, which also confirms that the team project accepts `<id>@peerconnect.invalid` logins
+  > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)), and one avatar upload succeeds.
 * **The README is now on the critical path**, and carries more than this decision: `:1242`
   wants prerequisites and step-by-step instructions, and II.1.1 wants the team roster and a
   Project Management section. `README.md` does not exist yet.
