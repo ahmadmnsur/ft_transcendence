@@ -34,32 +34,46 @@ function classify(exception: unknown): { status: number; code: ErrorCode; messag
 // §3.8.2: a refusal is 200 with ok: false; a protocol failure keeps its status;
 // anything else is 500 internal_error. Only a 5xx is logged, by its route
 // pattern and errorFields (§3.9); refusals and 4xx never are.
+export function answerFailure(
+  logger: AppLogger,
+  exception: unknown,
+  request: Request,
+  response: Response,
+): void {
+  const { status, code, message } =
+    exception instanceof Refusal
+      ? { status: 200, code: exception.code, message: exception.message }
+      : classify(exception);
+  if (status >= 500) {
+    const route: unknown = request.route?.path;
+    logger.entry('error', {
+      method: request.method,
+      route: typeof route === 'string' ? route : null,
+      ...errorFields(exception),
+    });
+  }
+  if (response.headersSent) {
+    response.end();
+    return;
+  }
+  const body: Envelope<never> = { ok: false, error: { code, message } };
+  // A failed file stream has already set its own type and disposition.
+  response.removeHeader('Content-Disposition');
+  response.status(status).type('application/json').json(body);
+}
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: AppLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     if (host.getType() !== 'http') throw exception;
-    const request = host.switchToHttp().getRequest<Request>();
-    const response = host.switchToHttp().getResponse<Response>();
-
-    const { status, code, message } =
-      exception instanceof Refusal
-        ? { status: 200, code: exception.code, message: exception.message }
-        : classify(exception);
-    if (status >= 500) {
-      const route: unknown = request.route?.path;
-      this.logger.entry('error', {
-        method: request.method,
-        route: typeof route === 'string' ? route : null,
-        ...errorFields(exception),
-      });
-    }
-    if (response.headersSent) {
-      response.end();
-      return;
-    }
-    const body: Envelope<never> = { ok: false, error: { code, message } };
-    response.status(status).json(body);
+    const http = host.switchToHttp();
+    answerFailure(
+      this.logger,
+      exception,
+      http.getRequest<Request>(),
+      http.getResponse<Response>(),
+    );
   }
 }
