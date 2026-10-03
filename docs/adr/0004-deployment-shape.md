@@ -20,14 +20,15 @@
 
 > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101): `make up` runs on the team
 > project.** When `.env` holds the team project's values, `make up` runs PeerConnect on it: work on
-> `main`, and the defense, where the evaluator is handed that `.env`. With no `.env`, a **fallback**
-> starts instead: Supabase's own Postgres, Auth, Storage and gateway inside Compose, with the local
-> values in `.env.example`. The fallback keeps a fresh clone and bare `docker compose up --build`
-> working (decision 8), and it is where branch work that changes the database runs. Wrong or
-> unusable values stop the boot and name the value; the boot never switches to the fallback by
-> itself. Decisions 1, 8, 9 and 11 and the first Consequence carry a note each. One sentence above
-> is narrowed: besides `main`, a branch whose testing only reads data may run against the team
-> project (decision 8's note).
+> `main`, and the defense, where the evaluator is handed that `.env`. With no `.env`, or with the
+> copy of `.env.example` that `make up` puts in its place, a **fallback** starts instead: Supabase's
+> own Postgres, Auth, Storage and gateway inside Compose, with the local values in `.env.example`.
+> The fallback keeps a fresh clone and bare `docker compose up --build` working (decision 8), and
+> it is where branch work that changes the database runs. Wrong, unusable or mixed values stop the
+> boot and name the problem; the boot never switches to the fallback by itself. Decisions 1, 8, 9
+> and 11 and the first Consequence carry a note each. One sentence above is narrowed: besides
+> `main`, branch work that neither migrates nor writes data may run against the team project
+> (decision 8's note).
 
 The subject's entire requirement for deployment is `document/en.subject.md:314` — a
 containerisation solution (Docker, Podman, or equivalent) that runs with a **single
@@ -51,9 +52,10 @@ nothing the subject asks for.
 
 > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** Kamel, the project's Owner, keeps it
 > active and checks it before each defense. Only he can resume it: Ahmad stays a Developer. There is
-> no keep-alive job and no paid plan. A paused project answers `540`, and the boot check (decision
-> 8's note) stops `make up` with that message. If it is paused on defense day anyway, the last resort
-> is to run without `.env`, on the fallback.
+> no keep-alive job and no paid plan. A paused project answers `540` on its Auth and Storage
+> addresses, and the boot check, the boot chain's first step (decision 8's note), stops `make up`
+> with that message. If it is paused on defense day anyway, the last resort is the fallback: remove
+> `.env`, or replace it with a copy of `.env.example`, and run `make up` again.
 
 > **Qualified 2026-09-20 — the portability claim above is too broad.** The deployment
 > contract is a clean clone using the supported Docker Compose setup, at
@@ -76,14 +78,30 @@ and why there is no `SESSION_SECRET`.
    > [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) settles what replaces the `db` service.
 
    > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101): the fallback replaces `db`.**
-   > `db` becomes Supabase's Postgres image, and three Supabase services join it: **Auth**,
-   > **Storage**, whose files live in a named volume, and Supabase's **gateway**, which serves both
-   > under one `SUPABASE_URL` as the team project does, so the `api` has one code path. That makes
-   > six services, pinned to the versions in Supabase's own Docker setup. Studio, Realtime
-   > (Socket.IO stays), Edge Functions, the image resizer and the pooler are left out; whether
-   > Storage still needs Supabase's REST service is checked when it is built. The four start on
-   > both targets and sit unused when `.env` points at the team project. Only `proxy` publishes a
-   > port, so nothing of the fallback is reachable from outside the machine.
+   > `db` becomes Supabase's Postgres image, and three Supabase services join it:
+   >
+   > - **Auth**, given the five settings [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) asks for as environment
+   >   variables (`GOTRUE_DISABLE_SIGNUP`, `GOTRUE_PASSWORD_MIN_LENGTH`,
+   >   `GOTRUE_EXTERNAL_EMAIL_ENABLED`, `GOTRUE_MAILER_AUTOCONFIRM`,
+   >   `GOTRUE_AUDIT_LOG_DISABLE_POSTGRES`), so it behaves like the team project's;
+   > - **Storage**, whose files live in a named volume;
+   > - Supabase's **gateway**, which serves both under one `SUPABASE_URL` as the team project does,
+   >   so the `api` has one code path.
+   >
+   > That makes six services, or seven if Storage still needs Supabase's REST service, which
+   > Supabase's own Compose file makes it depend on; that is checked when it is built. They are
+   > pinned to the versions in Supabase's own Docker setup. Studio, Realtime (Socket.IO stays), Edge
+   > Functions, the image resizer and the pooler are left out. Only `proxy` publishes a port, so
+   > nothing of the fallback is reachable from outside the machine.
+   >
+   > **The fallback's containers start on both targets and never read the team values.** They sit
+   > unused when `.env` points at the team project. Every service loads the same `env_file` chain,
+   > so the fallback's containers read their settings under names of their own, such as
+   > `POSTGRES_PASSWORD`, which a team `.env` never sets: it overrides only the `api`'s names,
+   > `DATABASE_URL` and the `SUPABASE_*` entries. So the fallback's `db` always initializes from
+   > `.env.example`'s password, a team `.env` cannot leave the fallback unable to start, and the
+   > last resort above still works. The rule that `DATABASE_URL` matches `POSTGRES_USER`,
+   > `POSTGRES_PASSWORD` and `POSTGRES_DB` applies to the fallback alone.
 
 2. **The proxy is what makes single origin structural.** ADR-0003 requires the bundle, the
    HTTP API and the socket.io endpoint to share one scheme, host and port; with a proxy in
@@ -288,22 +306,45 @@ and why there is no `SESSION_SECRET`.
 
    > **Both boot paths still hold, settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** From a
    > fresh clone, `make up` and bare `docker compose up --build` boot on the fallback with
-   > `.env.example`'s values, so nothing above moves. A `.env` holding the team project's values,
-   > later in the same order of sources, points the `api` at the team project instead.
+   > `.env.example`'s values, so nothing above moves. The copy of `.env.example` that `make up`
+   > leaves as `.env` still selects the fallback. A `.env` holding the team project's values, later
+   > in the same order of sources, points the `api` at the team project instead.
    >
-   > **Wrong values stop the boot and say which.** The `api` checks, before it serves anything, that
-   > every value is present and well formed, then that the database, Supabase Auth and Supabase
-   > Storage accept them. A failure ends the boot with the value named, for example
+   > **Wrong values stop the boot and say which.** The check is the boot chain's **first step**,
+   > before `prisma migrate deploy` (decision 11's note), so nothing touches a database before it
+   > passes. In order, it checks that:
+   >
+   > 1. every value is present and well formed;
+   > 2. the values name **one target**: `DATABASE_URL` and `SUPABASE_URL` both point at the
+   >    fallback's services, or both carry the same project ref, in the pooler user
+   >    `postgres.<ref>` and in `https://<ref>.supabase.co`. Compose layers `.env` over
+   >    `.env.example` one variable at a time, so a `.env` that misses one value would otherwise run
+   >    the database on one target and Auth and Storage on the other, each accepting its own values;
+   > 3. Supabase Auth and Supabase Storage accept the keys. They come before the database because
+   >    only their HTTP addresses answer `540` for a paused project; the pooler just refuses the
+   >    connection;
+   > 4. the database accepts `DATABASE_URL`.
+   >
+   > A failure ends the boot with the problem named, for example
    > `Supabase check failed: Auth rejected SUPABASE_SECRET_KEY (401)` or
    > `Supabase check failed: https://<ref>.supabase.co answered 540: the project is paused`. The
    > boot never falls back by itself: an evaluator who believes they are on the team project must
-   > never be quietly on an empty local copy. To use the fallback on purpose, remove `.env`.
+   > never be quietly on an empty local copy. To use the fallback on purpose, remove `.env`, or
+   > replace it with a copy of `.env.example`.
    >
-   > **Which branch runs where.** Branch work whose testing changes the database, a migration or
-   > written data, runs on the fallback; branch work that only reads data may use the team project.
-   > The team values pass between members privately and are never committed. `.gitignore` gains
-   > `.env.*` with `!.env.example`, so a second file such as `.env.team` cannot be committed by
-   > mistake.
+   > **Which branch runs where.** Branch work that changes the database, a migration (which any boot
+   > applies) or written data, runs on the fallback; branch work that only reads data may use the
+   > team project. The team values pass between members privately and are never committed.
+   > `.gitignore` gains `.env.*` with `!.env.example`, so a second file such as `.env.team` cannot
+   > be committed by mistake.
+   >
+   > **The suite never runs with the team values.** `make test` reads the same `.env` as `make up`.
+   > The harness drops and recreates `<database of DATABASE_URL>_test` and truncates between tests
+   > (`docs/spec.md` §16.2), and it will create accounts through Supabase Auth, so on the team values
+   > it would build test databases and test users on the team project, and two members testing at
+   > once would drop each other's. How the suite keeps to the fallback, for example a test target
+   > that passes the fallback's values itself or refuses a `DATABASE_URL` that is not the
+   > fallback's, is [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99)'s.
 
 9. **`.env.example` holds** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
    `DATABASE_URL`, `NODE_ENV`, `PUBLIC_ORIGIN`, `HTTPS_PORT`, `HTTP_PORT`, `ADMIN_EMAIL`,
@@ -326,8 +367,16 @@ and why there is no `SESSION_SECRET`.
    >
    > `ADMIN_PASSWORD`, `MODERATOR_PASSWORD` and `SEED_STUDENT_PASSWORD` are now Supabase Auth
    > passwords, so each must be 8 characters to 72 bytes
-   > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)); today's defaults fit. The `.env` handed to the evaluator holds the team
-   > project's database password and secret key, and it is not rotated after a defense.
+   > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)); today's defaults fit.
+   >
+   > **The handed `.env` is not rotated.** It holds the `postgres` role's password and the secret
+   > key, which bypasses every bucket policy, so whoever has it can read and change every account
+   > and file on the team project, and each evaluator keeps a copy. It is not rotated after a
+   > defense, by Kamel's choice: the `.env` is handed over only so the code runs at the evaluation,
+   > and the team accepts that an evaluator keeps that access afterwards. Rotating stays cheap if
+   > that changes: secret keys can be created and revoked one at a time, and the database password
+   > is one reset.
+   > [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) says who can see the data.
 
    > **Consolidated 2026-09-20 — the authoritative list is fifteen entries, and it is here.**
    > The ten above are what this decision settled; five were added by three later decisions,
@@ -385,13 +434,20 @@ and why there is no `SESSION_SECRET`.
     > once the database is Supabase's, including against the team project.
 
     > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101): the chain is the same on both
-    > targets.** Migrations, then the seed. On the team project, `prisma migrate deploy` and the
-    > `api` share one `DATABASE_URL`, the **session pooler**
-    > (`aws-<n>-eu-central-1.pooler.supabase.com:5432`). The direct connection is IPv6-only on the
-    > free plan, and the transaction pooler drops the lock `prisma migrate` holds. A test on the
+    > targets.** The check (decision 8's note), then migrations, then the seed. On the team
+    > project, `prisma migrate deploy` and the `api` share one `DATABASE_URL`, the **session
+    > pooler** (`aws-<n>-eu-central-1.pooler.supabase.com:5432`). The direct connection is IPv6-only
+    > on the free plan, and the transaction pooler drops the lock `prisma migrate` holds. A test on the
     > team project on 2026-10-03 ran two colliding `SERIALIZABLE` transactions and a deadlock through
     > it: `40001` (*"could not serialize access due to concurrent update"*) and `40P01` (*"deadlock
     > detected"*) came back unchanged, so the Unit of Work's retry works through the pooler.
+    >
+    > **The `api`'s pool is capped.** In session mode the pooler accepts at most the project's
+    > *Pool Size* clients per role and database, and refuses the next with "Max client connections
+    > reached" after a wait. node-postgres's pool opens up to 10 by default
+    > (`src/core/prisma.service.ts`), so two members' stacks on `main` at once, plus
+    > `prisma migrate deploy` and the seed, can go past it. The `api`'s pool is capped so that two
+    > stacks fit, and the build checks the number against the project's Pool Size.
     >
     > **The connection is encrypted and verified.** The same test found that Node does not trust the
     > pooler's certificate (`SELF_SIGNED_CERT_IN_CHAIN`): Supabase signs it with its own certificate
@@ -401,16 +457,34 @@ and why there is no `SESSION_SECRET`.
     > configuration; the build wires it in. The project also enforces SSL on incoming connections, so
     > an unencrypted connection is refused and the boot check names it.
     >
-    > The seed runs once on the team project, at its first boot, and every later boot skips it, so
-    > the data a demo adds stays (ADR-0017 d10). When the seed's fixture changes, the boot's
-    > warning names `make wipe`, which cannot reach a hosted project. A separate reset command, for
-    > example `make reset-team`, empties the team project so the next boot seeds it afresh. Kamel
-    > runs it only when the seed's data changes, never as part of `make up`; how it removes the
-    > seeded Supabase Auth users and files is
-    > [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98)'s. Once the application is public, which
-    > is outside this record, that command would delete real accounts, and the seeded Students share
-    > one known password: hosting revisits both. `make wipe` removes only the local volumes, the
-    > fallback's database and files, and never touches the team project.
+    > **The seed on the team project.** It writes its fixture at the first boot there, and every
+    > later boot skips it until the reset below, so the data a demo adds stays (ADR-0017 d10). That
+    > has a cost the fallback never had, where every evaluator started from an empty volume: each
+    > defense after the first starts from the team project's accumulated data, not from the seed's
+    > idle end state. The four-Round start and the Round 5 demo beat (ADR-0017 d1, and its note on
+    > the open-Round stall panel) hold only after the first seed or a reset. Before each defense,
+    > no Round is left open, since only one can be (ADR-0002 d2).
+    >
+    > **The reset command.** When the seed's fixture changes, a separate command, for example
+    > `make reset-team`, empties the team project so the next boot seeds it afresh. Kamel runs it
+    > only when the seed's data changes, never as part of `make up`. On the team project, the
+    > boot's stale-fixture warning names that command and says Kamel runs it; on the fallback it
+    > keeps naming `make wipe`, which removes only the local volumes, the fallback's database and
+    > files, and never touches the team project. How the reset removes the seeded Supabase Auth
+    > users and files is
+    > [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98)'s, and so is the failed-run path: §14.9's retry
+    > truncates our tables, but the Supabase Auth users and files a failed run created stay, on
+    > both targets.
+    >
+    > **One seed at a time on a shared database.** Truncating "no marker, rows present" is safe
+    > because a database without a marker can hold only a failed attempt's rows (`docs/spec.md`
+    > §14.9). On the team project another stack's seed can be running, or a serving stack writing.
+    > So the seed holds a session advisory lock for its whole run and re-reads the marker once it
+    > has it (the session pooler keeps such locks), and the reset, and the first boot after it, run
+    > with no other stack connected to the team project.
+    >
+    > Once the application is public, which is outside this record, the reset command would delete
+    > real accounts, and the seeded Students share one known password: hosting revisits both.
 
     > **Clarified 2026-09-20 — "from `.env`" describes the original `make up` path, not the
     > seed's only source.** The seed reads the resolved container environment. Bare Compose
@@ -503,7 +577,9 @@ six weeks and three developers.
   > above run on the fallback, from fresh clones, unchanged. Before each defense the handed `.env`
   > is tried as well: `make up` boots on the team project, the bootstrap Admin signs in, one sign-up
   > succeeds, which also confirms that the team project accepts `<id>@peerconnect.invalid` logins
-  > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)), and one avatar upload succeeds.
+  > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)), and one avatar upload succeeds. Those writes stay in the
+  > team project's data, which the defense starts from (decision 11's note), and before the defense
+  > no Round is left open.
 * **The README is now on the critical path**, and carries more than this decision: `:1242`
   wants prerequisites and step-by-step instructions, and II.1.1 wants the team roster and a
   Project Management section. `README.md` does not exist yet.
