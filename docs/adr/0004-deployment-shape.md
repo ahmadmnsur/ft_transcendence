@@ -25,7 +25,8 @@
 > own Postgres, Auth, Storage and gateway inside Compose, with the local values in `.env.example`.
 > The fallback keeps a fresh clone and bare `docker compose up --build` working (decision 8), and
 > it is where branch work runs, under `make dev` and `make local`, which run the fallback
-> whatever `.env` holds: only `make up` reads `.env`. Wrong, unusable or mixed values stop the
+> whatever `.env` holds: of the targets that start a stack, only `make up` reads `.env`. Wrong,
+> unusable or mixed values stop the
 > boot and name the problem; the boot never switches to the fallback by itself. Decisions 1, 8, 9
 > and 11 and the first Consequence carry a note each. One sentence above is narrowed: besides
 > `main`, branch work that neither migrates nor writes data may run against the team project
@@ -106,7 +107,9 @@ and why there is no `SESSION_SECRET`.
    > when `GOTRUE_DB_DATABASE_URL` is unset. Through the shared `env_file` chain a team `.env`
    > would reach them, and overriding a few names in a service's `environment:` would still leave
    > it every other team value. So **the fallback's services load `.env.example` alone, never
-   > `.env`**, while the `api` and `proxy` keep both: this narrows decision 8's 2026-09-20 note.
+   > `.env`**, while under `make up` the `api` and `proxy` keep both: this narrows decision 8's
+   > 2026-09-20 note, and so does the overlay of decision 8's note, under which the `api` and
+   > `proxy` load `.env.example` alone too.
    > The gateway then reads the fallback's own `SUPABASE_*` keys from `.env.example`, and Storage's
    > and Auth's database URLs, which use their own roles, are written in each service's own
    > `environment:` as plain values, with no `${…}`: Compose fills `${…}` from the shell and
@@ -336,9 +339,10 @@ and why there is no `SESSION_SECRET`.
    > fresh clone, `make up` and bare `docker compose up --build` boot on the fallback with
    > `.env.example`'s values, so nothing above moves. The copy of `.env.example` that `make up`
    > leaves as `.env` still selects the fallback. A `.env` holding the team project's values, later
-   > in the same order of sources, points the `api` at the team project instead. The fallback's
-   > services are the one exception to that order: they load `.env.example` alone (decision 1's
-   > note).
+   > in the same order of sources, points the `api` at the team project instead, under `make up`.
+   > The fallback's services are one exception to that order: they load `.env.example` alone
+   > (decision 1's note). The overlay below is the other: under `make local`, `make dev` and
+   > `make test`, the `api` and `proxy` load it alone too.
    >
    > **Wrong values stop the boot and say which.** The check is the boot chain's **first step**,
    > before `prisma migrate deploy` (decision 11's note), so nothing touches a database before it
@@ -364,7 +368,8 @@ and why there is no `SESSION_SECRET`.
    > never be quietly on an empty local copy. To use the fallback on purpose, run `make local` or
    > `make dev`.
    >
-   > **Only `make up` reads `.env`.** A small overlay gives the `api` and `proxy` `.env.example`
+   > **Of the targets that start a stack, only `make up` reads `.env`.** A small overlay gives the
+   > `api` and `proxy` `.env.example`
    > alone with `!override`, the way `compose.dev.yaml` overrides the proxy's ports, and
    > `--env-file .env.example` keeps Compose's own `${…}` off `.env` too. Every target but
    > `make up` uses both, so the targets are:
@@ -381,7 +386,10 @@ and why there is no `SESSION_SECRET`.
    >   (below).
    >
    > Like the others, these targets are conveniences over Compose, and nothing required hides in
-   > them.
+   > them. The rest: `make reset-team` reads `.env` too, to find the team project, and
+   > `make reset-local` reads `.env.example` alone (decision 11's note); `make seed` runs in
+   > whichever stack is up; `make down`, `make wipe` and `make logs` act on the local containers
+   > and volumes.
    >
    > **Which branch runs where.** Branch work runs under `make dev` or `make local`, whatever `.env`
    > holds. Branch work that changes the database, a migration (which any boot applies) or written
@@ -429,8 +437,8 @@ and why there is no `SESSION_SECRET`.
    > team project's data stays between defenses, so one defense can leave a seeded password that the
    > next defense's `.env` no longer opens. The pre-defense run signs in as each of the three
    > (the first Consequence's note), and if a password no longer works, Kamel runs `make reset-team`
-   > before the defense (decision 11's note), which creates the accounts afresh from the `.env`.
-   > Nothing is repaired in place: the handed `.env` never carries a changed password, and nobody
+   > before the defense (decision 11's note), which creates the accounts afresh from the `.env`,
+   > and the three sign-ins run again. Nothing is repaired in place: the handed `.env` never carries a changed password, and nobody
    > needs to know what an evaluator typed.
    >
    > **The handed `.env` is not rotated.** It holds the `postgres` role's password and the secret
@@ -539,6 +547,21 @@ and why there is no `SESSION_SECRET`.
     > - **`make reset-local`** reads `.env.example` alone, as `make local` does.
     > - **`make reset-team`** reads `.env`, prints the project ref it is about to empty, and asks for
     >   it to be typed before it deletes anything.
+    >
+    > **Each checks, then clears the completion record, then deletes.**
+    >
+    > 1. **It checks what it read** with the boot check's steps 1 and 2 (decision 8's note), since
+    >    neither reset runs the boot chain. `make reset-team` refuses unless `DATABASE_URL` and
+    >    `SUPABASE_URL` both name the team project with the same ref, and only then prints that ref
+    >    and asks for it; with no `.env`, or a copy of `.env.example`, it has no ref and refuses.
+    >    `make reset-local` refuses unless both name the fallback. A mixed `.env` would otherwise
+    >    delete Auth users and files on one target and rows on the other.
+    > 2. **Its first write clears the seed's completion record** (`COMMENT ON DATABASE … IS NULL`),
+    >    the way the seed clears a stale one (`docs/spec.md` §14.9). A reset that stops partway
+    >    then leaves no marker over the rows left, and the next boot truncates and seeds from the
+    >    start; with the marker still there, it would log "seed already complete" over half a
+    >    fixture.
+    > 3. Then it deletes.
     >
     > There is no single command for both: wanting a fresh local copy must never empty the shared
     > project, and the reset's local test must never reach it. `make wipe` is different again: it
@@ -674,8 +697,12 @@ six weeks and three developers.
   >
   > If anything an earlier defense changed is in the way, a changed password or a suspended,
   > demoted or removed account, Kamel runs `make reset-team` before the defense (decision 11's
-  > note); nothing is repaired in place. Unless Kamel resets, the run's writes stay in the team
-  > project's data, which the defense starts from, and before the defense no Round is left open.
+  > note); nothing is repaired in place. He then boots with `make up` and runs the three sign-ins
+  > again, so the defense is never the first sign-in after a reset. The sign-up and the upload are
+  > not repeated: they prove the project's settings and buckets, which the reset keeps, and
+  > repeating them would put an account and a file the seed did not make back into the fresh
+  > project. Unless Kamel resets, the run's writes stay in the team project's data, which the
+  > defense starts from, and before the defense no Round is left open.
 * **The README is now on the critical path**, and carries more than this decision: `:1242`
   wants prerequisites and step-by-step instructions, and II.1.1 wants the team roster and a
   Project Management section. `README.md` does not exist yet.
