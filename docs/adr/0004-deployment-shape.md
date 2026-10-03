@@ -103,11 +103,16 @@ and why there is no `SESSION_SECRET`.
    > names: Storage takes its database connection from `DATABASE_URL`, the gateway reads
    > `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`, and Auth falls back to `DATABASE_URL`
    > when `GOTRUE_DB_DATABASE_URL` is unset. Through the shared `env_file` chain a team `.env`
-   > would reach them. So each such name is set in that service's own `environment:`, which wins
-   > over `env_file`, from a fallback-only value with a `${VAR:-default}` of its own, since Compose
-   > reads interpolated values from `.env` alone (decision 8's 2026-09-20 note); or the fallback's
-   > services do not load the `.env` layer at all. The build checks it: with a team `.env` in place,
-   > `docker compose config` shows no team value in any fallback service.
+   > would reach them, and overriding a few names in a service's `environment:` would still leave
+   > it every other team value. So **the fallback's services load `.env.example` alone, never
+   > `.env`**, while the `api` and `proxy` keep both: this narrows decision 8's 2026-09-20 note.
+   > The gateway then reads the fallback's own `SUPABASE_*` keys from `.env.example`, and Storage's
+   > and Auth's database URLs, which use their own roles, are set in each service's own
+   > `environment:`. Any `${…}` there takes a fallback-only name with a `${VAR:-default}` of its
+   > own, since Compose fills `${…}` from the shell and `.env`, never from `env_file`. The build
+   > checks it: with a team `.env` in place, `docker compose config` shows no team value in any
+   > fallback service. `.env` therefore cannot change the fallback's values, which suits a stack
+   > nothing outside the machine can reach.
    >
    > So the fallback's `db` always initializes from `.env.example`'s password, a team `.env`
    > cannot leave the fallback unable to start, and the last resort above still works. The rule
@@ -319,7 +324,9 @@ and why there is no `SESSION_SECRET`.
    > fresh clone, `make up` and bare `docker compose up --build` boot on the fallback with
    > `.env.example`'s values, so nothing above moves. The copy of `.env.example` that `make up`
    > leaves as `.env` still selects the fallback. A `.env` holding the team project's values, later
-   > in the same order of sources, points the `api` at the team project instead.
+   > in the same order of sources, points the `api` at the team project instead. The fallback's
+   > services are the one exception to that order: they load `.env.example` alone (decision 1's
+   > note).
    >
    > **Wrong values stop the boot and say which.** The check is the boot chain's **first step**,
    > before `prisma migrate deploy` (decision 11's note), so nothing touches a database before it
@@ -385,7 +392,12 @@ and why there is no `SESSION_SECRET`.
    > warning above applies: a team `.env` sets all three, to values other than the defaults, before
    > the first boot there. The seed creates the bootstrap Admin, the Peer Moderator and the thirty
    > Students once, at that boot (decision 11's note), and their passwords stay. The evaluator reads
-   > them in the handed `.env`.
+   > them in the handed `.env`. Any account can change its own password in the app, though, and the
+   > team project's data stays between defenses, so one defense can leave a seeded password that the
+   > next defense's `.env` no longer opens. The pre-defense run signs in as each of the three
+   > (the first Consequence's note), and Kamel sets a password that no longer works back to the
+   > `.env`'s value through Supabase Auth's admin update before the defense. The reset is not used
+   > for this: it runs only when the seed's data changes (decision 11's note).
    >
    > **The handed `.env` is not rotated.** It holds the `postgres` role's password and the secret
    > key, which bypasses every bucket policy, so whoever has it can read and change every account
@@ -594,9 +606,11 @@ six weeks and three developers.
 
   > **One more run before each defense, 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** The checks
   > above run on the fallback, from fresh clones, unchanged. Before each defense the handed `.env`
-  > is tried as well: `make up` boots on the team project, the bootstrap Admin signs in, one sign-up
-  > succeeds, which also confirms that the team project accepts `<id>@peerconnect.invalid` logins
-  > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)), and one avatar upload succeeds. Those writes stay in the
+  > is tried as well: `make up` boots on the team project; the bootstrap Admin, the Peer Moderator
+  > and the demo Student sign in with the handed `.env`'s passwords, and one that no longer works is
+  > set back (decision 9's note); one sign-up succeeds, which also confirms that the team project
+  > accepts `<id>@peerconnect.invalid` logins
+  > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)); and one avatar upload succeeds. Those writes stay in the
   > team project's data, which the defense starts from (decision 11's note), and before the defense
   > no Round is left open.
 * **The README is now on the critical path**, and carries more than this decision: `:1242`
