@@ -24,8 +24,8 @@
 > copy of `.env.example` that `make up` puts in its place, a **fallback** starts instead: Supabase's
 > own Postgres, Auth, Storage and gateway inside Compose, with the local values in `.env.example`.
 > The fallback keeps a fresh clone and bare `docker compose up --build` working (decision 8), and
-> it is where branch work that changes the database runs, under `make local`, which runs the
-> fallback whatever `.env` holds. Wrong, unusable or mixed values stop the
+> it is where branch work runs, under `make dev` and `make local`, which run the fallback
+> whatever `.env` holds: only `make up` reads `.env`. Wrong, unusable or mixed values stop the
 > boot and name the problem; the boot never switches to the fallback by itself. Decisions 1, 8, 9
 > and 11 and the first Consequence carry a note each. One sentence above is narrowed: besides
 > `main`, branch work that neither migrates nor writes data may run against the team project
@@ -120,10 +120,11 @@ and why there is no `SESSION_SECRET`.
    > **The fallback's credentials are fixed, and `.env` is for the team values.** Under `make up`
    > the `api` still reads `.env` over `.env.example`, so a `.env` that changes `POSTGRES_*` and
    > `DATABASE_URL` together passes the rule below but points the `api` at a password the
-   > fallback's database never read. The fallback runs under `make local`, which never reads
-   > `.env`, or under `make up` with no `.env` or a copy of `.env.example`, and step 4 of the check
-   > (decision 8's note) says so when it refuses the fallback's database. Changing `POSTGRES_PASSWORD` in `.env` for shared use no longer
-   > applies: shared use is the team project.
+   > fallback's database never read. The fallback runs under `make dev`, `make local` and
+   > `make test`, which never read `.env`, or under `make up` with no `.env` or a copy of
+   > `.env.example`, and step 4 of the check (decision 8's note) says so when it refuses the
+   > fallback's database. Changing `POSTGRES_PASSWORD` in `.env` for shared use no longer applies:
+   > shared use is the team project.
    >
    > So the fallback's `db` always initializes from `.env.example`'s password, a team `.env`
    > cannot leave the fallback unable to start, and the last resort above still works. The rule
@@ -352,40 +353,51 @@ and why there is no `SESSION_SECRET`.
    > 3. Supabase Auth and Supabase Storage accept the keys. They come before the database because
    >    only their HTTP addresses answer `540` for a paused project; the pooler just refuses the
    >    connection;
-   > 4. the database accepts `DATABASE_URL`. On the fallback, a refusal says to use `make local`, or
-   >    to remove `.env` or replace it with a copy of `.env.example`, since the fallback's database
-   >    never reads `.env` (decision 1's note).
+   > 4. the database accepts `DATABASE_URL`. On the fallback, a refusal says to use `make dev` or
+   >    `make local`, or to remove `.env` or replace it with a copy of `.env.example`, since the
+   >    fallback's database never reads `.env` (decision 1's note).
    >
    > A failure ends the boot with the problem named, for example
    > `Supabase check failed: Auth rejected SUPABASE_SECRET_KEY (401)` or
    > `Supabase check failed: https://<ref>.supabase.co answered 540: the project is paused`. The
    > boot never falls back by itself: an evaluator who believes they are on the team project must
-   > never be quietly on an empty local copy. To use the fallback on purpose, run `make local`.
+   > never be quietly on an empty local copy. To use the fallback on purpose, run `make local` or
+   > `make dev`.
    >
-   > **`make local` always runs the fallback, whatever `.env` holds.** A small overlay gives the
-   > `api` and `proxy` `.env.example` alone with `!override`, the way `compose.dev.yaml` overrides
-   > the proxy's ports, and `--env-file .env.example` keeps Compose's own `${…}` off `.env` too. So
-   > the two targets are:
+   > **Only `make up` reads `.env`.** A small overlay gives the `api` and `proxy` `.env.example`
+   > alone with `!override`, the way `compose.dev.yaml` overrides the proxy's ports, and
+   > `--env-file .env.example` keeps Compose's own `${…}` off `.env` too. Every target but
+   > `make up` uses both, so the targets are:
    >
-   > - **`make up`:** `.env`'s target, the team project for the members and the evaluator; with no
-   >   `.env`, the fallback, so a fresh clone and bare `docker compose up --build` still work;
-   > - **`make local`:** always the fallback. Like the other targets it is a convenience over
-   >   Compose, and nothing required hides in it.
+   > - **`make up`:** the production image, on `.env`'s target: the team project for `main` and the
+   >   defense, and the fallback with no `.env`, so a fresh clone and bare
+   >   `docker compose up --build` still work;
+   > - **`make local`:** the production image, always on the fallback: destructive tests, the
+   >   reset's local runs, and the last resort on defense day;
+   > - **`make dev`:** the dev image with hot reload (decision 4), always on the fallback. This is
+   >   where branches are coded, and it runs the dev boot chain, migrations and seed included;
+   > - **`make test`:** the same files as `make dev`, `compose.yaml`, `compose.dev.yaml` and the
+   >   overlay, with `--env-file .env.example`, since the suite needs the `api` dev container
+   >   (below).
    >
-   > **Which branch runs where.** Branch work that changes the database, a migration (which any boot
-   > applies) or written data, runs under `make local`, whatever `.env` holds; branch work that
-   > only reads data may use `make up`. The team values pass between members privately and are
-   > never committed.
-   > `.gitignore` gains `.env.*` with `!.env.example`, so a second file such as `.env.team` cannot
-   > be committed by mistake.
+   > Like the others, these targets are conveniences over Compose, and nothing required hides in
+   > them.
+   >
+   > **Which branch runs where.** Branch work runs under `make dev` or `make local`, whatever `.env`
+   > holds. Branch work that changes the database, a migration (which any boot applies) or written
+   > data, never runs `make up`; branch work that only reads data may, to see the team project's
+   > data, without hot reload. The team values pass between members privately and are never
+   > committed. `.gitignore` gains `.env.*` with `!.env.example`, so a second file such as
+   > `.env.team` cannot be committed by mistake.
    >
    > **The suite never runs with the team values.** The harness drops and recreates
    > `<database of DATABASE_URL>_test` and truncates between tests (`docs/spec.md` §16.2), and it
    > will create accounts through Supabase Auth, so on the team values it would build test
    > databases and test users on the team project, and two members testing at once would drop each
    > other's. `make test` runs the suite in place of the boot chain, so the check above never runs
-   > there. So **`make test` runs on `make local`'s overlay**, reading `.env.example` alone for
-   > both `DATABASE_URL` and `SUPABASE_URL`. That settles the guard this note first left to
+   > there. So **`make test` runs on `make dev`'s files plus the overlay above**, keeping the `api`
+   > dev container with its dev dependencies and `nginx` (§16.2), and reads `.env.example` alone
+   > for both `DATABASE_URL` and `SUPABASE_URL`. That settles the guard this note first left to
    > [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99); what else the suite and CI need stays that ticket's.
 
 9. **`.env.example` holds** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
@@ -422,8 +434,9 @@ and why there is no `SESSION_SECRET`.
    > - **the new password is known**, for example the evaluator says what they set: the handed
    >   `.env` carries it, replacing `ADMIN_PASSWORD` or `MODERATOR_PASSWORD`, or as a comment line
    >   for the demo Student, since `SEED_STUDENT_PASSWORD` is the password of all thirty Students.
-   >   Nothing on the team project reads these three after the first seed, so the new value harms
-   >   nothing;
+   >   Nothing reads the three values again until `make reset-team` creates the accounts afresh
+   >   from them. A carried Admin or Peer Moderator value then simply stays in force, and the demo
+   >   Student's comment line is dropped, since the reset gives it `SEED_STUDENT_PASSWORD` again;
    > - **nobody knows it:** Kamel sets it back to the `.env`'s value through Supabase Auth's admin
    >   update. Setting it outside the app skips ADR-0003's session deletion, which is harmless here:
    >   the sessions left are the earlier evaluator's own, and they keep the `.env` anyway.
