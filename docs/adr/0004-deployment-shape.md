@@ -107,12 +107,20 @@ and why there is no `SESSION_SECRET`.
    > it every other team value. So **the fallback's services load `.env.example` alone, never
    > `.env`**, while the `api` and `proxy` keep both: this narrows decision 8's 2026-09-20 note.
    > The gateway then reads the fallback's own `SUPABASE_*` keys from `.env.example`, and Storage's
-   > and Auth's database URLs, which use their own roles, are set in each service's own
-   > `environment:`. Any `${…}` there takes a fallback-only name with a `${VAR:-default}` of its
-   > own, since Compose fills `${…}` from the shell and `.env`, never from `env_file`. The build
-   > checks it: with a team `.env` in place, `docker compose config` shows no team value in any
-   > fallback service. `.env` therefore cannot change the fallback's values, which suits a stack
-   > nothing outside the machine can reach.
+   > and Auth's database URLs, which use their own roles, are written in each service's own
+   > `environment:` as plain values, with no `${…}`: Compose fills `${…}` from the shell and
+   > `.env`, never from `env_file`, so any `${…}` there would let `.env` change it. The fallback's
+   > values therefore come only from `.env.example` and `compose.yaml`, and `.env` cannot change
+   > them, which suits a stack nothing outside the machine can reach. The build checks it: with a
+   > team `.env` in place, `docker compose config` shows no team value in any fallback service.
+   >
+   > **The fallback's credentials are fixed, and `.env` is for the team values.** Under `make up`
+   > the `api` still reads `.env` over `.env.example`, so a `.env` that changes `POSTGRES_*` and
+   > `DATABASE_URL` together passes the rule below but points the `api` at a password the
+   > fallback's database never read. The fallback runs with no `.env`, or with a copy of
+   > `.env.example` as `.env`, and step 4 of the check (decision 8's note) says so when it refuses
+   > the fallback's database. Changing `POSTGRES_PASSWORD` in `.env` for shared use no longer
+   > applies: shared use is the team project.
    >
    > So the fallback's `db` always initializes from `.env.example`'s password, a team `.env`
    > cannot leave the fallback unable to start, and the last resort above still works. The rule
@@ -341,7 +349,9 @@ and why there is no `SESSION_SECRET`.
    > 3. Supabase Auth and Supabase Storage accept the keys. They come before the database because
    >    only their HTTP addresses answer `540` for a paused project; the pooler just refuses the
    >    connection;
-   > 4. the database accepts `DATABASE_URL`.
+   > 4. the database accepts `DATABASE_URL`. On the fallback, a refusal says to remove `.env` or
+   >    replace it with a copy of `.env.example`, since the fallback's database never reads `.env`
+   >    (decision 1's note).
    >
    > A failure ends the boot with the problem named, for example
    > `Supabase check failed: Auth rejected SUPABASE_SECRET_KEY (401)` or
