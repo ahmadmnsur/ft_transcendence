@@ -428,18 +428,10 @@ and why there is no `SESSION_SECRET`.
    > them in the handed `.env`. Any account can change its own password in the app, though, and the
    > team project's data stays between defenses, so one defense can leave a seeded password that the
    > next defense's `.env` no longer opens. The pre-defense run signs in as each of the three
-   > (the first Consequence's note). For a password that no longer works, Kamel either runs the
-   > reset (decision 11's note) or keeps the data and fixes it in place:
-   >
-   > - **the new password is known**, for example the evaluator says what they set: the handed
-   >   `.env` carries it, replacing `ADMIN_PASSWORD` or `MODERATOR_PASSWORD`, or as a comment line
-   >   for the demo Student, since `SEED_STUDENT_PASSWORD` is the password of all thirty Students.
-   >   Nothing reads the three values again until `make reset-team` creates the accounts afresh
-   >   from them. A carried Admin or Peer Moderator value then simply stays in force, and the demo
-   >   Student's comment line is dropped, since the reset gives it `SEED_STUDENT_PASSWORD` again;
-   > - **nobody knows it:** Kamel sets it back to the `.env`'s value through Supabase Auth's admin
-   >   update. Setting it outside the app skips ADR-0003's session deletion, which is harmless here:
-   >   the sessions left are the earlier evaluator's own, and they keep the `.env` anyway.
+   > (the first Consequence's note), and if a password no longer works, Kamel runs `make reset-team`
+   > before the defense (decision 11's note), which creates the accounts afresh from the `.env`.
+   > Nothing is repaired in place: the handed `.env` never carries a changed password, and nobody
+   > needs to know what an evaluator typed.
    >
    > **The handed `.env` is not rotated.** It holds the `postgres` role's password and the secret
    > key, which bypasses every bucket policy, so whoever has it can read and change every account
@@ -555,8 +547,9 @@ and why there is no `SESSION_SECRET`.
     > **Kamel runs `make reset-team` whenever he chooses**, never as part of `make up`:
     >
     > - when the seed's fixture changes;
-    > - when the pre-defense run finds a seeded account an earlier defense broke. A removed one can
-    >   come back only this way, since Removal has no reinstate (ADR-0008);
+    > - when the pre-defense run finds anything an earlier defense changed in the way: a changed
+    >   password, or a suspended, demoted or removed account. The reset is the one remedy for all of
+    >   them, and the only one for a removed account, since Removal has no reinstate (ADR-0008);
     > - whenever a defense should start from the seed's end state.
     >
     > So the data stays between defenses by default, but nothing relies on it: anything a demo
@@ -679,11 +672,10 @@ six weeks and three developers.
   > also confirms that the team project accepts `<id>@peerconnect.invalid` logins
   > ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)); and one avatar upload succeeds.
   >
-  > What an earlier defense broke is fixed before the defense, by the reset (decision 11's note)
-  > or in place: a password that no longer works as decision 9's note says, a suspended account
-  > reinstated, a demoted Peer Moderator given the role back. A removed account needs the reset.
-  > Unless Kamel resets, the run's writes stay in the team project's data, which the defense
-  > starts from, and before the defense no Round is left open.
+  > If anything an earlier defense changed is in the way, a changed password or a suspended,
+  > demoted or removed account, Kamel runs `make reset-team` before the defense (decision 11's
+  > note); nothing is repaired in place. Unless Kamel resets, the run's writes stay in the team
+  > project's data, which the defense starts from, and before the defense no Round is left open.
 * **The README is now on the critical path**, and carries more than this decision: `:1242`
   wants prerequisites and step-by-step instructions, and II.1.1 wants the team roster and a
   Project Management section. `README.md` does not exist yet.
