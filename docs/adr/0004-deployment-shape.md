@@ -371,8 +371,8 @@ and why there is no `SESSION_SECRET`.
    > **Of the targets that start a stack, only `make up` reads `.env`.** A small overlay gives the
    > `api` and `proxy` `.env.example`
    > alone with `!override`, the way `compose.dev.yaml` overrides the proxy's ports, and
-   > `--env-file .env.example` keeps Compose's own `${…}` off `.env` too. Every target but
-   > `make up` uses both, so the targets are:
+   > `--env-file .env.example` keeps Compose's own `${…}` off `.env` too. Every other target that
+   > starts a stack uses both, so the targets are:
    >
    > - **`make up`:** the production image, on `.env`'s target: the team project for `main` and the
    >   defense, and the fallback with no `.env`, so a fresh clone and bare
