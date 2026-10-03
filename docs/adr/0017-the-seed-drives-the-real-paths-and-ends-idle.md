@@ -428,8 +428,8 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     >   beat of the open-Round stall panel hold only after the first seed or a reset. Before a
     >   defense, no Round is left open.
     > - **The older-fixture remedy.** The boot's warning names `make wipe`, which empties only local
-    >   volumes. On the team project it names a separate reset command instead, which empties the
-    >   project so the next boot seeds it afresh. Kamel runs it whenever he chooses, never as part
+    >   volumes. On the team project it names `make reset-team` instead, which empties the project
+    >   so the next boot seeds it afresh. Kamel runs it whenever he chooses, never as part
     >   of `make up`: when the fixture changes, when an earlier defense broke a seeded account, or
     >   when a defense should start from this decision's end state.
     > - **One seed at a time.** The truncate-and-retry above assumes no other stack shares the

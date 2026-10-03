@@ -110,9 +110,11 @@ and why there is no `SESSION_SECRET`.
    > The gateway then reads the fallback's own `SUPABASE_*` keys from `.env.example`, and Storage's
    > and Auth's database URLs, which use their own roles, are written in each service's own
    > `environment:` as plain values, with no `${…}`: Compose fills `${…}` from the shell and
-   > `.env`, never from `env_file`, so any `${…}` there would let `.env` change it. The fallback's
-   > values therefore come only from `.env.example` and `compose.yaml`, and `.env` cannot change
-   > them, which suits a stack nothing outside the machine can reach. The build checks it: with a
+   > `.env`, never from `env_file`, so any `${…}` there would let `.env` change it. The two URLs
+   > repeat `.env.example`'s `POSTGRES_PASSWORD`, because Supabase's Postgres image gives Storage's
+   > and Auth's roles that password when it initializes, so the two files change together. The
+   > fallback's values therefore come only from `.env.example` and `compose.yaml`, and `.env`
+   > cannot change them, which suits a stack nothing outside the machine can reach. The build checks it: with a
    > team `.env` in place, `docker compose config` shows no team value in any fallback service.
    >
    > **The fallback's credentials are fixed, and `.env` is for the team values.** Under `make up`
@@ -522,11 +524,22 @@ and why there is no `SESSION_SECRET`.
     > open-Round stall panel) hold only after the first seed or a reset. Before each defense,
     > no Round is left open, since only one can be (ADR-0002 d2).
     >
-    > **The reset command.** A separate command, for example `make reset-team`, empties the team
-    > project so the next boot seeds it afresh: our tables, **every** Supabase Auth user and
-    > **every** file in PeerConnect's buckets there, not only what the seed made, since pre-defense
-    > checks and defenses add accounts and files too. **Kamel runs it whenever he chooses**, never
-    > as part of `make up`:
+    > **Two reset commands, one fixed target each.** `make reset-team` empties the team project and
+    > `make reset-local` the fallback, so the next boot seeds afresh. Each deletes the rows of our
+    > tables (the tables and migrations stay), **every** Supabase Auth user and **every** file in
+    > PeerConnect's buckets, not only what the seed made, since pre-defense checks and defenses add
+    > accounts and files too. Each leaves the project or the stack itself, its settings, the
+    > buckets and the keys.
+    >
+    > - **`make reset-local`** reads `.env.example` alone, as `make local` does.
+    > - **`make reset-team`** reads `.env`, prints the project ref it is about to empty, and asks for
+    >   it to be typed before it deletes anything.
+    >
+    > There is no single command for both: wanting a fresh local copy must never empty the shared
+    > project, and the reset's local test must never reach it. `make wipe` is different again: it
+    > drops the fallback's volumes without running the reset's deletions through Auth and Storage.
+    >
+    > **Kamel runs `make reset-team` whenever he chooses**, never as part of `make up`:
     >
     > - when the seed's fixture changes;
     > - when the pre-defense run finds a seeded account an earlier defense broke. A removed one can
@@ -537,15 +550,14 @@ and why there is no `SESSION_SECRET`.
     > needs comes from the seed, and the reset deletes everything else, rehearsal sign-ups, an
     > earlier defense's accounts and files, and test data from work on `main`.
     >
-    > **It is proven on the fallback first,** under `make local`: boot; add a sign-up and an avatar
-    > the seed did not make; reset; boot again; check that only the seed's accounts and files are
-    > left, with four closed Rounds and none open. On the team project it asks for the project ref
-    > before it deletes anything.
+    > **It is proven on the fallback first,** with `make reset-local` under `make local`: boot; add
+    > a sign-up and an avatar the seed did not make; reset; boot again; check that only the seed's
+    > accounts and files are left, with four closed Rounds and none open.
     >
-    > On the team project, the
-    > boot's stale-fixture warning names that command and says Kamel runs it; on the fallback it
-    > keeps naming `make wipe`, which removes only the local volumes, the fallback's database and
-    > files, and never touches the team project. How the reset removes them is
+    > On the team project, the boot's stale-fixture warning names `make reset-team` and says Kamel
+    > runs it; on the fallback it keeps naming `make wipe`, which removes only the local volumes,
+    > the fallback's database and files, and never touches the team project. How the reset removes
+    > them is
     > [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98)'s, and so is the failed-run path: §14.9's retry
     > truncates our tables, but the Supabase Auth users and files a failed run created stay, on
     > both targets.
