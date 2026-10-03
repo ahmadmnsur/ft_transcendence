@@ -417,6 +417,28 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     > now meets it. While the seed is built slice by slice, a record certifies the fixture version
     > that wrote it, and the four-Round end state binds from the PR that completes it (§14.9, §16.5).
 
+    > **On the team project, 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101).** `make up` now runs
+    > on the hosted team project when `.env` holds its values. There the seed writes its fixture at
+    > the first boot, and every later boot skips it until a reset empties the project, so the Rounds
+    > a demo adds stay. Three things this decision took from an empty volume per evaluator no longer
+    > hold there:
+    >
+    > - **Later defenses do not start from decision 1's end state.** Each defense after the first
+    >   starts from the team project's accumulated data, so the four-Round idle start and the Round 5
+    >   beat of the open-Round stall panel hold only after the first seed or a reset. Before a
+    >   defense, no Round is left open.
+    > - **The older-fixture remedy.** The boot's warning names `make wipe`, which empties only local
+    >   volumes. On the team project it names `make reset-team` instead, which empties the project
+    >   so the next boot seeds it afresh. Kamel runs it whenever he chooses, never as part
+    >   of `make up`: when the fixture changes, when an earlier defense broke a seeded account, or
+    >   when a defense should start from this decision's end state.
+    > - **One seed at a time.** The truncate-and-retry above assumes no other stack shares the
+    >   database. On the team project the seed holds a session advisory lock for its whole run, and
+    >   the reset and the first boot after it run with no other stack connected.
+    >
+    > ADR-0004 d11's note has the detail. On the fallback, the local stack a fresh clone boots,
+    > nothing changes.
+
 11. **Presence cannot be seeded, and the demo script must account for it.** Presence is live,
     process-local state; it does not survive a restart, there is no column, and **nothing records
     when a Student was last online** (ADR-0003, `CONTEXT.md`). Every seeded Student therefore
