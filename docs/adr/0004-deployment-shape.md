@@ -507,6 +507,15 @@ and why there is no `SESSION_SECRET`.
    > seeded Students — without it an evaluator can reach the platform only as staff, and the
    > Student view is where the product lives.
 
+   > **Updated 2026-10-04 by [Local Supabase fallback: Compose services, make targets, environment check and CI](https://github.com/ahmadmnsur/ft_transcendence/issues/121).**
+   > `.env.example` now has **28 entries**. The fifteen above remain, and the added entries are
+   > `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ANON_KEY`,
+   > `SERVICE_ROLE_KEY`, `GOTRUE_JWT_KEYS`, `JWT_JWKS`, `PGRST_JWT_SECRET`, `GOTRUE_JWT_SECRET`,
+   > `AUTH_JWT_SECRET`, `SERVICE_KEY`, `ANON_KEY_ASYMMETRIC` and `SERVICE_ROLE_KEY_ASYMMETRIC`.
+   > Auth, Storage and PostgREST use their image-specific aliases for the same fixed local signing
+   > secret or keys. All twenty-eight values belong to the fallback; the team project's values
+   > belong in `.env`.
+
 10. **There is no `SESSION_SECRET`, deliberately.** ADR-0003 decision 1 makes the session id
     opaque with the database row as the authority, so there is nothing to sign. Recorded
     because "every app has one" is a reflex, and a variable that does nothing is worse than

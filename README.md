@@ -4,11 +4,13 @@
 
 ### Prerequisites
 
-Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, and Node 22 (22.12 or a later 22.x release). Docker runs the three services. Node on the host runs only the Vite development server used by the dev overlay.
+Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, and Node 22 (22.12 or a later 22.x release). Docker runs the application, proxy and local Supabase services. Node on the host runs only the Vite development server used by the dev overlay.
 
 ### The `.env` model
 
-`.env.example` is committed and holds working defaults for a local copy. Copy it to `.env` to override locally; values in `.env` win over `.env.example`. Both boot paths below work with no `.env` file present, because every service loads `.env.example` as a required file and `.env` as an optional one, and the two interpolated ports carry their own Compose defaults. For any shared use, change `POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `MODERATOR_PASSWORD` and `SEED_STUDENT_PASSWORD`. `DATABASE_URL` carries the same user, password and database as `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`, so change them together: boot refuses a mismatch. Postgres applies `POSTGRES_*` only to an empty data directory, so after changing them on an existing database run `make wipe` first. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it.
+`.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage, REST and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for its two interpolated ports.
+
+The fallback credentials are fixed. Keep the team project's `DATABASE_URL`, `SUPABASE_URL`, keys and three staff or seed passwords in the gitignored `.env`. Until the remaining checks and TLS land, a team `.env` stops the boot before any database connection; use `make local` or `make dev` for branch work. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory.
 
 ### Boot commands
 
@@ -26,10 +28,16 @@ make up
 
 Both serve the application at `https://localhost:8443`. Port 8080 only redirects to it.
 
+To run the production image on the fallback regardless of `.env`:
+
+```bash
+make local
+```
+
 Development path:
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up --build
+docker compose --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml up --build
 ```
 
 or:
@@ -46,7 +54,7 @@ The production proxy uses a self-signed certificate generated at image build tim
 
 ### Dev overlay and host Vite
 
-`make dev` brings up the base services plus the overlay only. It does not start Vite. Run Vite on the host as a separate step. From a fresh clone, install the web dependencies first:
+`make dev` brings up the base services with the dev and local overlays. It does not start Vite. Run Vite on the host as a separate step. From a fresh clone, install the web dependencies first:
 
 ```bash
 npm --prefix web ci
@@ -63,7 +71,7 @@ Replace `<address>` with the verified host-side bridge address, the address the 
 Find and verify the address in this order. Resolve the name from inside the dev proxy container:
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml exec proxy getent hosts host.docker.internal
+docker compose --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml exec proxy getent hosts host.docker.internal
 ```
 
 Confirm the host owns that address:
@@ -106,7 +114,7 @@ make dev
 or replace the volume in one step:
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up --build -V
+docker compose --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml up --build -V
 ```
 
 After a change to `web/package.json` or `web/package-lock.json`, run `npm --prefix web ci` again before starting host Vite.
@@ -119,20 +127,27 @@ Each target is convenience over Compose. The full command runs as written.
 make up
 # make env, then docker compose up --build
 
+make local
+# docker compose --env-file .env.example -f compose.yaml -f compose.local.yaml up --build
+
 make dev
-# make env, then docker compose -f compose.yaml -f compose.dev.yaml up --build
+# docker compose --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml up --build
 
 make down
 # docker compose down
 
 make wipe
-# docker compose down --volumes --remove-orphans
+# docker compose down --volumes --remove-orphans (includes the Storage volume)
 
 make seed
 # docker compose exec api npx prisma db seed --config prisma.config.ts
 
 make test
-# docker compose -f compose.yaml -f compose.dev.yaml run --rm api npx vitest run
+# docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml down --volumes --remove-orphans
+# docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml build api
+# docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml up -d db auth rest storage api-gw
+# docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml run --rm api npx vitest run
+# The down command runs again on every exit, even after failure. Run one copy at a time; proxy is never started.
 
 make logs
 # docker compose logs -f

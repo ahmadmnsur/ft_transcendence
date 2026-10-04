@@ -226,15 +226,17 @@ data after the command above. *(ADR-0005 Consequences, added 2026-09-20.)*
 the suite is thin on purpose and stays that way — see
 [ADR-0016](docs/adr/0016-a-thin-suite-over-what-fails-silently.md).
 
-**Vitest, one runner, one command.** Integration tests against a real Postgres in the container
-that already exists. No unit/integration/e2e pyramid, and no coverage target.
+**Vitest, one runner, one command.** Integration tests against Supabase's own Postgres, Auth and
+Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no coverage target.
 
-> **How it runs, 2026-09-24** ([`docs/spec.md`](docs/spec.md) §16.2, §16.4). The command is
-> `npx vitest run`; locally, run it as **`make test`**, which starts a fresh dev-overlay `api`
-> container beside `db`. The suite creates its own `<database>_test` database and never touches your
-> development data. It runs `prisma generate` first, so it works on a fresh clone. The file-upload
-> tests go through a real `nginx` using the repository's own `proxy/snippets/api.conf`. CI runs the
-> same command on the runner.
+> **How it runs, updated 2026-10-04** ([ADR-0004](docs/adr/0004-deployment-shape.md) d8;
+> [`docs/spec.md`](docs/spec.md) §16.2, §16.4). The command is `npx vitest run`; locally, run it as
+> **`make test`**. That target starts a separate `peerconnect-test` copy of the local Supabase
+> services from empty, runs a fresh `api` dev container, then removes its containers and volumes
+> even if the suite fails. Run one copy at a time. The suite creates its own `<database>_test`
+> database inside that copy and runs `prisma generate` first. The file-upload tests go through a
+> real `nginx` using the repository's own `proxy/snippets/api.conf`. CI uses the same isolated copy
+> for migration, seed and suite checks.
 
 **The closed list of what is covered:**
 
@@ -505,11 +507,13 @@ demo.
 
 ## Environment
 
-`.env` is gitignored; `.env.example` carries working development defaults. Services load
-`.env.example` first as their required `env_file` and optional `.env` second, so local values
-override the committed defaults. Values used for Compose interpolation still carry their own
-Compose-level defaults. `make up` copies `.env.example` into place when `.env` is absent; bare
-Compose ignores the absent optional file — see
+`.env` is gitignored; `.env.example` carries fixed values for the local Supabase fallback. Its
+Postgres, Auth, Storage, REST and gateway services load `.env.example` alone. `make local`,
+`make dev` and `make test` give `api` and `proxy` that file alone as well, including Compose
+interpolation. Among Makefile targets, only `make up` reads an optional `.env` for `api` and
+`proxy`, after `.env.example`; it copies the example into place if absent. Bare Compose uses the
+same base file and works without `.env` because its interpolated ports have defaults. Team project
+values belong in `.env`, but team boot is refused until the remaining checks and TLS land — see
 [ADR-0004](docs/adr/0004-deployment-shape.md). Develop through nginx at
 `http://localhost:8081`, published as `127.0.0.1:8081`; LAN access is outside the contract.
 
