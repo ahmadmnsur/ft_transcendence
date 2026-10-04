@@ -107,6 +107,12 @@ done when the PR template already is one.**
    > deterministically through one named `checkpoint()` in the Unit of Work, a no-op in production.
    > The tests still bind outcomes.
 
+   > **Extended 2026-10-04 by [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99): one pause sits outside a
+   > transaction.** The password change reaches the same test barrier, by name, between its first
+   > sign-out and Supabase's admin update, a no-op in production. The race `12-sign-in` needs has
+   > no transaction there to hold (decision 1's note of 2026-10-04). Every other race still goes
+   > through `checkpoint`.
+
    > **Corrected 2026-09-21 by ADR-0007.** The equal-timestamp publication case remains in scope,
    > but `(published_at, id)` is no longer the expected order. The test must assert a unique,
    > durable publication order that respects completed-before-started transactions and gives
@@ -275,8 +281,14 @@ done when the PR template already is one.**
    >   right password, the sanction's own message. The wrong order tells anyone who knows the email,
    >   and no demo step types a wrong password for a sanctioned account.
    > - **A completed password change leaves no session the old password opened.** A sign-in with
-   >   the old password racing the change, in each order the Unit of Work's `checkpoint` can stage,
-   >   ends refused or signed out. The change's second sign-out looks redundant; without it, or
+   >   the old password racing the change ends refused or signed out in every order the test
+   >   stages: held at its own transaction's `checkpoint` and the change's, and run whole between
+   >   the change's first sign-out and Supabase's admin update. Only the change's second sign-out
+   >   catches that last order, and no transaction spans it, so `checkpoint` cannot hold it. The
+   >   password change therefore reaches the same test barrier there, by name, a no-op in
+   >   production like `checkpoint` ([`docs/spec.md`](../spec.md) §3.6.4 gains it). The test holds
+   >   the change at that point, runs a whole sign-in with the old password, releases the change
+   >   and asserts the session is gone. The second sign-out looks redundant; without it, or
    >   without the `password_version` re-check, that session survives while the Student is told
    >   they are signed out everywhere.
    >
@@ -764,12 +776,15 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
   >   database, not to `<db>_test`, so sharing `make dev`'s containers would leave every test's
   >   users and files in the developer's data, and a run from empty means what CI's run means.
   > - **The harness keeps `<db>_test`** and never empties the main database, so a suite run inside
-  >   a `make dev` container still leaves the developer's data alone. Our tables therefore never sit
-  >   beside Supabase's `auth` and `storage` schemas during tests, and none of them may reference
-  >   those schemas by foreign key.
+  >   a `make dev` container leaves the developer's tables alone. The Supabase users and files that
+  >   run makes still go to the developer's stack and stay there until `make reset-local` or
+  >   `make wipe`, since only `make test`'s copy is thrown away. Our tables never sit beside
+  >   Supabase's `auth` and `storage` schemas during tests, and none of them may reference those
+  >   schemas by foreign key.
   > - **The harness refuses any target but the fallback.** Its first step, before any connection,
   >   runs the check `make reset-local` runs (ADR-0004 d11's note): `DATABASE_URL` and
-  >   `SUPABASE_URL` must both name the fallback, or the run stops and names the value. `make test`
+  >   `SUPABASE_URL` must both name the fallback, or the run stops and names the variable and the
+  >   host it points at, never the password. `make test`
   >   reads `.env.example` alone, but `npx vitest run` can be typed anywhere, and
   >   `prisma.config.ts` loads `.env` by itself.
   > - **Every test account is made the real way**: a Student through the sign-up code (Supabase

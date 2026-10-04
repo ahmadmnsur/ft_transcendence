@@ -414,8 +414,11 @@ and why there is no `SESSION_SECRET`.
    > Supabase Auth and Storage write each test's users and files to their own database, which would
    > otherwise be the developer's. The copy starts from empty, any copy an interrupted run left is
    > removed first, and the copy is deleted with its volumes when the run ends, so `make wipe`
-   > never needs to reach it. It never starts `proxy`, so it publishes no port. CI runs the same
-   > copy (ADR-0016 d8's note of 2026-10-04). Like the other targets it hides nothing required: it
+   > never needs to reach it. **One `make test` runs at a time per machine:** every copy has the
+   > same project name, so a second run's first step would delete a running copy, and the first run
+   > would fail partway with errors that look real. It never starts `proxy`, so it publishes no
+   > port. CI runs the same copy (ADR-0016 d8's note of 2026-10-04). Like the other targets it hides
+   > nothing required: it
    > is Compose with a project name. The harness itself still refuses any `DATABASE_URL` or
    > `SUPABASE_URL` that is not the fallback's, with the check `make reset-local` runs, since
    > `npx vitest run` can be typed outside `make test` and `prisma.config.ts` loads `.env` itself.
