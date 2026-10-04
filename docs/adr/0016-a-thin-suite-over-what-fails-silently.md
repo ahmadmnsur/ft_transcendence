@@ -288,9 +288,10 @@ done when the PR template already is one.**
    >   password change therefore reaches the same test barrier there, by name, a no-op in
    >   production like `checkpoint` ([`docs/spec.md`](../spec.md) §3.6.4 gains it). The test holds
    >   the change at that point, runs a whole sign-in with the old password, releases the change
-   >   and asserts the session is gone. The second sign-out looks redundant; without it, or
-   >   without the `password_version` re-check, that session survives while the Student is told
-   >   they are signed out everywhere.
+   >   and asserts the session is gone. Each guard looks redundant and has its own order. Without
+   >   the second sign-out, the sign-in run in that gap keeps its session. Without the
+   >   `password_version` re-check, a sign-in held at its own `checkpoint` until the change ends
+   >   keeps its session. Either way the Student is told they are signed out everywhere.
    >
    > Two other account behaviours stay untested. A concurrent duplicate sign-up that fails to delete
    > its spare Supabase Auth user leaves one that holds no real email and matches no Student, so it
