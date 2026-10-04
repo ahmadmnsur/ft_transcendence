@@ -508,7 +508,7 @@ demo.
 ## Environment
 
 `.env` is gitignored; `.env.example` carries fixed values for the local Supabase fallback. Its
-Postgres, Auth, Storage, REST and gateway services load `.env.example` alone. `make local`,
+Postgres, Auth, Storage and gateway services load `.env.example` alone. `make local`,
 `make dev` and `make test` give `api` and `proxy` that file alone as well, including Compose
 interpolation. Among Makefile targets, only `make up` reads an optional `.env` for `api` and
 `proxy`, after `.env.example`; it copies the example into place if absent. Bare Compose uses the

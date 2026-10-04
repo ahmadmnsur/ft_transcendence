@@ -19,7 +19,7 @@ x-fallback-env-file: &pc-fallback-env-file
 services:
   db:
     image: supabase/postgres:17.6.1.136
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_error_verbosity=terse", "-c", "log_min_error_statement=panic"]
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_error_verbosity=terse", "-c", "log_min_error_statement=panic", "-c", "auto_explain.log_min_duration=-1", "-c", "log_statement=none"]
     volumes:
       - db-data:/var/lib/postgresql/data
       - db-config:/etc/postgresql-custom
@@ -32,6 +32,8 @@ services:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: 5432
       POSTGRES_PORT: 5432
+      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
+      # cannot reach the fallback.
       PGPASSWORD: peerconnect-dev-password
       PGDATABASE: postgres
       JWT_EXP: 3600
@@ -54,6 +56,8 @@ services:
       GOTRUE_API_PORT: 9999
       API_EXTERNAL_URL: http://api-gw:8000/auth/v1
       GOTRUE_DB_DRIVER: postgres
+      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
+      # cannot reach the fallback.
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:peerconnect-dev-password@db:5432/postgres
       GOTRUE_SITE_URL: https://localhost:8443
       GOTRUE_DISABLE_SIGNUP: "true"
@@ -75,39 +79,15 @@ services:
       retries: 3
     logging: *pc-logging
 
-  rest:
-    image: postgrest/postgrest:v14.17
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file: *pc-fallback-env-file
-    environment:
-      PGRST_DB_URI: postgres://authenticator:peerconnect-dev-password@db:5432/postgres
-      PGRST_DB_SCHEMAS: public,graphql_public
-      PGRST_DB_MAX_ROWS: 1000
-      PGRST_DB_EXTRA_SEARCH_PATH: public
-      PGRST_DB_ANON_ROLE: anon
-      PGRST_ADMIN_SERVER_PORT: 3001
-      PGRST_ADMIN_SERVER_HOST: localhost
-      PGRST_DB_USE_LEGACY_GUCS: "false"
-      PGRST_APP_SETTINGS_JWT_EXP: 3600
-    healthcheck:
-      test: ["CMD", "postgrest", "--ready"]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-    logging: *pc-logging
-
   storage:
     image: supabase/storage-api:v1.74.0
     depends_on:
       db:
         condition: service_healthy
-      rest:
-        condition: service_healthy
     env_file: *pc-fallback-env-file
     environment:
-      POSTGREST_URL: http://rest:3000
+      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
+      # cannot reach the fallback.
       DATABASE_URL: postgres://supabase_storage_admin:peerconnect-dev-password@db:5432/postgres
       STORAGE_PUBLIC_URL: http://api-gw:8000
       REQUEST_ALLOW_X_FORWARDED_PATH: "true"

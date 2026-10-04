@@ -134,6 +134,11 @@ and why there is no `SESSION_SECRET`.
    > that `DATABASE_URL` matches `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` applies to
    > the fallback alone.
 
+   > **Settled 2026-10-04 by [Local Supabase fallback: Compose services, make targets, environment check and CI](https://github.com/ahmadmnsur/ft_transcendence/issues/121): six services.**
+   > Storage v1.74.0 talks to Postgres directly and does not need Supabase's REST service, so it is
+   > left out. With it, the committed publishable key could read and write tables in `public`
+   > through `/rest/v1/`, while the team project was created with its Data API off.
+
 2. **The proxy is what makes single origin structural.** ADR-0003 requires the bundle, the
    HTTP API and the socket.io endpoint to share one scheme, host and port; with a proxy in
    front, that is a property of the topology rather than something the application has to
@@ -508,12 +513,12 @@ and why there is no `SESSION_SECRET`.
    > Student view is where the product lives.
 
    > **Updated 2026-10-04 by [Local Supabase fallback: Compose services, make targets, environment check and CI](https://github.com/ahmadmnsur/ft_transcendence/issues/121).**
-   > `.env.example` now has **28 entries**. The fifteen above remain, and the added entries are
+   > `.env.example` now has **27 entries**. The fifteen above remain, and the added entries are
    > `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ANON_KEY`,
-   > `SERVICE_ROLE_KEY`, `GOTRUE_JWT_KEYS`, `JWT_JWKS`, `PGRST_JWT_SECRET`, `GOTRUE_JWT_SECRET`,
+   > `SERVICE_ROLE_KEY`, `GOTRUE_JWT_KEYS`, `JWT_JWKS`, `GOTRUE_JWT_SECRET`,
    > `AUTH_JWT_SECRET`, `SERVICE_KEY`, `ANON_KEY_ASYMMETRIC` and `SERVICE_ROLE_KEY_ASYMMETRIC`.
-   > Auth, Storage and PostgREST use their image-specific aliases for the same fixed local signing
-   > secret or keys. All twenty-eight values belong to the fallback; the team project's values
+   > Auth and Storage use their image-specific aliases for the same fixed local signing
+   > secret or keys. All twenty-seven values belong to the fallback; the team project's values
    > belong in `.env`.
 
 10. **There is no `SESSION_SECRET`, deliberately.** ADR-0003 decision 1 makes the session id

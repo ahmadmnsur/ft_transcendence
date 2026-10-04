@@ -43,7 +43,7 @@ test:
 		trap 'status=$$?; $(TEST_COMPOSE) down --volumes --remove-orphans || { if [ $$status -eq 0 ]; then status=1; fi; }; exit $$status' EXIT; \
 		$(TEST_COMPOSE) down --volumes --remove-orphans; \
 		$(TEST_COMPOSE) build api; \
-		$(TEST_COMPOSE) up -d db auth rest storage api-gw; \
+		$(TEST_COMPOSE) up -d db auth storage api-gw; \
 		$(TEST_COMPOSE) run --rm api npx vitest run
 
 ## logs — follow every service

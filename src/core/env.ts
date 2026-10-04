@@ -69,11 +69,14 @@ export function resolveSupabaseTarget(env: EnvRecord): SupabaseTarget {
   }
   const poolerUser = /^postgres\.([a-z0-9]+)$/.exec(databaseUser);
   const projectHost = /^([a-z0-9]+)\.supabase\.co$/.exec(supabaseHost);
+  // The api's requests to Supabase carry the secret key and passwords, and nothing else
+  // encrypts that hop, so only https: names the team project.
   if (
     poolerUser &&
     projectHost &&
     poolerUser[1] === projectHost[1] &&
-    databaseHost.endsWith('.pooler.supabase.com')
+    databaseHost.endsWith('.pooler.supabase.com') &&
+    supabaseUrl?.protocol === 'https:'
   ) {
     return { kind: 'team', ref: poolerUser[1], databaseHost, supabaseHost };
   }
@@ -152,7 +155,7 @@ export function validateEnv(env: EnvRecord): EnvResult {
   ) {
     return fail(
       'DATABASE_URL',
-      'at host db, user, password and database must equal POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB; change both together, then run `make wipe` if the database was already initialised',
+      'at host db, user, password and database must match .env.example; delete an old .env or replace it with a copy of .env.example',
     );
   }
 

@@ -8,9 +8,9 @@ Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, 
 
 ### The `.env` model
 
-`.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage, REST and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for its two interpolated ports.
+`.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for its two interpolated ports.
 
-The fallback credentials are fixed. Keep the team project's `DATABASE_URL`, `SUPABASE_URL`, keys and three staff or seed passwords in the gitignored `.env`. Until the remaining checks and TLS land, a team `.env` stops the boot before any database connection; use `make local` or `make dev` for branch work. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory.
+The fallback credentials are fixed. Keep the team project's `DATABASE_URL`, `SUPABASE_URL`, keys and three staff or seed passwords in the gitignored `.env`. Until the remaining checks and TLS land, a team `.env` stops the boot before any database connection; use `make local` or `make dev` for branch work. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory. If this checkout has a `.env` that the old `make up` copied, delete it: it still has `POSTGRES_USER=peerconnect`, and `make up` writes a fresh copy of `.env.example` when `.env` is absent.
 
 ### Boot commands
 
@@ -145,7 +145,7 @@ make seed
 make test
 # docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml down --volumes --remove-orphans
 # docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml build api
-# docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml up -d db auth rest storage api-gw
+# docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml up -d db auth storage api-gw
 # docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml run --rm api npx vitest run
 # The down command runs again on every exit, even after failure. Run one copy at a time; proxy is never started.
 

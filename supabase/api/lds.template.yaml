@@ -179,18 +179,6 @@ resources:
                   key: X-Forwarded-Prefix
                   value: /auth/v1/
                 append_action: ADD_IF_ABSENT
-            - name: rest-v1-protected
-              match:
-                prefix: /rest/v1/
-              route:
-                cluster: rest
-                prefix_rewrite: /
-                timeout: 30s
-              request_headers_to_add:
-              - header:
-                  key: X-Forwarded-Prefix
-                  value: /rest/v1/
-                append_action: ADD_IF_ABSENT
         http_filters:
         - name: envoy.filters.http.cors
           typed_config:
@@ -253,8 +241,6 @@ resources:
 
               local PROTECTED_ROUTES = {
                 ["auth-v1-protected"] = true,
-                ["rest-v1-openapi-protected"] = true,
-                ["rest-v1-protected"] = true,
                 ["graphql-v1-protected"] = true,
                 ["realtime-v1-api-protected"] = true,
                 ["realtime-v1-ws-protected"] = true,
@@ -558,9 +544,6 @@ resources:
                   - url_path:
                       path:
                         prefix: /auth/v1/
-                  - url_path:
-                      path:
-                        prefix: /rest/v1/
                   principals:
                   - header:
                       name: apikey

@@ -34,5 +34,5 @@ jobs:
           trap cleanup EXIT
           "${compose[@]}" down --volumes --remove-orphans
           "${compose[@]}" build api
-          "${compose[@]}" up -d db auth rest storage api-gw
+          "${compose[@]}" up -d db auth storage api-gw
           "${compose[@]}" run --rm api sh -c 'npx prisma migrate deploy --config prisma.config.ts && npx prisma db seed --config prisma.config.ts && npx vitest run'
