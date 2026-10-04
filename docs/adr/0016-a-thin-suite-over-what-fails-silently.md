@@ -107,6 +107,12 @@ done when the PR template already is one.**
    > deterministically through one named `checkpoint()` in the Unit of Work, a no-op in production.
    > The tests still bind outcomes.
 
+   > **Extended 2026-10-04 by [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99): one pause sits outside a
+   > transaction.** The password change reaches the same test barrier, by name, between its first
+   > sign-out and Supabase's admin update, a no-op in production. The race `12-sign-in` needs has
+   > no transaction there to hold (decision 1's note of 2026-10-04). Every other race still goes
+   > through `checkpoint`.
+
    > **Corrected 2026-09-21 by ADR-0007.** The equal-timestamp publication case remains in scope,
    > but `(published_at, id)` is no longer the expected order. The test must assert a unique,
    > durable publication order that respects completed-before-started transactions and gives
@@ -254,6 +260,44 @@ done when the PR template already is one.**
    > seed's two directly inserted bootstrap accounts are checked by the seed's own end-state
    > assertions instead. It binds the outcome, not the fold's technique;
    > [`docs/spec.md`](../spec.md) §16.3 and §14.8 hold the exact assertions once updated.
+
+   > **Changed 2026-10-04 by [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99): the real Postgres is Supabase's
+   > own, beside a real Supabase Auth and Storage.** Sign-up and the bootstrap staff are made
+   > through Supabase Auth (ADR-0003's top note of 2026-10-02), and the file categories store their
+   > bytes in Supabase Storage, so the suite runs against the containers of the local fallback
+   > (ADR-0004 d1's note): Supabase's Postgres image, Auth, Storage and gateway. There is no plain
+   > Postgres and no stand-in for either service. A stand-in would prove the code against itself,
+   > and CI's seed steps, which drive the real write paths, would pass a seed that breaks on
+   > Supabase. Where and how the suite runs is the last note under *Not settled*.
+
+   > **Extended 2026-10-04 — sign-in adds the twelfth silent-failure category**
+   > ([Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99)). Supabase Auth checks the password outside PeerConnect's
+   > transaction, and PeerConnect decides the rest afterwards (ADR-0003's notes on decisions 6 and
+   > 10 of 2026-10-02). Two of those decisions can go wrong behind a normal-looking answer, so
+   > `12-sign-in` asserts both:
+   >
+   > - **A sanction is told only after the right password.** A Suspended or Removed Student signed
+   >   in with a wrong password gets `password_incorrect`, never the sanction's message; with the
+   >   right password, the sanction's own message. The wrong order tells anyone who knows the email,
+   >   and no demo step types a wrong password for a sanctioned account.
+   > - **A completed password change leaves no session the old password opened.** A sign-in with
+   >   the old password racing the change ends refused or signed out in every order the test
+   >   stages: held at its own transaction's `checkpoint` and the change's, and run whole between
+   >   the change's first sign-out and Supabase's admin update. Only the change's second sign-out
+   >   catches that last order, and no transaction spans it, so `checkpoint` cannot hold it. The
+   >   password change therefore reaches the same test barrier there, by name, a no-op in
+   >   production like `checkpoint` ([`docs/spec.md`](../spec.md) §3.6.4 gains it). The test holds
+   >   the change at that point, runs a whole sign-in with the old password, releases the change
+   >   and asserts the session is gone. Each guard looks redundant and has its own order. Without
+   >   the second sign-out, the sign-in run in that gap keeps its session. Without the
+   >   `password_version` re-check, a sign-in held at its own `checkpoint` until the change ends
+   >   keeps its session. Either way the Student is told they are signed out everywhere.
+   >
+   > Two other account behaviours stay untested. A concurrent duplicate sign-up that fails to delete
+   > its spare Supabase Auth user leaves one that holds no real email and matches no Student, so it
+   > harms nothing. A Supabase `429` answered as `too_many_attempts` shows the Student a message,
+   > and no test can make Supabase answer `429` on demand. The category binds outcomes, not a
+   > technique.
 
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
@@ -488,6 +532,10 @@ done when the PR template already is one.**
    > 2026-10-02). The next proposed category is the twelfth and still needs the same *does it fail
    > silently?* argument.
 
+   > **Extended 2026-10-04 — sign-in supplies the twelfth category** (decision 1's note of
+   > 2026-10-04). The next proposed category is the thirteenth and still needs the same *does it
+   > fail silently?* argument.
+
    The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
    pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet
    reversal of the schema gate. **Anything the compiler or a demo
@@ -541,6 +589,20 @@ done when the PR template already is one.**
    > It installs, builds and tests nothing. **"One advisory CI workflow" still describes `ci.yml`**,
    > which stays the only workflow that tests anything and stays advisory; whether it becomes a
    > required check remains open (*Not settled*).
+
+   > **Narrowed 2026-10-04 by [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99): CI starts Supabase's containers,
+   > and still not the boot.** The suite and the seed steps need Supabase's own Postgres, Auth and
+   > Storage (decision 1's note of 2026-10-04). GitHub starts a workflow's service containers before
+   > it checks the repository out, and Supabase's containers need files from it, the database's
+   > setup SQL and the gateway's configuration, so they cannot be service containers. CI therefore
+   > starts the same throwaway copy as `make test` (*Not settled*, last note): Supabase's containers
+   > and the `api` dev container built from the `Dockerfile`'s `dev` target. The migration, the two
+   > seed runs and the suite run inside that container, then the copy is deleted. **What stays out
+   > is what this decision kept out**: no production image, no `proxy`, no TLS and no boot chain;
+   > the clean-clone boot stays decision 5's human check. The price is a `dev` image build and the
+   > Supabase images' download on each run. The workflow stays advisory.
+   >
+   > *Twelve categories since 2026-10-04 (decision 7's note of that date).*
 
 9. **The two additional browsers are Firefox and Brave, and Fadel runs the pass in week 5.**
    `:576`'s list — *"Firefox, Safari, Edge, etc."* — is open, so Brave qualifies unambiguously.
@@ -703,3 +765,37 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
   >
   > *Eleven categories since 2026-10-02 (decision 7's note of that date); the new one runs on the
   > same harness, locally and in CI.*
+
+  > **Changed 2026-10-04 by [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99).** The suite now runs against
+  > Supabase's own containers (decision 1's note of 2026-10-04), so:
+  >
+  > - **`make test` runs a copy of its own.** It keeps the files and values ADR-0004 d8's note gives
+  >   it (`compose.yaml`, `compose.dev.yaml`, the local overlay, `--env-file .env.example`) under a
+  >   Compose project name of its own, for example `peerconnect-test`. It starts the fallback's
+  >   Supabase containers from empty, runs `npx vitest run` in a fresh `api` dev container, and
+  >   deletes the copy, volumes included. Supabase Auth and Storage write to the copy's main
+  >   database, not to `<db>_test`, so sharing `make dev`'s containers would leave every test's
+  >   users and files in the developer's data, and a run from empty means what CI's run means.
+  > - **The harness keeps `<db>_test`** and never empties the main database, so a suite run inside
+  >   a `make dev` container leaves the developer's tables alone. The Supabase users and files that
+  >   run makes still go to the developer's stack and stay there until `make reset-local` or
+  >   `make wipe`, since only `make test`'s copy is thrown away. Our tables never sit beside
+  >   Supabase's `auth` and `storage` schemas during tests, and none of them may reference those
+  >   schemas by foreign key.
+  > - **The harness refuses any target but the fallback.** Its first step, before any connection,
+  >   runs the check `make reset-local` runs (ADR-0004 d11's note): `DATABASE_URL` and
+  >   `SUPABASE_URL` must both name the fallback, or the run stops and names the variable and the
+  >   host it points at, never the password. `make test`
+  >   reads `.env.example` alone, but `npx vitest run` can be typed anywhere, and
+  >   `prisma.config.ts` loads `.env` by itself.
+  > - **Every test account is made the real way**: a Student through the sign-up code (Supabase
+  >   admin create, then the `Student` and its `Session`), the bootstrap staff through the seed's
+  >   bootstrap code. A staff session is opened by the code sign-in runs after the password check,
+  >   so only the tests of sign-in itself pay for a real password check.
+  > - **Supabase Auth users and files outlive the truncation between tests** and are deleted with
+  >   the copy. Their ids never repeat, so they collide with nothing; a test checks a user or a
+  >   file by its id, never by a count, and file names are built from ids.
+  > - **CI runs the same copy** (decision 8's note of 2026-10-04): `prisma migrate deploy` and the
+  >   seed on the copy's empty main database, the seed again, then the suite, then the copy is
+  >   deleted. There is no Postgres service container, and `nginx` comes from the `dev` image rather
+  >   than the distribution.
