@@ -408,6 +408,18 @@ and why there is no `SESSION_SECRET`.
    > for both `DATABASE_URL` and `SUPABASE_URL`. That settles the guard this note first left to
    > [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99); what else the suite and CI need stays that ticket's.
 
+   > **Settled 2026-10-04 by [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99): `make test` runs a copy of its own.**
+   > It keeps the files and values above and adds a Compose project name of its own, for example
+   > `peerconnect-test`, so it never shares `make dev`'s or `make local`'s containers and volumes.
+   > Supabase Auth and Storage write each test's users and files to their own database, which would
+   > otherwise be the developer's. The copy starts from empty, any copy an interrupted run left is
+   > removed first, and the copy is deleted with its volumes when the run ends, so `make wipe`
+   > never needs to reach it. It never starts `proxy`, so it publishes no port. CI runs the same
+   > copy (ADR-0016 d8's note of 2026-10-04). Like the other targets it hides nothing required: it
+   > is Compose with a project name. The harness itself still refuses any `DATABASE_URL` or
+   > `SUPABASE_URL` that is not the fallback's, with the check `make reset-local` runs, since
+   > `npx vitest run` can be typed outside `make test` and `prisma.config.ts` loads `.env` itself.
+
 9. **`.env.example` holds** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
    `DATABASE_URL`, `NODE_ENV`, `PUBLIC_ORIGIN`, `HTTPS_PORT`, `HTTP_PORT`, `ADMIN_EMAIL`,
    `ADMIN_PASSWORD` — with a header comment saying these are development defaults and the
