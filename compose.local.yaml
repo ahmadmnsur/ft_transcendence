@@ -1,0 +1,10 @@
+services:
+  api:
+    env_file: !override
+      - path: .env.example
+        required: true
+
+  proxy:
+    env_file: !override
+      - path: .env.example
+        required: true

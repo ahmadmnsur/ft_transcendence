@@ -12,19 +12,121 @@ x-env-file: &pc-env-file
   - path: .env
     required: false
 
+x-fallback-env-file: &pc-fallback-env-file
+  - path: .env.example
+    required: true
+
 services:
   db:
-    image: postgres:17-alpine
-    command: postgres -c log_error_verbosity=terse -c log_min_error_statement=panic
+    image: supabase/postgres:17.6.1.136
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_error_verbosity=terse", "-c", "log_min_error_statement=panic", "-c", "auto_explain.log_min_duration=-1", "-c", "log_statement=none"]
     volumes:
       - db-data:/var/lib/postgresql/data
-    env_file: *pc-env-file
+      - db-config:/etc/postgresql-custom
+      - ./supabase/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro,Z
+      - ./supabase/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro,Z
+    env_file: *pc-fallback-env-file
+    environment:
+      # Supabase's image creates its initial superuser from POSTGRES_USER, which stays supabase_admin here while .env.example keeps postgres for the api role.
+      POSTGRES_USER: supabase_admin
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
+      # cannot reach the fallback.
+      PGPASSWORD: peerconnect-dev-password
+      PGDATABASE: postgres
+      JWT_EXP: 3600
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
       start_period: 30s
+    logging: *pc-logging
+
+  auth:
+    image: supabase/gotrue:v2.196.0
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: *pc-fallback-env-file
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://api-gw:8000/auth/v1
+      GOTRUE_DB_DRIVER: postgres
+      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
+      # cannot reach the fallback.
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:peerconnect-dev-password@db:5432/postgres
+      GOTRUE_SITE_URL: https://localhost:8443
+      GOTRUE_DISABLE_SIGNUP: "true"
+      GOTRUE_PASSWORD_MIN_LENGTH: 8
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_ISSUER: http://api-gw:8000/auth/v1
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_AUDIT_LOG_DISABLE_POSTGRES: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    logging: *pc-logging
+
+  storage:
+    image: supabase/storage-api:v1.74.0
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: *pc-fallback-env-file
+    environment:
+      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
+      # cannot reach the fallback.
+      DATABASE_URL: postgres://supabase_storage_admin:peerconnect-dev-password@db:5432/postgres
+      STORAGE_PUBLIC_URL: http://api-gw:8000
+      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      GLOBAL_S3_BUCKET: stub
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - storage-data:/var/lib/storage
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5000/status"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging: *pc-logging
+
+  api-gw:
+    image: envoyproxy/envoy:v1.39.1
+    depends_on:
+      auth:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    env_file: *pc-fallback-env-file
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
+    volumes:
+      - ./supabase/api/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./supabase/api/cds.yaml:/etc/envoy/cds.yaml:ro
+      - ./supabase/api/lds.template.yaml:/etc/envoy/lds.template.yaml:ro
+      - ./supabase/api/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/8000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     logging: *pc-logging
 
   api:
@@ -34,6 +136,8 @@ services:
       target: runtime
     depends_on:
       db:
+        condition: service_healthy
+      api-gw:
         condition: service_healthy
     env_file: *pc-env-file
     healthcheck:
@@ -63,3 +167,5 @@ services:
 
 volumes:
   db-data:
+  db-config:
+  storage-data:
