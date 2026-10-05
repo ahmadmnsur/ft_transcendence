@@ -531,6 +531,15 @@ arms. Those three sentences are the whole shape.
     > **Under revision 2026-09-30** (see the note at the top): the bytes move to Supabase Storage. [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96)
     > settles what these two tables keep.
 
+    > **Answered 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** Both tables stay, so the count stays
+    > nineteen, and both drop `bytes`: the file is in a private Supabase Storage bucket (ADR-0009
+    > decision 2's note). `Avatar` keeps `id`, `student_id`, `token`, `mime`, `size` and
+    > `uploaded_at`; `Evidence` keeps `id`, `review_id`, `token`, `mime`, `size`, `filename` and
+    > `uploaded_at`. The token, new on every upload, is also the file's name in its bucket, so there
+    > is no path column. `mime` and `size` stay so the Match detail shows them without calling
+    > Storage, and files are served with the validated type. [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) records the
+    > column change with the others.
+
     > **Stored metadata clarified 2026-09-22 by ADR-0009.** `mime` and `size` are server-derived
     > facts about validated bytes, never trusted upload metadata. The accepted sets are Evidence
     > = PDF/PNG/JPEG and Avatar = PNG/JPEG, under the exact byte caps in ADR-0009 decision 5.

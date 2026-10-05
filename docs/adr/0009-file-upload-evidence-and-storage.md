@@ -9,6 +9,13 @@
 > [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
 
+> **Settled 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).**
+> Avatars and Evidence live in two private Supabase Storage buckets, `avatars` and `evidence`,
+> that only the `api` opens, with the secret key. Every read still passes through NestJS's
+> authenticated routes, so decisions 3–7 stand as written. The notes on decisions 2, 5 and 6, on
+> *What this ADR changes in earlier records* and on the second-volume option record what
+> changed; the ticket's resolution has the detail.
+
 `document/en.subject.md:536`-`:548` claims a Minor for a file upload and management system,
 and its first bullet asks for "multiple file types (images, documents, etc.)". Avatars are
 images, owed anyway by `:596` under standard user management, so the image half was settled
@@ -28,6 +35,11 @@ authorisation structural rather than enforced.
 - **ADR-0004** is **extended, not amended**. Its named Postgres volume stays the only volume;
   decision 2 below settles that no second one is added, which is what keeps `make down` and
   the wipe target correct for files as well as rows.
+
+  > **No longer so, 2026-10-05.** On the local fallback, Supabase Storage keeps its files in a
+  > named volume of its own, which `make wipe` deletes with the database's (ADR-0004 d1's note of
+  > 2026-10-03); on the team project they are in its Storage. [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94)
+  > keeps the two stores in step through the order of writes and a cleanup (decision 2's note).
 - **ADR-0008** is **extended, not amended**. Its decision 8 lists avatar among the fields an
   Admin may edit, but Removal's effect on the avatar was unstated. Decision 6 below states it.
   The soft-delete scoping in its decision 6 — Student and Post, those two entities only —
@@ -52,6 +64,29 @@ authorisation structural rather than enforced.
 
    > **Under revision 2026-09-30** (see the note at the top): the bytes move to Supabase Storage, so this
    > decision no longer holds. [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94) settles how files are stored, served, replaced and deleted.
+
+   > **Settled 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94): the bytes live in Supabase
+   > Storage, and the reason above survives.** Two private buckets with no access policies,
+   > `avatars` (2,097,152 bytes; PNG, JPEG) and `evidence` (5,242,880 bytes; PDF, PNG, JPEG), and
+   > only the `api` holds the secret key that opens them. The browser never talks to Supabase:
+   > every read still passes through NestJS, which authorizes it, reads the whole file from Storage
+   > and then sends it, so "no file is reachable without authorisation" is still structural. There
+   > is no public bucket and no signed link, which would work for anyone holding it until it
+   > expired. The buckets' caps and types are a second guard only; decision 5's byte validation
+   > stays the check.
+   >
+   > **What is lost is the single store.** A file and its row now sit in two stores that no
+   > transaction covers, so the order of writes keeps them in step:
+   >
+   > - a file's name is its row's token, new on every upload, so an upload never overwrites;
+   > - **saving writes the file first, then the row**, and deletes the replaced file after commit;
+   >   a refused transaction deletes its new file at once;
+   > - **deleting removes the row first, then the file**, after commit.
+   >
+   > A crash can therefore leave a file no row names, never a row whose file is missing. The `api`
+   > deletes such files once they are an hour old, at every start and every hour while it runs; the
+   > hour protects an upload whose file exists a moment before its row. It creates the two buckets
+   > at boot (ADR-0004 d11's note of 2026-10-05).
 
    > **Proxy envelope corrected 2026-09-22, extending ADR-0004 decision 2.** nginx defaults
    > `client_max_body_size` to 1 MiB, below both file caps. The locations proxying avatar and
@@ -153,6 +188,13 @@ authorisation structural rather than enforced.
    > validated bytes, never from client metadata, and serve that canonical type with
    > `X-Content-Type-Options: nosniff`. This chooses a validation contract, not a library.
 
+   > **On Supabase Storage, 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** Replacement stays atomic: the new
+   > file is uploaded under a new name before the transaction, and the replaced one is deleted only
+   > after commit, so a rejected or failed replacement still leaves the old Evidence, its row and
+   > its file, intact. Storage keeps the type the `api` declares at upload, the validated canonical
+   > one, and its own type check reads only that label, so the validation above stays the only
+   > check of the bytes.
+
    Accepting images as well as documents is what actually satisfies `:538`. Evidence from a
    pair-programming session is most naturally a screenshot, so a document-only attachment would
    be useless for its commonest case — and one surface taking both categories makes "multiple
@@ -173,6 +215,10 @@ authorisation structural rather than enforced.
    > **Removed-row finality clarified 2026-09-21 by ADR-0008.** A Removed Student is view-only,
    > including to an Admin. No later avatar edit can recreate the deleted file; the default avatar
    > remains final. Evidence survival is unchanged.
+
+   > **On Supabase Storage, 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** Removal deletes the `Avatar` row
+   > in its transaction, as before, and the file after commit. The default avatar shows from the
+   > commit on; if the file's delete fails, the `api`'s cleanup deletes it within the hour.
 
 7. **A Suspension touches neither file.** It is reversible and destroys nothing; their Posts
    remain, so their avatar and Evidence do too.
@@ -201,6 +247,12 @@ bullet's own examples name two categories, and a defense would reasonably expect
 **A second named volume for files** (rejected, decision 2). Conventional and it streams better.
 Rejected because it means two stores to keep in sync across `make down` and the wipe target, and
 it leaves a live route to failing `:542` that no amount of care in the API can close.
+
+> **Revisited 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** The move to Supabase makes files a
+> second store anyway. The second objection does not return: the buckets are private and only the
+> `api` holds their key, so no nginx `location` or direct URL reaches a file. The first is paid:
+> the order of writes and the `api`'s hourly cleanup keep the two stores in step (decision 2's
+> note).
 
 ## Consequences
 

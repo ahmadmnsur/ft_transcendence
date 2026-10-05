@@ -630,6 +630,20 @@ and why there is no `SESSION_SECRET`.
     > Once the application is public, which is outside this record, the reset command would delete
     > real accounts, and the seeded Students share one known password: hosting revisits both.
 
+    > **One step added 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94): the buckets.**
+    > After the check and before the seed, which uploads *R*'s avatar and Evidence, the boot makes
+    > sure PeerConnect's two Storage buckets exist, `avatars` and `evidence`, private and with their
+    > caps and types (ADR-0009 decision 2's note): it creates a missing one and sets back one whose
+    > settings differ, for example one made public in the dashboard. It does the same on the team
+    > project and the fallback, and the test harness runs the same code. A failure stops the boot
+    > and names the bucket, as the check does (decision 8's note), since every upload would fail
+    > after it. The resets keep the buckets; `make wipe` drops the fallback's, and the next boot
+    > creates them again.
+    >
+    > Separately, the `api` deletes leftover files, ones no row names that are over an hour old, when
+    > it starts and every hour while it runs (ADR-0009 decision 2's note). That cleanup never stops
+    > the boot: a failure is logged and the `api` starts.
+
     > **Clarified 2026-09-20 — "from `.env`" describes the original `make up` path, not the
     > seed's only source.** The seed reads the resolved container environment. Bare Compose
     > receives its defaults from `.env.example`; when local `.env` exists, its later
