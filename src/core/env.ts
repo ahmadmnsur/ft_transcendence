@@ -186,7 +186,7 @@ export function assertEnvOrExit(env: EnvRecord): void {
   }
   if (target.kind === 'team') {
     console.error(
-      `Supabase check failed: DATABASE_URL host ${target.databaseHost} and SUPABASE_URL host ${target.supabaseHost} name a team project; use make local or make dev until the remaining checks and TLS land`,
+      `Supabase check failed: DATABASE_URL host ${target.databaseHost} and SUPABASE_URL host ${target.supabaseHost} name a team project; use make local or make dev until the boot check's remaining steps land`,
     );
     process.exit(1);
   }

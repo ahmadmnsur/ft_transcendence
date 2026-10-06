@@ -513,7 +513,7 @@ Postgres, Auth, Storage and gateway services load `.env.example` alone. `make lo
 interpolation. Among Makefile targets, only `make up` reads an optional `.env` for `api` and
 `proxy`, after `.env.example`; it copies the example into place if absent. Bare Compose uses the
 same base file and works without `.env` because its interpolated ports have defaults. Team project
-values belong in `.env`, but team boot is refused until the remaining checks and TLS land — see
+values belong in `.env`, but team boot is refused until the boot check's remaining steps land — see
 [ADR-0004](docs/adr/0004-deployment-shape.md). Develop through nginx at
 `http://localhost:8081`, published as `127.0.0.1:8081`; LAN access is outside the contract.
 
