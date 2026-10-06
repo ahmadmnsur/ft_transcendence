@@ -635,14 +635,16 @@ and why there is no `SESSION_SECRET`.
     > sure PeerConnect's two Storage buckets exist, `avatars` and `evidence`, private and with their
     > caps and types (ADR-0009 decision 2's note): it creates a missing one and sets back one whose
     > settings differ, for example one made public in the dashboard. It does the same on the team
-    > project and the fallback, and the test harness runs the same code. A failure stops the boot
+    > project and the fallback, and the test harness runs the same code for buckets of its own,
+    > `test-avatars` and `test-evidence` (ADR-0016 d1's note). A failure stops the boot
     > and names the bucket, as the check does (decision 8's note), since every upload would fail
     > after it. The resets keep the buckets; `make wipe` drops the fallback's, and the next boot
     > creates them again.
     >
     > Separately, the `api` deletes leftover files, ones no row names that are more than an hour
-    > old, when it starts and every hour while it runs (ADR-0009 decision 2's note). That cleanup
-    > never stops the boot: a failure is logged and the `api` starts.
+    > old, when it starts and every hour while it runs (ADR-0009 decision 2's note), never by
+    > itself in the test harness. That cleanup never stops the boot: a failure is logged and the
+    > `api` starts.
 
     > **Clarified 2026-09-20 — "from `.env`" describes the original `make up` path, not the
     > seed's only source.** The seed reads the resolved container environment. Bare Compose
