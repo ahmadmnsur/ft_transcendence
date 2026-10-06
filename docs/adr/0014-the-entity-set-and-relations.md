@@ -531,6 +531,15 @@ arms. Those three sentences are the whole shape.
     > **Under revision 2026-09-30** (see the note at the top): the bytes move to Supabase Storage. [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96)
     > settles what these two tables keep.
 
+    > **Answered 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** Both tables stay, so the count stays
+    > nineteen, and both drop `bytes`: the file is in a private Supabase Storage bucket (ADR-0009
+    > decision 2's note). `Avatar` keeps `id`, `student_id`, `token`, `mime`, `size` and
+    > `uploaded_at`; `Evidence` keeps `id`, `review_id`, `token`, `mime`, `size`, `filename` and
+    > `uploaded_at`. The token, new on every upload, is also the file's name in its bucket, so there
+    > is no path column. `mime` and `size` stay so the Match detail shows them without calling
+    > Storage, and files are served with the validated type. [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) records the
+    > column change with the others.
+
     > **Stored metadata clarified 2026-09-22 by ADR-0009.** `mime` and `size` are server-derived
     > facts about validated bytes, never trusted upload metadata. The accepted sets are Evidence
     > = PDF/PNG/JPEG and Avatar = PNG/JPEG, under the exact byte caps in ADR-0009 decision 5.
@@ -541,6 +550,12 @@ arms. Those three sentences are the whole shape.
     the model. A separate table makes the bytes unreachable by accident instead of by discipline,
     which is decision 1's argument in a different suit. Both are also genuinely 0..1 with their own
     replace-and-delete lifecycle, and neither is soft-deleted (ADR-0008 d6, ADR-0009 d6).
+
+    > **The `bytea` argument is historical since 2026-10-05.** The bytes left both tables
+    > ([Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94), the note of that date above), so the Prisma
+    > selection cost no longer applies. The tables stay for the reason this paragraph's last sentence
+    > gives: each file is 0..1 with its own replace-and-delete lifecycle. Evidence has a second: a
+    > Review is never updated (decision 11), so its replaceable attachment cannot be columns on it.
 
 13. **Four invariants move into the database; one cannot, and is named rather than assumed.**
 
@@ -730,6 +745,10 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > in plain language, and it says what the audit above required: online now, never last seen. The
   > policy now moves with this file: a PR that changes what personal data is stored, who can see it
   > or how long it is kept updates the policy in the same PR (ADR-0018 d15).
+
+  > **The two `bytea` stores changed 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** The
+  > files are in two private Supabase Storage buckets, and the two tables keep only their metadata
+  > (decision 12's notes). What the Privacy Policy says about it is [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)'s.
 - **`document/en.subject.md:1280`-`:1284`'s documentation requirement is satisfied by this file**, or
   by a diagram generated from the schema it describes: tables, relationships, key fields and data
   types are all above.

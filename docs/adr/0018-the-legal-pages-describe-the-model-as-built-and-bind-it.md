@@ -283,6 +283,18 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     > decisions 7 and 8 protect. **At the database level**, whoever runs the copy can read what is
     > stored, because nothing is encrypted at rest. The pages state both, each at its own layer.
 
+    > **The two files' deletion, refined 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** The avatar
+    > and Evidence files live in Supabase Storage, and each is deleted right after the database
+    > change that drops it: a replace, a delete, or the avatar's Removal. If that delete fails, the
+    > `api`'s cleanup deletes the file within two hours, as long as the `api` runs and its hourly
+    > cleanup succeeds: a stopped `api` counts from its next start, and a failed run, which is only
+    > logged, waits for the next one. The cleanup runs every hour and deletes only files more than an
+    > hour old (ADR-0009 decision 2's note).
+    >
+    > That cleanup is an automatic deletion, so this decision's "no automatic deletion" no longer
+    > holds for files no row names: a replaced or deleted file, and the file of a save that failed,
+    > which can stay up to two hours. [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words both for the pages.
+
 14. **The canonical text is `docs/legal/privacy-policy.md` and `docs/legal/terms-of-service.md`; the
     frontend bundles and renders it with no network fetch.** How it renders is `/to-spec`'s call; if
     that needs a Markdown library, it is a stack addition and goes through the map. **Drafted from

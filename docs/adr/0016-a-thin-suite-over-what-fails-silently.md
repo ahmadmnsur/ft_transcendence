@@ -147,6 +147,29 @@ done when the PR template already is one.**
    > delete-before-validate replacement can leave the ordinary UI healthy, so the scope guard admits
    > this category; the one-level, no-coverage-target shape is unchanged.
 
+   > **Extended 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94): four checks join the eighth
+   > category, and no category is added.** Files now live in Supabase Storage and their rows in
+   > Postgres, two stores no transaction covers (ADR-0009 decision 2's note). A file left behind,
+   > or deleted under its row, shows nowhere while the screens keep working, so the scope guard
+   > admits these:
+   >
+   > 1. after a replace or a delete, the old file is gone from Storage;
+   > 2. a save that fails before anything can commit leaves no new file: a refusal, and a failure
+   >    by the 30-minute rule (ADR-0009 decision 2's note) with the save held inside its
+   >    transaction while the clock moves;
+   > 3. the cleanup deletes a file no row names once it is more than an hour old, skips one an hour
+   >    old or younger, and never deletes a file a row names, with a page size small enough that
+   >    the bucket takes several pages, so a run that skips files fails it;
+   > 4. on an empty Supabase, the boot creates both buckets, private, with their caps and types;
+   >    and where a bucket exists with other settings, made public or given other caps or types,
+   >    the boot sets it back.
+   >
+   > Checks 2 and 3 move the application's clock rather than waiting. The suite's files go to
+   > buckets of its own, `test-avatars` and `test-evidence`, which the boot's own code creates with
+   > those names passed in, and in the harness the cleanup never runs by itself, neither at start
+   > nor hourly: check 3 calls it on the suite's buckets. Run inside `make dev`, where Supabase is
+   > the developer's own, the suite then never lists or deletes the developer's files.
+
    > **Extended 2026-09-22 — the Review/XP transaction contract adds the ninth silent-failure
    > category.** Integration coverage verifies one atomic Review + status + Takeaway + Private
    > Feedback + both XP line items + Badge success under duplicate/retried submission; Review versus
@@ -795,6 +818,12 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
   > - **Supabase Auth users and files outlive the truncation between tests** and are deleted with
   >   the copy. Their ids never repeat, so they collide with nothing; a test checks a user or a
   >   file by its id, never by a count, and file names are built from ids.
+  >
+  >   *Settled 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94): a file's name is its row's token, new and
+  >   random on every upload. The suite uses buckets of its own, `test-avatars` and
+  >   `test-evidence`, created by the boot's own code with those names passed in, and the cleanup
+  >   never runs by itself in the harness, neither at start nor hourly; the tests call it directly,
+  >   on those buckets (decision 1's note on the eighth category).*
   > - **CI runs the same copy** (decision 8's note of 2026-10-04): `prisma migrate deploy` and the
   >   seed on the copy's empty main database, the seed again, then the suite, then the copy is
   >   deleted. There is no Postgres service container, and `nginx` comes from the `dev` image rather
