@@ -154,11 +154,15 @@ done when the PR template already is one.**
    > admits these:
    >
    > 1. after a replace or a delete, the old file is gone from Storage;
-   > 2. a save the transaction refuses leaves no new file;
-   > 3. the cleanup deletes a file no row names once it is an hour old, skips a younger one, and
-   >    never deletes a file a row names; the test moves the application's clock rather than
-   >    waiting;
-   > 4. on an empty Supabase, the boot creates both buckets, private, with their caps and types.
+   > 2. a save the transaction refuses leaves no new file, a refusal by the 30-minute rule
+   >    (ADR-0009 decision 2's note) included;
+   > 3. the cleanup deletes a file no row names once it is more than an hour old, skips one an hour
+   >    old or younger, and never deletes a file a row names;
+   > 4. on an empty Supabase, the boot creates both buckets, private, with their caps and types;
+   >    and where a bucket exists with other settings, made public or given other caps or types,
+   >    the boot sets it back.
+   >
+   > Checks 2 and 3 move the application's clock rather than waiting.
 
    > **Extended 2026-09-22 — the Review/XP transaction contract adds the ninth silent-failure
    > category.** Integration coverage verifies one atomic Review + status + Takeaway + Private

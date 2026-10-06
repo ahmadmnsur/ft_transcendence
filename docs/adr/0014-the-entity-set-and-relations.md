@@ -551,6 +551,12 @@ arms. Those three sentences are the whole shape.
     which is decision 1's argument in a different suit. Both are also genuinely 0..1 with their own
     replace-and-delete lifecycle, and neither is soft-deleted (ADR-0008 d6, ADR-0009 d6).
 
+    > **The `bytea` argument is historical since 2026-10-05.** The bytes left both tables
+    > ([Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94), the note of that date above), so the Prisma
+    > selection cost no longer applies. The tables stay for the reason this paragraph's last sentence
+    > gives: each file is 0..1 with its own replace-and-delete lifecycle. Evidence has a second: a
+    > Review is never updated (decision 11), so its replaceable attachment cannot be columns on it.
+
 13. **Four invariants move into the database; one cannot, and is named rather than assumed.**
 
     Expressible, and taken:
@@ -739,6 +745,10 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > in plain language, and it says what the audit above required: online now, never last seen. The
   > policy now moves with this file: a PR that changes what personal data is stored, who can see it
   > or how long it is kept updates the policy in the same PR (ADR-0018 d15).
+
+  > **The two `bytea` stores changed 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** The
+  > files are in two private Supabase Storage buckets, and the two tables keep only their metadata
+  > (decision 12's notes). What the Privacy Policy says about it is [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)'s.
 - **`document/en.subject.md:1280`-`:1284`'s documentation requirement is satisfied by this file**, or
   by a diagram generated from the schema it describes: tables, relationships, key fields and data
   types are all above.

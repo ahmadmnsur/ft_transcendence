@@ -640,9 +640,9 @@ and why there is no `SESSION_SECRET`.
     > after it. The resets keep the buckets; `make wipe` drops the fallback's, and the next boot
     > creates them again.
     >
-    > Separately, the `api` deletes leftover files, ones no row names that are over an hour old, when
-    > it starts and every hour while it runs (ADR-0009 decision 2's note). That cleanup never stops
-    > the boot: a failure is logged and the `api` starts.
+    > Separately, the `api` deletes leftover files, ones no row names that are more than an hour
+    > old, when it starts and every hour while it runs (ADR-0009 decision 2's note). That cleanup
+    > never stops the boot: a failure is logged and the `api` starts.
 
     > **Clarified 2026-09-20 — "from `.env`" describes the original `make up` path, not the
     > seed's only source.** The seed reads the resolved container environment. Bare Compose

@@ -84,9 +84,17 @@ authorisation structural rather than enforced.
    > - **deleting removes the row first, then the file**, after commit.
    >
    > A crash can therefore leave a file no row names, never a row whose file is missing. The `api`
-   > deletes such files once they are an hour old, at every start and every hour while it runs; the
-   > hour protects an upload whose file exists a moment before its row. It creates the two buckets
-   > at boot (ADR-0004 d11's note of 2026-10-05).
+   > deletes such files once they are more than an hour old, at every start and every hour while it
+   > runs, so a file a failed delete left is gone within two hours while the `api` runs.
+   >
+   > The hour protects an upload whose file exists a moment before its row, and one rule makes that
+   > hold: **a save is refused if, at its transaction's last step, more than 30 minutes have passed
+   > since its upload finished**, and it then deletes its own file. A running save never comes near
+   > that, since the Unit of Work caps each attempt at seconds. A process frozen between the two, a
+   > laptop put to sleep say, would otherwise save its row after another stack's cleanup had deleted
+   > the file. Thirty minutes, half the hour, leaves room for clocks a few minutes apart.
+   >
+   > The `api` also creates the two buckets at boot (ADR-0004 d11's note of 2026-10-05).
 
    > **Proxy envelope corrected 2026-09-22, extending ADR-0004 decision 2.** nginx defaults
    > `client_max_body_size` to 1 MiB, below both file caps. The locations proxying avatar and
@@ -218,7 +226,8 @@ authorisation structural rather than enforced.
 
    > **On Supabase Storage, 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** Removal deletes the `Avatar` row
    > in its transaction, as before, and the file after commit. The default avatar shows from the
-   > commit on; if the file's delete fails, the `api`'s cleanup deletes it within the hour.
+   > commit on; if the file's delete fails, the `api`'s cleanup deletes it within two hours while
+   > the `api` runs (decision 2's note).
 
 7. **A Suspension touches neither file.** It is reversible and destroys nothing; their Posts
    remain, so their avatar and Evidence do too.

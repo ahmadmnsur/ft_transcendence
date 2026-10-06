@@ -286,7 +286,9 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     > **The two files' deletion, refined 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** The avatar
     > and Evidence files live in Supabase Storage, and each is deleted right after the database
     > change that drops it: a replace, a delete, or the avatar's Removal. If that delete fails, the
-    > `api`'s cleanup deletes the file within the hour (ADR-0009 decision 2's note). [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)
+    > `api`'s cleanup deletes the file within two hours while the `api` runs, or within two hours of
+    > its next start if it was stopped: the cleanup runs every hour and deletes only files more than
+    > an hour old (ADR-0009 decision 2's note). [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)
     > words it for the pages.
 
 14. **The canonical text is `docs/legal/privacy-policy.md` and `docs/legal/terms-of-service.md`; the
