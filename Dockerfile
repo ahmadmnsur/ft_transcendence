@@ -17,6 +17,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+COPY supabase/prod-ca-2021.crt ./supabase/
 EXPOSE 3000
 CMD ["sh", "-c", "node dist/src/core/check-env.js && npx prisma migrate deploy --config prisma.config.ts && npx prisma db seed --config prisma.config.ts && exec node dist/src/main.js"]
 
