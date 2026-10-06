@@ -8,15 +8,19 @@ import { defineConfig } from 'prisma/config';
 // relative one (ADR-0004 d11). The fallback's `db` stays a plain connection.
 // This file cannot reuse src/core/env.ts: the production image has no src/.
 function datasourceUrl(raw: string | undefined): string | undefined {
-  let host = '';
+  let url: URL;
   try {
-    host = new URL(raw ?? '').hostname;
+    url = new URL(raw ?? '');
   } catch {
     return raw;
   }
-  if (!host.endsWith('.pooler.supabase.com')) return raw;
-  const tls = `sslmode=require&sslaccept=strict&sslcert=${resolve('supabase/prod-ca-2021.crt')}`;
-  return `${raw}${raw?.includes('?') ? '&' : '?'}${tls}`;
+  if (!url.hostname.endsWith('.pooler.supabase.com')) return raw;
+  // Set on the query, not appended: a fragment cannot swallow them, the path is
+  // encoded, and a setting the URL already has is replaced rather than repeated.
+  url.searchParams.set('sslmode', 'require');
+  url.searchParams.set('sslaccept', 'strict');
+  url.searchParams.set('sslcert', resolve('supabase/prod-ca-2021.crt'));
+  return url.toString();
 }
 
 export default defineConfig({

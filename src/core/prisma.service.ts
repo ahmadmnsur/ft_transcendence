@@ -20,6 +20,13 @@ export function poolConfig(env: EnvRecord): PoolConfig {
   const config: PoolConfig = { connectionString: env['DATABASE_URL'], max: POOL_MAX };
   // The fallback's `db` sits on the Compose network and stays a plain connection.
   if (resolveSupabaseTarget(env).kind === 'team') {
+    // node-postgres lays the URL's own TLS settings over `ssl`, so a pasted
+    // `?sslmode=no-verify` would switch the check off: the team URL loses them all.
+    const url = new URL(env['DATABASE_URL'] as string);
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.startsWith('ssl') || key === 'uselibpqcompat') url.searchParams.delete(key);
+    }
+    config.connectionString = url.toString();
     config.ssl = { ca: readFileSync(SUPABASE_CA_PATH), rejectUnauthorized: true };
   }
   return config;

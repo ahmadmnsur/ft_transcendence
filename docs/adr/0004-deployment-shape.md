@@ -561,13 +561,16 @@ and why there is no `SESSION_SECRET`.
     > > **Built 2026-10-06 by [Team project database: verified TLS and the api's pool cap](https://github.com/ahmadmnsur/ft_transcendence/issues/124).**
     > > Supabase's certificate is committed as `supabase/prod-ca-2021.crt` (*Supabase Root 2021 CA*,
     > > valid until 2031-04-26). When `DATABASE_URL` and `SUPABASE_URL` name the team project,
-    > > `src/core/prisma.service.ts` gives the `api`'s pool that certificate with full verification.
-    > > For `prisma migrate`, whose engine takes TLS from the URL only, `prisma.config.ts` adds
-    > > `sslmode=require&sslaccept=strict&sslcert=<absolute path>` to a URL on Supabase's pooler; the
-    > > engine does not find a relative path. The handed `.env` keeps the plain Session pooler string.
-    > > A wrong or missing certificate stops both connections. The pool is capped at 5: two stacks of
-    > > 5, plus `prisma migrate deploy` and the seed, fit the project's Pool Size of 15, its default
-    > > for the Nano compute size, with 3 to spare.
+    > > `src/core/prisma.service.ts` gives the `api`'s pool that certificate with full verification,
+    > > and first removes every TLS setting the URL carries (each `ssl…` key and `uselibpqcompat`):
+    > > node-postgres lays the URL's settings over its config, so a pasted `?sslmode=no-verify` would
+    > > otherwise switch the check off. For `prisma migrate`, whose engine takes TLS from the URL
+    > > only, `prisma.config.ts` sets `sslmode=require`, `sslaccept=strict` and `sslcert=<absolute
+    > > path>` on the query of a URL on Supabase's pooler, replacing any the URL has; the engine does
+    > > not find a relative path. The handed `.env` keeps the plain Session pooler string. A wrong or
+    > > missing certificate stops both connections, whatever TLS settings the URL carries. The pool
+    > > is capped at 5: two stacks of 5, plus `prisma migrate deploy` and the seed, fit the project's
+    > > Pool Size of 15, its default for the Nano compute size, with 3 to spare.
     >
     > **The seed on the team project.** It writes its fixture at the first boot there, and every
     > later boot skips it until the reset below, so the data a demo adds stays (ADR-0017 d10). That
