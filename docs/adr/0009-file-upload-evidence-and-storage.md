@@ -112,7 +112,8 @@ authorisation structural rather than enforced.
    >   the file to the cleanup. The build checks the setting once through the team project's
    >   session pooler.
    >
-   > The `api` also creates the two buckets at boot (ADR-0004 d11's note of 2026-10-05).
+   > The seed's first step creates the two buckets, on every run, so at every boot and in CI
+   > (ADR-0004 d11's note of 2026-10-05).
 
    > **Proxy envelope corrected 2026-09-22, extending ADR-0004 decision 2.** nginx defaults
    > `client_max_body_size` to 1 MiB, below both file caps. The locations proxying avatar and
@@ -216,11 +217,11 @@ authorisation structural rather than enforced.
 
    > **On Supabase Storage, 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** Replacement stays atomic: the new
    > file is uploaded under a new name before the transaction, and the replaced one is deleted only
-   > after commit, so a rejected or failed replacement still leaves the old Evidence, its row and
-   > its file, intact. A replacement whose COMMIT reply is lost leaves the old Evidence or the new
-   > one whole, never a row without its file (decision 2's note). Storage keeps the type the `api`
-   > declares at upload, the validated canonical one, and its own type check reads only that label,
-   > so the validation above stays the only check of the bytes.
+   > after commit, so a rejected replacement, or one that fails before COMMIT, still leaves the old
+   > Evidence, its row and its file, intact. One whose COMMIT reply is lost leaves the old Evidence
+   > or the new one whole, never a row without its file (decision 2's note). Storage keeps the type
+   > the `api` declares at upload, the validated canonical one, and its own type check reads only
+   > that label, so the validation above stays the only check of the bytes.
 
    Accepting images as well as documents is what actually satisfies `:538`. Evidence from a
    pair-programming session is most naturally a screenshot, so a document-only attachment would
