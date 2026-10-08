@@ -16,6 +16,10 @@
 > [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93). What the pages say about Supabase is still for
 > [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) to settle.
 
+> **Answered 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): it does not.** NestJS runs Sign in
+> with 42, and the browser goes only to 42's pages and back (decision 5's note). Decisions 7, 8 and
+> 12 carry notes on the field kept, recovery through 42 and the 42 sign-up form.
+
 `document/en.subject.md:320` requires a **Privacy Policy** and **Terms of Service** "with relevant
 content"; `:323`-`:330` require them to be easily accessible from the application, to contain content
 appropriate to *this* project, and not to be placeholder or empty pages; `:336` makes missing or
@@ -163,6 +167,10 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > checks cookie, attempt, expiry and `state` before exchanging the code, and only then issues a
    > new session id. The Privacy Policy's cookie paragraph names the attempt identifier.
 
+   > **Still the one exception, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** NestJS runs
+   > Sign in with 42 itself. The browser goes to 42's own pages and back to PeerConnect, never to
+   > Supabase's address. Connect 42 and Confirm with 42 make the same trip, under the same cookie.
+
 6. **Logs are disclosed, kept clean and capped, and the sign-in throttle lives in memory.** nginx
    logs every request by default and Docker keeps that output on the host; saying nothing would be an
    omission an evaluator catches with `docker compose logs`. The pages disclose the request log in
@@ -211,12 +219,39 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > binds #24 without settling the rest: which 42 field is immutable, and whether a first login
    > links, creates or is refused, stay #24's.
 
+   > **The field named, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** PeerConnect keeps
+   > 42's account `id`, a number 42 never changes, in `Student.forty_two_id`; never the `login` or
+   > the `email`, which can change. Of `/v2/me`, every 42 login uses the `id`. The `login` and
+   > `email` are used only when no Student holds that `id`: they pre-fill the sign-up form, both
+   > editable, and are kept only as what the Student submits as display name and email. That is
+   > this decision's "values the Student explicitly chooses". Otherwise they stay in memory with
+   > the attempt and are gone within ten minutes. Nothing else from `/v2/me` is read, and the
+   > token is still used once and discarded.
+   >
+   > - The Student can **Disconnect 42** from their profile, which clears the number.
+   > - A Removed Student's row keeps it (ADR-0008 d7's note).
+   > - No Admin action sets, changes or clears it (ADR-0008 d8's note).
+   > - A Student created through 42 is an ordinary Student with a password. There is no 42-only
+   >   kind of Student and no 42-only feature: `forty_two_id` proves a 42 account, not a current
+   >   42 Beirut student (map #85, *Out of scope*).
+   >
+   > The Privacy Policy's marked 42 sentence can now be written; [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words it.
+
 8. **No Admin may set or reset a Student's password, so a forgotten password cannot be recovered, and
    the pages say so.** ADR-0003 decision 11 ships no reset and PeerConnect sends no email; ADR-0008
    decision 8's editable fields omit the password. The omission is now deliberate, because an Admin
    who could set a password could sign in as any Student and read their Direct Messages — the same
    hole decision 7 closes on the 42 side. The Terms tell Students plainly that a forgotten password
    cannot be reset. Fixing recovery would be a new decision, not an edit to this one.
+
+   > **Recovery through 42, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): the new decision
+   > this one asked for.** A Student who connected 42 can set a new password without the current
+   > one, within ten minutes of **Confirm with 42** on their signed-in profile (ADR-0003 d11's
+   > note). No Admin gains anything: an Admin still sets no password and cannot touch the 42 link
+   > (ADR-0008 d8's note), so the hole this decision closes stays closed. The Terms' line changes
+   > to say that a forgotten password can be reset only through 42, and only by a Student who
+   > connected it; [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words it. A Student who never
+   > connected 42 is where this decision left them.
 
 9. **The Terms' conduct rules are the Report reasons, plus five rules of PeerConnect's own.** ADR-0011
    decision 4's reasons — Harassment, Spam, Inappropriate content — are what a Report enforces, so
@@ -260,6 +295,11 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     > account a person creates, through sign-up or #24's 42 path. The seed creates the only others:
     > its demo Students and the bootstrap Admin and Peer Moderator (ADR-0004 d11, ADR-0008 d12,
     > ADR-0017), none of which is a real person's sign-up.
+
+    > **The 42 path, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** A 42 login with
+    > no Student does create one, through a sign-up form with the same checkbox, validated on both
+    > sides and not stored. Connecting 42 to an existing account creates no account and asks for
+    > no new acceptance.
 
 13. **Every settled limit is stated plainly.** Everything is kept for as long as the copy's database
     exists — no automatic deletion, no backups, and a wipe erases everything — with the exceptions
@@ -345,6 +385,10 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
   logins, which the project roster does not record (`CONTRIBUTING.md` lists names only, and the
   repository's GitHub usernames are not 42 logins); and the exact 42 field, which #24 settles. Both
   carry visible markers in the drafts, so neither can ship unnoticed.
+
+  > **The 42 field settled 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93):** 42's
+  > account `id` (decision 7's note). Its marker is replaced when [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words
+  > the sentence. The 42 logins' markers are not this ticket's.
 - **`/to-spec` inherits binding rules**: one cookie; no third-party fetching; log hygiene and a
   Compose log cap; the throttle in memory; no Admin-set password; decision 4's visibility rows, the
   Admin label and no read receipts; four signed-out routes with the footer everywhere; the signup
@@ -363,6 +407,9 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
 - **The exact 42 identity field(s)** — owned by
   [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24),
   under decision 7's constraints.
+
+  > **Settled 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93):** 42's account `id`, in
+  > `Student.forty_two_id` (decision 7's note of that date).
 - **The rendering mechanism and the log cap's numbers** — `/to-spec`.
 
   > **Settled 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.5.4, §15.1; M12, M22).

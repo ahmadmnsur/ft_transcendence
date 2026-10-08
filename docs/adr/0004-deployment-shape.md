@@ -934,3 +934,38 @@ so the single authorization path ADR-0003 defends survives intact.
 > identifier**, never through `Student.email`. So an email edit, an Admin's included, can never
 > change which Student a 42 login reaches. The "email that already holds a password account"
 > framing above describes the situation #24 must handle, not a lookup key.
+
+> **Settled 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)**, which answers #24's questions
+> for Supabase under ADR-0018 decision 7.
+>
+> - **The mapping.** A 42 login finds its Student by 42's account `id`, a number 42 never
+>   changes, stored in `Student.forty_two_id`. A 42 account that no Student holds gets a sign-up
+>   form pre-filled with the 42 login and email, both editable, and creates a Student with a
+>   password through the Terms checkbox. A signed-in Student can **Connect 42** or
+>   **Disconnect 42** on their profile. Nothing links by email: an email that already holds an
+>   account gets sign-up's `email_unavailable`, and the form tells its owner to sign in with their
+>   password and connect 42.
+> - **Email-and-password sign-up stays open**, as the 2026-09-20 note says, and every Student now
+>   has a password, whichever way they signed up.
+> - **Who registers the application: Kamel, once, for the team.** He registered an application
+>   named PeerConnect under his 42 account on 2026-10-07: scope `public`, one redirect URI,
+>   `https://localhost:8443/api/auth/42/callback`. Its `UID` and `SECRET` live only in the team
+>   `.env` handed to the evaluator, and Kamel gives them to Ahmad privately, never through the
+>   repository. `.env.example` keeps both empty, so this amendment's rule stands: a clean clone
+>   boots with the 42 button hidden.
+> - **Where 42 is on.** `make local`, `make dev` and `make test` read `.env.example` alone, so 42
+>   is off on them and `http://localhost:8081` is not registered. The open question of
+>   2026-09-21, whether 42 accepts plain `http://` for `localhost`, no longer matters. A branch
+>   that needs a real 42 sign-in runs `make up` with a `.env` holding only the two `FT_OAUTH_*`
+>   lines: its database and Supabase values then come from `.env.example`, so it boots the local
+>   fallback. If PeerConnect is hosted later (map #85, *Out of scope*), the hosted callback is a
+>   second line on the same application, and `PUBLIC_ORIGIN` names the host.
+> - **The secret expires.** 42 sets `secret_valid_until` 28 days after a secret is made (the
+>   first one: 2026-11-04) and returns it with every token. The `api` logs a warning at each token
+>   exchange once fewer than seven days are left, and checking the date is on the pre-defense
+>   checklist. An expired secret fails Sign in with 42 only; email and password are unaffected.
+>
+> Verified on 2026-10-07 with the team application's keys: a token request answers `scope:
+> public`, `expires_in: 7200` and `secret_valid_until`. Whether 42 checks PKCE is still
+> unconfirmed. The flow sends it as defence in depth, and the first real sign-in shows whether 42
+> accepts it.

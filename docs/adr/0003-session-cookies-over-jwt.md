@@ -31,6 +31,14 @@
 > [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): what Sign in with 42 does with the cookie and its callback,
 > and whether a Student it creates has a Supabase Auth user.
 
+> **Settled 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): Sign in with 42.** NestJS runs
+> the 42 flow itself, and Supabase Auth takes no part in it. A 42 login finds its Student by 42's
+> account `id`, stored in `Student.forty_two_id`, never by email. A 42 account that no Student holds
+> gets a sign-up form, and the Student it creates has a password and a Supabase Auth user like
+> every other. A signed-in Student can connect or disconnect 42, and a Student who connected it
+> can set a new password after confirming with 42. Decisions 6, 10 and 11 carry a note each.
+> Decision 1's notes on the attempt cookie stand as written.
+
 The subject mandates email-and-password authentication with hashed, salted storage
 (`document/en.subject.md:377`) and HTTPS for every browser-to-backend connection (`:383`),
 and **nothing else**. In particular it never mentions JWT: zero occurrences of "JWT" or
@@ -157,6 +165,12 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > password unchanged. A crash between steps 3 and 4 leaves the new password set and at most a
    > session created in that gap. That is accepted.
 
+   > **A password set through 42, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** A Student who
+   > connected 42 may set a new password without the current one, after **Confirm with 42**
+   > (decision 11's note). It is the password change above with step 1 replaced: the confirmation
+   > stands where the check of the current password stood. Steps 2 to 4, the `password_version`
+   > guards and the signing out everywhere stand as written.
+
 7. **The socket authenticates by the same cookie**, which same-origin socket.io replays on
    every handshake, including every reconnect. There is no token to pass, refresh, or
    re-present: the reconnect story is that there isn't one. A rejected handshake must stop
@@ -279,6 +293,27 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > the admin API with the secret key, and the project's public sign-up is switched off, so no
     > account can be made except through PeerConnect.
 
+    > **The callback's writes, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)**, answering the note
+    > on the callback exception's reach. The callback may write two things, both after the `state`
+    > check:
+    > - the session it creates for the Student a 42 login finds, the exception as first written;
+    > - the link a signed-in Student asked for with **Connect 42**: `Student.forty_two_id` set on
+    >   their own row, refused if another row already holds that 42 account.
+    >
+    > That is the exception's whole reach. A 42 account that no Student holds creates nothing in
+    > the callback. The attempt keeps the 42 `id`, with the 42 login and email as suggestions, in
+    > memory for the rest of its ten minutes, and the browser goes to a sign-up form. The Student
+    > is created by that form's JSON request: the ordinary sign-up, Terms checkbox included
+    > (ADR-0018 d12), which also writes `forty_two_id`. Its new session replaces the attempt
+    > cookie. **Confirm with 42** (decision 11's note) writes no row in the callback either.
+    >
+    > Sign in with 42 now tells a sanction the way sign-in does (the note above). Once 42 has
+    > confirmed the account, a Removed Student reads "This account was removed and can't sign in
+    > again." and a Suspended one "Your account is suspended. Contact an Admin." 42's confirmation
+    > stands where the right password does: it proves who is signing in. Every other failure keeps
+    > one message, "Sign in with 42 failed. Try again.": cancelled on 42's page, an expired or
+    > unknown attempt, a `state` mismatch, or 42 unreachable.
+
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
     rule. Email verification in particular would put SMTP deliverability on the critical path
@@ -297,6 +332,17 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > [Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85) as a later effort, in which PeerConnect would send the email itself and
     > Supabase Auth would only set the new password. The admin update a password change uses is
     > never offered as an Admin action (ADR-0018 d8).
+
+    > **Recovery through 42, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** A Student who
+    > connected 42 can recover a forgotten password. Signed in, for example through Sign in with 42,
+    > they press **Confirm with 42** on their profile and go to 42 and back. For the next ten
+    > minutes they may set a new password once, without the current one (decision 6's note). The
+    > confirmation must return the 42 account that Student connected; anything else fails like any
+    > 42 failure. The permission lives in memory, bound to the session like a Connect 42 attempt,
+    > and is never a database row. A session opened through 42 earlier grants nothing by itself,
+    > so a computer left signed in cannot be used to change the password. Email verification and
+    > reset by email still do not ship, an Admin still sets no password (ADR-0018 d8's note), and
+    > a Student who never connected 42 still cannot recover a forgotten password.
 
 **The numbers in decisions 3, 4 and 10 are engineering defaults, not citations.** The subject
 sets no figure for session length, renewal threshold or rate limit. Change them freely; the

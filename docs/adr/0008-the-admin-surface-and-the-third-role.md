@@ -245,6 +245,15 @@ revoke XP.**
    > Removal, or tell the owner their password is wrong. The kept hash is one more thing Removal
    > keeps, for [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) to list.
 
+   > **The 42 account burns too, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** The removed row
+   > keeps `Student.forty_two_id`, like its email, so the 42 account it holds can never make a new
+   > Student. Once 42 confirms that account, Sign in with 42 answers "This account was removed and
+   > can't sign in again.", and Connect 42 on another account refuses it as connected elsewhere.
+   > This matters more than the email: a new email is free, a new 42 account is not. A Student who
+   > left by asking (ADR-0018 d3) can come back only through email-and-password sign-up with a new
+   > email. The 42 account number is one more thing Removal keeps, for
+   > [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) to list.
+
 8. **An Admin may edit only what the Student themselves could edit, plus the role.** Display
    name, email, avatar, **Learning Goal**, **Skills**. Never XP, Level, Streak, **Badges** or
    Mentor Reputation — all derived, and derived values have no setter by construction. Never
@@ -270,6 +279,12 @@ revoke XP.**
    > Student or by an Admin, writes `Student.email` alone. Supabase Auth is not touched and no mail
    > can be sent. The password is still absent from this list: Supabase's admin update, which a
    > password change uses, is never offered as an Admin action.
+
+   > **`forty_two_id` is never an Admin's, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** The
+   > list above stays as written: an Admin may not set, change or clear a Student's
+   > `forty_two_id`. Only the Student connects or disconnects 42, from their own profile. An
+   > Admin's email edit cannot steer a 42 login either, since a 42 login never reads the email
+   > (ADR-0018 d7).
 
 9. **Three guards against locking the platform out.** An Admin may not change their own role;
    may not suspend or remove themselves; and the last remaining Admin may not be demoted or

@@ -322,6 +322,25 @@ done when the PR template already is one.**
    > and no test can make Supabase answer `429` on demand. The category binds outcomes, not a
    > technique.
 
+   > **Extended 2026-10-08 — `12-sign-in` gains two checks for Sign in with 42**
+   > ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)). Two of its paths can go wrong behind a normal-looking
+   > answer:
+   >
+   > - **A 42 login finds its Student only by `forty_two_id`.** After an Admin sets another
+   >   Student's email to the email of a Student who connected 42, a 42 login with that 42 account
+   >   still reaches the Student who connected it, never the other. A lookup by email would hand an
+   >   Admin any account (ADR-0018 d7), and no demo step edits an email before signing in with 42.
+   > - **A password is set without the current one only within a fresh Confirm with 42.** Without
+   >   the confirmation, and eleven minutes after it, the request is refused; within ten minutes,
+   >   once, it succeeds (ADR-0003 d11's note).
+   >
+   > 42 cannot run on the machine, so these checks replace only the two calls to 42, the token
+   > exchange and `/v2/me`, with a fixed answer. Everything after them is the real code on the
+   > fallback: the lookup, the transactions, Supabase Auth and the session. This is not the
+   > stand-in the note above rules out, which is about Supabase, a service that runs locally. The
+   > real round trip to 42 is shown by hand, once on the registered application and again at the
+   > defense. The category count stays at twelve.
+
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
    `ts-jest`/babel configuration to keep alive. One runner means **one command for decision 6 to
@@ -558,6 +577,10 @@ done when the PR template already is one.**
    > **Extended 2026-10-04 — sign-in supplies the twelfth category** (decision 1's note of
    > 2026-10-04). The next proposed category is the thirteenth and still needs the same *does it
    > fail silently?* argument.
+
+   > **Extended 2026-10-08 for Sign in with 42, still without adding a category.** Two checks join
+   > `12-sign-in` (decision 1's note of 2026-10-08). The next proposed category remains the
+   > thirteenth.
 
    The pull to broaden will arrive during implementation, the way ADR-0003 decision 9 predicts the
    pull to put a privileged action on the socket and ADR-0005 decision 4 predicts the quiet
