@@ -6,7 +6,13 @@
 
 Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, and Node 22 (22.12 or a later 22.x release). Docker runs the application, proxy and local Supabase services. Node on the host runs only the Vite development server used by the dev overlay.
 
-The repository checks out every text file with LF on every machine, Windows included, through `.gitattributes`. Without it Windows checkouts would use CRLF, which breaks shell scripts run from the checkout. A Windows checkout made before this change keeps its CRLF files until they are checked out again.
+The repository checks out every text file with LF on every machine, Windows included, through `.gitattributes`. Without it Windows checkouts would use CRLF, which breaks shell scripts run from the checkout. A Windows checkout made before `.gitattributes` was added keeps its CRLF files until they are checked out again. `git status` stays clean on such a checkout, so check it with:
+
+```bash
+git ls-files --eol | grep w/crlf
+```
+
+It prints nothing once the checkout uses LF.
 
 `git reset --hard` discards uncommitted changes, so commit or stash them first. To fix an old checkout once, run from the repository root:
 
