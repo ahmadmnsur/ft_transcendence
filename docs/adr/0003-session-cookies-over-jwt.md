@@ -314,18 +314,21 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > the callback. The callback still uses the attempt's `state` and PKCE verifier once, as for
     > any 42 login. Then, under the same cookie, it keeps a sign-up draft in memory until the
     > attempt's ten minutes end: the 42 `id`, with the 42 login and email as suggestions. The
-    > browser goes to a sign-up form. The Student is created by that form's JSON request: the
-    > ordinary sign-up's checks and transaction, Terms checkbox included (ADR-0018 d12), which also
-    > write `forty_two_id` and use the draft up. Its new session replaces the attempt cookie.
+    > browser goes to a sign-up form. The Student is created by that form's JSON request, which
+    > runs the ordinary sign-up's checks and transaction, Terms checkbox included (ADR-0018 d12),
+    > and also writes `forty_two_id` and uses the draft up. Its new session replaces the attempt
+    > cookie.
     >
     > **The 42 sign-up form's request says it comes from that form**, so it can never be taken for
     > an ordinary sign-up. The attempt cookie ends with the draft (`Max-Age` ten minutes), and
     > after that the browser sends none. A request without its cookie, or whose draft has expired,
     > would otherwise look exactly like an ordinary sign-up and succeed without `forty_two_id`. So
     > it is refused with the 42 failure below, and never becomes an ordinary sign-up. An ordinary
-    > sign-up never uses a draft, even while one is live in that browser. A Student who started
-    > from 42 therefore never ends up with an account that is not connected to it. **Confirm with
-    > 42** (decision 11's note) writes no row in the callback either.
+    > sign-up never uses a draft, even while one is live in that browser. A 42 sign-up form that
+    > goes through therefore always creates an account connected to that 42 account. Someone who
+    > leaves it for the ordinary sign-up page creates an ordinary account, and can connect 42
+    > later with their password. **Confirm with 42** (decision 11's note) writes no row in the
+    > callback either.
     >
     > Sign in with 42 now tells a sanction the way sign-in does (the note above). Once 42 has
     > confirmed the account, a Removed Student reads "This account was removed and can't sign in
