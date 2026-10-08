@@ -31,6 +31,16 @@
 > [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): what Sign in with 42 does with the cookie and its callback,
 > and whether a Student it creates has a Supabase Auth user.
 
+> **Settled 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93): Sign in with 42.** NestJS runs
+> the 42 flow itself, and Supabase Auth takes no part in it. A 42 login finds its Student by 42's
+> account `id`, stored in `Student.forty_two_id`, never by email. A 42 account that no Student holds
+> gets a sign-up form, and the Student it creates has a password and a Supabase Auth user like
+> every other. A signed-in Student can connect or disconnect 42 with their current password, and a
+> Student who connected it can set a new password after confirming with 42. Decisions 6, 10 and
+> 11 carry a note each. Decision 1's notes on the attempt cookie stand, except that on a first 42
+> login the sign-up form's request replaces the attempt cookie, not the callback (decision 10's
+> note).
+
 The subject mandates email-and-password authentication with hashed, salted storage
 (`document/en.subject.md:377`) and HTTPS for every browser-to-backend connection (`:383`),
 and **nothing else**. In particular it never mentions JWT: zero occurrences of "JWT" or
@@ -157,6 +167,12 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > password unchanged. A crash between steps 3 and 4 leaves the new password set and at most a
    > session created in that gap. That is accepted.
 
+   > **A password set through 42, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** A Student who
+   > connected 42 may set a new password without the current one, after **Confirm with 42**
+   > (decision 11's note). It is the password change above with step 1 replaced: the confirmation
+   > stands where the check of the current password stood. Steps 2 to 4, the `password_version`
+   > guards and the signing out everywhere stand as written.
+
 7. **The socket authenticates by the same cookie**, which same-origin socket.io replays on
    every handshake, including every reconnect. There is no token to pass, refresh, or
    re-present: the reconnect story is that there isn't one. A rejected handshake must stop
@@ -279,6 +295,48 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > the admin API with the secret key, and the project's public sign-up is switched off, so no
     > account can be made except through PeerConnect.
 
+    > **The callback's writes, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)**, answering the note
+    > on the callback exception's reach. The callback may write two things, both after the `state`
+    > check:
+    > - the session it creates for the Student a 42 login finds, the exception as first written;
+    > - the link a signed-in Student asked for with **Connect 42**: `Student.forty_two_id` set on
+    >   their own row, refused if another row already holds that 42 account.
+    >
+    > **Connect 42 and Disconnect 42 ask for the current password**, checked through Supabase Auth
+    > as a password change's step 1 is: Connect 42 when it starts, before the trip to 42, and
+    > Disconnect 42 in its own JSON request. The `state` check proves the callback came back to the
+    > browser that started the trip, not that the person at that browser owns the account. Without
+    > the password, someone at a computer left signed in could put their own 42 account on the
+    > owner's row and keep it after the owner's next password change. A Student who signed up
+    > through 42 is already connected, and one who signed up with a password knows it.
+    >
+    > That is the exception's whole reach. A 42 account that no Student holds creates nothing in
+    > the callback. The callback still uses the attempt's `state` and PKCE verifier once, as for
+    > any 42 login. Then, under the same cookie, it keeps a sign-up draft in memory until the
+    > attempt's ten minutes end: the 42 `id`, with the 42 login and email as suggestions. The
+    > browser goes to a sign-up form. The Student is created by that form's JSON request, which
+    > runs the ordinary sign-up's checks and transaction, Terms checkbox included (ADR-0018 d12),
+    > and also writes `forty_two_id` and uses the draft up. Its new session replaces the attempt
+    > cookie.
+    >
+    > **The 42 sign-up form's request says it comes from that form**, so it can never be taken for
+    > an ordinary sign-up. The attempt cookie ends with the draft (`Max-Age` ten minutes), and
+    > after that the browser sends none. A request without its cookie, or whose draft has expired,
+    > would otherwise look exactly like an ordinary sign-up and succeed without `forty_two_id`. So
+    > it is refused with the 42 failure below, and never becomes an ordinary sign-up. An ordinary
+    > sign-up never uses a draft, even while one is live in that browser. A 42 sign-up form that
+    > goes through therefore always creates an account connected to that 42 account. Someone who
+    > leaves it for the ordinary sign-up page creates an ordinary account, and can connect 42
+    > later with their password. **Confirm with 42** (decision 11's note) writes no row in the
+    > callback either.
+    >
+    > Sign in with 42 now tells a sanction the way sign-in does (the note above). Once 42 has
+    > confirmed the account, a Removed Student reads "This account was removed and can't sign in
+    > again." and a Suspended one "Your account is suspended. Contact an Admin." 42's confirmation
+    > stands where the right password does: it proves who is signing in. Every other failure keeps
+    > one message, "Sign in with 42 failed. Try again.": cancelled on 42's page, an expired or
+    > unknown attempt, a `state` mismatch, or 42 unreachable.
+
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
     rule. Email verification in particular would put SMTP deliverability on the critical path
@@ -297,6 +355,25 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > [Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85) as a later effort, in which PeerConnect would send the email itself and
     > Supabase Auth would only set the new password. The admin update a password change uses is
     > never offered as an Admin action (ADR-0018 d8).
+
+    > **Recovery through 42, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** A Student who
+    > connected 42 can recover a forgotten password. Signed in, for example through Sign in with 42,
+    > they press **Confirm with 42** on their profile and go to 42 and back. For the next ten
+    > minutes they may set a new password once, without the current one (decision 6's note). The
+    > confirmation must return the 42 account that Student connected; anything else fails like any
+    > 42 failure. The permission lives in memory, bound to the session like a Connect 42 attempt,
+    > and is never a database row. The new-password request takes it, and checks that the Student's
+    > connected 42 account is still the one confirmed.
+    >
+    > A PeerConnect session alone cannot change the password: Confirm with 42 also needs the
+    > connected 42 account, signed in in that browser. If the 42 intranet is still signed in there,
+    > 42 may send the browser straight back without asking for anything; it is plain OAuth 2.0,
+    > with no way to ask for a fresh login. So whoever controls the connected 42 account in a
+    > browser controls the PeerConnect account, as they already could through Sign in with 42, and
+    > PeerConnect cannot tell them apart. Connect 42 asks for the current password (decision 10's
+    > note), so a session left open cannot attach another 42 account and use it here. Email
+    > verification and reset by email still do not ship, an Admin still sets no password (ADR-0018
+    > d8's note), and a Student who never connected 42 still cannot recover a forgotten password.
 
 **The numbers in decisions 3, 4 and 10 are engineering defaults, not citations.** The subject
 sets no figure for session length, renewal threshold or rate limit. Change them freely; the

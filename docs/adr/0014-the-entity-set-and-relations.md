@@ -39,6 +39,15 @@
 > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) still records the column
 > change and whether the count of nineteen tables moves.
 
+> **`Student.forty_two_id` joins, 2026-10-08.** [Settle how a 42 login finds its Student on
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93) adds one column: 42's
+> account `id`, a nullable unique integer. It is set when a Student signs up through 42 or connects
+> 42, and cleared when they disconnect it; a Removed row keeps it (ADR-0008 d7's note). A 42 login
+> finds its Student by this column alone, never by `Student.email` (ADR-0018 d7). It is a plain
+> Prisma unique index and adds no raw-SQL step. [Settle which tables change for
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) still records the column
+> change and whether the count of nineteen tables moves.
+
 `document/en.subject.md:373` requires "a clear schema and well-defined relations", and `:1280`-`:1284`
 requires the schema to be *documented* — tables, relationships, key fields and data types. Twelve
 tickets have decided what this platform does; none of them has said what tables it has. This ADR is
