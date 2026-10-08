@@ -282,9 +282,9 @@ revoke XP.**
 
    > **`forty_two_id` is never an Admin's, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** The
    > list above stays as written: an Admin may not set, change or clear a Student's
-   > `forty_two_id`. Only the Student connects or disconnects 42, from their own profile. An
-   > Admin's email edit cannot steer a 42 login either, since a 42 login never reads the email
-   > (ADR-0018 d7).
+   > `forty_two_id`. Only the Student connects or disconnects 42, from their own profile and with
+   > their current password (ADR-0003 d10's note). An Admin's email edit cannot steer a 42 login
+   > either, since a 42 login never reads the email (ADR-0018 d7).
 
 9. **Three guards against locking the platform out.** An Admin may not change their own role;
    may not suspend or remove themselves; and the last remaining Admin may not be demoted or

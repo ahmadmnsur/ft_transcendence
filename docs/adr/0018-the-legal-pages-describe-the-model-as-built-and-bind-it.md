@@ -228,7 +228,8 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > the attempt and are gone within ten minutes. Nothing else from `/v2/me` is read, and the
    > token is still used once and discarded.
    >
-   > - The Student can **Disconnect 42** from their profile, which clears the number.
+   > - The Student can **Disconnect 42** from their profile, with their current password, which
+   >   clears the number.
    > - A Removed Student's row keeps it (ADR-0008 d7's note).
    > - No Admin action sets, changes or clears it (ADR-0008 d8's note).
    > - A Student created through 42 is an ordinary Student with a password. There is no 42-only

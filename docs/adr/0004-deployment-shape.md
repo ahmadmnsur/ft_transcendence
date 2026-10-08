@@ -942,9 +942,9 @@ so the single authorization path ADR-0003 defends survives intact.
 >   changes, stored in `Student.forty_two_id`. A 42 account that no Student holds gets a sign-up
 >   form pre-filled with the 42 login and email, both editable, and creates a Student with a
 >   password through the Terms checkbox. A signed-in Student can **Connect 42** or
->   **Disconnect 42** on their profile. Nothing links by email: an email that already holds an
->   account gets sign-up's `email_unavailable`, and the form tells its owner to sign in with their
->   password and connect 42.
+>   **Disconnect 42** on their profile, with their current password. Nothing links by email: an
+>   email that already holds an account gets sign-up's `email_unavailable`, and the form tells its
+>   owner to sign in with their password and connect 42.
 > - **Email-and-password sign-up stays open**, as the 2026-09-20 note says, and every Student now
 >   has a password, whichever way they signed up.
 > - **Who registers the application: Kamel, once, for the team.** He registered an application
@@ -963,7 +963,8 @@ so the single authorization path ADR-0003 defends survives intact.
 > - **The secret expires.** 42 sets `secret_valid_until` 28 days after a secret is made (the
 >   first one: 2026-11-04) and returns it with every token. The `api` logs a warning at each token
 >   exchange once fewer than seven days are left, and checking the date is on the pre-defense
->   checklist. An expired secret fails Sign in with 42 only; email and password are unaffected.
+>   checklist. An expired secret fails every trip to 42 (Sign in, Connect and Confirm with 42);
+>   email-and-password sign-in is unaffected.
 >
 > Verified on 2026-10-07 with the team application's keys: a token request answers `scope:
 > public`, `expires_in: 7200` and `secret_valid_until`. Whether 42 checks PKCE is still

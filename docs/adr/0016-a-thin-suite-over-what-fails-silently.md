@@ -327,9 +327,11 @@ done when the PR template already is one.**
    > answer:
    >
    > - **A 42 login finds its Student only by `forty_two_id`.** After an Admin sets another
-   >   Student's email to the email of a Student who connected 42, a 42 login with that 42 account
-   >   still reaches the Student who connected it, never the other. A lookup by email would hand an
-   >   Admin any account (ADR-0018 d7), and no demo step edits an email before signing in with 42.
+   >   Student's email to the one 42 returns for a connected Student's 42 account, a 42 login with
+   >   that account still reaches the Student who connected it, never the other. The fixed
+   >   `/v2/me` answer returns that email, and the connected Student's own email is a different
+   >   one, since `Student.email` is unique. A lookup by email would hand an Admin any account
+   >   (ADR-0018 d7), and no demo step edits an email before signing in with 42.
    > - **A password is set without the current one only within a fresh Confirm with 42.** Without
    >   the confirmation, and eleven minutes after it, the request is refused; within ten minutes,
    >   once, it succeeds (ADR-0003 d11's note).
