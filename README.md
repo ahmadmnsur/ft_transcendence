@@ -6,6 +6,17 @@
 
 Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, and Node 22 (22.12 or a later 22.x release). Docker runs the application, proxy and local Supabase services. Node on the host runs only the Vite development server used by the dev overlay.
 
+The repository checks out every text file with LF on every machine, Windows included, through `.gitattributes`. Without it Windows checkouts would use CRLF, which breaks shell scripts run from the checkout. A Windows checkout made before this change keeps its CRLF files until they are checked out again.
+
+`git reset --hard` discards uncommitted changes, so commit or stash them first. To fix an old checkout once, run from the repository root:
+
+```bash
+git rm --cached -r -q .
+git reset --hard
+```
+
+or clone the repository again.
+
 ### The `.env` model
 
 `.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for its two interpolated ports.
