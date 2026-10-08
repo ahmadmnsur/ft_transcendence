@@ -315,11 +315,17 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > any 42 login. Then, under the same cookie, it keeps a sign-up draft in memory until the
     > attempt's ten minutes end: the 42 `id`, with the 42 login and email as suggestions. The
     > browser goes to a sign-up form. The Student is created by that form's JSON request: the
-    > ordinary sign-up, Terms checkbox included (ADR-0018 d12), which also writes `forty_two_id`
-    > and uses the draft up. Its new session replaces the attempt cookie. A request that arrives
-    > after the draft has expired is refused with the 42 failure below, so a Student who started
-    > from 42 never ends up with an account that is not connected to it. **Confirm with 42**
-    > (decision 11's note) writes no row in the callback either.
+    > ordinary sign-up's checks and transaction, Terms checkbox included (ADR-0018 d12), which also
+    > write `forty_two_id` and use the draft up. Its new session replaces the attempt cookie.
+    >
+    > **The 42 sign-up form's request says it comes from that form**, so it can never be taken for
+    > an ordinary sign-up. The attempt cookie ends with the draft (`Max-Age` ten minutes), and
+    > after that the browser sends none. A request without its cookie, or whose draft has expired,
+    > would otherwise look exactly like an ordinary sign-up and succeed without `forty_two_id`. So
+    > it is refused with the 42 failure below, and never becomes an ordinary sign-up. An ordinary
+    > sign-up never uses a draft, even while one is live in that browser. A Student who started
+    > from 42 therefore never ends up with an account that is not connected to it. **Confirm with
+    > 42** (decision 11's note) writes no row in the callback either.
     >
     > Sign in with 42 now tells a sanction the way sign-in does (the note above). Once 42 has
     > confirmed the account, a Removed Student reads "This account was removed and can't sign in
