@@ -12,8 +12,23 @@ import {
 } from './nginx';
 
 // The suite only ever runs against the local fallback; a team or unknown target
-// would let a stray `.env` point the harness at real data (§16.2).
+// would let a stray `.env` point the harness at real data (§16.2). A query
+// `host` or `hostaddr` is refused too, because pg would connect there instead
+// of the hostname.
 function assertFallback(env: EnvRecord): void {
+  let databaseUrl: URL | undefined;
+  try {
+    databaseUrl = new URL(env['DATABASE_URL'] ?? '');
+  } catch {
+    // An unset or unparseable URL is left to the refusals below.
+  }
+  for (const parameter of ['host', 'hostaddr']) {
+    if (databaseUrl?.searchParams.has(parameter)) {
+      throw new Error(
+        `Test setup refused: DATABASE_URL sets ${parameter} in its query, not the local fallback.`,
+      );
+    }
+  }
   const target = resolveSupabaseTarget(env);
   if (target.kind === 'fallback') return;
   if (target.databaseHost !== 'db') {

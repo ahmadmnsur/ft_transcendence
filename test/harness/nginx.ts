@@ -7,7 +7,7 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 // Every `*_temp_path` the config names, all inside the prefix directory.
 const TEMP_PATHS = ['client_body', 'proxy', 'fastcgi', 'uwsgi', 'scgi'] as const;
 
-// Running as root, nginx drops its workers to `nobody`, and a mkdtemp prefix is
+// Running as root, nginx drops its workers to `nginx`, and a mkdtemp prefix is
 // root-owned 0700, so a worker cannot spool a request body it buffered. The
 // prefix only has to be traversable and each temp path writable; the owner
 // keeps full access either way, so a non-root run is unaffected.
