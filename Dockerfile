@@ -23,6 +23,9 @@ CMD ["sh", "-c", "node dist/src/core/check-env.js && npx prisma migrate deploy -
 
 FROM base AS dev
 RUN --mount=type=cache,target=/root/.npm npm ci
+# The test harness starts this binary for the upload category (§16.2); the
+# runtime image never needs it.
+RUN apk add --no-cache nginx
 COPY --from=build /app/dist/src/core/check-env.js /opt/peerconnect/check-env.js
 COPY --from=build /app/dist/src/core/env.js /opt/peerconnect/env.js
 CMD ["sh", "-c", "node /opt/peerconnect/check-env.js && npx prisma generate --config prisma.config.ts && npx nest build && npx prisma migrate deploy --config prisma.config.ts && npx prisma db seed --config prisma.config.ts && exec npx nest start --watch"]

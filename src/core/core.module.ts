@@ -33,6 +33,6 @@ import { CheckpointHook, UnitOfWork } from './uow';
     { provide: APP_GUARD, useClass: JsonMutationGuard },
     { provide: APP_GUARD, useClass: UploadCsrfGuard },
   ],
-  exports: [AppConfig, AppLogger, PrismaService, UnitOfWork, Clock, RealtimePublisher],
+  exports: [AppConfig, AppLogger, PrismaService, UnitOfWork, CheckpointHook, Clock, RealtimePublisher],
 })
 export class CoreModule {}
