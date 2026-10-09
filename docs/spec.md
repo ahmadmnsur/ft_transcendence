@@ -2961,6 +2961,9 @@ Chrome as the baseline; Brave Shields against the self-signed certificate, the `
 `SameSite=Lax` cookie; the CSP and the clean console. Limitations are documented in the README
 (`en.subject.md:580`).
 
+> **Updated 2026-10-09:** Fadel left the team on 2026-10-01, and the pass has been Ahmad's since
+> (#72; ADR-0016 d9's note). No deputy is recorded for it.
+
 ### 16.8 Definition of Done (ADR-0016 d6)
 
 A ticket is done when its PR merges with every applicable box of `.github/pull_request_template.md`
@@ -3063,6 +3066,9 @@ calculation (§1.3), the browser-limitations section (§16.7), the credential va
 Student's email. **Owners recorded**: Instructions — Kamel (ADR-0004 d12); browser limitations — Fadel
 (ADR-0016 d9). **No owner is recorded for the other sections**; `/to-tickets` should surface that as a
 ticket rather than assume one.
+
+> **Updated 2026-10-09:** the browser-limitations section has been Ahmad's since Fadel left the team
+> on 2026-10-01 (#72, which covers the pass and that section).
 
 ### 17.6 Settled dates
 

@@ -429,7 +429,8 @@ is fragile.
   > 2026-10-08, so `main` holds commits from all three members: Ahmad, Kamel and Hussein. A root
   > `.mailmap` gives each of them one name in the author list: it folds Ahmad's two identities into
   > one, maps Kamel's local identity to his GitHub one, and names Hussein, whose commit carries only
-  > his login. #16 closes with it.
+  > his login. #16 closes with it. The collaborators are now `ahmadmnsur`, `UchihaKim` and
+  > `hdakdouk42`; `fadel-fr03` no longer is one.
 - **Nothing here is enforced by GitHub.** Every rule is a convention three people keep. If branch
   protection turns out to be available, decisions 5 and 7 are the ones to enforce first.
 

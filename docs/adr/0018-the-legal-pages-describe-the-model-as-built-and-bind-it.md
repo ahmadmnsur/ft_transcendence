@@ -82,10 +82,6 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    42; each copy run by whoever started it, its data on that machine, its Admins that copy's staff
    accounts; a fresh copy holding only the fictional Students ADR-0017 seeds.
 
-   > **Roster updated 2026-10-09.** Fadel left the team on 2026-10-01 and Hussein Dakdouk joined on
-   > 2026-10-04, so the section names Ahmad, Kamel and Hussein. The Privacy Policy reads so since
-   > 2026-10-09.
-
    > **Under revision 2026-09-30** (see the note at the top): with a shared Supabase project, a copy's data may
    > no longer live only on the machine that runs it. [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) settles what this section says.
 
@@ -94,6 +90,10 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > and no real user data**: ADR-0017's thirty Students plus the bootstrap Admin and Peer
    > Moderator (ADR-0004 d11, ADR-0008 d12). Those two are Student records holding a role, like
    > every account (ADR-0008 d1).
+
+   > **Roster updated 2026-10-09.** Fadel left the team on 2026-10-01 and Hussein Dakdouk joined on
+   > 2026-10-04, so the section names Ahmad, Kamel and Hussein. The Privacy Policy reads so since
+   > 2026-10-09.
 
 2. **No law is named and no compliance is claimed.** A GDPR-shaped policy — a controller, lawful
    bases, the eight rights — would name a controller that does not exist and promise what this model
