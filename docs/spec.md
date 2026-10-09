@@ -3079,6 +3079,10 @@ matcher tests. End of week 4 (2026-10-15): the legal pages signed off by Ahmad, 
 verified by Kamel, live. Week 5 (2026-10-16 → 10-22): the browser pass. The 2026-10-02 / 10-05 / 10-22
 module-contingency dates are discharged (#7).
 
+> **Updated 2026-10-09:** week 2's owner changed after this was settled. Fadel left the team on
+> 2026-10-01, and Ahmad took the fixture port and the matcher tests (#34, #35; §17.1): the port
+> landed as `e15d2c0` (#110) and the tests as `ab26e78` (#112).
+
 ---
 
 ## 18. Build dependencies
@@ -3103,6 +3107,9 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
 4. **Fixture port + matcher engine + category 1** (Fadel, week 2, independent of the database layer for
    the pure part). If no earlier PR has added a test file, this one adds the first: from it the Done
    box's suite must be green and CI gains step 7 (§16.4, §16.8).
+
+   > **Updated 2026-10-09:** Ahmad built it after Fadel left the team on 2026-10-01 (#34, #35;
+   > §17.6's note).
 5. **Profiles and Skills** → **Rounds and Matches** (open, accept, decline, hand-made, close without
    Streak) → **Reviews** → **XP, Badges, Streak at close, Leaderboard** → **Learning Analytics**.
 6. **Prompts** → **feed and Likes** → **Reports and moderation**.
