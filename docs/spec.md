@@ -3006,6 +3006,9 @@ only way an empty suite is excused, and it ends for good with the first test fil
 - **Kamel reviews; Ahmad deputises when Kamel is blocked more than 24 hours**; Fadel watches for the
   stall. The developer authors the migration. **When the gate holder authors a gated PR, Ahmad
   reviews it** — nobody reviews their own PR (§17.4), and Ahmad is already the gate's deputy.
+
+  > **Updated 2026-10-09:** Fadel left the team on 2026-10-01, and Ahmad has watched for the stall
+  > since (#28; §17.1's note).
 - **Rules**: a merged migration is immutable (fix forward); rebase onto `main` before merging and
   regenerate only your own unmerged migration; `schema.prisma` and its migration are committed
   together; `npx prisma generate` is run explicitly; migrations are named `<slice>_<change>`; the seed
