@@ -3,6 +3,9 @@ WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY web/ ./
+# The `@shared` alias resolves to web/'s parent, so the shared constants are
+# copied to the same relative path inside this stage.
+COPY src/shared/ /src/shared/
 RUN npm run build
 
 FROM nginx:1.30.5-alpine AS ngbase
