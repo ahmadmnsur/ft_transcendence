@@ -2956,13 +2956,14 @@ from empty in CI rather than trusted to surface at the next local boot.
 
 ### 16.7 Browser pass (ADR-0016 d9)
 
-Fadel runs it in week 5 (2026-10-16 → 10-22), Ahmad deputising: every feature in Firefox and Brave,
+Ahmad runs it in week 5 (2026-10-16 → 10-22): every feature in Firefox and Brave,
 Chrome as the baseline; Brave Shields against the self-signed certificate, the `wss` socket and the
 `SameSite=Lax` cookie; the CSP and the clean console. Limitations are documented in the README
 (`en.subject.md:580`).
 
-> **Updated 2026-10-09:** Fadel left the team on 2026-10-01, and the pass has been Ahmad's since
-> (#72; ADR-0016 d9's note). No deputy is recorded for it.
+> **Updated 2026-10-09:** this read *"Fadel runs it in week 5 (2026-10-16 → 10-22), Ahmad
+> deputising"*. Fadel left the team on 2026-10-01, and the pass has been Ahmad's since (#72;
+> ADR-0016 d9's note). No deputy is recorded for it.
 
 ### 16.8 Definition of Done (ADR-0016 d6)
 
@@ -2990,14 +2991,15 @@ only way an empty suite is excused, and it ends for good with the first test fil
 
 | | Role | Also |
 | --- | --- | --- |
-| **Ahmad** | Product Owner | Developer · schema-gate deputy |
+| **Ahmad** | Product Owner · Scrum Master | Developer · schema-gate deputy · fixture port and matcher tests (week 2) · browser pass (week 5) |
 | **Kamel** | Technical Lead / Architect | Developer · schema gate · week-1 infrastructure gate |
-| **Fadel** | Scrum Master | Developer · fixture port and matcher tests (week 2) · browser pass (week 5) |
+| **Hussein** | Developer | — |
 
-> **Updated 2026-10-09.** Fadel left the team on 2026-10-01. Ahmad took his Scrum Master role, his
-> tickets (#34, #35, and #72, §16.7's browser pass) and the watch for schema-gate stalls (§17.2).
-> Hussein Dakdouk (`hdakdouk42`) joined as a Developer on 2026-10-04. The team is Ahmad, Kamel and
-> Hussein.
+> **Updated 2026-10-09.** The table's third row was *Fadel: Scrum Master; Developer · fixture port
+> and matcher tests (week 2) · browser pass (week 5)*. Fadel left the team on 2026-10-01, and Ahmad
+> took that role and those tickets (#34, #35, and #72, §16.7's browser pass), with the watch for
+> schema-gate stalls (§17.2). Hussein Dakdouk (`hdakdouk42`) joined as a Developer on 2026-10-04.
+> The team is Ahmad, Kamel and Hussein, as in `CONTRIBUTING.md` → *Roles*.
 
 ### 17.2 The schema gate (ADR-0005 d3–d6)
 
@@ -3006,12 +3008,12 @@ only way an empty suite is excused, and it ends for good with the first test fil
   patterns of §3.2: `/prisma.config*` (which holds the root `prisma.config.ts`), `/prisma7.config*`
   and `/.config/prisma*`. A PR adding any file matching one other than `prisma.config.ts` is inside
   the gate and refused. The application code the seed drives stays round-robin.
-- **Kamel reviews; Ahmad deputises when Kamel is blocked more than 24 hours**; Fadel watches for the
-  stall. The developer authors the migration. **When the gate holder authors a gated PR, Ahmad
-  reviews it** — nobody reviews their own PR (§17.4), and Ahmad is already the gate's deputy.
+- **Kamel reviews; Ahmad deputises when Kamel is blocked more than 24 hours**; Ahmad also watches
+  for the stall. The developer authors the migration. **When the gate holder authors a gated PR,
+  Ahmad reviews it** — nobody reviews their own PR (§17.4), and Ahmad is already the gate's deputy.
 
-  > **Updated 2026-10-09:** Fadel left the team on 2026-10-01, and Ahmad has watched for the stall
-  > since (#28; §17.1's note).
+  > **Updated 2026-10-09:** this read *"Fadel watches for the stall"*. Fadel left the team on
+  > 2026-10-01, and Ahmad has watched for the stall since (#28; §17.1's note).
 - **Rules**: a merged migration is immutable (fix forward); rebase onto `main` before merging and
   regenerate only your own unmerged migration; `schema.prisma` and its migration are committed
   together; `npx prisma generate` is run explicitly; migrations are named `<slice>_<change>`; the seed
@@ -3063,12 +3065,12 @@ bind command with its LAN restriction), Resources and AI usage sections, **Team 
 Management**, **Technical Stack** with justifications, **Database Schema** (§4, or a diagram generated
 from the schema), **Features List** with the member(s) behind each, **Modules** with the 18-point
 calculation (§1.3), the browser-limitations section (§16.7), the credential variables and the demo
-Student's email. **Owners recorded**: Instructions — Kamel (ADR-0004 d12); browser limitations — Fadel
-(ADR-0016 d9). **No owner is recorded for the other sections**; `/to-tickets` should surface that as a
-ticket rather than assume one.
+Student's email. **Owners recorded**: Instructions — Kamel (ADR-0004 d12); browser limitations —
+Ahmad (ADR-0016 d9; #72). **No owner is recorded for the other sections**; `/to-tickets` should
+surface that as a ticket rather than assume one.
 
-> **Updated 2026-10-09:** the browser-limitations section has been Ahmad's since Fadel left the team
-> on 2026-10-01 (#72, which covers the pass and that section).
+> **Updated 2026-10-09:** this read *"browser limitations — Fadel"*. The section has been Ahmad's
+> since Fadel left the team on 2026-10-01 (#72, which covers the pass and that section).
 
 ### 17.6 Settled dates
 
@@ -3395,18 +3397,20 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
    a decision): whether 42 accepts plain `http://localhost:8081/api/auth/42/callback` as a registered
    redirect URI. It affects only exercising Sign in with 42 on the dev overlay; the base path's
    `https://localhost:8443` is unaffected. Feeds #24's registration question.
-3. **Legal-page sign-off inputs** (ADR-0018 Consequences): Kamel's and Fadel's **42 logins**, which no
-   record holds, and #24's field. Ahmad signs off and Kamel verifies the technical claims by
-   **2026-10-15**.
+3. **Legal-page sign-off inputs** (ADR-0018 Consequences): Kamel's and Hussein's **42 logins**,
+   which no record holds, and #24's field. Ahmad signs off and Kamel verifies the technical claims
+   by **2026-10-15**.
 
-   > **Updated 2026-10-09:** the logins still needed are Kamel's and Hussein's. Fadel left the team
-   > on 2026-10-01, and Hussein Dakdouk joined on 2026-10-04 (§17.1).
-4. **[#16 — commits from Kamel and Fadel](https://github.com/ahmadmnsur/ft_transcendence/issues/16)
-   (open)**: `en.subject.md:306`–`:312` is a rejection criterion until each has landed a commit.
+   > **Updated 2026-10-09:** this read *"Kamel's and Fadel's"*. Fadel left the team on 2026-10-01,
+   > and Hussein Dakdouk joined on 2026-10-04 (§17.1).
+4. **[#16 — a commit from every member](https://github.com/ahmadmnsur/ft_transcendence/issues/16)
+   (met)**: `en.subject.md:306`–`:312` is a rejection criterion. Every member has a commit on
+   `main`, and the root `.mailmap` gives each of them one name in the author list.
 
-   > **Met 2026-10-09:** every member has a commit on `main`. Kamel's first is `77bef58` (#81),
-   > Fadel left on 2026-10-01 without one, and Hussein, who joined on 2026-10-04, landed `5d58d3c`
-   > (#127). #16 closes with a root `.mailmap` that gives each member one name in the author list.
+   > **Met 2026-10-09:** this read *"#16 — commits from Kamel and Fadel (open):
+   > `en.subject.md:306`–`:312` is a rejection criterion until each has landed a commit"*. Kamel's
+   > first is `77bef58` (#81), Fadel left on 2026-10-01 without one, and Hussein, who joined on
+   > 2026-10-04, landed `5d58d3c` (#127). #16 closes with the `.mailmap`.
 5. **[#28 — repository governance](https://github.com/ahmadmnsur/ft_transcendence/issues/28) (open)**:
    `CODEOWNERS` (which must map `/prisma/`, `/prisma.config*`, `/prisma7.config*` and
    `/.config/prisma*`, §3.2 — the seed paths now sit inside `prisma/**`); squashing migrations before
