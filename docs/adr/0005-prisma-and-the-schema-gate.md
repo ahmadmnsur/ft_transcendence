@@ -423,6 +423,13 @@ is fragile.
   > **Kamel's commit landed, annotated 2026-09-28.** `main` gained its first commit from Kamel on
   > 2026-09-27: `77bef58`, the squash-merge of #81, the infrastructure gate (#29). Still failing:
   > Fadel has no commit on `main`, so `:306`-`:312` stays unmet and #16 stays open.
+
+  > **Met by every member, annotated 2026-10-09.** Fadel left the team on 2026-10-01 without a
+  > commit, and Hussein Dakdouk joined on 2026-10-04. His first commit is `5d58d3c` (#127), on
+  > 2026-10-08, so `main` holds commits from all three members: Ahmad, Kamel and Hussein. A root
+  > `.mailmap` gives each of them one name in the author list: it folds Ahmad's two identities into
+  > one, maps Kamel's local identity to his GitHub one, and names Hussein, whose commit carries only
+  > his login. #16 closes with it.
 - **Nothing here is enforced by GitHub.** Every rule is a convention three people keep. If branch
   protection turns out to be available, decisions 5 and 7 are the ones to enforce first.
 
@@ -451,6 +458,9 @@ is fragile.
 > (Consequences above), so `CODEOWNERS` auto-request has people to request. #16 stays open for its
 > other half, a commit from each, and #28 keeps its blocking edge on it; whether questions 1–3
 > still wait on that half is for #28 to rule.
+
+> **That half is met, 2026-10-09.** Every member has a commit on `main` (Consequences above), so #16
+> closes when its `.mailmap` merges, and #28's blocking edge clears with it.
 
 - **Whether `CODEOWNERS` auto-request works on this plan.** Add it; treat it as a convenience, and
   never as the mechanism.

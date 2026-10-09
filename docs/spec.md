@@ -2991,6 +2991,11 @@ only way an empty suite is excused, and it ends for good with the first test fil
 | **Kamel** | Technical Lead / Architect | Developer · schema gate · week-1 infrastructure gate |
 | **Fadel** | Scrum Master | Developer · fixture port and matcher tests (week 2) · browser pass (week 5) |
 
+> **Updated 2026-10-09.** Fadel left the team on 2026-10-01. Ahmad took his Scrum Master role, his
+> tickets (#34, #35, and #72, §16.7's browser pass) and the watch for schema-gate stalls (§17.2).
+> Hussein Dakdouk (`hdakdouk42`) joined as a Developer on 2026-10-04. The team is Ahmad, Kamel and
+> Hussein.
+
 ### 17.2 The schema gate (ADR-0005 d3–d6)
 
 - **Scope, read off the file list**: `prisma/**` — which contains the seed (`prisma/seed/**`) and the
@@ -3384,8 +3389,15 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
 3. **Legal-page sign-off inputs** (ADR-0018 Consequences): Kamel's and Fadel's **42 logins**, which no
    record holds, and #24's field. Ahmad signs off and Kamel verifies the technical claims by
    **2026-10-15**.
+
+   > **Updated 2026-10-09:** the logins still needed are Kamel's and Hussein's. Fadel left the team
+   > on 2026-10-01, and Hussein Dakdouk joined on 2026-10-04 (§17.1).
 4. **[#16 — commits from Kamel and Fadel](https://github.com/ahmadmnsur/ft_transcendence/issues/16)
    (open)**: `en.subject.md:306`–`:312` is a rejection criterion until each has landed a commit.
+
+   > **Met 2026-10-09:** every member has a commit on `main`. Kamel's first is `77bef58` (#81),
+   > Fadel left on 2026-10-01 without one, and Hussein, who joined on 2026-10-04, landed `5d58d3c`
+   > (#127). #16 closes with a root `.mailmap` that gives each member one name in the author list.
 5. **[#28 — repository governance](https://github.com/ahmadmnsur/ft_transcendence/issues/28) (open)**:
    `CODEOWNERS` (which must map `/prisma/`, `/prisma.config*`, `/prisma7.config*` and
    `/.config/prisma*`, §3.2 — the seed paths now sit inside `prisma/**`); squashing migrations before

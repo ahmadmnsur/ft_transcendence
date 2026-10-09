@@ -655,6 +655,9 @@ done when the PR template already is one.**
 9. **The two additional browsers are Firefox and Brave, and Fadel runs the pass in week 5.**
    `:576`'s list — *"Firefox, Safari, Edge, etc."* — is open, so Brave qualifies unambiguously.
 
+   > **Annotated 2026-10-09 — Ahmad runs the pass.** Fadel left the team on 2026-10-01, and the
+   > week-5 pass (#72) has been Ahmad's since. The browsers, the reasons and the week stand.
+
    **Recorded because the engine argument cuts against it and was weighed anyway.** Chrome, Edge
    and Brave are all **Blink**, so Firefox + Brave is Gecko plus a second Blink browser, and
    Firefox + Safari would have covered three engines. It loses to a harder constraint: **the pass
@@ -681,6 +684,14 @@ done when the PR template already is one.**
     > Kamel or Fadel" no longer holds for Kamel. Fadel still has none, so this decision's reason
     > stands: the fixture port (#34) is planned as Fadel's first commit. Tracked on
     > [#16](https://github.com/ahmadmnsur/ft_transcendence/issues/16).
+
+    > **Annotated 2026-10-09 — the reason no longer applies.** Fadel left the team on 2026-10-01
+    > without a commit, and Ahmad took #34 and #35: the fixture port landed as `e15d2c0` (#110) and
+    > the matcher tests as `ab26e78` (#112). With decision 9's pass (#72) also his, the two QA
+    > commitments the paragraph below gives Fadel are Ahmad's, and no deputy for them is recorded
+    > since. The requirement this decision served is met all the same: Hussein Dakdouk joined on
+    > 2026-10-04 and landed his first commit as `5d58d3c` (#127), so `main` holds commits from all
+    > three members. #16 closes with the root `.mailmap`.
 
     Kamel is excluded deliberately: ADR-0005 decision 3 only holds because his infrastructure gate
     and his schema gate are *sequential*, and week 2 is where they meet.
