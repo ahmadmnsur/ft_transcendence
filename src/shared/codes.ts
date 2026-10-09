@@ -1,0 +1,56 @@
+// §6.15: the codes both ends share. Protocol failures keep their HTTP
+// status; refusals are answered 200 with ok: false. Plain types only, so
+// this file compiles under both tsconfigs.
+export type ErrorCode =
+  | 'validation_failed'
+  | 'unauthenticated'
+  | 'forbidden'
+  | 'csrf_rejected'
+  | 'not_found'
+  | 'payload_too_large'
+  | 'unsupported_media_type'
+  | 'internal_error'
+  | 'busy_retry_later';
+
+// The refusals a correctly built UI can reach in normal use. Answered
+// 200 with ok: false, except dm_unavailable, which is a socket ack (§7.3).
+export type RefusalCode =
+  | 'invalid_credentials'
+  | 'too_many_attempts'
+  | 'email_unavailable'
+  | 'password_incorrect'
+  | 'already_signed_in'
+  | 'student_removed'
+  | 'self_action_forbidden'
+  | 'last_active_admin'
+  | 'already_suspended'
+  | 'not_suspended'
+  | 'goal_skill_not_listed'
+  | 'file_too_large'
+  | 'file_type_not_allowed'
+  | 'file_invalid'
+  | 'friend_request_unavailable'
+  | 'friendship_exists'
+  | 'request_not_pending'
+  | 'not_friends'
+  | 'already_blocked'
+  | 'not_blocked'
+  | 'dm_unavailable'
+  | 'round_already_open'
+  | 'no_open_round'
+  | 'not_a_candidate'
+  | 'already_matched'
+  | 'pair_blocked'
+  | 'same_student'
+  | 'match_not_pending'
+  | 'match_not_in_progress'
+  | 'match_not_reviewable'
+  | 'already_reviewed'
+  | 'prompt_not_live'
+  | 'already_answered'
+  | 'admins_cannot_answer'
+  | 'post_unavailable'
+  | 'already_reported'
+  | 'report_target_invalid'
+  | 'already_resolved'
+  | 'conflict_of_interest';

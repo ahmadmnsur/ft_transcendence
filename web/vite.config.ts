@@ -8,6 +8,10 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    // The SPA imports src/shared/ through `@shared` (§3.5.2, §6.0.3).
+    alias: { '@shared': path.resolve(repoRoot, 'src/shared') },
+  },
   server: {
     port: 5173,
     strictPort: true,
