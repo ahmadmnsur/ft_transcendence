@@ -15,9 +15,9 @@ dashboard ([ADR-0005](../docs/adr/0005-prisma-and-the-schema-gate.md) d5).
 | Kamel  | Owner     | everything, including resuming a paused project                                                                                       |
 | Ahmad  | Developer | reads everything, runs SQL, edits rows; cannot change settings or buckets, create or delete Supabase Auth users, read keys, or pause and resume |
 
-Anyone holding the team `.env`, both members and each evaluator, can still do anything through
-the API with its secret key and database password. The rules below are the team's, not the
-dashboard's.
+Anyone holding the team `.env`, the project's two members and each evaluator, can still do
+anything through the API with its secret key and database password. The rules below are the
+team's, not the dashboard's.
 
 ## What is set
 
