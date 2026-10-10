@@ -1,6 +1,8 @@
 import { CheckpointHook } from '../../src/core/uow';
 
 type Release = () => void;
+type Reject = (reason: Error) => void;
+type HeldArrival = { resolve: Release; reject: Reject };
 type ArrivedWatcher = { count: number; resolve: () => void };
 
 // One named checkpoint. It holds the first arrival of an armed name until the
@@ -8,14 +10,14 @@ type ArrivedWatcher = { count: number; resolve: () => void };
 // the barrier never holds the same operation twice (§3.6.4).
 class Barrier {
   armed = false;
-  private readonly held: Release[] = [];
+  private readonly held: HeldArrival[] = [];
   private readonly watchers: ArrivedWatcher[] = [];
 
   constructor(private readonly name: string) {}
 
   hold(): Promise<void> {
-    return new Promise((resolveHold) => {
-      this.held.push(resolveHold);
+    return new Promise((resolveHold, rejectHold) => {
+      this.held.push({ resolve: resolveHold, reject: rejectHold });
       this.notify();
     });
   }
@@ -39,11 +41,21 @@ class Barrier {
         `No arrival held at barrier "${this.name}" index ${index} (${this.held.length} held).`,
       );
     }
-    this.held.splice(index, 1)[0]?.();
+    this.held.splice(index, 1)[0]?.resolve();
   }
 
   releaseAll(): void {
-    for (const release of this.held.splice(0, this.held.length)) release();
+    for (const arrival of this.held.splice(0, this.held.length)) arrival.resolve();
+  }
+
+  // Rejects every held arrival, so a run a finished test left held stops at its
+  // pause instead of continuing into the next test (see reset()).
+  rejectAll(): void {
+    for (const arrival of this.held.splice(0, this.held.length)) {
+      arrival.reject(
+        new Error(`Barrier "${this.name}" still held this arrival when the test ended.`),
+      );
+    }
   }
 
   get arrived(): number {
@@ -113,10 +125,11 @@ export class BarrierRegistry extends CheckpointHook {
     await barrier.hold();
   }
 
-  // Drops every barrier and releases whatever it still holds, so one test can
-  // never leave another blocked.
+  // Reject instead of release: a rejected run throws inside its transaction and
+  // rolls back, and since that is not a write conflict the Unit of Work never
+  // retries it; a service paused outside a transaction stops at its pause.
   reset(): void {
-    for (const barrier of this.barriers.values()) barrier.releaseAll();
+    for (const barrier of this.barriers.values()) barrier.rejectAll();
     this.barriers.clear();
   }
 }

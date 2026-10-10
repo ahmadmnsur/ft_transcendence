@@ -92,12 +92,13 @@ export function useHarness(): Harness {
   }, 30_000);
 
   beforeEach(async () => {
-    // A run held at a barrier keeps its read lock, so truncate would wait for a
-    // release that never comes. Release every held run first.
+    // A run a finished test left held keeps its read lock, so every held arrival
+    // is rejected before the truncate: the run rolls back, and the truncate
+    // waits only for that.
     barriers.reset();
     await harness.truncate();
-    // Clear after the truncate: a released run publishes its after-commit events
-    // when it commits, and the truncate is what waits for that commit.
+    // Clear after the truncate, which waits for any transaction still open on
+    // those tables to end.
     recorder.clear();
     ipCounter += 1;
     // One fixed address per test, so §5.5's key is deterministic within a test
