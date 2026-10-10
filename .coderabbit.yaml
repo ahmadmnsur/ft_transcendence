@@ -45,11 +45,19 @@ reviews:
         - New or changed personal data must come with an update to docs/legal/privacy-policy.md.
     - path: "{prisma.config*,prisma7.config*,.config/prisma*}"
       instructions: "Inside the schema gate. The root prisma.config.ts is the only Prisma Config; any other file matching /prisma.config*, /prisma7.config* or /.config/prisma* is refused."
+    - path: "supabase/**"
+      instructions: |
+        Inside the schema gate (CONTRIBUTING.md, ADR-0005 d5). Check:
+        - No new route, port or service exposes the database or a Data API.
+        - A change to supabase/team-project.md that changes a setting with a GOTRUE_* line in its table changes that line in compose.yaml too.
+        - Anything outside Markdown also needs the clean-clone boot; remind the author if the PR description does not mention it.
+    - path: "compose*.yaml"
+      instructions: "Inside the schema gate (ADR-0005 d5): the fallback's Auth settings are its GOTRUE_* lines. A changed GOTRUE_* value must match supabase/team-project.md, and no new route, port or service may expose the database."
     - path: "src/**/*.ts"
       instructions: "NestJS API. Flag logging of passwords, tokens or request bodies (ADR-0018) and any call to a third-party origin."
     - path: "web/src/**"
       instructions: "Frontend. Flag anything fetched from a third party (fonts, CDNs, analytics) and any cookie other than the session cookie (ADR-0018)."
-    - path: "{Dockerfile,compose*.yaml,proxy/**}"
+    - path: "{Dockerfile,compose*.yaml,proxy/**,.env.example}"
       instructions: "Changes here require a clean-clone boot check before merge; remind the author if the PR description does not mention it."
     - path: "docs/adr/**"
       instructions: "ADR history is annotated, never rewritten. Flag edits that change existing decision text instead of adding a dated note."
@@ -79,7 +87,7 @@ reviews:
     custom_checks:
       - name: "Schema gate"
         mode: warning
-        instructions: "If the PR touches prisma/**, or any file matching prisma.config*, prisma7.config* or .config/prisma*, pass only if Kamel is a requested reviewer, or Ahmad when Kamel is the author or the PR description says Kamel has been blocked for more than 24 hours. Otherwise pass."
+        instructions: "If the PR touches prisma/**, supabase/**, any compose*.yaml, or any file matching prisma.config*, prisma7.config* or .config/prisma*, or moves or renames one of these, pass only if Kamel is a requested reviewer, or Ahmad when Kamel is the author or the PR description says Kamel has been blocked for more than 24 hours. Otherwise pass."
       - name: "Privacy Policy moves with personal data"
         mode: warning
         instructions: "If the PR changes what personal data about a Student is stored, who can see it, or how long it is kept, pass only if docs/legal/privacy-policy.md is also changed. Otherwise pass."

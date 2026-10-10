@@ -319,15 +319,15 @@ revoke XP.**
 
    > **Answered 2026-10-10 by [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97): nobody does.** Kamel, the Supabase
    > project's Owner, is the only member who changes it by hand, and Ahmad stays a Developer, a role
-   > that cannot create or delete Supabase Auth users in the dashboard (Supabase's access-control
+   > that can still create and delete Supabase Auth users in the dashboard (Supabase's access-control
    > table, read 2026-10-09). Nobody deletes or edits a Student's Supabase Auth user, a Removed
    > Student's included, except through `make reset-team`, which deletes every Supabase Auth user
    > together with every row of our tables, so no Student is left without one (ADR-0004 d11). The
    > one other deletion allowed is Kamel's, of a Supabase Auth user whose id no Student has, which a
    > crash during sign-up can leave. `supabase/team-project.md` lists both with the other changes
-   > made by hand (ADR-0005 d5's note of 2026-10-10). The team `.env`, which the
-   > project's two members and each evaluator hold, can still do it through the API, so this is a
-   > rule the team keeps, as direct SQL always was. Still no repair code.
+   > made by hand (ADR-0005 d5's note of 2026-10-10). The dashboard and the team `.env`, which the
+   > project's two members and each evaluator hold, can both do it, so this is a rule the team
+   > keeps, as direct SQL always was. Still no repair code.
 
 10. **A Peer Moderator may not act on a report concerning their own Post, or one involving a
     Student in a mutual Block with them.** Both escalate to an Admin. The report queue is the

@@ -8,16 +8,24 @@ Its settings live in its dashboard, outside git, so no pull request ever shows t
 their record. It sits inside the schema gate, and a setting changes here before it changes in the
 dashboard ([ADR-0005](../docs/adr/0005-prisma-and-the-schema-gate.md) d5).
 
+> **Not built yet, as of 2026-10-10:** the boot check's steps 3 and 4, so a team `.env` still stops
+> the boot before any connection, and `make up` neither migrates the team project nor reports a
+> `540`; the bucket step ([Avatars, and PNG/JPEG byte validation](https://github.com/ahmadmnsur/ft_transcendence/issues/43)); and the two reset commands,
+> whose ticket [Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) has yet to open. The ADRs record
+> what each will do, and the steps below that use them wait for them.
+
 ## Members
 
 | Member | Role      | In the dashboard                                                                                                                      |
 | ------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Kamel  | Owner     | everything, including resuming a paused project                                                                                       |
-| Ahmad  | Developer | reads everything, runs SQL, edits rows; cannot change settings or buckets, create or delete Supabase Auth users, read keys, or pause and resume |
+| Ahmad  | Developer | reads everything, runs SQL, edits rows, creates and deletes Supabase Auth users, changes buckets and their files, reads the keys; cannot change the project's settings (Auth, database, API, Storage's upload limit), or pause and resume |
 
-Anyone holding the team `.env`, the project's two members and each evaluator, can still do
-anything through the API with its secret key and database password. The rules below are the
-team's, not the dashboard's.
+So the dashboard stops a Developer only at the project's settings and at pausing (Supabase's access-control
+table, read 2026-10-09, for the API and the dashboard alike). Read-only, the role that could not
+do the rest, is offered only on the Team and Enterprise plans. Anyone holding the team `.env`, the
+project's two members and each evaluator, can also do anything through the API with its secret
+key and database password. The rules below are the team's, not the dashboard's.
 
 ## What is set
 
@@ -94,12 +102,19 @@ There are four exceptions, and each is Kamel's:
    1. Stop every stack connected to the team project.
    2. Find which of the migration's statements ran: `_prisma_migrations` names the failed one;
       compare its SQL with the database.
-   3. Either run its remaining statements by hand, then mark it applied with
-      `npx prisma migrate resolve --applied <name> --config prisma.config.ts`; or undo the
-      statements that ran, fix the cause (data the migration cannot convert, say), then mark it
-      rolled back with `npx prisma migrate resolve --rolled-back <name> --config prisma.config.ts`,
-      so the next `make up` runs it again. Prisma's commands run with the team `.env`, in the `api`
-      container, as the boot runs them.
+   3. Either run its remaining statements by hand, then mark it applied; or undo the statements
+      that ran, fix the cause (data the migration cannot convert, say), then mark it rolled back,
+      so the next `make up` runs it again. The failed boot has stopped the `api`, so run Prisma in
+      a one-off container, from the checkout that holds the team `.env`:
+
+      ```bash
+      docker compose run --rm --no-deps api npx prisma migrate resolve --applied <name> --config prisma.config.ts
+      docker compose run --rm --no-deps api npx prisma migrate resolve --rolled-back <name> --config prisma.config.ts
+      ```
+
+      `run` replaces the boot chain, the `api` reads the team `.env` through its `env_file` list,
+      `--no-deps` keeps the fallback's services from starting, and `prisma.config.ts` verifies the
+      pooler's certificate as at boot.
    4. Any change the schema still needs is a new migration in a new pull request. Never edit the
       merged migration or `_prisma_migrations` by hand (ADR-0005 d6).
 
@@ -107,5 +122,5 @@ There are four exceptions, and each is Kamel's:
 
 ## Before each defense
 
-Compare the dashboard with *What is set* above, and correct any difference through *Changing a
-setting*. This is one step of the pre-defense run.
+Kamel compares the dashboard with *What is set* above, and corrects any difference through
+*Changing a setting*. This is one step of the pre-defense run.

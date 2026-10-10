@@ -438,11 +438,11 @@ done when the PR template already is one.**
    > is the argument that added `prisma.config.ts` above. The two-clone procedure is unchanged.
 
    > **Extended 2026-10-10 by [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97).** The trigger also includes
-   > `supabase/**`, except its Markdown files, and `.env.example`. Both act at a database's first
-   > start: `compose.yaml` mounts `supabase/db/`'s SQL into the folder Postgres runs only when its
-   > volume is created, and the fallback's services read `.env.example` alone, the database
-   > passwords among its values taking effect only then. A broken change there passes on a working
-   > stack with an old volume and fails on a fresh clone. Markdown files in `supabase/`, such as
+   > `supabase/**`, except its Markdown files, and `.env.example`. Parts of both act only at a
+   > database's first start: `compose.yaml` mounts `supabase/db/`'s SQL into the folder Postgres runs
+   > only when its volume is created, and the fallback's services read `.env.example` alone, the
+   > database passwords among its values taking effect only then. So a broken change there can pass
+   > on a working stack with an old volume and fail on a fresh clone. Markdown files in `supabase/`, such as
    > `supabase/team-project.md`, cannot break a boot, so they stay inside the gate (ADR-0005 d5's
    > note of that date) without the check. The two-clone procedure is unchanged.
 
@@ -470,6 +470,14 @@ done when the PR template already is one.**
    > gate. That line binds in full from the PR that completes the seed; before it, a criterion counts
    > from the PR whose slice creates it. The PR template's clean-clone box lists the criteria checked,
    > so decision 6's Done stays checkable without asking anyone.
+
+   > **Corrected 2026-10-10 — `migrate deploy` is not blocked by an edited migration.** "A blocked
+   > `migrate deploy`" above comes from ADR-0005 decision 6's 2026-09-20 annotation, and it does not
+   > hold: on 2026-10-10, with Prisma 7.10.0 on Postgres 17, a migration edited after `migrate deploy`
+   > had applied it was skipped by the next `migrate deploy`, which printed "No pending migrations to
+   > apply" and exited 0 ([review of PR #132](https://github.com/ahmadmnsur/ft_transcendence/pull/132#pullrequestreview-5477409221)). The database silently keeps the old version, so
+   > the danger is a quiet one. This check, its trigger and its moment are unchanged; ADR-0005 decision
+   > 6 carries the correction.
 
 6. **Done is the merged PR, with every box in the template ticked. Nothing else is defined.**
    The template gains three checks — the suite is green, the ticket's acceptance criteria are met,
@@ -501,7 +509,8 @@ done when the PR template already is one.**
    > unchanged.** Following ADR-0005 decision 5's note of that date, it also covers `supabase/**`
    > and every `compose*.yaml`, and gains five checks for them: no foreign key or SQL into
    > Supabase's `auth` or `storage` schemas, a migration run only on the fallback before merge, a
-   > team setting changed together with its record and its `GOTRUE_*` line, nothing new exposing
+   > team setting changed together with its record and, where the record names one, its `GOTRUE_*`
+   > line, nothing new exposing
    > the database, and a moved gated file carried into the gate list. Done remains the merged PR
    > with every applicable box ticked.
 

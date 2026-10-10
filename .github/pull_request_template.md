@@ -37,7 +37,7 @@
   - [ ] Any migration ran only on the local fallback (`make dev`, `make local`, `make test`), never on the team project before merge
   - [ ] A team project setting changed → `supabase/team-project.md` and, where it names one, the matching `GOTRUE_*` line in `compose.yaml` changed together
   - [ ] No new route, port or service exposes the database or a Data API
-  - [ ] A gated file moved or renamed → the gate list here and in `CONTRIBUTING.md` updated
+  - [ ] A gated file moved or renamed → the gate list here, in `CONTRIBUTING.md` and in `.coderabbit.yaml` updated
 
 ## Clean-clone boot
 

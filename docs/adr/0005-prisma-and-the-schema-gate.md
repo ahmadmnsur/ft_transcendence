@@ -170,7 +170,7 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > deleting a Supabase Auth user whose id no Student has, and repairing a migration that failed
    > partway. Migrations reach the team project only through `make up` on `main` (ADR-0004 d8's
    > note). The PR template's gate section gains a check for each of these rules, and
-   > `CONTRIBUTING.md` lists the paths.
+   > `CONTRIBUTING.md`, the PR template and `.coderabbit.yaml`'s schema-gate check list the paths.
 
 6. **Three rules on migrations, which live in `CONTRIBUTING.md` and the PR template, not only
    here.** They must be visible at the moment someone is about to break them:
@@ -217,6 +217,17 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > their local database to a forced reset or has their deploy blocked — it just isn't silent
    > corruption. The rule is unchanged: fix forward with a new migration, never edit one already
    > on `main`.
+
+   > **Corrected 2026-10-10 — `migrate deploy` skips an edited migration; it does not error out.**
+   > `migrate deploy` matches applied migrations by name. On 2026-10-10, with Prisma 7.10.0 on
+   > Postgres 17, a migration edited after `migrate deploy` had applied it was skipped by the next
+   > `migrate deploy`, which printed "No pending migrations to apply" and exited 0, and
+   > `migrate status` reported the schema up to date ([review of PR #132](https://github.com/ahmadmnsur/ft_transcendence/pull/132#pullrequestreview-5477409221)). So the deploy is
+   > not blocked: the database silently keeps the old version while `main`, a fresh clone and the
+   > test database get the new one, and nothing reports it until a later migration fails against
+   > it. That makes the rule matter more, not less: fix forward, never edit a merged migration. On
+   > the team project, where `migrate deploy` is the only command that runs, it is also why a
+   > migration never reaches it before review (decision 5's note of 2026-10-10).
 
    > **Locked 2026-09-20 — this decision's ordering explanation and workflow target Prisma ORM
    > major version 7.** `package.json` must constrain `prisma` and `@prisma/client` to the Prisma
