@@ -107,6 +107,9 @@ export function useHarness(): Harness {
   });
 
   afterAll(async () => {
+    // The file's last test gets no beforeEach after it, so its held arrivals are
+    // rejected here, or a held request would keep app.close() waiting.
+    barriers.reset();
     await harness.app?.close();
   }, 30_000);
 
