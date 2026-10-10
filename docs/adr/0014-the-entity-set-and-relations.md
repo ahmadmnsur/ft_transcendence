@@ -50,17 +50,17 @@
 
 > **Settled 2026-10-10 by [Settle which tables change for
 > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96).** This answers every
-> "still open" and "still records" in the notes above. The count stays **nineteen tables and nine
-> enums**. `Session`, `Avatar` and `Evidence` all stay, and no new table is needed: the 42 sign-up
-> draft and the Confirm with 42 permission are kept in memory (ADR-0003's notes on decisions 1 and
-> 11). The full list of changes:
+> "still open" and "still records" in the notes above and in decision 12's note of 2026-10-05. The
+> count stays **nineteen tables and nine enums**. `Session`, `Avatar` and `Evidence` all stay, and
+> no new table is needed: the 42 sign-up draft and the Confirm with 42 permission are kept in
+> memory (ADR-0003's notes on decisions 10 and 11). The full list of changes:
 >
 > - `Student`: `password_hash` goes, and `password_version` (integer, not null, default 0) takes
 >   its place. `email` stays unique. `display_name_search` and `forty_two_id` (integer, nullable,
 >   unique) join. `display_name` gets the `und-x-icu` collation.
 > - `Avatar` and `Evidence` drop `bytes` and gain no path column (decision 12's note).
-> - No foreign key from our tables into Supabase's `auth` or `storage` schemas (ADR-0016's note of
->   2026-10-04). A Student shares its id with its Supabase Auth user, and a file is named by its
+> - No foreign key from our tables into Supabase's `auth` or `storage` schemas (ADR-0016's *Not
+>   settled* note of 2026-10-04). A Student shares its id with its Supabase Auth user, and a file is named by its
 >   row's token.
 > - No row-level security and no grants step. The team project's Data API is off, and the fallback
 >   runs no REST service ([Create PeerConnect's Supabase organization and team
@@ -548,10 +548,15 @@ arms. Those three sentences are the whole shape.
     > makes three of these values before it writes their row: `Student.id` before it creates the
     > Supabase Auth user that shares it (ADR-0003's top note of 2026-10-02), and each `token`
     > before it uploads the file the token names (ADR-0009 decision 2's note). So `Student.id`,
-    > `Avatar.token` and `Evidence.token` have no `@default` in the Prisma schema. Prisma's
-    > generated type then makes each one required when a row is created, so a create that forgets
-    > it fails to compile. With a default, it would write a row that names no Supabase Auth user or
-    > no file. `Student.id` is still a UUIDv7, made with the `uuid` package's `v7()`, the function
+    > `Avatar.token` and `Evidence.token` have no `@default` in the Prisma schema. A create that
+    > forgets a token fails to compile: every create input Prisma generates requires it. A create
+    > that forgets `Student.id` still compiles, because the Learning Goal's composite foreign key
+    > (decision 3's note of 2026-09-23) makes `id` a relation field, which Prisma's checked create
+    > input leaves out. The database then refuses the row, since `id` is not null and has no
+    > default. Sign-up therefore passes `id` with the other scalar fields. With a default, either
+    > create would write a row that names no Supabase Auth user or no file. A required field only
+    > catches a value that is missing: writing the id the Supabase Auth user got, and the token
+    > that was uploaded, is still the path's job. `Student.id` is still a UUIDv7, made with the `uuid` package's `v7()`, the function
     > Prisma's `uuid(7)` uses, so id order still follows creation order. A token is still a random
     > UUIDv4 (`randomUUID()`), so ADR-0009 decision 3 still holds. Every other `uuid` identifier
     > keeps `@default(uuid(7))`.
