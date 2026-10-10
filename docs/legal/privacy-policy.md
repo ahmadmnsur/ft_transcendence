@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 24 September 2026
+**42 PeerConnect** · Last updated: 9 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -22,7 +22,7 @@ and what you can change. It describes the platform exactly as it works — inclu
 ## Who runs PeerConnect
 
 42 PeerConnect is a student project, built for the ft_transcendence project of the 42 curriculum by
-Ahmad (`ahmmanso`), Kamel (**[42 login needed]**) and Fadel (**[42 login needed]**). It is not run or
+Ahmad (`ahmmanso`), Kamel (**[42 login needed]**) and Hussein (**[42 login needed]**). It is not run or
 endorsed by 42.
 
 There is no central PeerConnect server. Each copy of PeerConnect runs on the computer of whoever

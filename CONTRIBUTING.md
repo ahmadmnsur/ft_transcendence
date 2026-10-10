@@ -5,11 +5,15 @@ Three developers, six weeks, one database. This file is the short version of
 
 ## Roles
 
-|           | Role                       | Also                           |
-| --------- | -------------------------- | ------------------------------ |
-| **Ahmad** | Product Owner              | Developer · schema-gate deputy |
-| **Kamel** | Technical Lead / Architect | Developer · **schema gate**    |
-| **Fadel** | Scrum Master               | Developer                      |
+|             | Role                         | Also                           |
+| ----------- | ---------------------------- | ------------------------------ |
+| **Ahmad**   | Product Owner · Scrum Master | Developer · schema-gate deputy |
+| **Kamel**   | Technical Lead / Architect   | Developer · **schema gate**    |
+| **Hussein** | Developer                    | —                              |
+
+> **Updated 2026-10-09.** Fadel left the team on 2026-10-01, and Ahmad took his Scrum Master role.
+> Hussein Dakdouk (`hdakdouk42`) joined as a Developer on 2026-10-04. The team is Ahmad, Kamel and
+> Hussein.
 
 ## Branching
 
@@ -89,14 +93,14 @@ describing the changes", and it sits in the list that gets a project **rejected*
   > to `main` go through a PR (*Merging*, above), but it asks for no approving review. This rule
   > is still a convention. See ADR-0005 decision 7.
 * **PRs outside the Prisma gate: round-robin.** Anyone reviews anyone.
-* **PRs touching `prisma/` or the root `prisma.config.ts`: Kamel reviews, always.** If he is
-  blocked for more than 24 hours, **Ahmad** deputises. Fadel watches for the stall rather than
-  absorbing it. If the change touches personal data, that review also confirms the Privacy Policy
-  moved with it (*Personal data moves the Privacy Policy*, below). **A PR that adds a Prisma Config
-  anywhere else is inside the gate too, and is refused:** Prisma 7.10+ would load a root
-  `prisma7.config.*` or `.config/prisma7.*` in preference to `prisma.config.ts`, the only Config
-  this project has, and every Prisma 7 release would load a root `prisma.config.js` in preference
-  to it (ADR-0005 d5).
+* **PRs touching `prisma/` or the root `prisma.config.ts`: Kamel reviews, always.** If he is blocked
+  for more than 24 hours, **Ahmad** deputises. Ahmad also watches for the stall, which Fadel did
+  until he left on 2026-10-01. If the change touches personal data, that review also confirms the
+  Privacy Policy moved with it (*Personal data moves the Privacy Policy*, below). **A PR that adds a
+  Prisma Config anywhere else is inside the gate too, and is refused:** Prisma 7.10+ would load a
+  root `prisma7.config.*` or `.config/prisma7.*` in preference to `prisma.config.ts`, the only
+  Config this project has, and every Prisma 7 release would load a root `prisma.config.js` in
+  preference to it (ADR-0005 d5).
 
   > **Read off the file list, 2026-09-23** ([`docs/spec.md`](docs/spec.md) §3.2, M16). "Anywhere
   > else" is every path Prisma 7 can discover a Config at, which is three patterns: `/prisma.config*`,

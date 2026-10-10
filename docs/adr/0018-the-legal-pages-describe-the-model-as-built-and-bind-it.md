@@ -91,6 +91,10 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > Moderator (ADR-0004 d11, ADR-0008 d12). Those two are Student records holding a role, like
    > every account (ADR-0008 d1).
 
+   > **Roster updated 2026-10-09.** Fadel left the team on 2026-10-01 and Hussein Dakdouk joined on
+   > 2026-10-04, so the section names Ahmad, Kamel and Hussein. The Privacy Policy reads so since
+   > 2026-10-09.
+
 2. **No law is named and no compliance is claimed.** A GDPR-shaped policy — a controller, lawful
    bases, the eight rights — would name a controller that does not exist and promise what this model
    withholds by design: erasure (ADR-0008 d6-d7), export (never built; the GDPR Minor at `:915` was
@@ -390,6 +394,10 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
   > **The 42 field settled 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93):** 42's
   > account `id` (decision 7's note). Its marker is replaced when [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words
   > the sentence. The 42 logins' markers are not this ticket's.
+
+  > **Updated 2026-10-09 — the logins still needed are Kamel's and Hussein's.** Fadel left the team
+  > on 2026-10-01, and Hussein Dakdouk joined on 2026-10-04. Ahmad's is `ahmmanso`. Tracked on
+  > [Legal pages sign-off](https://github.com/ahmadmnsur/ft_transcendence/issues/69).
 - **`/to-spec` inherits binding rules**: one cookie; no third-party fetching; log hygiene and a
   Compose log cap; the throttle in memory; no Admin-set password; decision 4's visibility rows, the
   Admin label and no read receipts; four signed-out routes with the footer everywhere; the signup
