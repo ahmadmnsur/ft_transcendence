@@ -48,6 +48,30 @@
 > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) still records the column
 > change and whether the count of nineteen tables moves.
 
+> **Settled 2026-10-10 by [Settle which tables change for
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96).** This answers every
+> "still open" and "still records" in the notes above. The count stays **nineteen tables and nine
+> enums**. `Session`, `Avatar` and `Evidence` all stay, and no new table is needed: the 42 sign-up
+> draft and the Confirm with 42 permission are kept in memory (ADR-0003's notes on decisions 1 and
+> 11). The full list of changes:
+>
+> - `Student`: `password_hash` goes, and `password_version` (integer, not null, default 0) takes
+>   its place. `email` stays unique. `display_name_search` and `forty_two_id` (integer, nullable,
+>   unique) join. `display_name` gets the `und-x-icu` collation.
+> - `Avatar` and `Evidence` drop `bytes` and gain no path column (decision 12's note).
+> - No foreign key from our tables into Supabase's `auth` or `storage` schemas (ADR-0016's note of
+>   2026-10-04). A Student shares its id with its Supabase Auth user, and a file is named by its
+>   row's token.
+> - No row-level security and no grants step. The team project's Data API is off, and the fallback
+>   runs no REST service ([Create PeerConnect's Supabase organization and team
+>   project](https://github.com/ahmadmnsur/ft_transcendence/issues/90); ADR-0004 decision 1's note
+>   of 2026-10-04).
+> - `Student.id`, `Avatar.token` and `Evidence.token` lose their Prisma default (decision 10's
+>   note).
+>
+> Raw SQL stays at **nine** steps, or **eleven** if the `partialIndexes` preview feature is declined
+> (the *Consequences* count note of 2026-10-10).
+
 `document/en.subject.md:373` requires "a clear schema and well-defined relations", and `:1280`-`:1284`
 requires the schema to be *documented* — tables, relationships, key fields and data types. Twelve
 tickets have decided what this platform does; none of them has said what tables it has. This ADR is
@@ -519,6 +543,19 @@ arms. Those three sentences are the whole shape.
     to be, `Avatar` and `Evidence` each carry a `token uuid @default(uuid(4)) @unique`, and the route
     carries the token. One column on two tables, and ADR-0009 stands unamended.
 
+    > **Three defaults removed 2026-10-10 by [Settle which tables change for
+    > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96).** On Supabase, NestJS
+    > makes three of these values before it writes their row: `Student.id` before it creates the
+    > Supabase Auth user that shares it (ADR-0003's top note of 2026-10-02), and each `token`
+    > before it uploads the file the token names (ADR-0009 decision 2's note). So `Student.id`,
+    > `Avatar.token` and `Evidence.token` have no `@default` in the Prisma schema. Prisma's
+    > generated type then makes each one required when a row is created, so a create that forgets
+    > it fails to compile. With a default, it would write a row that names no Supabase Auth user or
+    > no file. `Student.id` is still a UUIDv7, made with the `uuid` package's `v7()`, the function
+    > Prisma's `uuid(7)` uses, so id order still follows creation order. A token is still a random
+    > UUIDv4 (`randomUUID()`), so ADR-0009 decision 3 still holds. Every other `uuid` identifier
+    > keeps `@default(uuid(7))`.
+
 11. **A Review is immutable; its one attachment is not.** The Learning Outcome text gets no edit
     path, for anyone, matching the Public Takeaway (immutable by the Post rule) and Private Feedback
     (ADR-0013 d7). ADR-0009 decision 5 left this open and its own sentence settles it — *"the Learning
@@ -733,6 +770,12 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > a later `ALTER COLUMN … TYPE` silently puts the column back on the database default, which
   > test category 2 catches. The working count is **nine**, or **eleven** if the `partialIndexes`
   > preview feature is declined.
+
+  > **Count confirmed 2026-10-10 by [Settle which tables change for
+  > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96).** The move to Supabase adds
+  > no raw-SQL step: `password_version`, `display_name_search` and `forty_two_id` are plain Prisma,
+  > and no row-level security or grants step is added. The working count stays **nine**, or
+  > **eleven** if the `partialIndexes` preview feature is declined.
 - **The seed gains an input that was not on the map's list: the Skill catalogue.** Without it no
   Student can list anything, no Match can form and the matcher has no inputs — it joins the bootstrap
   Admin, the Peer Moderator and the one Reflection Prompt as something without which nothing is
