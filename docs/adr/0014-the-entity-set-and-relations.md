@@ -141,6 +141,13 @@ Nineteen tables and nine enums. Every identifier is `uuid(7)` unless noted.
 Enums: `Role`, `SkillKind`, `FriendshipStatus`, `MatchStatus`, `Mission`, `CoverageDirection`,
 `ReportReason`, `ReportState`, `Badge`.
 
+> **Rows 3 and 14 corrected 2026-10-10 by [Settle which tables change for
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96).** `Avatar` and `Evidence` no
+> longer hold bytes. Each file is in a private Supabase Storage bucket, named by its row's token,
+> and the row keeps the token, `mime`, `size` and `uploaded_at` (plus `filename` for Evidence), as
+> decision 12's note of 2026-10-05 has it. The rest of the table stands; the top note of
+> 2026-10-10 lists every column the move changes.
+
 > **Student lifecycle clarified 2026-09-21 by ADR-0008.** The two sanction flags expose exactly
 > one dashboard status: Removed takes precedence, otherwise Suspended, otherwise Active. A Removed
 > row is terminal and view-only, and its retained email cannot be changed. Mutations that can
