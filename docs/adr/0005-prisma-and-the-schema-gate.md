@@ -142,6 +142,36 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > from source in `docs/research/prisma-7-config-governance.md`. Pinning alone would not stop an
    > unpinned run from discovering another file, so the files stay forbidden.
 
+   > **Widened 2026-10-10 by [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97): Supabase's files join the gate.**
+   > Supabase can change the database, or what can reach it, without touching `prisma/`. Still read
+   > off a PR's file list, the gate also covers:
+   >
+   > - **`supabase/**`**: the fallback database's start-up SQL (`supabase/db/`), the gateway's routes
+   >   (`supabase/api/`), the CA certificate the `api` verifies the team project with, and
+   >   `supabase/team-project.md`, the record of the team project's settings;
+   > - **every `compose*.yaml`**: the fallback's Auth settings are `GOTRUE_*` variables in
+   >   `compose.yaml`, beside the `api` and `proxy` services, which a path cannot tell apart;
+   > - **the Storage buckets' settings**: the seed's first step sets them (ADR-0004 d11's note of
+   >   2026-10-05), so under `prisma/seed/**` they are gated already; a build that puts them anywhere
+   >   else names that file in the gate list;
+   > - **the two reset commands' code**, under `prisma/reset/**`, which `prisma/**` already covers.
+   >
+   > **A PR that moves or renames a gated file updates the gate list in the same PR, and is gated
+   > itself**, so a move cannot take a file out of the gate. Kamel still holds the gate and Ahmad
+   > still deputises. The application code that calls Supabase, sign-up and the password change,
+   > the file cleanup and the boot check, stays round-robin; `08-files` and `12-sign-in` cover it.
+   >
+   > **The team project changes outside git**, in its dashboard, where no PR shows it.
+   > `supabase/team-project.md` records what is set there. A new setting is a PR changing that
+   > record, and the matching `GOTRUE_*` variable where one exists, before Kamel changes the
+   > dashboard; the dashboard goes first only to undo a breakage, with the PR the same day. Nobody
+   > changes the team project's tables, rows, settings or Supabase Auth users by hand, except in
+   > four cases the record lists, each Kamel's: resuming a paused project, `make reset-team`,
+   > deleting a Supabase Auth user whose id no Student has, and repairing a migration that failed
+   > partway. Migrations reach the team project only through `make up` on `main` (ADR-0004 d8's
+   > note). The PR template's gate section gains a check for each of these rules, and
+   > `CONTRIBUTING.md` lists the paths.
+
 6. **Three rules on migrations, which live in `CONTRIBUTING.md` and the PR template, not only
    here.** They must be visible at the moment someone is about to break them:
    - **A merged migration is immutable.** Prisma checksums applied migrations in
@@ -465,6 +495,10 @@ is fragile.
 
 - **Whether `CODEOWNERS` auto-request works on this plan.** Add it; treat it as a convenience, and
   never as the mechanism.
+
+  > **The paths it would map, 2026-10-10:** decision 5's note of that date, by
+  > [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97), completes the gate's path list. Whether a `CODEOWNERS` file
+  > maps it stays with [Settle repository governance](https://github.com/ahmadmnsur/ft_transcendence/issues/28).
 - **Migration naming beyond `<slice>_<change>`**, and whether migrations are ever squashed before
   defense.
 - **What happens to a long-lived branch that falls far behind** — the rebase rule assumes branches

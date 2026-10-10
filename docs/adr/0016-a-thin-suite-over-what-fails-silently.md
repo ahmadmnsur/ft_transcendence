@@ -437,6 +437,15 @@ done when the PR template already is one.**
    > there can break a boot from an empty database while touching nothing under `prisma/**`, which
    > is the argument that added `prisma.config.ts` above. The two-clone procedure is unchanged.
 
+   > **Extended 2026-10-10 by [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97).** The trigger also includes
+   > `supabase/**`, except its Markdown files, and `.env.example`. Both act at a database's first
+   > start: `compose.yaml` mounts `supabase/db/`'s SQL into the folder Postgres runs only when its
+   > volume is created, and the fallback's services read `.env.example` alone, the database
+   > passwords among its values taking effect only then. A broken change there passes on a working
+   > stack with an old volume and fails on a fresh clone. Markdown files in `supabase/`, such as
+   > `supabase/team-project.md`, cannot break a boot, so they stay inside the gate (ADR-0005 d5's
+   > note of that date) without the check. The two-clone procedure is unchanged.
+
    > **Sharpened 2026-09-23 before `/to-spec #1` — a fresh clone is not a fresh database.**
    > Compose groups containers and named volumes by **project name**, not by directory. The
    > `Makefile` says the base Compose file carries a default name; even without one, two default
@@ -487,6 +496,14 @@ done when the PR template already is one.**
    > `prisma.config.ts`.** This follows ADR-0005 decision 5's scope correction and decision 5
    > above's matching clean-clone trigger. Done remains the merged PR with every applicable box
    > ticked; only the Prisma box's path scope changed.
+
+   > **Amended 2026-10-10 — the gate box covers Supabase's files too, and the decision is
+   > unchanged.** Following ADR-0005 decision 5's note of that date, it also covers `supabase/**`
+   > and every `compose*.yaml`, and gains five checks for them: no foreign key or SQL into
+   > Supabase's `auth` or `storage` schemas, a migration run only on the fallback before merge, a
+   > team setting changed together with its record and its `GOTRUE_*` line, nothing new exposing
+   > the database, and a moved gated file carried into the gate list. Done remains the merged PR
+   > with every applicable box ticked.
 
    > **Amended 2026-09-23 — a fifth check, and the decision is unchanged.** *Personal data moves
    > the Privacy Policy* (ADR-0018 d15): a PR that changes what personal data is stored, who can

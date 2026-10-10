@@ -115,6 +115,12 @@ describing the changes", and it sits in the list that gets a project **rejected*
   > and datasource, no feature table yet) and the seed entry `prisma/seed/main.ts`, all inside the
   > gate.
 
+  > **Supabase's files join the gate, 2026-10-10** (ADR-0005 d5). Also inside it: `supabase/**`,
+  > every `compose*.yaml` (the fallback's Auth settings are its `GOTRUE_*` lines), the Storage
+  > buckets' settings (the seed's first step, already under `prisma/seed/**`) and the reset commands
+  > under `prisma/reset/**`. **A PR that moves or renames a gated file updates this list in the
+  > same PR and is gated itself.** The rules for the team project are in *Supabase*, below.
+
 ## Schema changes — read this before touching `prisma/` or `prisma.config.ts`
 
 **You write your own migration. Kamel reviews it.** You own your feature DB-through-UI; the
@@ -223,6 +229,24 @@ data after the command above. *(ADR-0005 Consequences, added 2026-09-20.)*
    > `prisma/seed/assets/` — and the fixture module is `prisma/fixtures/**` (`cohort.ts`). **Both sit
    > inside `prisma/**`**, so the gate's file-list test needs no second pattern. `prisma/seed.ts`
    > above names the entry as it was imagined before this.
+
+### Supabase
+
+*Added 2026-10-10 (ADR-0005 d5).* The team project holds `main`'s data and the defense's, and its
+settings live in its dashboard, where no PR shows them.
+
+* **Test a migration on the local fallback only**: `make dev`, `make local` or `make test`. Never
+  boot a branch carrying one with `make up` and the team `.env`: the team project would apply it
+  before review, and the merged version would then fail its checksum there. Migrations reach the
+  team project only through `make up` on `main`.
+* **Nothing links into Supabase's own schemas.** No foreign key or SQL into `auth` or `storage`:
+  the test database has neither, and Supabase owns them.
+* **The team project's settings are recorded in
+  [`supabase/team-project.md`](supabase/team-project.md).** A new setting is a PR changing that
+  file and the matching `GOTRUE_*` line in `compose.yaml`; Kamel changes the dashboard after it
+  merges.
+* **Nobody changes the team project by hand** (tables, rows, settings, Supabase Auth users), except
+  the four cases that file lists, each Kamel's.
 
 ## Testing
 
@@ -367,6 +391,10 @@ That means, every time: the suite green, the ticket's acceptance criteria met, *
 review**, and — if the PR touches `prisma/`, `prisma.config.ts`, the seed (rule 3 above), the
 Compose files or a Dockerfile — **a clean-clone boot verified**.
 
+> **Two more triggers, 2026-10-10** (ADR-0016 d5): `supabase/**`, except its Markdown files, and
+> `.env.example`. Parts of both act only when a database volume is created, so a broken change
+> can pass on your working stack and fail on a fresh clone.
+
 > **"The suite green" starts with the first test, 2026-09-24** ([`docs/spec.md`](docs/spec.md)
 > §16.8). `npx vitest run` exits 1 when there is no test file to run, so a PR that lands before the
 > first `test/<NN>-<category>/*.test.ts` — the week-1 infrastructure PR among them — ticks that box
@@ -436,6 +464,9 @@ stale the first time someone adds a column. So:
   reasons, which are the Terms' first three rules (ADR-0011 d4).
 * **Kamel checks it on `prisma/` PRs**, as part of the schema gate. Everywhere else, the PR
   template's Done box is the check.
+
+  > **On every gated PR, 2026-10-10:** the gate now also covers `supabase/**` and the Compose files
+  > (*Review*, above), and the check comes with it.
 * **The pages are corrected in place, not annotated.** They are user-facing text, not records an
   evaluator audits; update the *Last updated* date and let git keep the history.
 
