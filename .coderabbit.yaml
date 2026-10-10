@@ -52,7 +52,7 @@ reviews:
         - A change to supabase/team-project.md that changes a setting with a GOTRUE_* line in its table changes that line in compose.yaml too.
         - Anything outside Markdown also needs the clean-clone boot; remind the author if the PR description does not mention it.
     - path: "compose*.yaml"
-      instructions: "Inside the schema gate (ADR-0005 d5): the fallback's Auth settings are its GOTRUE_* lines. A changed GOTRUE_* value must match supabase/team-project.md, and no new route, port or service may expose the database."
+      instructions: "Inside the schema gate (ADR-0005 d5): the fallback's Auth settings are its GOTRUE_* lines. A changed GOTRUE_* value that supabase/team-project.md's Authentication table names must match it, and no new route, port or service may expose the database."
     - path: "src/**/*.ts"
       instructions: "NestJS API. Flag logging of passwords, tokens or request bodies (ADR-0018) and any call to a third-party origin."
     - path: "web/src/**"

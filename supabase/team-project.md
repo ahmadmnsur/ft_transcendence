@@ -10,9 +10,9 @@ dashboard ([ADR-0005](../docs/adr/0005-prisma-and-the-schema-gate.md) d5).
 
 > **Not built yet, as of 2026-10-10:** the boot check's steps 3 and 4, so a team `.env` still stops
 > the boot before any connection, and `make up` neither migrates the team project nor reports a
-> `540`; the bucket step ([Avatars, and PNG/JPEG byte validation](https://github.com/ahmadmnsur/ft_transcendence/issues/43)); and the two reset commands,
-> whose ticket [Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) has yet to open. The ADRs record
-> what each will do, and the steps below that use them wait for them.
+> `540`; the bucket step ([Avatars, and PNG/JPEG byte validation](https://github.com/ahmadmnsur/ft_transcendence/issues/43)); and the two reset
+> commands, whose ticket is not opened yet ([Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) lists them).
+> The ADRs record what each will do, and the steps below that use them wait for them.
 
 ## Members
 
@@ -21,8 +21,9 @@ dashboard ([ADR-0005](../docs/adr/0005-prisma-and-the-schema-gate.md) d5).
 | Kamel  | Owner     | everything, including resuming a paused project                                                                                       |
 | Ahmad  | Developer | reads everything, runs SQL, edits rows, creates and deletes Supabase Auth users, changes buckets and their files, reads the keys; cannot change the project's settings (Auth, database, API, Storage's upload limit), or pause and resume |
 
-So the dashboard stops a Developer only at the project's settings and at pausing (Supabase's access-control
-table, read 2026-10-09, for the API and the dashboard alike). Read-only, the role that could not
+So the dashboard stops a Developer at the project's settings and at the project itself (pausing,
+deleting, transferring), not at its data, its Supabase Auth users or its keys (Supabase's
+access-control table, read 2026-10-09, for the API and the dashboard alike). Read-only, the role that could not
 do the rest, is offered only on the Team and Enterprise plans. Anyone holding the team `.env`, the
 project's two members and each evaluator, can also do anything through the API with its secret
 key and database password. The rules below are the team's, not the dashboard's.
