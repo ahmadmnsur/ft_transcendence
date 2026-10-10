@@ -21,8 +21,9 @@
 
 ## Schema gate
 
-<!-- Yes if this touches prisma/** (seed: prisma/seed/**, prisma/fixtures/**), prisma.config.ts,
-     or adds any file matching /prisma.config*, /prisma7.config*, /.config/prisma* (ADR-0005 d5, d6). -->
+<!-- Yes if this touches prisma/** (seed: prisma/seed/**, prisma/fixtures/**; resets: prisma/reset/**),
+     prisma.config.ts, supabase/** or any compose*.yaml, or adds any file matching /prisma.config*,
+     /prisma7.config*, /.config/prisma* (ADR-0005 d5, d6). Moving or renaming one of these is Yes too. -->
 
 - [ ] **No** — round-robin review
 - [ ] **Yes** — Kamel reviews (Ahmad if Kamel authored it or is blocked >24h), and:
@@ -32,10 +33,16 @@
   - [ ] Seed still idempotent; personal data → Privacy Policy moved
   - [ ] Any `prisma.config.ts` change described, with its effect on schema, migrations, datasource and seed; no second Prisma Config file
   - [ ] `prisma`/`@prisma/client` still `^7`
+  - [ ] No foreign key or SQL into Supabase's `auth` or `storage` schemas
+  - [ ] Any migration ran only on the local fallback (`make dev`, `make local`, `make test`), never on the team project before merge
+  - [ ] A team project setting changed → `supabase/team-project.md` and, where it names one, the matching `GOTRUE_*` line in `compose.yaml` changed together
+  - [ ] No new route, port or service exposes the database or a Data API
+  - [ ] A gated file moved or renamed → the gate list here, in `CONTRIBUTING.md` and in `.coderabbit.yaml` updated
 
 ## Clean-clone boot
 
-<!-- Required if this touches prisma/**, prisma.config.ts, a Compose file or a Dockerfile (ADR-0004 d8). -->
+<!-- Required if this touches prisma/**, prisma.config.ts, a Compose file, a Dockerfile, supabase/** other than
+     its Markdown files, or .env.example (ADR-0004 d8, ADR-0016 d5). -->
 
 - [ ] **n/a**
 - [ ] **Verified in two separate fresh clones**, each starting with no `peerconnect` containers or volumes:

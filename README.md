@@ -29,6 +29,8 @@ or clone the repository again.
 
 The fallback credentials are fixed. Keep the team project's `DATABASE_URL`, `SUPABASE_URL`, keys and three staff or seed passwords in the gitignored `.env`. Paste `DATABASE_URL` as the dashboard's Session pooler string with no TLS settings: on the team project the `api` and `prisma migrate` replace any TLS setting it carries and verify the connection themselves against Supabase's certificate, `supabase/prod-ca-2021.crt`. Until the boot check's remaining steps land, a team `.env` stops the boot before any database connection; use `make local` or `make dev` for branch work. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory. If this checkout has a `.env` that the old `make up` copied, delete it: it still has `POSTGRES_USER=peerconnect`, and `make up` writes a fresh copy of `.env.example` when `.env` is absent.
 
+The team project's settings, its members' roles and the few changes ever made to it by hand are recorded in [`supabase/team-project.md`](supabase/team-project.md).
+
 ### Boot commands
 
 Production path, from a clean checkout:
