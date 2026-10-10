@@ -35,7 +35,7 @@
   - [ ] `prisma`/`@prisma/client` still `^7`
   - [ ] No foreign key or SQL into Supabase's `auth` or `storage` schemas
   - [ ] Any migration ran only on the local fallback (`make dev`, `make local`, `make test`), never on the team project before merge
-  - [ ] A team project setting changed → `supabase/team-project.md` and its `GOTRUE_*` line in `compose.yaml` changed together
+  - [ ] A team project setting changed → `supabase/team-project.md` and, where it names one, the matching `GOTRUE_*` line in `compose.yaml` changed together
   - [ ] No new route, port or service exposes the database or a Data API
   - [ ] A gated file moved or renamed → the gate list here and in `CONTRIBUTING.md` updated
 

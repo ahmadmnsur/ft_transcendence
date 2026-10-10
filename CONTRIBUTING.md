@@ -243,8 +243,8 @@ settings live in its dashboard, where no PR shows them.
   the test database has neither, and Supabase owns them.
 * **The team project's settings are recorded in
   [`supabase/team-project.md`](supabase/team-project.md).** A new setting is a PR changing that
-  file and the matching `GOTRUE_*` line in `compose.yaml`; Kamel changes the dashboard after it
-  merges.
+  file and, where it names one, the matching `GOTRUE_*` line in `compose.yaml`; Kamel changes the
+  dashboard after it merges.
 * **Nobody changes the team project by hand** (tables, rows, settings, Supabase Auth users), except
   the four cases that file lists, each Kamel's.
 
