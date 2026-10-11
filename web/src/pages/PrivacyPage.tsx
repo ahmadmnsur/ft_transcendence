@@ -1,11 +1,13 @@
 import { PageTitle } from '../layout';
+import { LegalDocument } from '../legal/markdown';
+import privacySource from '../../../docs/legal/privacy-policy.md?raw';
 
-// The footer links here.
+// The Markdown file is the page: its `# …` is the only h1.
 export function PrivacyPage(): React.JSX.Element {
   return (
     <>
       <PageTitle name="Privacy Policy" />
-      <h1 className="text-2xl font-semibold text-ink">Privacy Policy</h1>
+      <LegalDocument source={privacySource} fileName="docs/legal/privacy-policy.md" />
     </>
   );
 }
