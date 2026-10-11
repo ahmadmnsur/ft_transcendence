@@ -142,10 +142,11 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    note, ADR-0013 d8 and ADR-0014 d6.
 
    > **Two more things kept, 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).**
-   > The Privacy Policy's Removal list gains the password's hash, kept by Supabase Auth so that
-   > sign-in tells only the owner, after the right password, that the account was removed (ADR-0008
-   > d7's note of 2026-10-02), and the 42 account number, so that 42 account can never make a new
-   > Student (ADR-0008 d7's note of 2026-10-08).
+   > The Privacy Policy's Removal list gains the password's hash, kept by Supabase Auth so that a
+   > password sign-in says the account was removed only after the right password (ADR-0008 d7's
+   > note of 2026-10-02), and the 42 account number, so that 42 account can never make a new Student
+   > (ADR-0008 d7's note of 2026-10-08). Sign in with 42 says the account was removed too, once 42
+   > confirms the connected account.
 
 4. **Who sees what is ruled here wherever no record had ruled it.** The recorded rows stand as their
    ADRs set them. The new rows:
@@ -444,12 +445,15 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     >   note of 2026-09-23 stand.
     > - **Emptying a copy.** The team empties the team's copy, with `make reset-team`; whoever runs
     >   a local copy wipes it.
-    > - **What Supabase Auth records by itself** joins *Your account*: the hash; the time of the last
-    >   password sign-in (`last_sign_in_at`, which cannot be turned off), and rarely an earlier one,
-    >   when a password check's own sign-out fails and its Supabase Auth session row stays; and only
-    >   the internal login, never the real email
-    >   ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)). "Does not record when
-    >   you were last online" stays, pointing to that one kept sign-in time.
+    > - **What Supabase Auth records by itself** joins *Your account*: the hash; the time Supabase
+    >   Auth last checked the password (`last_sign_in_at`, which cannot be turned off), and rarely
+    >   an earlier one, when a check's own sign-out fails and its Supabase Auth session row stays;
+    >   and only the internal login, never the real email
+    >   ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)). Every check moves that time,
+    >   since the password grant cannot tell them apart: a sign-in, a password change's check of the
+    >   current password (ADR-0003's note of 2026-10-02), and Connect 42's and Disconnect 42's
+    >   ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)). "Does not record when you
+    >   were last online" stays, and points to that time and to the logs, which keep each check.
     > - **Availability.** The Terms' section 8 adds that Supabase can pause the team's copy until the
     >   team resumes it.
 

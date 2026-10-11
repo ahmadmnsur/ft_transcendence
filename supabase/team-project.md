@@ -31,8 +31,10 @@ key and database password. The rules below are the team's, not the dashboard's.
 > **Changed 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)**:
 > no evaluator holds the team `.env`. A defense runs on a team member's own computer, and the
 > evaluator is told only the three sign-in passwords (`ADMIN_PASSWORD`, `MODERATOR_PASSWORD`,
-> `SEED_STUDENT_PASSWORD`). If a defense ever runs on another computer, a team member puts the
-> `.env` there, shows it to nobody, and deletes it at the end. So only the team holds it, and the
+> `SEED_STUDENT_PASSWORD`). If a defense ever runs on another computer, never one an evaluator
+> controls, a team member puts the `.env` there, shows it to nobody, and at the end runs
+> `make down` and deletes it: `compose.yaml` copies the `.env` into the `api` and `proxy`
+> containers, which keep it until `make down` removes them. So only the team holds it, and the
 > Privacy Policy says that only the team, and Supabase as its host, can open the team's copy
 > directly. The keys are still not rotated after a defense.
 
@@ -78,12 +80,28 @@ alter role postgres set log_statement = 'none';
 ```
 
 A role's settings reach only the connections opened after them, and the pooler keeps its
-connections, so **Restart project** follows; it keeps every row and file. Then
-`select rolconfig from pg_roles where rolname = 'postgres';` lists the four, and the comparison before
-each defense uses the same query. If the project's image refuses `log_min_error_statement` (images
-older than `17.6.1.133`), leave that line out: `log_min_messages = fatal` already keeps every error
-line, and the statement printed with it, out of the log. The cost is that the dashboard's Postgres
-log no longer shows our errors; the `api`'s own log still records every 5xx with its Prisma code.
+connections, so **Restart project** follows; it keeps every row and file. Then check what a
+connection really runs with, through the session pooler with the team `DATABASE_URL`, as the `api`
+connects (any Postgres client that verifies `supabase/prod-ca-2021.crt`):
+
+```sql
+select session_user;  -- postgres
+show log_min_messages; show log_min_error_statement;
+show auto_explain.log_min_duration; show log_statement;
+set log_min_messages = warning;
+do $$ begin raise exception 'log probe' using detail = 'probe <date>, must appear'; end $$;
+reset log_min_messages;
+do $$ begin raise exception 'log probe' using detail = 'probe <date>, must not appear'; end $$;
+```
+
+The two probes write nothing. In the dashboard's Postgres log the first must appear, which shows
+that log is being read at all, and the second must not. `select rolconfig from pg_roles where
+rolname = 'postgres';` shows only what the role stores, the four among others, not what a pooled
+connection runs with. The comparison before each defense runs the same check. If the project's
+image refuses `log_min_error_statement` (images older than `17.6.1.133`), leave that line out:
+`log_min_messages = fatal` already keeps every ERROR-level line and its statement out of the log.
+The cost is that the dashboard's Postgres log no longer shows our errors; the `api`'s own log still
+records every 5xx with its Prisma code.
 
 **Authentication**, with the line in `compose.yaml` that gives the local fallback the same behaviour:
 
@@ -113,15 +131,17 @@ log no longer shows our errors; the `api`'s own log still records every 5xx with
 1. Open a pull request that changes this file and, where the table names one, the matching
    `GOTRUE_*` line in `compose.yaml`, so the fallback keeps behaving like the team project. It is
    inside the schema gate.
-2. Once it merges, Kamel changes the dashboard and comments `Applied in the dashboard on <date>`
-   on the merged pull request.
+2. Once it merges, Kamel changes the dashboard, or, for the `postgres` role's log settings, runs
+   the SQL above in its SQL editor and restarts the project. Then he comments
+   `Applied in the dashboard on <date>` on the merged pull request.
 
 The dashboard goes first only to undo something broken, and the pull request follows the same day.
 
 ## Changes by hand
 
-Nobody changes the team project's tables, rows, settings or Supabase Auth users by hand: not in
-the dashboard, not in its SQL editor, not with the `.env`'s keys. Migrations reach it only through
+Outside *Changing a setting* and the exceptions below, nobody changes the team project's tables,
+rows, settings or Supabase Auth users by hand: not in the dashboard, not in its SQL editor, not with
+the `.env`'s keys. Migrations reach it only through
 `make up` on `main`. Reading is always fine.
 
 There are four exceptions, and each is Kamel's:

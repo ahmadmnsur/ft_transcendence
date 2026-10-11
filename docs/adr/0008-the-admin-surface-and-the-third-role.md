@@ -246,8 +246,9 @@ revoke XP.**
    > keeps, for [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) to list.
    >
    > > **Listed 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100):** the Privacy Policy's
-   > > *Leaving PeerConnect* says the hash stays with Supabase Auth, so that only the owner, with the
-   > > right password, is told the account was removed (ADR-0018 d3's note).
+   > > *Leaving PeerConnect* says the hash stays with Supabase Auth, so that a password sign-in says
+   > > the account was removed only after the right password (ADR-0018 d3's note). Sign in with 42
+   > > says it too, once 42 confirms the connected account (the note below).
 
    > **The 42 account burns too, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** The removed row
    > keeps `Student.forty_two_id`, like its email, so the 42 account it holds can never make a new

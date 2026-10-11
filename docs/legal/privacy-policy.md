@@ -52,8 +52,9 @@ law that applies to them. That law may give you rights beyond what this page des
 - your password, stored only as a salted hash, so nobody can read it, Admins included. It is kept by
   Supabase Auth, the sign-in software that checks it, which knows your account only by an internal
   code, never by your email address;
-- when you last signed in with your password, which Supabase Auth records by itself. Rarely, when a
-  technical step fails, it also keeps the time of an earlier password sign-in;
+- when Supabase Auth last checked your password: to sign you in, to change your password, or to
+  connect or disconnect 42. It records this by itself. Rarely, when a technical step fails, it also
+  keeps the time of an earlier check;
 - if you connect 42 to your account, your 42 account number (see *Other websites and services*);
 - your role — Student, Peer Moderator or Admin — and whether your account is suspended or removed.
 
@@ -105,8 +106,8 @@ Other records also carry the time they were made; a sign-in session records only
 
 **What PeerConnect does not record: when you were last online.** Your Friends can see whether you are
 online *now*. That status lives only in the running server's memory, is never saved, and resets
-whenever the server restarts. The one sign-in time kept is that of your last password sign-in (see
-*Your account*).
+whenever the server restarts. Supabase Auth keeps the time it last checked your password (see *Your
+account*), and its logs keep each check (see *Logs*).
 
 ## Why PeerConnect uses it
 
@@ -185,9 +186,9 @@ to your account) or **Confirm with 42** (to set a forgotten password). Your brow
 own sign-in page, and PeerConnect asks 42 who you are. PeerConnect keeps your **42 account number**,
 to recognise you when you sign in with 42. When no account has that number yet, PeerConnect's sign-up
 form suggests your 42 login as your display name and your 42 email address; they are kept only if you
-keep them. You can disconnect 42 from your profile at any time, which forgets the number. PeerConnect
-never keeps your 42 photo, grades, projects, level, campus or location, and it uses 42's access token
-once and then discards it.
+keep them. You can disconnect 42 from your profile at any time, with your current password, which
+forgets the number. PeerConnect never keeps your 42 photo, grades, projects, level, campus or location,
+and it uses 42's access token once and then discards it.
 
 The team's copy is stored by Supabase in its Frankfurt, Germany region. Supabase's backups and logs,
 and the companies it uses to run its service, may be in other places, under Supabase's own terms.
@@ -201,10 +202,10 @@ the program, is capped in size, and its oldest entries are overwritten automatic
 
 The services that store a copy's data keep their own logs of PeerConnect's requests to them: the time,
 what was asked for, and the address of PeerConnect's server, never your browser's. They include each
-password sign-in, sign-out and password change on your account, under its internal code rather than
-your email address. For the team's copy, Supabase keeps these logs: the team can see them for up to
-a day, and Supabase keeps them for its own operations and security, for a period it sets. For a local
-copy, they stay on that computer, capped and overwritten like the request log.
+check of your password, each sign-out and each password change on your account, under its internal
+code rather than your email address. For the team's copy, Supabase keeps these logs: the team can see
+them for up to a day, and Supabase keeps them for its own operations and security, for a period it
+sets. For a local copy, they stay on that computer, capped and overwritten like the request log.
 
 **No log ever contains a password, a cookie, the content of what you submit, message text or a
 file.**
@@ -305,8 +306,8 @@ PeerConnect has no "delete my account" button. To leave, ask an Admin to **remov
 
 - you are signed out everywhere and can never sign in again;
 - your email address stays in the database for good, so it can never be registered again;
-- your password's hash stays with Supabase Auth, so that only you, signing in with the right
-  password, are told that the account was removed;
+- your password's hash stays with Supabase Auth, so that a password sign-in says the account was
+  removed only after the right password;
 - if you connected 42, your 42 account number stays too, so that 42 account can never make a new
   account;
 - your avatar is deleted;
