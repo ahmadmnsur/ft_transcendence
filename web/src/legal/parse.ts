@@ -194,6 +194,12 @@ function numberedMarker(text: string): { indent: number; value: number; width: n
   return { indent: match[1].length, value: Number(match[2]), width: match[1].length + match[2].length + 2 };
 }
 
+// GitHub lets a numbered item interrupt a paragraph only when it starts at
+// 1 and has text: any other `<n>.` line there is more of the paragraph.
+function continuesParagraph(text: string, marker: { value: number; width: number }): boolean {
+  return marker.value !== 1 || text.slice(marker.width) === '';
+}
+
 // One entity shape in two forms: `ENTITY_ANYWHERE` checks link
 // destinations, while the sticky `ENTITY_HERE` checks inline text at one
 // `&`. Hex digits accept `x` or `X`.
@@ -839,6 +845,11 @@ export function parseMarkdown(source: string, fileName: string): Block[] {
       fail(fileName, line.no, 'a list item outside a list starts at the beginning of the line');
     }
     const numbered = numberedMarker(text);
+    // A blank line would turn this text into a list, so the reason asks
+    // for a rewrap instead.
+    if (numbered && inParagraph && continuesParagraph(text, numbered)) {
+      fail(fileName, line.no, 'a paragraph line cannot start with a number and `.`; rewrap the line');
+    }
     if (numbered && numbered.indent === 0) {
       if (inParagraph) fail(fileName, line.no, 'blank line required before a list');
       return;
@@ -848,7 +859,13 @@ export function parseMarkdown(source: string, fileName: string): Block[] {
     }
     if (/^ {4}/.test(text)) fail(fileName, line.no, 'indented code blocks are not supported');
     if (looksLikeDelimiterRow(text)) {
-      fail(fileName, line.no, 'pipe table rows need a leading and a trailing `|`');
+      if (!isTableRow(text)) fail(fileName, line.no, 'pipe table rows need a leading and a trailing `|`');
+      // GitHub reads the paragraph line above as the header row. Only an
+      // indented row reaches here with its pipes; any other is missing them.
+      if (inParagraph) {
+        if (isTableRow(lines[line.no - 2].text)) fail(fileName, line.no - 1, 'blank line required before a table');
+        fail(fileName, line.no - 1, 'a table header row needs a leading and a trailing `|`');
+      }
     }
     if (isTableRow(text)) {
       if (inParagraph) fail(fileName, line.no, 'blank line required before a table');
@@ -876,7 +893,7 @@ export function parseMarkdown(source: string, fileName: string): Block[] {
     if (/^(?:-|\d{1,9}\.)(?: |$)/.test(rest)) {
       fail(fileName, lineNo, "a list marker cannot start a list item's text; nested items go on their own line");
     }
-    if (looksLikeDelimiterRow(rest)) {
+    if (looksLikeDelimiterRow(rest) && !isTableRow(rest)) {
       fail(fileName, lineNo, 'pipe table rows need a leading and a trailing `|`');
     }
     if (isTableRow(rest)) fail(fileName, lineNo, 'pipe table rows cannot continue a list item');
@@ -1033,6 +1050,11 @@ export function parseMarkdown(source: string, fileName: string): Block[] {
         finishTopItem(list, open);
         return list;
       }
+      // Indented to the open item's text, `2024. …` is more of that text on
+      // GitHub; under a nested item, 2–3 spaces start a new list instead.
+      if (numbered && numbered.indent >= (openNested ? 4 : 2) && continuesParagraph(line.text, numbered)) {
+        fail(fileName, line.no, 'a line inside a list item cannot start with a number and `.`; rewrap the line');
+      }
       if (numbered) fail(fileName, line.no, 'only one nested `-` level is supported (no numbered nesting)');
       if (/^ {4}/.test(line.text)) {
         if (openNested && /^ {4}[^ ]/.test(line.text)) {
@@ -1147,6 +1169,10 @@ export function parseMarkdown(source: string, fileName: string): Block[] {
         i += 1;
         continue;
       }
+      // Indented to the item's text, `2024. …` is more of that text on GitHub.
+      if (numbered && open && numbered.indent >= open.width && continuesParagraph(line.text, numbered)) {
+        fail(fileName, line.no, 'a line inside a list item cannot start with a number and `.`; rewrap the line');
+      }
       if (numbered) fail(fileName, line.no, 'nested numbered lists are not supported');
       if (/^ /.test(line.text)) {
         if (!open) fail(fileName, line.no, 'list continuation with no parent item');
@@ -1177,6 +1203,9 @@ export function parseMarkdown(source: string, fileName: string): Block[] {
   }
 
   function parseTable(headerLine: Line): TableBlock {
+    if (looksLikeDelimiterRow(headerLine.text)) {
+      fail(fileName, headerLine.no, 'a table starts with its header row, not a delimiter row (`| --- |`)');
+    }
     // A backslash never survives to the split: it throws here first, so an
     // escaped pipe reports the backslash, not a wrong cell count.
     if (headerLine.text.includes('\\')) {
