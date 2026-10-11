@@ -605,7 +605,7 @@ and nothing is fetched. A project-owned renderer (`web/src/legal/markdown.tsx`) 
 constructs the two files use: ATX headings, paragraphs, `**bold**`, `*italic*`, inline code, `-`
 bullet lists (including one nested level and indented continuation lines, as the Terms' sanctions
 list has), `1.` numbered lists, pipe tables with a header row, `[text](url)` links, and a bracketed
-`[…]` not followed by `(` as literal text (the pages' `[42 login needed]` markers). It escapes
+`[…]` not followed by `(` as literal text (the Privacy Policy's 42-field marker). It escapes
 all text. **An unsupported construct throws during `vite build`** (the renderer runs over both files
 in a build-time check), so a page can never silently mis-render. No Markdown library is added.
 
@@ -3410,6 +3410,9 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
 
    > **Updated 2026-10-09:** this read *"Kamel's and Fadel's"*. Fadel left the team on 2026-10-01,
    > and Hussein Dakdouk joined on 2026-10-04 (§17.1).
+
+   > **Logins recorded 2026-10-11:** Kamel's 42 login is `kabbas` and Hussein's is `hdakdouk`, and
+   > both legal pages carry them, so the logins no longer hold up sign-off.
 4. **[#16 — a commit from every member](https://github.com/ahmadmnsur/ft_transcendence/issues/16)
    (met)**: `en.subject.md:306`–`:312` is a rejection criterion. Every member has a commit on
    `main`, and the root `.mailmap` gives each of them one name in the author list.

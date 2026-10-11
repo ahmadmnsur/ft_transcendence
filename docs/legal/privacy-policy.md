@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 9 October 2026
+**42 PeerConnect** · Last updated: 11 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -22,8 +22,7 @@ and what you can change. It describes the platform exactly as it works — inclu
 ## Who runs PeerConnect
 
 42 PeerConnect is a student project, built for the ft_transcendence project of the 42 curriculum by
-Ahmad (`ahmmanso`), Kamel (**[42 login needed]**) and Hussein (**[42 login needed]**). It is not run or
-endorsed by 42.
+Ahmad (`ahmmanso`), Kamel (`kabbas`) and Hussein (`hdakdouk`). It is not run or endorsed by 42.
 
 There is no central PeerConnect server. Each copy of PeerConnect runs on the computer of whoever
 started it, and everything this page describes is stored in that copy's own database, on that
@@ -275,8 +274,8 @@ matched, and sign out.
 For anything about your account — Removal, a correction, a Suspension — contact an **Admin** of your
 copy, in person or by Direct Message. Admins are labelled as Admins in PeerConnect.
 
-For questions about this page, contact its authors on the 42 intranet: `ahmmanso`, **[42 login
-needed]** and **[42 login needed]**.
+For questions about this page, contact its authors on the 42 intranet: `ahmmanso`, `kabbas` and
+`hdakdouk`.
 
 ## Changes to this page
 
