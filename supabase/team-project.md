@@ -93,7 +93,10 @@ There are four exceptions, and each is Kamel's:
    project ref and asks for it to be typed before deleting anything (ADR-0004 d11). Run it when the
    seed's fixture changes, when the pre-defense run finds an account an earlier defense changed, or
    when a defense should start from the seed's end state. Prove it on the fallback first, with
-   `make reset-local` under `make local`.
+   `make reset-local` under `make local`. It runs only from `main` with no uncommitted change,
+   equal to `origin/main` after a fetch, and refuses otherwise, so switch to `main` and pull
+   first. Then run `make up` from the same checkout: that boot writes the seed's fixture, which
+   takes several minutes against the team project.
 3. **Delete a leftover Supabase Auth user**: one whose id no Student has. A crash between sign-up's
    two steps can leave one; it blocks nobody and nobody can sign in with it. Never delete a
    Supabase Auth user whose id a Student has, a Removed Student included: sign-in still checks

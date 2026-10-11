@@ -634,6 +634,11 @@ and why there is no `SESSION_SECRET`.
     > truncates our tables, but the Supabase Auth users and files a failed run created stay, on
     > both targets.
     >
+    > > **Answered 2026-10-11 by [Settle how the seed creates accounts and files on
+    > > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98):** one function deletes
+    > > for both resets and for the seed's retry, and the retry now deletes those Supabase Auth users
+    > > and files too (this decision's note of 2026-10-11, below).
+    >
     > **One seed at a time on a shared database.** Truncating "no marker, rows present" is safe
     > because a database without a marker can hold only a failed attempt's rows (`docs/spec.md`
     > §14.9). On the team project another stack's seed can be running, or a serving stack writing.
@@ -663,6 +668,37 @@ and why there is no `SESSION_SECRET`.
     > old, when it starts and every hour while it runs (ADR-0009 decision 2's note), never by
     > itself in the test harness. That cleanup never stops the boot: a failure is logged and the
     > `api` starts.
+
+    > **Answered 2026-10-11 by [Settle how the seed creates accounts and files on
+    > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98): how the resets delete, and
+    > the failed-run path.** ADR-0017 d10's note of the same date has the seed's side.
+    >
+    > - **One function deletes, for both resets and the seed.** It deletes the rows of our tables,
+    >   then every Supabase Auth user, then every file in the `avatars` and `evidence` buckets,
+    >   through Supabase's admin APIs, never by SQL into the `auth` or `storage` schemas, and it
+    >   lists each set whole before deleting any of it. Each reset runs it after clearing the
+    >   completion record. The seed runs it before writing its fixture, so a failed attempt's
+    >   Supabase Auth users and files go with its rows, after a check that every Student is one the
+    >   seed makes; if one is not, the seed deletes nothing and fails. The resets skip that check,
+    >   since deleting every account is what they are for.
+    > - **The resets take the seed's lock.** Each reset tries the advisory lock the seed holds, on a
+    >   connection of its own, and refuses at once, saying a seed is running on that target, while a
+    >   seed holds it; otherwise it keeps the lock until it has deleted, so a seed that starts
+    >   meanwhile waits. The lock is never taken on the `api`'s pool, which closes a connection idle
+    >   for 10 seconds and would drop it.
+    > - **`make reset-team` runs only from an up-to-date `main`.** Before its checks above, it
+    >   refuses unless the checkout is on `main`, has no uncommitted change and, after a fetch,
+    >   equals `origin/main`: the reset is code (`prisma/reset/**`), and the boot after it writes the
+    >   fixture of whatever checkout runs `make up`. When it finishes, it says to run `make up` from
+    >   the same checkout. `make reset-local` has no such check, and `make up` on a branch is
+    >   unchanged: branch work that only reads data may still use the team project (decision 8's
+    >   note).
+    > - **The `api`'s healthcheck allows 15 minutes.** A boot that writes the fixture on the team
+    >   project takes minutes. With `start_period` at 180 s, three failed checks after it mark the
+    >   `api` unhealthy, and the proxy, which waits for a healthy `api`, never starts, although the
+    >   seed carries on. At `start_period: 900s` a normal boot is unchanged, healthy within one
+    >   5-second interval of the `api` answering, and a failed seed still exits at once, so only a
+    >   boot that hangs is reported later.
 
     > **Clarified 2026-09-20 — "from `.env`" describes the original `make up` path, not the
     > seed's only source.** The seed reads the resolved container environment. Bare Compose

@@ -329,6 +329,15 @@ revoke XP.**
    > project's two members and each evaluator hold, can both do it, so this is a rule the team
    > keeps, as direct SQL always was. Still no repair code.
 
+   > **Widened 2026-10-11 by [Settle how the seed creates accounts and files on
+   > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98):** PeerConnect's seed
+   > deletes Supabase Auth users too, on both targets, but only in a run that writes its fixture,
+   > after deleting every row of our tables, and only once it has checked that every Student is one
+   > it makes. If one is not, it deletes nothing and fails (ADR-0017 d10's note of 2026-10-11). So
+   > a Student a person made never loses its Supabase Auth user to the seed, and, as with
+   > `make reset-team`, no Student is left without one. Sign-up's duplicate is no longer the only
+   > delete PeerConnect makes.
+
 10. **A Peer Moderator may not act on a report concerning their own Post, or one involving a
     Student in a mutual Block with them.** Both escalate to an Admin. The report queue is the
     one place a Peer Moderator holds power over a peer, and "the moderator deleted the

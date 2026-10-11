@@ -867,6 +867,12 @@ happened by default. `:306`-`:312` is a rejection criterion and the repository c
   >   `make wipe`, since only `make test`'s copy is thrown away. Our tables never sit beside
   >   Supabase's `auth` and `storage` schemas during tests, and none of them may reference those
   >   schemas by foreign key.
+  >
+  >   *Widened 2026-10-11 by [Settle how the seed creates accounts and files on
+  >   Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98): the users also go at the
+  >   next seed run in that stack that writes its fixture, which deletes every Supabase Auth user
+  >   first (ADR-0017 d10's note of 2026-10-11). The files in the suite's own buckets stay, since
+  >   that run deletes only those in `avatars` and `evidence`.*
   > - **The harness refuses any target but the fallback.** Its first step, before any connection,
   >   runs the check `make reset-local` runs (ADR-0004 d11's note): `DATABASE_URL` and
   >   `SUPABASE_URL` must both name the fallback, or the run stops and names the variable and the
