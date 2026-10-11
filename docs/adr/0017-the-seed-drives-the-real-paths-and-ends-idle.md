@@ -439,6 +439,66 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     > ADR-0004 d11's note has the detail. On the fallback, the local stack a fresh clone boots,
     > nothing changes.
 
+    > **Settled 2026-10-11 by [Settle how the seed creates accounts and files on
+    > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98): what a run empties, the
+    > record, the lock and the time, on both targets.** The accounts and files themselves are made as
+    > already decided: the staff and the thirty Students through Supabase Auth's admin create and the
+    > real sign-up (ADR-0008 d12's note), *R*'s two files through the real upload paths after the
+    > seed's bucket step (ADR-0004 d11's note of 2026-10-05).
+    >
+    > - **A run that writes the fixture empties first.** The seed writes only when it finds no
+    >   record, or a stale one over empty tables: the first boot, the boot after a reset, the boot
+    >   after a failed attempt. Before its first fixture step it deletes the rows of our tables, then
+    >   every Supabase Auth user, then every file in the `avatars` and `evidence` buckets, through
+    >   Supabase's admin APIs, never by SQL into the `auth` or `storage` schemas, and it lists each
+    >   set whole before deleting any of it, since deleting page by page skips some. Our tables then
+    >   hold a failed attempt's rows or none, since the API serves only after the seed completes
+    >   (`docs/spec.md` §15.5) and a stale record sits over empty tables; the guard below catches the
+    >   one other case. So once those rows are gone, no Student names any Supabase Auth user or file
+    >   left there: they are a failed attempt's, or an unfinished reset's. Truncating our tables alone
+    >   left them behind, up to thirty-two more Supabase Auth users for every failed attempt. After a
+    >   retry, Supabase holds exactly the seed's accounts, and in `avatars` and `evidence` exactly
+    >   its files. The two resets run the same deletions (ADR-0004 d11's note of 2026-10-11).
+    > - **A guard comes before it.** If any Student is not one the seed makes, by email (the thirty
+    >   of `docs/spec.md` §14.3, `ADMIN_EMAIL` and `MODERATOR_EMAIL`), the seed deletes nothing,
+    >   says the database holds accounts the seed did not make, names the target's reset,
+    >   `make reset-team` or `make reset-local`, and fails. That state means the record was lost
+    >   over real data, by a bug or by hand, and the seed never deletes real data on its own: only a
+    >   reset does, which someone runs on purpose. A reset that stopped before deleting our rows is
+    >   finished by running it again. A failed read of the record also stops the seed; it never
+    >   counts as no record.
+    > - **The record stays `COMMENT ON DATABASE`.** The `postgres` role is not a superuser, but it
+    >   owns the database, on the fallback (checked 2026-10-10) and on the team project (checked
+    >   2026-10-11, read-only), so it can write and clear the record. Both databases already carry
+    >   Postgres's own comment, *"default administrative connection database"*, so only text of the
+    >   form `peerconnect:seed:complete:fixture-v<N>` counts as a record, and any other comment is no
+    >   record. A record for another version, over tables that hold rows, writes nothing and exits 0:
+    >   an older one names the reset, as the note above says, and a newer one, which an out-of-date
+    >   checkout meets, says to pull `main`. Over empty tables, any record is stale and the seed
+    >   writes, as the first bullet says. The *already complete* line names the version. On the team
+    >   project the record is read in the dashboard's SQL editor, with `docs/spec.md` §14.9's query.
+    > - **The lock has a connection of its own.** The advisory lock above is taken on both targets,
+    >   on a connection opened for it alone, outside the `api`'s pool, before the record is read,
+    >   and kept to the end of the run. Prisma gives a connection back to the pool after each
+    >   operation, so a lock taken through it is not held by the run: other work can use that
+    >   session, the record may be written on another one, and an idle one is closed after 10
+    >   seconds (node-postgres's default). The record is cleared and written on the lock's
+    >   connection. **Losing that connection stops the run at once**: an error or a close on it exits
+    >   1, with no reconnect, since a second seed can take the freed lock and start deleting while
+    >   this run is still writing. The connection sends TCP keepalives every few seconds, because it
+    >   sits idle for the whole run and node-postgres turns keepalives off by default. A second seed
+    >   waits for the lock, then reads the record. Once built, it is checked through the team
+    >   project's session pooler that a dropped client connection frees the lock: client A holds
+    >   it, A's connection is closed without ending its backend, and client B gets it.
+    > - **The run is slow on the team project, and that is accepted.** Every step is its own
+    >   transaction (`docs/spec.md` §14.1), and from a laptop every statement is a round trip to
+    >   Frankfurt, about 70 ms from Kamel's computer (measured 2026-10-01). Some 3,000 to 6,000 round
+    >   trips put a full run at roughly four to seven minutes, an estimate while the seed is unbuilt;
+    >   on the fallback it takes seconds. Only a boot that writes the fixture pays it. So the `api`'s
+    >   healthcheck allows 15 minutes (ADR-0004 d11's note of 2026-10-11), the seed logs how long its
+    >   run took, and the first complete run on `main` against the team project checks that it fits.
+    >   Batching, which this decision keeps for a seed that is too slow, stays the last resort.
+
 11. **Presence cannot be seeded, and the demo script must account for it.** Presence is live,
     process-local state; it does not survive a restart, there is no column, and **nothing records
     when a Student was last online** (ADR-0003, `CONTEXT.md`). Every seeded Student therefore
