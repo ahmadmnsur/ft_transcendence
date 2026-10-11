@@ -398,6 +398,9 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
   > **Updated 2026-10-09 — the logins still needed are Kamel's and Hussein's.** Fadel left the team
   > on 2026-10-01, and Hussein Dakdouk joined on 2026-10-04. Ahmad's is `ahmmanso`. Tracked on
   > [Legal pages sign-off](https://github.com/ahmadmnsur/ft_transcendence/issues/69).
+
+  > **Logins recorded 2026-10-11.** Kamel's 42 login is `kabbas` and Hussein's is `hdakdouk`. Both
+  > pages name every author by login since that date, so the logins no longer block sign-off.
 - **`/to-spec` inherits binding rules**: one cookie; no third-party fetching; log hygiene and a
   Compose log cap; the throttle in memory; no Admin-set password; decision 4's visibility rows, the
   Admin label and no read receipts; four signed-out routes with the footer everywhere; the signup

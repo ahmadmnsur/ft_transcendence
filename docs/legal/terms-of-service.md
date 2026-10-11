@@ -1,6 +1,6 @@
 # Terms of Service
 
-**42 PeerConnect** · Last updated: 23 September 2026
+**42 PeerConnect** · Last updated: 11 October 2026
 
 These Terms are the rules for using 42 PeerConnect: what you agree to when you create an account, how
 the community is moderated, and what PeerConnect does and does not promise. The *Privacy Policy*
@@ -121,5 +121,5 @@ does not ask you to accept a new version, so check back from time to time.
 For anything about your account — Removal, a correction, a Suspension — contact an **Admin** of your
 copy, in person or by Direct Message. Admins are labelled as Admins in PeerConnect.
 
-For questions about these Terms, contact their authors on the 42 intranet: `ahmmanso`, **[42 login
-needed]** and **[42 login needed]**.
+For questions about these Terms, contact their authors on the 42 intranet: `ahmmanso`, `kabbas` and
+`hdakdouk`.
