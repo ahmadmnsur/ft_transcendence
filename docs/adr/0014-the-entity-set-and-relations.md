@@ -60,8 +60,8 @@
 >   unique) join. `display_name` gets the `und-x-icu` collation.
 > - `Avatar` and `Evidence` drop `bytes` and gain no path column (decision 12's note).
 > - No foreign key from our tables into Supabase's `auth` or `storage` schemas (ADR-0016's *Not
->   settled* note of 2026-10-04). A Student shares its id with its Supabase Auth user, and a file is named by its
->   row's token.
+>   settled* note of 2026-10-04). A Student shares its id with its Supabase Auth user, and a file
+>   is named by its row's token.
 > - No row-level security and no grants step. The team project's Data API is off, and the fallback
 >   runs no REST service ([Create PeerConnect's Supabase organization and team
 >   project](https://github.com/ahmadmnsur/ft_transcendence/issues/90); ADR-0004 decision 1's note
@@ -563,10 +563,10 @@ arms. Those three sentences are the whole shape.
     > default. Sign-up therefore passes `id` with the other scalar fields. With a default, either
     > create would write a row that names no Supabase Auth user or no file. A required field only
     > catches a value that is missing: writing the id the Supabase Auth user got, and the token
-    > that was uploaded, is still the path's job. `Student.id` is still a UUIDv7, made with the `uuid` package's `v7()`, the function
-    > Prisma's `uuid(7)` uses, so id order still follows creation order. A token is still a random
-    > UUIDv4 (`randomUUID()`), so ADR-0009 decision 3 still holds. Every other `uuid` identifier
-    > keeps `@default(uuid(7))`.
+    > that was uploaded, is still the path's job. `Student.id` is still a UUIDv7, made with the
+    > `uuid` package's `v7()`, the function Prisma's `uuid(7)` uses, so id order still follows
+    > creation order. A token is still a random UUIDv4 (`randomUUID()`), so ADR-0009 decision 3
+    > still holds. Every other `uuid` identifier keeps `@default(uuid(7))`.
 
 11. **A Review is immutable; its one attachment is not.** The Learning Outcome text gets no edit
     path, for anyone, matching the Public Takeaway (immutable by the Post rule) and Private Feedback
