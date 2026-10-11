@@ -217,6 +217,13 @@ const BARE_WWW = /www\./iy;
 const BARE_EMAIL = /[\w.+-]+@[\w.-]*\.[A-Za-z0-9]/y;
 const ENTITY_HERE = /&(#\d+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]+);/y;
 
+// GitHub shows `:name:` as an emoji when the name is one of its emoji
+// codes, which use only lowercase letters, digits, `_`, `+` and `-`. Every
+// code holds a letter except these four, so a digit-only run like the
+// `:30:` in `10:30:45` stays text.
+const EMOJI_CODE = /:([a-z0-9_+-]+):/y;
+const LETTERLESS_EMOJI_CODES = new Set(['+1', '-1', '100', '1234']);
+
 // One shared reason for bare URL-like text: it names every form the check
 // covers, so it stays accurate whether the text is a scheme without a
 // domain or a full address.
@@ -641,6 +648,26 @@ function parseRange(
     if (char === '!') {
       if (i + 1 < end && source[i + 1] === '[') {
         fail(fileName, lineAt(i), 'images (`![…]`) are not supported');
+      }
+      text += char;
+      i += 1;
+      continue;
+    }
+    // A run whose name holds a letter throws whether or not GitHub knows the
+    // name, so a lettered code GitHub adds later cannot slip through; a
+    // letterless run throws only as one of the four known codes. Code
+    // content skips this loop and link destinations are never scanned, so
+    // both stay allowed; link text is scanned, since GitHub shows emoji
+    // there too.
+    if (char === ':') {
+      EMOJI_CODE.lastIndex = i;
+      const code = EMOJI_CODE.exec(source);
+      if (
+        code !== null &&
+        code.index + code[0].length <= end &&
+        (/[a-z]/.test(code[1]) || LETTERLESS_EMOJI_CODES.has(code[1]))
+      ) {
+        fail(fileName, lineAt(i), `\`${code[0]}\` is not supported outside inline code (GitHub can show it as an emoji)`);
       }
       text += char;
       i += 1;
