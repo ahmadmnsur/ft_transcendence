@@ -28,6 +28,14 @@ do the rest, is offered only on the Team and Enterprise plans. Anyone holding th
 project's two members and each evaluator, can also do anything through the API with its secret
 key and database password. The rules below are the team's, not the dashboard's.
 
+> **Changed 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)**:
+> no evaluator holds the team `.env`. A defense runs on a team member's own computer, and the
+> evaluator is told only the three sign-in passwords (`ADMIN_PASSWORD`, `MODERATOR_PASSWORD`,
+> `SEED_STUDENT_PASSWORD`). If a defense ever runs on another computer, a team member puts the
+> `.env` there, shows it to nobody, and deletes it at the end. So only the team holds it, and the
+> Privacy Policy says that only the team, and Supabase as its host, can open the team's copy
+> directly. The keys are still not rotated after a defense.
+
 ## What is set
 
 Last checked by Kamel on 2026-10-10.
@@ -48,6 +56,34 @@ Last checked by Kamel on 2026-10-10.
 | Enforce SSL on incoming connections   | on                                                                       |
 | Connection the `api` and `prisma migrate` use | the session pooler, port 5432, one `DATABASE_URL`                |
 | Session-mode Pool Size                | 15, the default; each stack's `api` opens at most 5 connections          |
+| The `postgres` role's log settings    | `log_min_messages = fatal`, `log_min_error_statement = panic`, `auto_explain.log_min_duration = -1`, `log_statement = none` |
+
+The four log settings keep the Privacy Policy's promise that no log holds the content of what a
+Student submits ([ADR-0018](../docs/adr/0018-the-legal-pages-describe-the-model-as-built-and-bind-it.md) d6). By default the hosted database logs a failed query with its
+`DETAIL`, which can print the whole failing row (a Post's text), and logs a query of 10 seconds or
+more with its values. The fallback turns this off in `compose.yaml`'s `db` command, but a hosted
+project takes no command-line settings, and `log_error_verbosity` cannot help there: the hosted log
+is `csvlog`, which keeps `DETAIL` whatever that setting says, and the role may not change it. The
+four settings stop those lines for every connection the `postgres` role opens, which is every
+connection the `api`, `prisma migrate` and the seed make. Supabase's own Auth and Storage roles keep
+their defaults, which nobody but Supabase can change; their rows hold no Student's text or real email.
+
+They are set in the dashboard's SQL editor, which runs as `postgres`:
+
+```sql
+alter role postgres set log_min_messages = 'fatal';
+alter role postgres set log_min_error_statement = 'panic';
+alter role postgres set auto_explain.log_min_duration = -1;
+alter role postgres set log_statement = 'none';
+```
+
+A role's settings reach only the connections opened after them, and the pooler keeps its
+connections, so **Restart project** follows; it keeps every row and file. Then
+`select rolconfig from pg_roles where rolname = 'postgres';` lists the four, and the comparison before
+each defense uses the same query. If the project's image refuses `log_min_error_statement` (images
+older than `17.6.1.133`), leave that line out: `log_min_messages = fatal` already keeps every error
+line, and the statement printed with it, out of the log. The cost is that the dashboard's Postgres
+log no longer shows our errors; the `api`'s own log still records every 5xx with its Prisma code.
 
 **Authentication**, with the line in `compose.yaml` that gives the local fallback the same behaviour:
 
@@ -67,6 +103,10 @@ Last checked by Kamel on 2026-10-10.
   d11's note of 2026-10-05).
 - **The keys and the database password.** They are only in the team `.env`, which is handed to the
   evaluator at the defense and never committed.
+
+  > **Changed 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)**:
+  > the `.env` is no longer handed to the evaluator; only the team holds it (the note under
+  > *Members*).
 
 ## Changing a setting
 

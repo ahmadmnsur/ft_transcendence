@@ -32,6 +32,11 @@
 > `main`, branch work that neither migrates nor writes data may run against the team project
 > (decision 8's note).
 
+> **Changed 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100): the evaluator is no longer
+> handed the `.env`.** The defense still runs on the team project, from a team member's own
+> computer, and only the team holds the team `.env` (decision 9's note of that date). "The handed
+> `.env`" in the notes below now names the team `.env` used at the defense.
+
 The subject's entire requirement for deployment is `document/en.subject.md:314` — a
 containerisation solution (Docker, Podman, or equivalent) that runs with a **single
 command** — plus HTTPS for every browser-to-backend connection (`:383`), credentials in a
@@ -469,6 +474,17 @@ and why there is no `SESSION_SECRET`.
    > that changes: secret keys can be created and revoked one at a time, and the database password
    > is one reset.
    > [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) says who can see the data.
+   >
+   > > **Changed 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100), by Kamel: no
+   > > evaluator holds the `.env`.** A defense runs on a team member's own computer, and the
+   > > evaluator is told only the three sign-in passwords, `ADMIN_PASSWORD`, `MODERATOR_PASSWORD` and
+   > > `SEED_STUDENT_PASSWORD`, which the paragraph above had them read in the `.env`. If a defense
+   > > ever runs on another computer, a team member puts the `.env` there, shows it to nobody, and
+   > > deletes it at the end. So "each evaluator keeps a copy" no longer holds: only the team holds
+   > > the database password and the secret key. It is still not rotated after a defense. This is
+   > > what the Privacy Policy now says: only the team, and Supabase as its host, can open the team's
+   > > copy directly (ADR-0018 d1's note of 2026-10-11). The project's two members also read it
+   > > through the dashboard ([`supabase/team-project.md`](../../supabase/team-project.md)).
 
    > **Consolidated 2026-09-20 — the authoritative list is fifteen entries, and it is here.**
    > The ten above are what this decision settled; five were added by three later decisions,

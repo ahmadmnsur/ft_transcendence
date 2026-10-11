@@ -20,6 +20,12 @@
 > with 42, and the browser goes only to 42's pages and back (decision 5's note). Decisions 7, 8 and
 > 12 carry notes on the field kept, recovery through 42 and the 42 sign-up form.
 
+> **Settled 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).** Both
+> pages were corrected in place that day (decision 15). They now name two kinds of copy, the
+> team's copy, kept by Supabase in Frankfurt, and a local copy, kept on the computer that started
+> it, and state each one's facts in the section that covers them. Decisions 1, 3, 5, 6, 7, 8 and 13
+> carry the notes.
+
 `document/en.subject.md:320` requires a **Privacy Policy** and **Terms of Service** "with relevant
 content"; `:323`-`:330` require them to be easily accessible from the application, to contain content
 appropriate to *this* project, and not to be placeholder or empty pages; `:336` makes missing or
@@ -95,6 +101,26 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > 2026-10-04, so the section names Ahmad, Kamel and Hussein. The Privacy Policy reads so since
    > 2026-10-09.
 
+   > **Two kinds of copy, 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).**
+   > "There is no central PeerConnect server" and "stored in that copy's own database, on that
+   > computer" are gone. **The team's copy**, run by the three authors, keeps its database, its
+   > files and the passwords that sign in to it with Supabase, in Frankfurt, Germany; a team member
+   > runs the program on their own computer. **A local copy**, which PeerConnect makes when it
+   > starts without the team's settings, keeps everything on that computer (ADR-0004 d1's note of
+   > 2026-10-03). The responsibility sentence stands, and for the team's copy it is the authors'.
+   >
+   > - **Supabase is named** as storing the team's copy for the team and using it for nothing
+   >   else; its Data Processing Addendum, part of its terms on every plan, makes it the team's
+   >   processor. The pages say its backups, logs and the companies it uses may be outside
+   >   Frankfurt, link nothing, and still name no law (decision 2).
+   > - **Each copy's facts sit in the section that covers them**: who can open it directly,
+   >   encryption, backups, emptying it, logs (decision 6's note) and, in the Terms, availability
+   >   (decision 13's note).
+   > - **Only the team, and Supabase as its host, can open the team's copy directly**: Kamel and
+   >   Ahmad through the dashboard, or anyone holding the team `.env`, which the team gives to no
+   >   one, an evaluator included. That changes ADR-0004 d9's note of 2026-10-03, which handed the
+   >   `.env` to each evaluator (its note of 2026-10-11).
+
 2. **No law is named and no compliance is claimed.** A GDPR-shaped policy — a controller, lawful
    bases, the eight rights — would name a controller that does not exist and promise what this model
    withholds by design: erasure (ADR-0008 d6-d7), export (never built; the GDPR Minor at `:915` was
@@ -114,6 +140,12 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    out; Removal itself deletes only the sessions and the avatar, and everything else stays. The pages
    state exactly what it keeps and deletes, from ADR-0008 d6-d7, ADR-0009 d6, ADR-0011 d10's Removal
    note, ADR-0013 d8 and ADR-0014 d6.
+
+   > **Two more things kept, 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).**
+   > The Privacy Policy's Removal list gains the password's hash, kept by Supabase Auth so that
+   > sign-in tells only the owner, after the right password, that the account was removed (ADR-0008
+   > d7's note of 2026-10-02), and the 42 account number, so that 42 account can never make a new
+   > Student (ADR-0008 d7's note of 2026-10-08).
 
 4. **Who sees what is ruled here wherever no record had ruled it.** The recorded rows stand as their
    ADRs set them. The new rows:
@@ -175,6 +207,16 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > Sign in with 42 itself. The browser goes to 42's own pages and back to PeerConnect, never to
    > Supabase's address. Connect 42 and Confirm with 42 make the same trip, under the same cookie.
 
+   > **The cookie paragraph stays true, 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).**
+   > The note *The one cookie stays, 2026-09-30* at the top kept `pc_session`; this says the page's
+   > paragraph is unchanged too. It is still one random session identifier, sent only to PeerConnect
+   > over HTTPS, unreadable by page scripts, ending after 30 days without use or at sign-out, and the
+   > attempt identifier for at most ten minutes during a Sign in with 42. Connect 42 and Confirm with
+   > 42 run signed in, so they bind through the session (the note of 2026-09-23 above) and change
+   > nothing the paragraph says. The pages' one exception now names all three trips to 42, in *In
+   > short* and *Other websites and services*, and *Other websites and services* adds that the
+   > browser never contacts Supabase.
+
 6. **Logs are disclosed, kept clean and capped, and the sign-in throttle lives in memory.** nginx
    logs every request by default and Docker keeps that output on the host; saying nothing would be an
    omission an evaluator catches with `docker compose logs`. The pages disclose the request log in
@@ -199,6 +241,34 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > **Chosen 2026-09-23 by `/to-spec #1`** ([`docs/spec.md`](../spec.md) §3.9; M10): a custom
    > `log_format` whose path and referrer are cut at the first `?`, with no `$request`, `$args` or
    > cookie field.
+
+   > **The storage services' logs, 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).**
+   > The request log stays on the computer that runs the program. The services that store a copy's
+   > data now log PeerConnect's requests to them, and the Privacy Policy discloses those logs too:
+   >
+   > - **On the team's copy**, Supabase keeps its API gateway, Auth, Storage and Postgres logs. The
+   >   team sees them for up to a day on the Free plan (Auth's audit events for an hour), and Supabase keeps them
+   >   for its own operations and security, for a period it does not publish.
+   > - **On a local copy**, the same services' container logs stay on the computer, capped like the
+   >   others.
+   > - **What they hold**: the time, the path and PeerConnect's server address, never a browser's,
+   >   since the browser never contacts Supabase (decision 5). Auth's events name the account by
+   >   `<id>@peerconnect.invalid`, never the real email
+   >   ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)). No schema of them has
+   >   a request body, a password or a cookie (Supabase's log field reference and Supabase Auth
+   >   v2.197.0's request logger, read 2026-10-11).
+   >
+   > **This decision's rule now binds the team project too**, and it did not hold there. The hosted
+   > database logs a failed query with its `DETAIL`, which can print the whole failing row, a Post's
+   > text included, and logs any query of 10 seconds or more with its values. The fallback's `db`
+   > command turns this off (`docs/spec.md` §3.9, M13), but a hosted project takes no command-line
+   > settings. `log_error_verbosity` cannot help either: the `postgres` role may not set it, and the
+   > hosted `csvlog` keeps `DETAIL` whatever it says. So the `postgres` role carries four settings,
+   > `log_min_messages = fatal`, `log_min_error_statement = panic`,
+   > `auto_explain.log_min_duration = -1` and `log_statement = none`. They are recorded in
+   > [`supabase/team-project.md`](../../supabase/team-project.md) and applied by Kamel once the record
+   > merges. Supabase's own Auth and Storage roles keep Supabase's defaults, which only Supabase can
+   > change; their rows hold no Student's text and no real email.
 
 7. **From 42, PeerConnect keeps only what the identity mapping needs, and no Admin action may ever
    make a 42 login reach a Student.** ADR-0004's module-claim amendment already uses the 42 token once
@@ -241,6 +311,12 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    >   42 Beirut student (map #85, *Out of scope*).
    >
    > The Privacy Policy's marked 42 sentence can now be written; [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words it.
+   >
+   > > **Worded 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).** The marker is gone.
+   > > *Other websites and services* says PeerConnect keeps the 42 account number to recognise the
+   > > Student; that the sign-up form suggests the 42 login as display name and the 42 email, kept
+   > > only if kept; and that Disconnect 42 forgets the number. *Your account*, *Your choices* and
+   > > *Leaving PeerConnect* name it too.
 
 8. **No Admin may set or reset a Student's password, so a forgotten password cannot be recovered, and
    the pages say so.** ADR-0003 decision 11 ships no reset and PeerConnect sends no email; ADR-0008
@@ -257,6 +333,14 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > to say that a forgotten password can be reset only through 42, and only by a Student who
    > connected it; [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words it. A Student who never
    > connected 42 is where this decision left them.
+   >
+   > > **Worded 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).** The Privacy
+   > > Policy's limits and the Terms' section 2 say a forgotten password can be reset only through
+   > > 42, and only by a Student who connected it: sign in with 42, Confirm with 42 on the profile,
+   > > then a new password within ten minutes. The Terms add that whoever can sign in to the
+   > > connected 42 account can sign in to the PeerConnect account and set a new password, the risk
+   > > [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)'s resolution recorded on 2026-10-09. A password reset by
+   > > email would be a new decision, outside the map that moved PeerConnect to Supabase.
 
 9. **The Terms' conduct rules are the Report reasons, plus five rules of PeerConnect's own.** ADR-0011
    decision 4's reasons — Harassment, Spam, Inappropriate content — are what a Report enforces, so
@@ -340,6 +424,35 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     > holds for files no row names: a replaced or deleted file, and the file of a save that failed,
     > which can stay up to two hours. [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words both for the pages.
 
+    > **The limits on Supabase, 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).**
+    > Each limit now says what holds for each kind of copy (decision 1's note of that date).
+    >
+    > - **Automatic deletion.** "Nothing is deleted automatically" now excepts a file no record uses
+    >   any more, deleted within two hours as long as PeerConnect is running and can reach its file
+    >   storage. The avatar and Evidence lines carry the same condition (the note above).
+    > - **Backups.** PeerConnect keeps none, and on the Free plan the team has none it can restore
+    >   the team's copy from. Supabase may keep its own copies of that copy's database: a pause takes
+    >   one, and its Data Processing Addendum speaks of daily backups by default, which its docs and
+    >   pricing deny for Free. So the page says something deleted can remain in them until Supabase
+    >   deletes them. A local copy has none. The Terms say "no backups to count on" and "no backups
+    >   the team can restore" ([Find out what Supabase's free plan means for PeerConnect](https://github.com/ahmadmnsur/ft_transcendence/issues/89)).
+    > - **Encryption.** Supabase encrypts the team project's disks and backups (AES-256, its Data
+    >   Processing Addendum's security schedule), so "not encrypted at rest" no longer holds for the
+    >   team's copy; it still holds for a local copy. Disk encryption stops no one who can open the
+    >   database, so the limit is now worded as who can: only the team, and Supabase as its host,
+    >   for the team's copy (decision 1's note); whoever runs it, for a local copy. Both layers of the
+    >   note of 2026-09-23 stand.
+    > - **Emptying a copy.** The team empties the team's copy, with `make reset-team`; whoever runs
+    >   a local copy wipes it.
+    > - **What Supabase Auth records by itself** joins *Your account*: the hash; the time of the last
+    >   password sign-in (`last_sign_in_at`, which cannot be turned off), and rarely an earlier one,
+    >   when a password check's own sign-out fails and its Supabase Auth session row stays; and only
+    >   the internal login, never the real email
+    >   ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)). "Does not record when
+    >   you were last online" stays, pointing to that one kept sign-in time.
+    > - **Availability.** The Terms' section 8 adds that Supabase can pause the team's copy until the
+    >   team resumes it.
+
 14. **The canonical text is `docs/legal/privacy-policy.md` and `docs/legal/terms-of-service.md`; the
     frontend bundles and renders it with no network fetch.** How it renders is `/to-spec`'s call; if
     that needs a Markdown library, it is a stack addition and goes through the map. **Drafted from
@@ -394,6 +507,8 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
   > **The 42 field settled 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93):** 42's
   > account `id` (decision 7's note). Its marker is replaced when [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) words
   > the sentence. The 42 logins' markers are not this ticket's.
+  >
+  > > **Replaced 2026-10-11** (decision 7's note of that date), so neither page carries a marker.
 
   > **Updated 2026-10-09 — the logins still needed are Kamel's and Hussein's.** Fadel left the team
   > on 2026-10-01, and Hussein Dakdouk joined on 2026-10-04. Ahmad's is `ahmmanso`. Tracked on

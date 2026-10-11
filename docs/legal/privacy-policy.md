@@ -13,8 +13,11 @@ and what you can change. It describes the platform exactly as it works — inclu
   XP and Badges.
 - Your Learning Outcomes, Evidence, Private Feedback and Direct Messages are never public. Your
   profile, your Posts and your place on the Leaderboard are visible to every signed-in Student.
+- The team's copy of PeerConnect is stored by **Supabase**, an online database service, in
+  Frankfurt, Germany. Your browser never contacts Supabase.
 - PeerConnect sets one cookie, to keep you signed in. It has no analytics or advertising, and your
-  browser loads nothing from any other website, except when you choose **Sign in with 42**.
+  browser loads nothing from any other website, except when you choose **Sign in with 42**,
+  **Connect 42** or **Confirm with 42**.
 - What you submit can't be edited or deleted afterwards, and Direct Messages can't be unsent.
 - To leave, you ask an Admin to remove your account. **Removal is final, and it is not erasure**:
   most of what you contributed stays.
@@ -24,11 +27,19 @@ and what you can change. It describes the platform exactly as it works — inclu
 42 PeerConnect is a student project, built for the ft_transcendence project of the 42 curriculum by
 Ahmad (`ahmmanso`), Kamel (`kabbas`) and Hussein (`hdakdouk`). It is not run or endorsed by 42.
 
-There is no central PeerConnect server. Each copy of PeerConnect runs on the computer of whoever
-started it, and everything this page describes is stored in that copy's own database, on that
-computer. Each copy has its own **Admins**: the staff accounts that run its Rounds, publish its
-Reflection Prompts and moderate it. A newly started copy contains only demo accounts created
-automatically, including its first Admin and Peer Moderator, and no real person's data.
+PeerConnect runs as separate **copies**, and each keeps its own data:
+
+- **The team's copy** is run by its three authors. Its database, its files and the passwords that
+  sign in to it are stored by **Supabase**, an online database service, in its Frankfurt, Germany
+  region. A team member runs the program on their own computer; the data it reads and writes stays
+  with Supabase.
+- **A local copy** is what PeerConnect makes when it is started without the team's settings. It keeps
+  everything this page describes on the computer that started it.
+
+Each copy has its own **Admins**: the staff accounts that run its Rounds, publish its Reflection
+Prompts and moderate it. A newly started copy contains only demo accounts created automatically,
+including its first Admin and Peer Moderator, and no real person's data. The team's copy keeps what
+people add to it until the team empties it.
 
 Whoever runs a copy of PeerConnect is responsible for the data it holds and for any data-protection
 law that applies to them. That law may give you rights beyond what this page describes.
@@ -38,7 +49,12 @@ law that applies to them. That law may give you rights beyond what this page des
 **Your account**
 
 - your email address and display name;
-- your password, stored only as a salted hash, so nobody can read it, Admins included;
+- your password, stored only as a salted hash, so nobody can read it, Admins included. It is kept by
+  Supabase Auth, the sign-in software that checks it, which knows your account only by an internal
+  code, never by your email address;
+- when you last signed in with your password, which Supabase Auth records by itself. Rarely, when a
+  technical step fails, it also keeps the time of an earlier password sign-in;
+- if you connect 42 to your account, your 42 account number (see *Other websites and services*);
 - your role — Student, Peer Moderator or Admin — and whether your account is suspended or removed.
 
 **Your profile**
@@ -89,7 +105,8 @@ Other records also carry the time they were made; a sign-in session records only
 
 **What PeerConnect does not record: when you were last online.** Your Friends can see whether you are
 online *now*. That status lives only in the running server's memory, is never saved, and resets
-whenever the server restarts.
+whenever the server restarts. The one sign-in time kept is that of your last password sign-in (see
+*Your account*).
 
 ## Why PeerConnect uses it
 
@@ -113,9 +130,10 @@ whenever the server restarts.
   they use Skills and Match statuses, never what anyone wrote.
 - **To troubleshoot** the platform, using the request logs described below.
 
-PeerConnect uses your data for nothing else. It shows no advertising, sells nothing, shares nothing
-with anyone outside PeerConnect, and does not use your data to train AI models. It never sends you
-email: your email address is used only to sign in.
+PeerConnect uses your data for nothing else. It shows no advertising, sells nothing, and does not use
+your data to train AI models. It shares nothing with anyone outside PeerConnect, except **Supabase**,
+which stores the team's copy for the team and uses it for nothing else. It never sends you email:
+your email address is used only to sign in.
 
 ## Who can see what
 
@@ -159,20 +177,34 @@ an interface preference, never information about you.
 
 Your browser talks to PeerConnect alone. PeerConnect loads no fonts, scripts, images or other content
 from other websites, shows no link previews, and contains no analytics, advertising or tracking
-tools. Avatars are stored in PeerConnect itself.
+tools. Your browser never contacts Supabase either: PeerConnect's server fetches every avatar and
+Evidence file from the copy's own file storage, and checks who may see it before sending it.
 
-The one exception is **42**, and only when you choose **Sign in with 42**. Your browser then goes to
-42's own sign-in page, and PeerConnect asks 42 who you are. It keeps only the part of your 42 identity
-it needs to recognise your account — **[the exact field is set when the 42 sign-in decision
-closes]** — plus anything you choose to show in PeerConnect. It never keeps your 42 photo, grades,
-projects, level, campus or location, and it uses 42's access token once and then discards it.
+The one exception is **42**, and only when you choose **Sign in with 42**, **Connect 42** (to link 42
+to your account) or **Confirm with 42** (to set a forgotten password). Your browser then goes to 42's
+own sign-in page, and PeerConnect asks 42 who you are. PeerConnect keeps your **42 account number**,
+to recognise you when you sign in with 42. When no account has that number yet, PeerConnect's sign-up
+form suggests your 42 login as your display name and your 42 email address; they are kept only if you
+keep them. You can disconnect 42 from your profile at any time, which forgets the number. PeerConnect
+never keeps your 42 photo, grades, projects, level, campus or location, and it uses 42's access token
+once and then discards it.
+
+The team's copy is stored by Supabase in its Frankfurt, Germany region. Supabase's backups and logs,
+and the companies it uses to run its service, may be in other places, under Supabase's own terms.
 
 ## Logs
 
 To help fix problems, PeerConnect's web server keeps a log of the requests it receives: the time, the
 network address each request came from, the method and path requested, the result, the size of the
-response, the page that linked to it, and your browser type. The log is capped in size, and its
-oldest entries are overwritten automatically.
+response, the page that linked to it, and your browser type. The log stays on the computer running
+the program, is capped in size, and its oldest entries are overwritten automatically.
+
+The services that store a copy's data keep their own logs of PeerConnect's requests to them: the time,
+what was asked for, and the address of PeerConnect's server, never your browser's. They include each
+password sign-in, sign-out and password change on your account, under its internal code rather than
+your email address. For the team's copy, Supabase keeps these logs: the team can see them for up to
+a day, and Supabase keeps them for its own operations and security, for a period it sets. For a local
+copy, they stay on that computer, capped and overwritten like the request log.
 
 **No log ever contains a password, a cookie, the content of what you submit, message text or a
 file.**
@@ -183,16 +215,25 @@ address and email address. Those counts live only in the server's memory and are
 ## How long your data is kept
 
 Everything PeerConnect records is kept for as long as the copy's database exists. Nothing is deleted
-automatically, and there are no backups. Whoever runs a copy can wipe its database, which erases
-everything in it.
+automatically, except a file that no record uses any more, such as the file of an upload that could
+not be saved: PeerConnect deletes it within two hours, as long as it is running and can reach its
+file storage. Whoever runs a copy can empty it, which erases everything in it; for the team's copy,
+that is the team.
+
+PeerConnect keeps no backups. The team has none it can restore the team's copy from, but Supabase may
+keep its own backup copies of that copy's database, under its own terms, so something deleted in
+PeerConnect can remain in them until Supabase deletes them. A local copy has no backups at all.
 
 Some things end sooner:
 
 - **Sessions.** Signing out ends that session. Changing your password, a Suspension or a Removal ends
   all of them. An unused session stops working after 30 days.
-- **Your avatar** is deleted when you replace or remove it, and when your account is removed.
-- **Evidence** is deleted when its Mentee deletes or replaces it. It is not deleted when an account is
-  removed.
+- **Your avatar** is deleted when you replace or remove it, and when your account is removed, or
+  within two hours if that deletion fails, as long as PeerConnect is running and can reach its file
+  storage.
+- **Evidence** is deleted when its Mentee deletes or replaces it, or within two hours if that deletion
+  fails, as long as PeerConnect is running and can reach its file storage. It is not deleted when an
+  account is removed.
 - **A Skill** leaves your profile when you remove it. Past Matches keep the Skills they were made on,
   because a Match's explanation never changes.
 - **A Like** is deleted when you take it back, **a Friendship** when either of you ends it, and **a
@@ -212,6 +253,8 @@ Some things are permanent:
 - Your password is salted and hashed, so nobody can see it, Admins included.
 - Every connection to PeerConnect uses HTTPS. The one exception is a developer's local build, which
   serves plain HTTP and only to the same computer, so its traffic never crosses a network.
+- For the team's copy, PeerConnect's server reaches Supabase only over encrypted connections whose
+  certificates it checks.
 - Page scripts cannot read your session cookie, and changing your password signs you out everywhere.
 - Files are never public: each request for an avatar or an Evidence file is checked against who is
   allowed to see it.
@@ -219,12 +262,17 @@ Some things are permanent:
 
 And the limits:
 
-- **The database is not encrypted, and Direct Messages are not end-to-end encrypted.** Whoever runs a
-  copy can read everything in its database directly, Direct Messages included. That is access to the
-  database itself, outside PeerConnect: inside PeerConnect, no account, an Admin's included, can open
-  another Student's Direct Messages.
-- **There are no backups.** If a copy's database is lost, everything in it is lost.
-- **A forgotten password can't be reset.** PeerConnect sends no email, and no Admin can set your
+- **Whoever can open a copy's database directly can read everything in it, Direct Messages
+  included.** Supabase encrypts the team's copy on its disks, but that protects only the disks. A local
+  copy is not encrypted at all, and Direct Messages are not end-to-end encrypted. Only the team, and
+  Supabase as its host, can open the team's copy directly: the team through Supabase's dashboard or
+  with the copy's settings, which it gives to no one, an evaluator included. Whoever runs a local
+  copy can open it. That is access to the database itself, outside PeerConnect: inside PeerConnect, no
+  account, an Admin's included, can open another Student's Direct Messages.
+- **There are no backups to count on.** If a copy's database is lost, everything in it is lost.
+- **A forgotten password can be reset only through 42**, and only if you connected 42 to your
+  account: sign in with 42, choose **Confirm with 42** on your profile, then set a new password within
+  ten minutes. Otherwise it can't be reset: PeerConnect sends no email, and no Admin can set your
   password.
 
 ## Your choices
@@ -233,6 +281,7 @@ In PeerConnect you can:
 
 - view and edit your profile: display name, email address, avatar, Skills and Learning Goal;
 - change your password, and sign out;
+- connect 42 to your account, or disconnect it;
 - stop being matched, by removing all your Skills;
 - decline any Match;
 - Block another Student, and lift a Block you set;
@@ -256,6 +305,10 @@ PeerConnect has no "delete my account" button. To leave, ask an Admin to **remov
 
 - you are signed out everywhere and can never sign in again;
 - your email address stays in the database for good, so it can never be registered again;
+- your password's hash stays with Supabase Auth, so that only you, signing in with the right
+  password, are told that the account was removed;
+- if you connected 42, your 42 account number stays too, so that 42 account can never make a new
+  account;
 - your avatar is deleted;
 - your account record stays in the database, where only Admins can view it and nobody can change it;
 - everywhere else you appear as a former student. Your Posts stay on the feed. Your Matches stay in
