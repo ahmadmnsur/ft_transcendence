@@ -691,11 +691,12 @@ and why there is no `SESSION_SECRET`.
     >   the team project, each reset tries the advisory lock the seed holds, on a connection of its
     >   own, and refuses before any write, saying a seed is running on that target, while a seed
     >   holds it. Otherwise it keeps the lock until it has deleted, so a seed that starts meanwhile
-    >   waits: it clears the completion record on the lock's connection, then deletes. As in the
-    >   seed, losing that connection stops the reset at once, with no reconnect, and the connection
-    >   sends TCP keepalives every few seconds. The lock is never taken through the `api`'s pool:
-    >   Prisma gives a connection back after each operation, so the lock's session would not be held,
-    >   and an idle one is closed after 10 seconds (ADR-0017 d10's note of 2026-10-11).
+    >   waits. Holding it, the reset clears the completion record on the lock's connection, then
+    >   deletes. As in the seed, losing that connection stops the reset at once, with no reconnect,
+    >   and the connection sends TCP keepalives every few seconds. The lock is never taken through
+    >   the `api`'s pool: Prisma gives a connection back after each operation, so the lock's session
+    >   would not be held, and an idle one is closed after 10 seconds (ADR-0017 d10's note of
+    >   2026-10-11).
     > - **The lock's connection is one more on the session pooler.** The pool cap above counted the
     >   seed as one connection: 2 × 5 + 2, with 3 to spare. With its lock on a connection of its own,
     >   the seed takes two, so the sum is 13 of the Pool Size of 15, with 2 to spare. It still fits;
