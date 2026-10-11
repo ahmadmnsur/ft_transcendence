@@ -33,10 +33,10 @@ key and database password. The rules below are the team's, not the dashboard's.
 > evaluator is told only the three sign-in passwords (`ADMIN_PASSWORD`, `MODERATOR_PASSWORD`,
 > `SEED_STUDENT_PASSWORD`). If a defense ever runs on another computer, never one an evaluator
 > controls, a team member puts the `.env` there, shows it to nobody, and at the end runs
-> `make down` and deletes it: `compose.yaml` copies the `.env` into the `api` and `proxy`
-> containers, which keep it until `make down` removes them. So only the team holds it, and the
-> Privacy Policy says that only the team, and Supabase as its host, can open the team's copy
-> directly. The keys are still not rotated after a defense.
+> `make down` and deletes it: `compose.yaml` gives the `.env`'s values to the `api` and `proxy`
+> containers through `env_file`, and they keep them until `make down` removes them. So only the
+> team holds it, and the Privacy Policy says that only the team, and Supabase as its host, can open
+> the team's copy directly. The keys are still not rotated after a defense.
 
 ## What is set
 
@@ -82,7 +82,12 @@ alter role postgres set log_statement = 'none';
 A role's settings reach only the connections opened after them, and the pooler keeps its
 connections, so **Restart project** follows; it keeps every row and file. Then check what a
 connection really runs with, through the session pooler with the team `DATABASE_URL`, as the `api`
-connects (any Postgres client that verifies `supabase/prod-ca-2021.crt`):
+connects. Save the block below as a file and run it with `psql -f`, which sends each statement on
+its own:
+
+```bash
+PGSSLMODE=verify-full PGSSLROOTCERT=supabase/prod-ca-2021.crt psql "<the team DATABASE_URL>" -f check.sql
+```
 
 ```sql
 select session_user;  -- postgres
@@ -94,10 +99,13 @@ reset log_min_messages;
 do $$ begin raise exception 'log probe' using detail = 'probe <date>, must not appear'; end $$;
 ```
 
-The two probes write nothing. In the dashboard's Postgres log the first must appear, which shows
-that log is being read at all, and the second must not. `select rolconfig from pg_roles where
-rolname = 'postgres';` shows only what the role stores, the four among others, not what a pooled
-connection runs with. The comparison before each defense runs the same check. If the project's
+The two probes write nothing. The client must show `ERROR:  log probe` twice, each with its own
+`DETAIL`: a client that sends the block as one query stops at the first probe, so the second never
+runs and its absence from the log proves nothing. In the dashboard's Postgres log the first must
+appear, which shows that log is being read at all, and the second must not. The comparison before
+each defense runs the check above. `select rolconfig from pg_roles where rolname = 'postgres';`
+shows only what the role stores, the four among others, not what a pooled connection runs with.
+If the project's
 image refuses `log_min_error_statement` (images older than `17.6.1.133`), leave that line out:
 `log_min_messages = fatal` already keeps every ERROR-level line and its statement out of the log.
 The cost is that the dashboard's Postgres log no longer shows our errors; the `api`'s own log still

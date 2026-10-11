@@ -21,10 +21,10 @@
 > 12 carry notes on the field kept, recovery through 42 and the 42 sign-up form.
 
 > **Settled 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).** Both
-> pages were corrected in place that day (decision 15). They now name two kinds of copy, the
-> team's copy, kept by Supabase in Frankfurt, and a local copy, kept on the computer that started
-> it, and state each one's facts in the section that covers them. Decisions 1, 3, 5, 6, 7, 8 and 13
-> carry the notes.
+> pages are corrected in place, with their *Last updated* dates (decision 15). They now name two
+> kinds of copy, the team's copy, kept by Supabase in Frankfurt, and a local copy, kept on the
+> computer that started it, and state each one's facts in the section that covers them. Decisions
+> 1, 3, 5, 6, 7, 8 and 13 carry the notes.
 
 `document/en.subject.md:320` requires a **Privacy Policy** and **Terms of Service** "with relevant
 content"; `:323`-`:330` require them to be easily accessible from the application, to contain content
@@ -446,14 +446,18 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     > - **Emptying a copy.** The team empties the team's copy, with `make reset-team`; whoever runs
     >   a local copy wipes it.
     > - **What Supabase Auth records by itself** joins *Your account*: the hash; the time Supabase
-    >   Auth last checked the password (`last_sign_in_at`, which cannot be turned off), and rarely
-    >   an earlier one, when a check's own sign-out fails and its Supabase Auth session row stays;
-    >   and only the internal login, never the real email
-    >   ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)). Every check moves that time,
-    >   since the password grant cannot tell them apart: a sign-in, a password change's check of the
-    >   current password (ADR-0003's note of 2026-10-02), and Connect 42's and Disconnect 42's
-    >   ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)). "Does not record when you
-    >   were last online" stays, and points to that time and to the logs, which keep each check.
+    >   Auth last accepted the password (`last_sign_in_at`, which cannot be turned off), and rarely
+    >   an earlier one, when an accepted check's own sign-out fails and its Supabase Auth session
+    >   row stays; and only the internal login, never the real email
+    >   ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)). Every accepted check moves that
+    >   time, since the password grant cannot tell them apart: a sign-in, a password change's check
+    >   of the current password (ADR-0003's note of 2026-10-02), and Connect 42's and Disconnect 42's
+    >   ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)). A refused check does not, and a
+    >   password set after Confirm with 42 has no check. "Does not record when you were last online"
+    >   stays, and points to that time and to the logs, which keep each check. The logs' only
+    >   sign-outs are those that follow an accepted check: each check's Supabase Auth session is
+    >   signed out at once (ADR-0003 d1's note of 2026-09-30), and a PeerConnect sign-out writes
+    >   nothing to Supabase Auth (ADR-0003 d6's note of 2026-10-02).
     > - **Availability.** The Terms' section 8 adds that Supabase can pause the team's copy until the
     >   team resumes it.
 
