@@ -20,7 +20,7 @@ jobs:
       - run: npm --prefix web ci
       - run: npx prisma generate --config prisma.config.ts
       - run: npx tsc --noEmit -p tsconfig.json
-      - run: npm --prefix web run typecheck
+      - run: npm --prefix web run build
       - run: npx nest build
       - name: Check the local Supabase copy
         run: |
