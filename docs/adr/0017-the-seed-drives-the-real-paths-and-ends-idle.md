@@ -457,8 +457,8 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     >   one other case. So once those rows are gone, no Student names any Supabase Auth user or file
     >   left there: they are a failed attempt's, or an unfinished reset's. Truncating our tables alone
     >   left them behind, up to thirty-two more Supabase Auth users for every failed attempt. After a
-    >   retry, Supabase holds exactly the seed's accounts and files. The two resets run the same
-    >   deletions (ADR-0004 d11's note of 2026-10-11).
+    >   retry, Supabase holds exactly the seed's accounts, and in `avatars` and `evidence` exactly
+    >   its files. The two resets run the same deletions (ADR-0004 d11's note of 2026-10-11).
     > - **A guard comes before it.** If any Student is not one the seed makes, by email (the thirty
     >   of `docs/spec.md` §14.3, `ADMIN_EMAIL` and `MODERATOR_EMAIL`), the seed deletes nothing,
     >   says the database holds accounts the seed did not make, names the target's reset,
@@ -472,17 +472,24 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
     >   2026-10-11, read-only), so it can write and clear the record. Both databases already carry
     >   Postgres's own comment, *"default administrative connection database"*, so only text of the
     >   form `peerconnect:seed:complete:fixture-v<N>` counts as a record, and any other comment is no
-    >   record. A record for another version, older or newer, writes nothing and exits 0: an older
-    >   one names the reset, as the note above says, and a newer one, which an out-of-date checkout
-    >   meets, says to pull `main`. The *already complete* line names the version. On the team
+    >   record. A record for another version, over tables that hold rows, writes nothing and exits 0:
+    >   an older one names the reset, as the note above says, and a newer one, which an out-of-date
+    >   checkout meets, says to pull `main`. Over empty tables, any record is stale and the seed
+    >   writes, as the first bullet says. The *already complete* line names the version. On the team
     >   project the record is read in the dashboard's SQL editor, with `docs/spec.md` §14.9's query.
     > - **The lock has a connection of its own.** The advisory lock above is taken on both targets,
     >   on a connection opened for it alone, outside the `api`'s pool, before the record is read,
-    >   and kept to the end of the run. The pool closes a connection idle for 10 seconds
-    >   (node-postgres's default), which would drop a lock taken on one of its connections partway
-    >   through a run. The record is cleared and written on the lock's connection, so a run that lost
-    >   it cannot write the record: it fails loudly, and the next boot runs again. A second seed
-    >   waits for the lock, then reads the record.
+    >   and kept to the end of the run. Prisma gives a connection back to the pool after each
+    >   operation, so a lock taken through it is not held by the run: other work can use that
+    >   session, the record may be written on another one, and an idle one is closed after 10
+    >   seconds (node-postgres's default). The record is cleared and written on the lock's
+    >   connection. **Losing that connection stops the run at once**: an error or a close on it exits
+    >   1, with no reconnect, since a second seed can take the freed lock and start deleting while
+    >   this run is still writing. The connection sends TCP keepalives every few seconds, because it
+    >   sits idle for the whole run and node-postgres turns keepalives off by default. A second seed
+    >   waits for the lock, then reads the record. Once built, it is checked through the team
+    >   project's session pooler that a dropped client connection frees the lock: client A holds
+    >   it, A's connection is closed without ending its backend, and client B gets it.
     > - **The run is slow on the team project, and that is accepted.** Every step is its own
     >   transaction (`docs/spec.md` §14.1), and from a laptop every statement is a round trip to
     >   Frankfurt, about 70 ms from Kamel's computer (measured 2026-10-01). Some 3,000 to 6,000 round

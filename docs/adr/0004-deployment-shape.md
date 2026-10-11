@@ -604,6 +604,12 @@ and why there is no `SESSION_SECRET`.
     >    then leaves no marker over the rows left, and the next boot truncates and seeds from the
     >    start; with the marker still there, it would log "seed already complete" over half a
     >    fixture.
+    >
+    >    > **Narrowed 2026-10-11 by [Settle how the seed creates accounts and files on
+    >    > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98):** if the reset stopped
+    >    > before deleting our rows and a Student the seed does not make is left, the seed's guard
+    >    > stops that boot instead, deleting nothing, and running the reset again finishes it
+    >    > (ADR-0017 d10's note of 2026-10-11).
     > 3. Then it deletes.
     >
     > There is no single command for both: wanting a fresh local copy must never empty the shared
@@ -681,11 +687,19 @@ and why there is no `SESSION_SECRET`.
     >   Supabase Auth users and files go with its rows, after a check that every Student is one the
     >   seed makes; if one is not, the seed deletes nothing and fails. The resets skip that check,
     >   since deleting every account is what they are for.
-    > - **The resets take the seed's lock.** Each reset tries the advisory lock the seed holds, on a
-    >   connection of its own, and refuses at once, saying a seed is running on that target, while a
-    >   seed holds it; otherwise it keeps the lock until it has deleted, so a seed that starts
-    >   meanwhile waits. The lock is never taken on the `api`'s pool, which closes a connection idle
-    >   for 10 seconds and would drop it.
+    > - **The resets take the seed's lock.** After the checks of step 1, and after the typed ref on
+    >   the team project, each reset tries the advisory lock the seed holds, on a connection of its
+    >   own, and refuses before any write, saying a seed is running on that target, while a seed
+    >   holds it. Otherwise it keeps the lock until it has deleted, so a seed that starts meanwhile
+    >   waits: it clears the completion record on the lock's connection, then deletes. As in the
+    >   seed, losing that connection stops the reset at once, with no reconnect, and the connection
+    >   sends TCP keepalives every few seconds. The lock is never taken through the `api`'s pool:
+    >   Prisma gives a connection back after each operation, so the lock's session would not be held,
+    >   and an idle one is closed after 10 seconds (ADR-0017 d10's note of 2026-10-11).
+    > - **The lock's connection is one more on the session pooler.** The pool cap above counted the
+    >   seed as one connection: 2 × 5 + 2, with 3 to spare. With its lock on a connection of its own,
+    >   the seed takes two, so the sum is 13 of the Pool Size of 15, with 2 to spare. It still fits;
+    >   the comment in `src/core/prisma.service.ts` changes with the build.
     > - **`make reset-team` runs only from an up-to-date `main`.** Before its checks above, it
     >   refuses unless the checkout is on `main`, has no uncommitted change and, after a fetch,
     >   equals `origin/main`: the reset is code (`prisma/reset/**`), and the boot after it writes the
