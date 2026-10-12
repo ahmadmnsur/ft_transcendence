@@ -1,6 +1,6 @@
 # Terms of Service
 
-**42 PeerConnect** · Last updated: 11 October 2026
+**42 PeerConnect** · Last updated: 12 October 2026
 
 These Terms are the rules for using 42 PeerConnect: what you agree to when you create an account, how
 the community is moderated, and what PeerConnect does and does not promise. The *Privacy Policy*
@@ -13,7 +13,7 @@ explains what PeerConnect records about you and who can see it.
 - What you submit stays yours, but it is permanent: you can't edit or delete it afterwards.
 - Staff and trusted Students moderate the community. You are not told when you are reported, and a
   Removal can't be undone.
-- PeerConnect is a student project, provided as it is, with no backups.
+- PeerConnect is a student project, provided as it is, with no backups to count on.
 
 ## 1. What PeerConnect is
 
@@ -23,16 +23,19 @@ way to meet, and afterwards asks the Mentee for a Review. A community feed, Frie
 Messages support that loop.
 
 It is a student project, built for the ft_transcendence project of the 42 curriculum, and it is not
-run or endorsed by 42. Each copy is run by whoever started it: see *Who runs PeerConnect* in the
-Privacy Policy.
+run or endorsed by 42. The team's copy is run by its authors, and a local copy by whoever started it:
+see *Who runs PeerConnect* in the Privacy Policy.
 
 ## 2. Who can use it
 
 PeerConnect is meant for 42 students, and for the people who run a copy of it. Nothing checks that you
 are a 42 student.
 
-Your account is personal, and keeping your password safe is up to you: **a forgotten password can't
-be reset**, because PeerConnect sends no email and no Admin can set your password.
+Your account is personal, and keeping your password safe is up to you. **A forgotten password can be
+reset only through 42**, and only if you connected 42 to your account; otherwise it can't be reset,
+because PeerConnect sends no email and no Admin can set your password. If you connect 42, keep your
+42 account safe too: whoever can sign in to it can sign in to your PeerConnect account and set a new
+password.
 
 ## 3. Agreeing to these Terms
 
@@ -107,9 +110,11 @@ To leave PeerConnect yourself, ask an Admin to remove your account.
 
 ## 8. No guarantees
 
-PeerConnect is provided as it is. A copy runs only while the computer running it does, it keeps no
-backups, and data in it can be lost. It may contain mistakes. Neither its authors nor whoever runs
-your copy promise that it will be available, accurate or suitable for any purpose.
+PeerConnect is provided as it is. A copy runs only while the computer running it does, and the team's
+copy also depends on Supabase, which can pause it until the team resumes it. PeerConnect keeps no
+backups the team can restore, and data in a copy can be lost. It may contain mistakes. Neither its
+authors nor whoever runs your copy promise that it will be available, accurate or suitable for any
+purpose.
 
 ## 9. Changes to these Terms
 

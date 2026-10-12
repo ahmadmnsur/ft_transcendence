@@ -38,6 +38,11 @@
 > [Settle which tables change for
 > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) still records the column
 > change and whether the count of nineteen tables moves.
+>
+> > **Confirmed 2026-10-11 by [Settle what the Privacy Policy and Terms say about
+> > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100):** the Privacy Policy does
+> > not change for `display_name_search`. It lists the display name, and the column is a copy of it
+> > that is never shown.
 
 > **`Student.forty_two_id` joins, 2026-10-08.** [Settle how a 42 login finds its Student on
 > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93) adds one column: 42's
@@ -813,6 +818,12 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > **The two `bytea` stores changed 2026-10-05 by [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94).** The
   > files are in two private Supabase Storage buckets, and the two tables keep only their metadata
   > (decision 12's notes). What the Privacy Policy says about it is [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)'s.
+  >
+  > > **Said 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).** The policy's
+  > > *Other websites and services* says the server fetches every avatar and Evidence file from the
+  > > copy's own file storage, Supabase's for the team's copy, and the browser never contacts
+  > > Supabase. *How long your data is kept* adds the two-hour cleanup of a file no record uses
+  > > (ADR-0018 d13's notes).
 - **`document/en.subject.md:1280`-`:1284`'s documentation requirement is satisfied by this file**, or
   by a diagram generated from the schema it describes: tables, relationships, key fields and data
   types are all above.
