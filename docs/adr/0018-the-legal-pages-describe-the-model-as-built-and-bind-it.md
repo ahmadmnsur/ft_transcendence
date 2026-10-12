@@ -477,6 +477,23 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     being live**, end of week 4 (2026-10-15), and now falls on review rather than on writing from
     scratch.
 
+    > **Noted 2026-10-13 by [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143): the English
+    > files stay the canonical text, and gain French and Arabic translations.** [Map: PeerConnect in English, French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/139)
+    > translates PeerConnect's own text. Until the translations merge, both pages show the English
+    > text in every language. Near the end, Hussein translates them once, in their own build ticket,
+    > finished before [Pre-defense readiness](https://github.com/ahmadmnsur/ft_transcendence/issues/73). The translations sit beside the English files
+    > as `privacy-policy.fr.md`, `privacy-policy.ar.md`, `terms-of-service.fr.md` and
+    > `terms-of-service.ar.md`, and are bundled, rendered and checked at build like them.
+    >
+    > - **Each translation says under its date** that it is a translation and that the English
+    >   version applies where they differ. The English pages then say that the translations exist.
+    > - **Ahmad checks and signs off the French and the Arabic before they merge.** Kamel's technical
+    >   check is not repeated, since a translation adds no claim. [Legal pages sign-off](https://github.com/ahmadmnsur/ft_transcendence/issues/69) stays
+    >   English only, with this decision's deadline.
+    > - **The translations use the interface's words** in each language: the buttons, the sign-up
+    >   checkbox, the Admin label and the Report reasons, as [Settle what counts as user-facing text](https://github.com/ahmadmnsur/ft_transcendence/issues/142)
+    >   point 7 has it for the reasons.
+
 15. **The Privacy Policy moves with personal data, in the same PR.** Once it exists it is a record of
     the data model in plain language, and it goes stale the first time someone adds a column. Any PR
     that changes what personal data is stored, who can see it, or how long it is kept updates the
@@ -486,6 +503,14 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     *decision* that changes visibility or retention reaches the pages too. **The pages are corrected
     in place, not annotated**: they are user-facing text rather than a record an evaluator audits,
     and git keeps their history.
+
+    > **Noted 2026-10-13 by [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143): once the
+    > translations exist, this rule moves all three versions.** Until then the English pages move
+    > alone, as above. After that, a PR that changes one version of a page changes all three, even
+    > for a change to one translation alone, and all three *Last updated* dates move to the same day.
+    > **The build fails if the three dates differ.** The French and the Arabic of such a PR are
+    > checked before merge by a member who did not write them: Ahmad when Hussein wrote them, Hussein
+    > otherwise (decision 14's note of this date).
 
 ## Considered options
 
