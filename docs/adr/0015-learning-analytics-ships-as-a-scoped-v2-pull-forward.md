@@ -415,3 +415,8 @@ being claimed.
   > The lesson generalises past this ADR: **"no ticket owns it" is not visible from the module list,
   > only from reading each record's own open-questions section**, which is why the audit found in one
   > pass what three tickets had missed.
+  >
+  > > **Answered 2026-10-08, noted 2026-10-12.**
+  > > [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93) settled the questions that ticket held:
+  > > NestJS runs Sign in with 42 and finds a Student by 42's account `id` (ADR-0004's note under
+  > > *Not settled by this amendment*). [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24) closed on 2026-10-12.

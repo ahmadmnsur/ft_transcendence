@@ -9,6 +9,9 @@
 > each request and on the socket handshake, CSRF) and
 > [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) (passwords, sign-out, Suspension, Removal).
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+>
+> > **Recorded 2026-10-12 in [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md)**,
+> > which sums up the move to Supabase and names which of this ADR's decisions carry its notes.
 
 > **Settled in part 2026-09-30 by [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91):
 > PeerConnect keeps its own session.** Supabase Auth holds the account and checks the password;

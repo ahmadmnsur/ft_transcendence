@@ -1,5 +1,12 @@
 # The seed drives the real write paths, carries four closed Rounds, and ends idle
 
+> **Annotated 2026-10-12 for the move to Supabase.** Decision 10 carries notes from
+> [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) and [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98) on how the seed runs on
+> Supabase: what a run that writes the fixture empties, its guard, the completion record and its
+> lock. Decision 6 and the *Consequences* count of `.env.example` carry notes of this date. The
+> text below is kept as written;
+> [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md) sums up the move.
+
 ADR-0004's *Not settled* section opened this in one line — *"decision 11 settles the mechanism and
 the bootstrap Admin only; the demo strategy is still open"* — and **eleven later decisions bolted
 requirements onto it without anyone owning the result.** It is the last entry in the map's
@@ -241,6 +248,13 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > environment, not only `.env`.** `.env.example` is the required baseline `env_file` for
    > the bare clean-clone path; optional `.env` is loaded later and overrides it. The variable,
    > its shared development value and the fifteen-entry environment list are unchanged.
+
+   > **A Supabase Auth password since the move to Supabase, noted 2026-10-12.** Like
+   > `ADMIN_PASSWORD` and `MODERATOR_PASSWORD`, the variable is 8 characters to 72 bytes, and a
+   > team `.env` sets it to a value other than the default before the first boot on the team
+   > project (ADR-0004 d9's notes). The evaluator is told it and is never handed the `.env`
+   > ([Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)), so they can still sign in as any seeded Student. The
+   > environment list has twenty-seven entries since 2026-10-04 (the *Consequences* note).
 
    The cohort is deterministic from its seed, so **the designated demo Student is stable by
    construction**. They must carry a Match, a Review, a Badge, a **Streak of at least 3**, and
@@ -557,6 +571,10 @@ question by another route. The consequence below states what we accept instead.
   Knowledge Sharer existed.
 - **`.env.example` reaches fifteen entries.** Ten from ADR-0004, two empty OAuth, two moderator,
   and `SEED_STUDENT_PASSWORD`.
+
+  > **Twenty-seven since 2026-10-04, noted 2026-10-12.** The fifteen remain, and the move to
+  > Supabase added twelve: the `api`'s three `SUPABASE_*` entries and nine signing secrets and
+  > keys of the local fallback (ADR-0004 d9's note of 2026-10-04).
 - **The seed is now the largest gated artifact in the repository** after `schema.prisma`, and
   ADR-0005 decision 6 puts it through the same review. Whoever writes it should expect the gate.
 - **The map's *Not yet specified* section is empty.** Testing went to ADR-0016 and the demo

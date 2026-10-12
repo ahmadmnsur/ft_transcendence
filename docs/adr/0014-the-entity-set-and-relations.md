@@ -7,6 +7,9 @@
 > `Student.password_hash` stay, and whether the count of nineteen tables changes, is still open:
 > [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) settles which tables, columns and constraints, after [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91) and [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92).
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+>
+> > **Recorded 2026-10-12 in [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md)**,
+> > which sums up the move to Supabase and names which of this ADR's decisions carry its notes.
 
 > **`Session` stays, 2026-09-30.** [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)
 > keeps PeerConnect's own session, so the `Session` table stays as ADR-0003 has it. Whether

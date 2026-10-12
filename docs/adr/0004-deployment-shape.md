@@ -17,6 +17,9 @@
 > hosted infrastructure that must be kept available, since a free project with too little activity
 > for a week is paused ([Find out what Supabase's free plan means for PeerConnect](https://github.com/ahmadmnsur/ft_transcendence/issues/89)).
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+>
+> > **Recorded 2026-10-12 in [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md)**,
+> > which sums up the move to Supabase and names which of this ADR's decisions carry its notes.
 
 > **Settled 2026-10-03 by [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101): `make up` runs on the team
 > project.** When `.env` holds the team project's values, `make up` runs PeerConnect on it: work on
