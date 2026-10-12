@@ -59,6 +59,13 @@ It says *how* to meet; ADR-0006's Score explanation already says *what* about.
    > that changes every past Match's Mission, which is what frozen forbids, and a new mode is a
    > seventh value and a migration (Consequences).
 
+   > **Noted 2026-10-13 by [Settle what counts as user-facing text](https://github.com/ahmadmnsur/ft_transcendence/issues/142): a translation is a
+   > rewording.** [Map: PeerConnect in English, French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/139) translates PeerConnect's own
+   > text into French and Arabic, the six Mission sentences included. The rule above binds each
+   > translation: the French and the Arabic sentence describe the same mode as the English one, so a
+   > Match shows the same Mission in every language. The sentences stay in the frontend, and nothing
+   > is stored per language.
+
 2. **A Mission names a mode of meeting, never a Skill.**
 
    The tempting alternative is to render the Skill into a sentence — "Teach Karim about Docker" —

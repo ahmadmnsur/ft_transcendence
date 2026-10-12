@@ -353,6 +353,11 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    to share, and nobody else's personal data; and **leave the platform alone** (no attacking or
    probing it, no reaching data one is not meant to see).
 
+   > **Noted 2026-10-13 by [Settle what counts as user-facing text](https://github.com/ahmadmnsur/ft_transcendence/issues/142):** the coupling holds in
+   > French and Arabic too. The report form's labels for the three shared reasons use exactly the
+   > words of each language's Terms (ADR-0011 decision 4's note of this date). How the Terms exist in
+   > three languages is [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143)'s to decide.
+
 10. **Students keep ownership; PeerConnect's licence is to store, show and retain, and nothing else.**
     Store it; show it to the audiences decision 4 and the recorded rows define; retain it according to
     the retention rules, including after Removal. **Excluded outright**: publication outside

@@ -98,6 +98,13 @@ every place they could do social damage.**
    > `docs/legal/terms-of-service.md` in the same PR, so the rules a Report enforces stay the rules
    > the Terms state.
 
+   > **Noted 2026-10-13 by [Settle what counts as user-facing text](https://github.com/ahmadmnsur/ft_transcendence/issues/142): the coupling holds in
+   > every language.** The report form's reason labels are translated into French and Arabic with
+   > the rest of PeerConnect's text. In each language, Harassment, Spam and Inappropriate content use
+   > exactly the words of that language's Terms, so a reason never reads one way on the form and
+   > another in the rule it enforces. Whichever of the two is translated second matches the first.
+   > The enum values are unchanged.
+
 5. **One report per reporter per target, as a unique constraint, and the queue groups by
    target with a count.** The constraint is ADR-0007 decision 7's precedent, and it matters more
    here: decision 12 gives the reporter no feedback, so re-reporting is the natural "did that
