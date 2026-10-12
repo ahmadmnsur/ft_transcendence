@@ -82,8 +82,8 @@ alter role postgres set log_statement = 'none';
 A role's settings reach only the connections opened after them, and the pooler keeps its
 connections, so **Restart project** follows; it keeps every row and file. Then check what a
 connection really runs with, through the session pooler with the team `DATABASE_URL`, as the `api`
-connects. Save the block below as a file and run it with `psql -f`, which sends each statement on
-its own:
+connects. Save the SQL block below as `check.sql` and run it with `psql -f`, which sends each
+statement on its own:
 
 ```bash
 PGSSLMODE=verify-full PGSSLROOTCERT=supabase/prod-ca-2021.crt psql "<the team DATABASE_URL>" -f check.sql

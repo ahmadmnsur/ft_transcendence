@@ -54,7 +54,7 @@ law that applies to them. That law may give you rights beyond what this page des
   code, never by your email address;
 - when Supabase Auth last accepted your password: when you sign in with it, change it using your
   current password, or connect or disconnect 42. It records this by itself. Rarely, when a technical
-  step fails, it also keeps the time of an earlier one;
+  step fails, it also keeps an earlier time it accepted your password;
 - if you connect 42 to your account, your 42 account number (see *Other websites and services*);
 - your role — Student, Peer Moderator or Admin — and whether your account is suspended or removed.
 
