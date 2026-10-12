@@ -1,9 +1,9 @@
 # Supabase hosts the database, the files and the passwords; PeerConnect keeps the rest
 
-Until 2026-09-30, every copy of PeerConnect kept its data on the computer that started it: Postgres
-in a Compose volume (ADR-0004 d1), avatar and Evidence bytes in `bytea` columns (ADR-0009 d2), and
-argon2id password hashes in `Student.password_hash` (ADR-0003 d3). Nothing was stored online. Each
-member's copy began from the seed and held only what was done on that computer.
+Until the move was decided on 2026-09-30, the design kept every copy's data on the computer that
+started it: Postgres in a Compose volume (ADR-0004 d1), avatar and Evidence bytes in `bytea` columns
+(ADR-0009 d2), and argon2id password hashes in `Student.password_hash` (ADR-0003 d3). Nothing was
+stored online. Each member's copy began from the seed and held only what was done on that computer.
 
 As Technical Lead, Kamel saw two things missing: **one copy of the data that the whole team
 shares**, the same from any member's computer and at the defense, and **a hosted place for that
@@ -29,8 +29,8 @@ The shape we chose: **Supabase stores, and PeerConnect decides.**
 
 Settled ticket by ticket on that map between 2026-09-30 and 2026-10-11, by Kamel as Technical Lead,
 except [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91) and [Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95), which Ahmad settled. Each decision below is a summary. The rule itself
-is in the note it names, inside the ADR it changes, and in its ticket's resolution, so it is
-corrected in one place only.
+is in the note it names, inside the ADR it changes, and in its ticket's resolution. A later change
+annotates the note, the resolution and, where its summary no longer holds, this ADR.
 
 ## What this ADR changes in earlier records
 
@@ -52,7 +52,8 @@ for, checked against every ADR on 2026-10-12.
   and [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91).
 - **ADR-0005**: decision 5's gate also covers `supabase/**`, every `compose*.yaml`, the buckets'
   settings and `prisma/reset/**`; decision 6 is corrected, since `prisma migrate deploy` skips an
-  edited migration rather than refusing it. From [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97).
+  edited migration rather than refusing it; and *Not settled* notes that decision 5's note completes
+  the path list a `CODEOWNERS` file would map. From [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97).
 - **ADR-0008**: decisions 5, 7, 8, 9 and 12. No sanction writes to Supabase Auth, a Removed
   Student's hash is kept, an Admin still sets no password, nobody deletes a Student's Supabase Auth
   user outside a reset or the seed's guarded run, and the bootstrap accounts go through Supabase's
@@ -66,33 +67,41 @@ for, checked against every ADR on 2026-10-12.
   [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92), [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93), [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94), [Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95), [Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96) and [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).
 - **ADR-0016**: decision 1 (real Supabase, never a stand-in; the eleventh and twelfth categories;
   four checks in `08-files`), decisions 5 and 6 (the clean-clone triggers and the gate box),
-  decision 8 (CI starts Supabase's containers) and *Not settled*. From [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99), [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94), [Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95),
+  decision 7 (the eleventh and twelfth categories and the two Sign in with 42 checks, counted
+  against its closed list), decision 8 (CI starts Supabase's containers) and *Not settled*. From [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99), [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94), [Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95),
   [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93), [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97) and [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98).
 - **ADR-0017**: decision 10 (what a run that writes the fixture empties, its guard, the completion
   record, the lock's own connection, and minutes on the team project). From [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) and [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98).
-- **ADR-0018**: the top note and decisions 1, 3, 5, 6, 7, 8, 12 and 13: two kinds of copy,
-  Supabase named as the host of the team's copy, Supabase Auth's records and Supabase's logs
-  disclosed, no backups the team can restore, and the 42 sentence. From [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91), [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93), [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94)
+- **ADR-0018**: the top note, decisions 1, 3, 5, 6, 7, 8, 12 and 13, *Consequences* and *Not
+  settled*: two kinds of copy, Supabase named as the host of the team's copy, Supabase Auth's
+  records and Supabase's logs disclosed, no backups the team can restore, the 42 field settled and
+  the 42 sentence worded. From [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91), [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93), [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94)
   and [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100).
 
-The audit added these notes, dated 2026-10-12:
+The audit added these notes, dated 2026-10-12, and one dated 2026-10-13 after review:
 
 - **A pointer to this ADR** under the top note of ADR-0003, ADR-0004, ADR-0008, ADR-0009, ADR-0014
   and ADR-0018, each of which said that [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) would record what the move changes.
 - **A top note on ADR-0005, ADR-0016 and ADR-0017**, which carried their Supabase notes only
   inside decisions, naming those decisions.
 - **ADR-0015**: the 42 questions its last *Consequence* hands to [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24) were answered by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93) on
-  2026-10-08, and that ticket closed on 2026-10-12.
+  2026-10-08, and [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24) closed on 2026-10-12.
 - **ADR-0017**: `.env.example` has 27 entries, not fifteen (ADR-0004 d9), and decision 6's shared
   password is a Supabase Auth password of 8 characters to 72 bytes.
+- **ADR-0013** (2026-10-13): decision 5 says ADR-0009 put Evidence in Postgres so that every read
+  passes through NestJS. Since [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94) settled it on 2026-10-05, Evidence goes in a private Storage
+  bucket, and every read still passes through NestJS (ADR-0009 d2's note), so the decision stands.
 
 Unaffected:
 
 - **ADR-0011**: decision 7's action request re-runs ADR-0003's session, role and sanction check,
   which [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91) kept reading PeerConnect's tables only.
-- **ADR-0001, ADR-0002, ADR-0006, ADR-0007, ADR-0010, ADR-0012, ADR-0013 and the rest of
-  ADR-0015**: they rest on Postgres's `SERIALIZABLE` transactions and the retry on `40001` and
-  `40P01`, which run unchanged through the session pooler (decision 3).
+- **ADR-0001, ADR-0002, ADR-0006, ADR-0007, ADR-0010, ADR-0012, the rest of ADR-0013 and the rest
+  of ADR-0015**: their domain rules do not depend on where the data is stored, and what they rest
+  on carries over. Postgres's `SERIALIZABLE` transactions and the retry on `40001` and `40P01` run
+  unchanged through the session pooler (decision 3). Student ids still follow creation order,
+  since NestJS makes them as UUIDv7 ([Settle which tables change for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/96#issuecomment-6100214046)), which the tie-breaks of ADR-0006 d9 and
+  ADR-0010 d6 rely on. And NestJS stays the only way to the data (decision 1).
 - **`CONTEXT.md`**: no term changes. "Supabase Auth user" and "Supabase Auth session" name
   infrastructure, not domain language, as the resolutions of [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91#issuecomment-5913893382) (decision 7) and
   [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92#issuecomment-5941374186) (decision 1) say.
@@ -124,9 +133,10 @@ Unaffected:
 3. **`make up` runs on the team project when `.env` holds its values, and on a local fallback
    otherwise.** The fallback is Supabase's own Postgres, Auth, Storage and gateway inside Compose,
    reading `.env.example` alone, so a fresh clone and bare `docker compose up --build` still boot
-   ([Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101), built by [Local Supabase fallback: Compose services, make targets, environment check and CI](https://github.com/ahmadmnsur/ft_transcendence/issues/121)). Only `make up` reads `.env`: `make local`, `make dev` and
-   `make test` always run the fallback. The boot check runs first: every value present, both URLs
-   naming one target, the keys accepted, then the database. A failure stops the boot and names the
+   ([Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101), built by [Local Supabase fallback: Compose services, make targets, environment check and CI](https://github.com/ahmadmnsur/ft_transcendence/issues/121)). Of the `make` targets that start a stack, only `make up` reads
+   `.env`, as bare `docker compose up --build` does; `make local`, `make dev` and `make test` always
+   run the fallback. The boot check runs first: every value present, both URLs naming one target,
+   the keys accepted, then the database. A failure stops the boot and names the
    variable, and nothing falls back by itself. Branch work that changes the database, by a
    migration or by writing data, runs on the fallback.
 
@@ -142,8 +152,8 @@ Unaffected:
    `Session` row, behind the one `pc_session` cookie, decides who is signed in. Resolving a session
    on a request or a socket handshake reads only PeerConnect's tables and never calls Supabase. The
    Supabase Auth session that a password check creates is signed out at once, and its tokens never
-   leave that request. Supabase's shared rate limit is accepted, and no browser's address is
-   forwarded to Supabase ([Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)). ADR-0003 decisions 1 and 5.
+   leave that request. That sign-out is best effort: if it fails, the sign-in still succeeds.
+   Supabase's shared rate limit is accepted, and no browser's address is forwarded to Supabase ([Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)). ADR-0003 decisions 1 and 5.
 
 5. **Supabase Auth keeps each Student's password, and nothing else of theirs.** Each Supabase Auth
    user has the Student's own id and logs in as `<id>@peerconnect.invalid`, a reserved name that
@@ -161,9 +171,9 @@ Unaffected:
    Student by 42's account `id`, in `Student.forty_two_id`. A 42 account that no Student holds gets
    the sign-up form, pre-filled, with a password and the Terms checkbox, so every Student has a
    password. Connect 42 and Disconnect 42 ask for the current password, and Confirm with 42 lets a
-   Student set a new password once, without the current one, within ten minutes. The team application is registered on Kamel's 42
-   account; its keys are only in the team `.env`, and its secret lasts 28 days, with a warning in
-   the last seven ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)). ADR-0003; ADR-0004's module amendment; ADR-0008 decisions 7 and 8;
+   Student set a new password once, without the current one, within ten minutes. The team
+   application is registered on Kamel's 42 account; its keys are only in the team `.env`, and its
+   secret lasts 28 days, with a warning in the last seven ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)). ADR-0003; ADR-0004's module amendment; ADR-0008 decisions 7 and 8;
    ADR-0018 decisions 5, 7, 8 and 12.
 
 7. **Files live in two private buckets, and every byte goes through NestJS.** `avatars` (2 MiB;
@@ -173,8 +183,10 @@ Unaffected:
    `token`, `mime`, `size` and `uploaded_at` and drop `bytes`. A save writes the file, then the row,
    then deletes the old file, and a delete removes the row, then the file. So a crash leaves at
    worst a file that no row names, which the `api` deletes once it is more than an hour old, at
-   every start and every hour. The boot creates the buckets ([Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94)). ADR-0009 decisions 2, 5 and
-   6; ADR-0014 decision 12.
+   every start and every hour: within two hours, as long as the `api` runs and its hourly cleanup
+   succeeds. The seed's first step creates the buckets, or sets them back, on every run: at boot,
+   under `make seed` and in CI ([Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94)). ADR-0009 decisions 2, 5 and 6; ADR-0014 decision 12;
+   ADR-0004 decision 11.
 
 8. **The tables barely change, and none reaches into Supabase's schemas.** Nineteen tables and nine
    enums, as before, and nine raw-SQL steps. `Student` swaps `password_hash` for `password_version`
@@ -197,9 +209,9 @@ Unaffected:
     fixture at a target's first boot, and every later boot finds its completion record and skips
     it, so the team project's data stays between defenses. A run that writes the fixture first
     deletes our rows, every Supabase Auth user and every file in the two buckets, but only after a
-    guard: if any Student is not one the seed makes, it deletes nothing and fails. The completion record stays `COMMENT ON DATABASE`, and the
-    lock has a connection of its own. A run takes minutes against Frankfurt, so the `api` has 15
-    minutes to turn healthy ([Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98)). `make reset-team` and `make reset-local` each empty one fixed
+    guard: if any Student's email is not one the seed uses, it deletes nothing and fails. The
+    completion record stays `COMMENT ON DATABASE`, and the lock has a connection of its own. A run
+    takes minutes against Frankfurt, so the `api` has 15 minutes to turn healthy ([Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98)). `make reset-team` and `make reset-local` each empty one fixed
     target; `make reset-team` asks for the project ref to be typed and runs only from an up-to-date
     `main` ([Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101), [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98)). ADR-0017 decision 10; ADR-0004 decision 11; ADR-0008 decision 9.
 
@@ -261,6 +273,8 @@ Unaffected:
 - **Tests on a plain Postgres or with fakes** ([Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99#issuecomment-5979357629)): a seed or a file check could pass on a
   stand-in and fail on Supabase, and Auth and Storage need roles that only Supabase's Postgres
   image creates.
+- **Google sign-in**, ruled out on 2026-10-08 ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93#issuecomment-6067107389)): Sign in with 42 already earns the
+  OAuth Minor, and Supabase's own Google sign-in would send the browser through Supabase's address.
 - **The gate read from a ticked box, or the dashboard changed first** ([Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97#issuecomment-6092752187)): a box is easy
   to skip and cannot become a `CODEOWNERS` line, and changing the dashboard first changes a setting
   unreviewed. Dashboard first stays only for undoing a breakage.
@@ -273,13 +287,15 @@ Unaffected:
 - **Part of a Student's account lives where PeerConnect's code cannot reach it.** Supabase Auth
   records the last time it accepted a password and keeps its own logs, and Supabase may keep
   backups the team cannot restore. The Privacy Policy says each (decision 12).
-- **The secret key opens everything.** Whoever holds it can read every file and create, change or
-  delete any Supabase Auth user. It is in the team `.env` alone, only the `api` uses it, and it is
-  never committed or sent to the browser.
-- **A password is 8 characters to 72 bytes.** An accented or Arabic letter counts two bytes, so
-  the frontend and the API both check the length before Supabase sees the password.
+- **The team project's secret key opens everything.** Whoever holds it can read every file and
+  create, change or delete any Supabase Auth user. It is in the team `.env` alone, only the `api`
+  uses it, and it is never committed or sent to the browser. The fallback's own key, committed in
+  `.env.example`, opens only a local copy.
+- **A password is 8 characters to 72 bytes.** An accented or Arabic letter counts two bytes or
+  more, so the frontend and the API both check the length before Supabase sees the password.
 - **A crash can leave harmless leftovers**: a Supabase Auth user that no Student has, which nobody
-  can sign in with and Kamel may delete, and a file that no row names, deleted after an hour.
+  can sign in with and Kamel may delete, and a file that no row names, which the `api`
+  deletes within two hours, as long as it runs and its hourly cleanup succeeds.
 - **The seed is slow on the team project**, an estimated four to seven minutes, so the `api` waits
   15 minutes before it counts as unhealthy, and no other stack connects while the seed runs after
   a reset.
@@ -300,7 +316,6 @@ Unaffected:
   seeded Students' shared password mean once the accounts are real.
 - **Password reset by email**, a later effort: PeerConnect would send the email itself, and
   Supabase Auth would only set the password ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92#issuecomment-5941374186)).
-- **Google sign-in**: ruled out, since Sign in with 42 already earns the OAuth Minor ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93#issuecomment-6067107389)).
 - **Features only for 42 students, and 42 projects as Skills**: a later ticket ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93#issuecomment-6067107389)).
 - **French and Arabic**: [Map: PeerConnect in English, French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/139) claims the language modules, and the database stores nothing per
   language ([Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95)).

@@ -3,7 +3,8 @@
 > **Annotated 2026-10-12 for the move to Supabase.** The suite runs on Supabase's own containers,
 > never on a stand-in. Decision 1 (where the suite runs, the eleventh and twelfth categories, and
 > four checks in `08-files`), decisions 5 and 6 (the clean-clone triggers and the gate box),
-> decision 8 (CI) and *Not settled* carry notes from [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99),
+> decision 7 (the same two categories and the two Sign in with 42 checks, counted against its
+> closed list), decision 8 (CI) and *Not settled* carry notes from [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99),
 > [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94), [Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95), [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93),
 > [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97) and [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98). The text below is kept as
 > written; [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md) sums up the move.
