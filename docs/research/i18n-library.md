@@ -43,6 +43,12 @@ and how text is keyed"). No browser was opened: every claim about the browser co
 reading the source, or from running the library in Node, and says which. Code that was read but not
 run says so.
 
+> **Corrected 2026-10-12** after Ahmad's
+> [review of `86f2f7b`](https://github.com/ahmadmnsur/ft_transcendence/pull/150#pullrequestreview-5494498948):
+> section 9 said i18next picks French for a German-then-French browser; it does so only when
+> `supportedLngs` is set. Smaller corrections in the Short answer and sections 3, 6, 11 and 12, and
+> the comparison table.
+
 The four options:
 
 - **i18next**: `i18next` with `react-i18next`.
@@ -72,9 +78,10 @@ JavaScript is about **0.9 kB** gzip for the typed dictionary, **3.8 kB** for Lin
 react-intl with precompiled messages (14.6 kB without), and **19.9 kB** for i18next. Every option
 selects plurals through `Intl.PluralRules`, and in CLDR 38 and later **French has a `many` form**
 (1,000,000 → `many`). When a French `many` text is missing, react-intl and Lingui use `other`, but
-**i18next shows the English text** instead. On typing, i18next and Lingui check keys against one
-language only; react-intl's flat catalogue lets `satisfies` check French and Arabic; the typed
-dictionary can check every key and every plural form of every language in `tsc -b`. In the console,
+**i18next shows the English text** instead. On typing, i18next checks keys against English once its
+resources are declared; Lingui checks none in `tsc -b` unless typed ids are added (read, not run);
+react-intl's flat catalogue lets `satisfies` check French and Arabic; the typed dictionary can check
+every key and every plural form of every language in `tsc -b`. In the console,
 i18next 26 prints nothing by default (the support notice of 25.8–25.10 is gone), react-intl prints
 `console.error` for a missing message in development only, and **Lingui prints `console.warn` in
 production** for a message id missing from the loaded catalogue, unless a `missing` handler is set.
@@ -216,6 +223,8 @@ every language has every key. All results below are from `tsc -b` runs unless ma
   ([TypeScript docs L46](https://github.com/i18next/i18next-gitbook/blob/ea65e2028dc163c08cbf0c1660c8c96d35a9d5cf/overview/typescript.md#L46)).
   **Run:** `t('inbox.nope')` failed with TS2345. `t('inbox.unread', { count })` passed: the types
   strip the plural suffixes ([`typescript/t.d.ts` L50–56](https://github.com/i18next/i18next/blob/v26.4.4/typescript/t.d.ts#L50-L56)).
+  **The check is opt-in**, like react-intl's: **run** without the `CustomTypeOptions` declaration,
+  `t('inbox.nope')` passed.
 - **(b) no, by default.** **Run:** deleting `title` from the French file still passed.
 - **A plain `satisfies typeof en` does not fit.** **Run:** a correct French file failed it with
   TS2353, because French has `unread_many` and English does not. Arabic has four more suffixes, so
@@ -237,7 +246,10 @@ every language has every key. All results below are from `tsc -b` runs unless ma
   ([`intl/types.ts` L68–72, L97–104](https://github.com/formatjs/formatjs/blob/react-intl%4012.1.4/packages/intl/types.ts#L97-L104)).
   **Run:** passing a French object that lacks an id **failed** `tsc -b`; passing the same object
   typed as `Record<string, string>` **passed**. So it depends on how the catalogue reaches the
-  provider.
+  provider. Loading one language at a time hits the same gap: a catalogue loaded with a computed
+  path, `` (await import(`./i18n/${lang}`)).default ``, is typed `any`, so a French file missing an
+  id **passed**; with a literal path, `import('./i18n/fr')`, the missing id **failed** (TS2322,
+  run). `satisfies` in each language file applies either way.
 - **`satisfies` works.** The catalogue is flat and the plural forms live inside the message text, so
   every language has the same keys. **Run:** `fr satisfies Record<keyof typeof en, string>` failed
   with TS1360 when a key was missing.
@@ -275,7 +287,8 @@ every language has every key. All results below are from `tsc -b` runs unless ma
   language (`ar: 'zero' | 'one' | 'two' | 'few' | 'many' | 'other'`), an Arabic message missing
   `few` failed with TS2741.
 - **Not checked:** placeholder names inside a string. **Run:** French `{nom}` instead of `{name}`
-  passed.
+  passed. With the sketch's `fill` (section 12), a placeholder that has no value shows as nothing,
+  with no error, so the French sentence would show without the name.
 
 ### Plural completeness, for every option
 
@@ -424,7 +437,8 @@ with a dynamic `import()` when chosen. `vite build` made one chunk per language 
 
 Measured, not quoted: `vite build` output for the main chunk, minified, and gzip as Vite reports it.
 The "added" columns are the growth over the baseline app (same React, router and component, English
-text written inline), so they include each option's English catalogue and glue code.
+text written inline), so they include each option's English catalogue and glue code, except Lingui,
+whose English catalogue is in its own chunk (0.2–0.6 kB, like the others).
 
 | App | Main chunk | gzip | Added | Added gzip |
 | --- | --- | --- | --- | --- |
@@ -493,21 +507,34 @@ Rules in: all four. Rules out: wiring any hosted translation service or backend 
 
 ## 9. Detection and the `localStorage` preference
 
-The rule to fit: the choice is kept in `localStorage`; a first visit uses the browser's language
-when it is `en`, `fr` or `ar`, else English. Not designed here.
+The rule to fit, settled on [#139](https://github.com/ahmadmnsur/ft_transcendence/issues/139)
+(*Notes*), not by this research: the choice is kept in `localStorage`; a first visit uses the
+browser's language when it is `en`, `fr` or `ar`, else English. Not designed here.
 
 - **i18next + `i18next-browser-languagedetector` 8.2.1.** Default order `querystring`, `cookie`,
   `localStorage`, `sessionStorage`, `navigator`, `htmlTag`; default `caches: ['localStorage']` under
   the key `i18nextLng` ([`index.js` L20–36](https://github.com/i18next/i18next-browser-languagedetector/blob/v8.2.1/src/index.js#L20-L36)).
   `navigator` returns the **whole** `navigator.languages` list
   ([`navigator.js` L4–24](https://github.com/i18next/i18next-browser-languagedetector/blob/v8.2.1/src/browserLookups/navigator.js#L4-L24)),
-  and i18next picks the first supported entry, then tries the language part (`fr-CA` → `fr`), then
-  `fallbackLng` ([`LanguageUtils.js` L67–112](https://github.com/i18next/i18next/blob/v26.4.4/src/LanguageUtils.js#L67-L112)).
-  So a browser set to German then French gets French. With the default `caches`, the detected
-  language is written to `localStorage` on every language change, including the first detection
+  and, when `supportedLngs` is set, i18next picks the first supported entry, then tries the
+  language part (`fr-CA` → `fr`), then `fallbackLng`
+  ([`LanguageUtils.js` L67–112](https://github.com/i18next/i18next/blob/v26.4.4/src/LanguageUtils.js#L67-L112)).
+  `supportedLngs` defaults to `false`
+  ([`defaults.js` L12](https://github.com/i18next/i18next/blob/v26.4.4/src/defaults.js#L12)), and
+  then every code counts as supported: *"pick first supported code or if no restriction pick the
+  first one"* (`LanguageUtils.js` L72–77). **Run** in Node with the detector, a stubbed
+  `navigator.languages` of `de-DE, de, fr-FR, fr` and `fallbackLng: 'en'`:
+  - with `supportedLngs: ['en', 'fr', 'ar']`, the language is `fr`, the page shows French, and `fr`
+    is stored;
+  - without it, the first entry wins (`de-DE`), the text falls back to English, and `de-DE` is
+    stored. On the next visit the stored `de-DE` comes before `navigator`, so the person stays on
+    English even if their browser changes.
+
+  With the default `caches`, the detected language is written to `localStorage` on every language
+  change, including the first detection
   ([`i18next.js` L383](https://github.com/i18next/i18next/blob/v26.4.4/src/i18next.js#L383)),
-  not only on a user's choice; `caches: []` turns that off. Read, not run in a browser; the
-  detector adds 6.86 kB (2.03 kB gzip, measured).
+  not only on a user's choice; `caches: []` turns that off. Not run in a browser; the detector adds
+  6.86 kB (2.03 kB gzip, measured).
 - **react-intl:** no detector. Our code reads `localStorage` and `navigator`.
 - **Lingui + `@lingui/detect-locale` 6.9.1:** `detect(fromStorage(key), fromNavigator(), fallback)`
   returns the first non-empty result
@@ -519,7 +546,8 @@ when it is `en`, `fr` or `ar`, else English. Not designed here.
 - **Typed dictionary:** our code, as for react-intl.
 
 Rules in: all four; the rule is a few lines with any of them. Rules out: the i18next detector's
-defaults as they are, if only an explicit choice may be stored.
+defaults as they are: without `supportedLngs` it keeps an unsupported language, and, if only an
+explicit choice may be stored, the default `caches` stores a language the person never chose.
 
 ## 10. Fallback to English when a key is missing at run time
 
@@ -565,6 +593,11 @@ Other facts:
 - `@lingui/*` 6.9.1 need Node `>=22.19.0`. The SPA is built on `node:22-alpine`
   (`proxy/Dockerfile:1`). `@lingui/cli` pulls `pseudolocale` 3.1.0, which declares Node `>=24`;
   **run:** npm printed `EBADENGINE` on Node 22.22.1 and installed anyway.
+- The host runs the SPA too: `npm --prefix web ci` and the Vite dev server (`README.md:76`–`:85`).
+  `README.md:7` asks for *"Node 22 (22.12 or a later 22.x release)"*, and spec §3.3 records
+  `engines.node: "^22.12.0"` (`docs/spec.md:473`). So choosing Lingui raises the floor on every
+  developer's host from 22.12 to 22.19. On 22.12–22.18 npm prints `EBADENGINE`; whether the plugin
+  then runs is unknown.
 - i18next's typing needs TypeScript 5, 6 or 7 (optional peer); react-intl's needs 5.4 or newer.
 
 ## 12. The typed dictionary over `Intl`
@@ -621,6 +654,8 @@ and any file format a translation tool reads; translators edit TypeScript files.
 An illustration of the mechanism only, not a recommendation:
 
 ```tsx
+import { Fragment, type ReactNode } from 'react';
+
 interface PluralCategories {
   en: 'one' | 'other';
   fr: 'one' | 'many' | 'other';
@@ -644,7 +679,7 @@ export default {
 function plural(lang: Language, forms: Plural<Language>, count: number): string {
   const table = forms as Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
   const text = table[new Intl.PluralRules(lang).select(count)] ?? table.other;
-  return text.replace('{count}', new Intl.NumberFormat(lang).format(count));
+  return text.replaceAll('{count}', new Intl.NumberFormat(lang).format(count));
 }
 
 function fill(text: string, values: Record<string, ReactNode>): ReactNode {
@@ -653,6 +688,7 @@ function fill(text: string, values: Record<string, ReactNode>): ReactNode {
   ));
 }
 // fill(m.sentYou, { name: <PersonName name={n} /> })
+// A placeholder with no value in `values` shows as nothing, with no error (section 3).
 ```
 
 ## Comparison
@@ -663,8 +699,8 @@ function fill(text: string, values: Record<string, ReactNode>): ReactNode {
 | React 19 | peer `>=16.8` | peer `>=18` | peer up to `^19` | – |
 | Arabic six forms | yes, one key per form | yes, ICU | yes, ICU | yes, our code |
 | French `many` missing | **shows English** | uses `other` | uses `other` | our code; type can require it |
-| (a) unknown key fails `tsc -b` | yes | yes, opt-in | no; opt-in typed ids | yes |
-| (b) language missing a key fails `tsc -b` | no; mapped type needed | yes with `satisfies`, or via typed `IntlProvider` | no; `failOnMissing`, `compile --strict`, `check missing` | yes, and per plural form |
+| (a) unknown key fails `tsc -b` | yes, opt-in | yes, opt-in | no; opt-in typed ids (read) | yes |
+| (b) language missing a key fails `tsc -b` | no; mapped type needed | yes with `satisfies`, or via typed `IntlProvider` with a literal import path | no; `failOnMissing`, `compile --strict`, `check missing` | yes, and per plural form |
 | CI check for (b) | `i18next-cli status` (read) | `formatjs verify` (run) | `lingui check missing` (run) | `tsc -b` |
 | Switch without reload | `changeLanguage` | new props | `loadAndActivate` | our state |
 | `dir` from the library | `i18n.dir()` | no | no | no |
@@ -674,7 +710,7 @@ function fill(text: string, values: Record<string, ReactNode>): ReactNode {
 | One language at a time | yes | yes | yes | yes |
 | Element in a sentence | `<Trans components>` | `values` | `<Trans>` children | our `fill` |
 | `eval` / `new Function` | none | none | none | none |
-| Detection helper | detector plugin (whole `navigator.languages`) | none | `@lingui/detect-locale` (`navigator.language`) | ours |
+| Detection helper | detector plugin (whole `navigator.languages`; a supported entry only with `supportedLngs`) | none | `@lingui/detect-locale` (`navigator.language`) | ours |
 | Fallback to English | per key, `fallbackLng` | `defaultMessage` or merged catalogue | at compile time from the source | ours |
 | Latest, licence | 26.4.4 / 17.0.16, MIT | 12.1.4, BSD-3-Clause | 6.9.1, MIT | – |
 
@@ -713,6 +749,9 @@ settings and exact versions (`react` 19.3.0, `vite` 8.3.1, `@vitejs/plugin-react
   HTTP.
 - Node scripts that imported each library from its app folder and rendered with `react-dom/server`,
   once with `NODE_ENV` unset and once with `NODE_ENV=production`, counting every `console.*` call.
+- After review: i18next with the detector in Node, with stubbed `navigator`, `localStorage` and
+  `document`, with and without `supportedLngs`; `tsc` with i18next's `CustomTypeOptions` removed,
+  and with react-intl catalogues loaded through a computed and a literal `import()` path.
 
 ## Primary sources
 
@@ -812,5 +851,6 @@ npm registry, queried 2026-10-12: `i18next`, `react-i18next`, `i18next-browser-l
 `@lingui/react`, `@lingui/cli`, `@lingui/vite-plugin`, `@lingui/swc-plugin`,
 `@lingui/native-tools`, `@lingui/detect-locale`, `@vitejs/plugin-react`, `@rolldown/plugin-babel`.
 
-PeerConnect: `document/en.subject.md:318`, `:572`; `docs/spec.md` §3.10; `web/package.json`;
-`web/tsconfig.app.json`; `proxy/Dockerfile:1`.
+PeerConnect: `document/en.subject.md:318`, `:572`; `docs/spec.md` §3.10, `:473`; `README.md:7`,
+`:76`–`:85`; `web/package.json`; `web/tsconfig.app.json`; `proxy/Dockerfile:1`; map
+[#139](https://github.com/ahmadmnsur/ft_transcendence/issues/139) (*Notes*).
