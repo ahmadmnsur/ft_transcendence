@@ -533,6 +533,12 @@ done when the PR template already is one.**
    > `docs/legal/terms-of-service.md` where a conduct rule or a sanction moves. It sits in the
    > template for the same reason as the fourth check: a Done condition written only in
    > `CONTRIBUTING.md` would be the second definition this decision refuses.
+   >
+   > > **Noted 2026-10-13 by [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143):** once the
+   > > French and Arabic translations exist, this check covers all three versions of each page, the
+   > > `.fr.md` and `.ar.md` files beside each English one, with one date (ADR-0018 decision 15's
+   > > note of this date). The build compares only the dates, so the box is true only when the French
+   > > and the Arabic text moved too.
 
    **This deliberately invents no second concept.** A separately written definition of done drifts
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be

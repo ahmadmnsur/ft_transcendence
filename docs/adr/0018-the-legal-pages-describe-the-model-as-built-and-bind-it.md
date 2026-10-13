@@ -360,6 +360,8 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > French and Arabic too. The report form's labels for the three shared reasons use exactly the
    > words of each language's Terms (ADR-0011 decision 4's note of this date). How the Terms exist in
    > three languages is [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143)'s to decide.
+   >
+   > > **Settled 2026-10-13** in decision 14's note of 2026-10-13.
 
 10. **Students keep ownership; PeerConnect's licence is to store, show and retain, and nothing else.**
     Store it; show it to the audiences decision 4 and the recorded rows define; retain it according to
