@@ -40,8 +40,8 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > boot: the boot check's steps 3 and 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155),
 > [The two resets: make reset-local and make
 > reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156), and [Sign in with 42:
-> recovery through Confirm with 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157), which
-> takes recovery out of T42. T15 builds the seed's bucket step, which T09 does not.
+> recovery through Confirm with 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157), so
+> recovery is not in T42. T15 builds the seed's bucket step, which T09 does not.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
@@ -1954,6 +1954,12 @@ behaviour-free ticket after Rounds.
   4. §14.8 check 5 passes (§14.8).
   5. **All nine §14.8 checks pass, and the record is written last.** From this version on, the
      fixture implements all of §14.4–§14.8 (§14.9).
+
+     > **Corrected 2026-10-14:** §14.8 has ten checks, here and in *Implements* above. Check 10,
+     > every Student's `display_name_search` equals `foldName(display_name)`, came with #95's
+     > refinement of 2026-10-02, and T09 implements it from v1
+     > ([#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)).
+
   6. The first complete run's Match distribution is logged against §14.5's targets (62 = 46 / 8 /
      6 / 2, 74 %), and *D*'s email is logged (§14.5, §14.8, §18 item 12).
   7. The fixture version is v7 (§14.9).
