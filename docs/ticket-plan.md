@@ -31,7 +31,7 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > direction](https://github.com/ahmadmnsur/ft_transcendence/issues/116) added to T04's; and [Rewrite
 > the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104)
 > rewrites the open tickets the move changes and opens the ones it adds. The notes below mark the
-> places that issues #106 and #121 named.
+> places that issues #99 and #106 named.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).

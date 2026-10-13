@@ -182,7 +182,7 @@ npx prisma generate
 
 > **Nine since 2026-10-02** ([`docs/spec.md`](docs/spec.md) §4.4; [ADR-0014](docs/adr/0014-the-entity-set-and-relations.md)'s
 > *Consequences* count note). A ninth hand-written step, in the migration that creates `Student`,
-> gives display names one sort order on every stack:
+> gives display names the same collation on every stack:
 > `ALTER TABLE "Student" ALTER COLUMN display_name TYPE text COLLATE "und-x-icu";`. A later
 > `ALTER COLUMN … TYPE` on `display_name` silently puts it back on the database's default, so delete
 > one that `migrate dev` emits as well. Category 2 checks the ten named objects and the column's
@@ -282,7 +282,9 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
 > even if the suite fails. Run one copy at a time. The suite creates its own `<database>_test`
 > database inside that copy and runs `prisma generate` first. The file-upload tests go through a
 > real `nginx` using the repository's own `proxy/snippets/api.conf`. CI uses the same isolated copy
-> for migration, seed and suite checks.
+> for migration, seed and suite checks. *(Added 2026-10-13, from `docs/spec.md` §16.2:)* the
+> harness's first step refuses any target but the local fallback, naming the variable and the host,
+> never the password.
 
 **The closed list of what is covered:**
 

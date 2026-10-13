@@ -345,7 +345,9 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > current password also counts: the password change, Connect 42's start and Disconnect 42 share
     > one check of it through Supabase Auth (the notes above), and each refusal counts as a failed
     > attempt under the signed-in Student's own email and the client address, so someone at a
-    > computer left signed in cannot keep guessing, slowed only by Supabase's shared per-IP limit.
+    > computer left signed in cannot keep guessing, as they could while only Supabase's shared
+    > per-IP limit slowed them. A new password set after Confirm with 42 checks no password and is
+    > not throttled.
     > The limit, the window, the key and the in-memory store stand. A lost race, a sanction told
     > after the right password, a Supabase `429` and Supabase Auth unreachable count as nothing
     > (`docs/spec.md` §5.5, M37). The Privacy Policy's sentence on attempt counts moves with it
