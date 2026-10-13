@@ -69,6 +69,15 @@ browser.
 > against Tailwind's own class list (section 2). The count at `0d20fcb` does not change. Tailwind
 > reads all of `web/`, not only `web/src` (section 2).
 
+> **Corrected 2026-10-13** after Ahmad's
+> [review of `52957a1`](https://github.com/ahmadmnsur/ft_transcendence/issues/140#issuecomment-6152718248):
+> the scanner in `52957a1` cut a file into tokens its own way, so it missed the first class of an
+> array (`['ml-4', 'mr-4']`) and exited with 0 when that was the only one. It was rebuilt the same
+> day to take a class wherever Tailwind's extractor can and to read every file Tailwind reads,
+> and checked against Tailwind's own extractor, class list and file scanner (section 2). The
+> files Tailwind reads outside `web/src` include `vite.config.ts`. The count at `0d20fcb` does
+> not change; the hits in comments are 7, not 10.
+
 ## Question
 
 What does *"complete layout mirroring (not just text direction)"* (`document/en.subject.md:568`)
@@ -106,10 +115,10 @@ Safari and Brave were not run.
 
 ### The count
 
-**Run** with a token scanner over `web/src` (it cuts the files into tokens, strips variants such as
-`focus:`, and reports the physical classes; what it catches and misses is in
-[section 2](#how-a-physical-class-can-be-caught)). The first scanner and the one widened on
-2026-10-13 give the same result. On `origin/main`
+**Run** with a token scanner over `web/` (it reads the files Tailwind reads, takes a class wherever
+Tailwind's extractor can take one, and reports the physical ones; what it catches and misses is in
+[section 2](#how-a-physical-class-can-be-caught)). Every version of the scanner gives the same
+result. On `origin/main`
 at `0d20fcb` there are **15 uses of 10 distinct physical classes, on 12 lines**: `pl-6` four times,
 `text-left` and `text-right` twice each, and `right-px`, `rounded-r-lg`, `bg-linear-to-l`,
 `origin-left`, `pl-3`, `pr-1` and `focus:left-4` once each. Both commits of 2026-10-11 (`592bf58`,
@@ -134,10 +143,10 @@ at `0d20fcb` there are **15 uses of 10 distinct physical classes, on 12 lines**:
 | `legal/markdown.tsx:183` | `pl-6` | room for bullets | bullets hang outside the text column on the right |
 | `legal/markdown.tsx:191` | `pl-6` | room for numbers | numbers hang outside the text column on the right |
 
-No CSS file in `web/src` uses a physical property (`margin-left`, `left:`, `text-align`, `float`).
-`web/index.html` has `<html lang="en">` and no `dir` attribute. **Run:** the other files Tailwind
-reads in `web/` (`index.html`, `package.json`, the `tsconfig` files and the two SVGs, section 2)
-hold no physical class.
+**Run:** no CSS file in `web/src` uses a physical property (`margin-left`, `left:`,
+`text-align`, `float`), and the files Tailwind reads in `web/` outside `web/src` (`index.html`,
+`package.json`, the three `tsconfig` files, `vite.config.ts` and `public/favicon.svg`, section 2)
+hold no physical class. `web/index.html` has `<html lang="en">` and no `dir` attribute.
 
 ### Direction-bound code that is not a class
 
@@ -307,32 +316,71 @@ production build behaves like the dev server for `rtl:`/`ltr:`, unless `build.cs
   when the CSS gives no `source()`. `web/src/index.css` gives none, and `web/vite.config.ts` sets
   no `root`. It skips files in `.gitignore`, `node_modules`, binary files, CSS files and lock files
   ([docs L135–141](https://github.com/tailwindlabs/tailwindcss.com/blob/7f92c2213315c195dae583d68752da4042da3ade/src/docs/detecting-classes-in-source-files.mdx#L135-L141)).
-  So `web/index.html`, `package.json`, the `tsconfig` files and the two SVGs are read too. None
-  holds a physical class at `0d20fcb` (section 1).
+  So it also reads `web/index.html`, `package.json`, the three `tsconfig` files, `vite.config.ts`
+  and `public/favicon.svg`, and in `web/src` the SVG `design/assets/default-avatar.svg` as well as
+  the scripts. **Run:** Tailwind's own file scanner (`Scanner` from `@tailwindcss/oxide` 4.3.3) on
+  `web/` at `0d20fcb` lists exactly these files, plus the two CSS files, from which it takes CSS
+  variables but no class. None of them holds a physical class (section 1).
 - **The scanner on this branch,**
   [`rtl-mirroring/physical-scan.mjs`](rtl-mirroring/physical-scan.mjs), found the 15 uses above.
-  It was added on 2026-10-13 after Ahmad's first review, and widened the same day after his second.
-  The first version missed the 13 classes in that review, which Tailwind 4.3.3 compiles to a left
-  or right property (`border-l-ink`, `border-l-danger-500/50`, `border-l-(--my-color)`,
-  `[margin-left:4px]`, `mask-r-to-80%`, `perspective-origin-left`, `bg-linear-to-l/srgb`,
-  `text-left!`, `ml-[length:3px]`, `left-(--sidebar)`, `origin-[left_top]`…), and it took
-  `/* note */ const c = "text-left";` for a comment. **Run** with the widened scanner:
-  - Tailwind 4.3.3 lists 11,858 classes that compile for the SPA's theme. 1,418 of them compile to
-    CSS that sets only one side, left or right, or a `transform-origin` or `perspective-origin`
-    that is not centred left to right. The scanner reports all 1,418, and 166 more, all from
-    families with no flow-relative form whose CSS names no side: `translate-x-`, `scale-x-`,
-    `skew-x-` and the one-sided resize cursors.
-  - Each of the 13 classes, and the comment line, alone in a file: reported, exit 1. `ps-`, `ms-`,
-    `inset-s-`, `rounded-s-`, `border-s`, `mask-x-`, `rounded-t-` and `origin-top`: not
-    reported, exit 0.
-  - On `web/src` at `0d20fcb`: the same 15 in code and 10 in comments as the first version.
+  It was added on 2026-10-13 after Ahmad's first review (`18e04ea`), widened after his second
+  (`52957a1`), and rebuilt after his third. `18e04ea` missed the 13 classes of the second review,
+  which Tailwind 4.3.3 compiles to a left or right property (`border-l-ink`,
+  `border-l-danger-500/50`, `border-l-(--my-color)`, `[margin-left:4px]`, `mask-r-to-80%`,
+  `perspective-origin-left`, `bg-linear-to-l/srgb`, `text-left!`, `ml-[length:3px]`,
+  `left-(--sidebar)`, `origin-[left_top]`…), and took `/* note */ const c = "text-left";` for a
+  comment. `52957a1` cut a file into tokens its own way, so it missed the first class of an array
+  (`['ml-4', 'mr-4']`, `clsx(['ml-4'])`) and exited with 0 when that was the only one; it also read
+  only `.ts`, `.tsx` and `.css` files. Both called `process.exit()` right after printing, which can
+  cut the output short in a pipe.
 
-  It lists every `@source inline(` line, and exits with 1 when it finds a class outside a comment
-  or such a line. A comment that holds a real class (`mr-auto` at `Modal.tsx:17`) generates CSS, so
-  hits in comments are shown and marked. Its header lists what it still cannot see: the other files
-  Tailwind reads in `web/`, classes built by joining strings, angles and arbitrary transforms
-  (`bg-linear-45`, `translate-[4px_0]`), and JavaScript. It matches names, not CSS, so it can also
-  report a token that Tailwind would not compile.
+  The scanner now reads the files Tailwind reads in the folder it is given, takes a class wherever
+  Tailwind's extractor can take one (the same characters before and after it, its rule for
+  `ml-4: …`, and its steps for JSON and Markdown), and reports the physical ones. In CSS files it
+  reports the classes after `@apply`, each declaration that sets one side, and the lines a person
+  must read (`@source`, `@plugin`, `@config`, `source(`, and an `@import` from outside the folder).
+  Its header says what it reports and what it cannot see. **Run** on 2026-10-13, with Tailwind
+  4.3.3's own code as the reference (*How the experiments were run*):
+  - **The class list.** Tailwind lists 11,858 classes that compile for the SPA's theme. 1,418 of
+    them compile to CSS that sets only one side, left or right, or a `transform-origin` or
+    `perspective-origin` that is not centred left to right. The scanner reports all 1,418, and 166
+    more, all from families with no flow-relative form whose CSS names no side: `translate-x-`,
+    `scale-x-`, `skew-x-` and the one-sided resize cursors.
+  - **The extractor.** On each set below, every physical class that Tailwind's extractor takes
+    and compiles was compared with what the scanner reports on that line. Missed: none. On the
+    first four sets the scanner prints exactly the class Tailwind takes.
+    - `web/` at `0d20fcb`: 16 physical classes (the 15 and `mr-auto` in a comment).
+    - The same files with every class Tailwind takes and compiles swapped for a physical one: 897.
+    - 91 shapes of code, JSX, HTML, JSON and SVG (arrays, object keys, ternaries, templates,
+      `querySelector('.…')`, JSX text…), each filled in with 40 physical classes: 3,760.
+    - 669 files of library code (Redux Toolkit, TanStack, React Redux, Immer, Reselect, Recharts,
+      React DOM) with a physical class put into each of their 12,814 strings, template parts and
+      JSX texts: 12,228. None of the injected classes is marked as a comment.
+    - 60 runs of 42,000 random lines in seven file types, mixing classes, words and punctuation:
+      394,928. In about 3 % of them the scanner prints a longer token on the same line that
+      holds the class (`text-left!.@md:ml-4` for `@md:ml-4`), where Tailwind prints the class.
+  - **Comments.** Against the comments TypeScript 5.9.3's parser finds in the SPA's 57 script
+    files and the 669 library files (5.1 million characters), no code is marked as a comment. 30
+    characters of comment are read as code, in two comments inside a template's `${…}`.
+  - **Files.** The scanner's list matched Tailwind's file scanner on `web/` and on a test folder
+    with a `.gitignore` above it, untracked files, a lock file, a log file and a binary file.
+    Outside a git repository it also reads the files a `.gitignore` names, so it reads more.
+  - **CSS.** In the compiled CSS of the 11,858 classes, it flags each of the 1,418 one-sided
+    classes, and 264 more whose declarations set one side each but the class as a whole sets both
+    (`mask-x-`, `rounded-t-`, `rounded-b-`), since it judges each declaration alone.
+  - **Every case from Ahmad's three reviews,** alone in a file (66 cases, physical and not): the
+    expected exit code each time.
+  - **Output in a pipe.** Captured by another Node program, in one series of ten runs, `52957a1`
+    printed 1,995, 3,983 and 3,614 lines instead of 4,003 three times; the exit code was right.
+    The scanner now sets `process.exitCode` instead, and printed all 4,003 lines in ten of ten
+    runs.
+  - **The count.** On `web/` at `0d20fcb`, `592bf58` and `15d3b47`: the same 15 uses in code, and
+    7 hits in comments where the earlier versions had 10. The 3 gone are prose (`right-aligned;`,
+    `right-flanking,`, `left-flanking,`): Tailwind takes no class before `;` or `,`.
+
+  A comment that holds a real class (`mr-auto` at `Modal.tsx:17`) generates CSS, so hits in
+  comments are shown and marked. It matches names, not CSS, so it also reports some words that
+  Tailwind would not compile (`right-to-left`).
 - **A check on the compiled CSS** reads what Tailwind generates instead of the class names.
   **Run** by Ahmad, and again for this file: with the SPA's `index.css` and no classes, Tailwind
   4.3.3's output has no declaration that names left or right; adding `text-left` adds
@@ -712,6 +760,26 @@ In a scratch directory outside the repository, on Node 22.22.1 and npm 9.2.0:
   to every comment line of a copy of `web/src`, and one inside a `/* */` comment at the end of
   every other line that holds no backtick or `/*`: all were marked as comments except one inside
   a template's `${…}`, which counted as code. `compile()` with no classes for the compiled-CSS check.
+- **The rebuilt scanner, 2026-10-13,** against Tailwind 4.3.3's own code, with `@tailwindcss/oxide`
+  and `@tailwindcss/node` 4.3.3 and TypeScript 5.9.3, the versions in the SPA's lockfile:
+  - **The extractor:** `Scanner.getCandidatesWithPositions()` gave each class Tailwind takes from a
+    file and where (an index into the JavaScript string, not a byte offset). A class counted as
+    physical when `candidatesToCss()` compiled it to CSS that sets one side (as in section 2's
+    class-list check, plus box and corner shorthands), or when it is `translate-x-`, `scale-x-`,
+    `skew-x-` or a one-sided resize cursor. Each was looked for among the scanner's hits on the
+    same line.
+  - **The sets:** the swapped set replaced every class Tailwind takes and compiles from `web/` at
+    `0d20fcb` with one of 20 physical classes, keeping its variants. The library set parsed each
+    file with TypeScript and put one of 20 physical classes into each string, template part and
+    JSX text, by turns replacing the text or going before it. The random set used a seeded generator
+    (mulberry32) to write 14 files of 3,000 lines for each run, in `.html`, `.tsx`, `.ts`, `.json`,
+    `.svg`, `.md` and `.txt`, each line 3 to 10 pieces taken from 29 physical classes, 14 words
+    and 44 pieces of punctuation.
+  - **Comments:** TypeScript's leading and trailing comment ranges at every token were compared,
+    character by character, with the scanner's marking.
+  - **Files:** `Scanner.files` after `scan()` with the source `**/*` on the folder.
+  - **Exit codes and output:** each review case in a file of its own; and the scanner's output
+    read through `execFileSync()` from a file of 4,000 classes, ten times per version.
 
 ## Primary sources
 
