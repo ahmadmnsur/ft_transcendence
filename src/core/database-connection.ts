@@ -3,21 +3,18 @@ import { join } from 'node:path';
 import type { PoolConfig } from 'pg';
 import { resolveSupabaseTarget, type EnvRecord } from './env';
 
-// Two members' stacks on the team project, plus `prisma migrate deploy` and the
-// seed, must fit its session-mode Pool Size of 15: 2 × 5 + 2, with 3 to spare
-// (ADR-0004 d11). node-postgres would otherwise open up to 10.
-export const POOL_MAX = 5;
-
 // Supabase signs the pooler's certificate with its own authority, which Node
 // does not trust, so the team project is verified against this committed copy
 // (ADR-0004 d11). Every image runs from /app, where the file sits.
-export const SUPABASE_CA_PATH = join(process.cwd(), 'supabase', 'prod-ca-2021.crt');
+const SUPABASE_CA_PATH = join(process.cwd(), 'supabase', 'prod-ca-2021.crt');
+
+export type ConnectionConfig = Pick<PoolConfig, 'connectionString' | 'ssl'>;
 
 // The URL and TLS settings every database client of the api uses: its pool, and
 // the boot check's one connection (§15.5), so the check proves what the api will
 // meet. This file loads no Prisma, since the dev image runs the check first.
-export function connectionConfig(env: EnvRecord): Pick<PoolConfig, 'connectionString' | 'ssl'> {
-  const config: Pick<PoolConfig, 'connectionString' | 'ssl'> = { connectionString: env['DATABASE_URL'] };
+export function connectionConfig(env: EnvRecord): ConnectionConfig {
+  const config: ConnectionConfig = { connectionString: env['DATABASE_URL'] };
   // The fallback's `db` sits on the Compose network and stays a plain connection.
   if (resolveSupabaseTarget(env).kind === 'team') {
     // node-postgres lays the URL's own TLS settings over `ssl`, so a pasted
@@ -30,8 +27,4 @@ export function connectionConfig(env: EnvRecord): Pick<PoolConfig, 'connectionSt
     config.ssl = { ca: readFileSync(SUPABASE_CA_PATH), rejectUnauthorized: true };
   }
   return config;
-}
-
-export function poolConfig(env: EnvRecord): PoolConfig {
-  return { ...connectionConfig(env), max: POOL_MAX };
 }

@@ -25,10 +25,10 @@ const KEY_CALLS: KeyCall[] = [
 const FALLBACK_REMEDY =
   "; the fallback's database never reads .env, so use make dev or make local, or remove .env or replace it with a copy of .env.example";
 
-// A failure message carries a variable's name, a host and a status only (§15.4):
-// an error's own message can quote the URL, so only its code is kept, and only
-// when it looks like one.
-export function errorCode(err: unknown): string {
+// A failure message carries a variable's name, a host and a status only (§3.9,
+// §15.4): an error's own message can quote the URL, so only its code is kept,
+// and only when it looks like one, as a suffix such as " (28P01)".
+export function errorCodeSuffix(err: unknown): string {
   const code = (err as { cause?: { code?: unknown } } | undefined)?.cause?.code ?? (err as { code?: unknown } | undefined)?.code;
   if (typeof code === 'string' && /^[A-Z0-9_]+$/.test(code)) return ` (${code})`;
   if (err instanceof Error && err.name === 'TimeoutError') return ' (timeout)';
@@ -53,10 +53,14 @@ export async function checkSupabaseKeys(env: EnvRecord): Promise<string | undefi
       status = response.status;
       await response.body?.cancel();
     } catch (err) {
-      return `no answer from ${supabaseUrl.host}${errorCode(err)}`;
+      return `no answer from SUPABASE_URL host ${supabaseUrl.host}${errorCodeSuffix(err)}`;
     }
     if (status === 540) return `${supabaseUrl.origin} answered 540: the project is paused`;
-    if (status < 200 || status > 299) return `${call.service} rejected ${call.variable} (${status})`;
+    // Only 401 and 403 are the key's fault; an outage's 5xx must not blame a key.
+    if (status === 401 || status === 403) return `${call.service} rejected ${call.variable} (${status})`;
+    if (status < 200 || status > 299) {
+      return `${call.service} at SUPABASE_URL host ${supabaseUrl.host} answered ${status}`;
+    }
   }
   return undefined;
 }
@@ -74,9 +78,9 @@ export async function checkDatabase(env: EnvRecord): Promise<string | undefined>
   } catch (err) {
     if (err instanceof DatabaseError) {
       const remedy = resolveSupabaseTarget(env).kind === 'fallback' ? FALLBACK_REMEDY : '';
-      return `the database at ${host} refused DATABASE_URL${errorCode(err)}${remedy}`;
+      return `the database at ${host} refused DATABASE_URL${errorCodeSuffix(err)}${remedy}`;
     }
-    return `could not connect to the database at ${host}${errorCode(err)}`;
+    return `could not connect to DATABASE_URL host ${host}${errorCodeSuffix(err)}`;
   }
   await client.end();
   return undefined;

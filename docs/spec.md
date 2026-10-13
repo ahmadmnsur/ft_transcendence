@@ -3407,8 +3407,9 @@ The dev image runs the same check first, from a copy outside the bind mount, the
   `40001` and `40P01` come back through the session pooler unchanged (tested on 2026-10-03), so the
   Unit of Work's retry works (§3.6.2).
 - **The connection is encrypted and verified.** When `DATABASE_URL` and `SUPABASE_URL` name the team
-  project, `src/core/prisma.service.ts` gives the `api`'s pool `supabase/prod-ca-2021.crt` with full
-  verification, after removing every TLS setting the URL carries (each `ssl…` key and
+  project, `src/core/database-connection.ts` gives the `api`'s pool, and the boot check's step 4,
+  `supabase/prod-ca-2021.crt` with full verification, after removing every TLS setting the URL
+  carries (each `ssl…` key and
   `uselibpqcompat`): node-postgres lays the URL's settings over its config, so a pasted
   `?sslmode=no-verify` would otherwise switch the check off. For `prisma migrate`, whose engine takes
   TLS from the URL only, `prisma.config.ts` sets `sslmode=require`, `sslaccept=strict` and
