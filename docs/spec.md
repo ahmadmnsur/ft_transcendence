@@ -6,6 +6,13 @@ the map ([#1](https://github.com/ahmadmnsur/ft_transcendence/issues/1)), `CONTEX
 `docs/research/`, the prototype on `prototype/compatibility-score`, and the two primary sources in
 `document/`. It is the input `/to-tickets` reads.
 
+> **Updated 2026-10-13 for the move to Supabase**, from
+> [ADR-0019](adr/0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md) and the ADR notes it
+> names, by [Update the spec and the legal pages for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/103).
+> Every section the move changed is corrected in place, each changed rule citing the note that holds
+> it: §§1–7, §9, §12.7, §13, §§14–19 and the final section, with the mechanisms chosen here listed in §2.2
+> (M35–M37). `main` at `62eb070` holds the text before.
+
 ## How to read this document
 
 - **The ADRs are the decisions; this document is the build.** Every rule here is traced to the
@@ -25,8 +32,8 @@ the map ([#1](https://github.com/ahmadmnsur/ft_transcendence/issues/1)), `CONTEX
   the successful attempt has committed (§3.7).
 - **Field-length numbers, retry budgets, timeouts and log caps are engineering defaults** chosen
   here, in the sense ADR-0003 uses the phrase: change them freely; the shape is what is locked.
-- **Blocked** marks behaviour whose product meaning is owned by an open ticket (final section). A
-  ticket touching it cannot complete until that ticket resolves.
+- **Blocked** marks behaviour whose product meaning is owned by an open ticket (final section); none
+  is marked since 2026-10-13. A ticket touching it cannot complete until that ticket resolves.
 
 ---
 
@@ -49,7 +56,9 @@ Feedback** to the Mentor, and a **Public Takeaway** that becomes a **Post**. A l
 beside it: **Reflection Prompts** the Admin publishes, answered once as Posts. Both loops feed one
 **XP** pool, a **Level**, one **Streak**, three **Badges** and one **Leaderboard**. Friends,
 **Presence**, **Direct Messages**, **Likes**, **Blocks**, **Reports**, a **Peer Moderator** role and
-**Learning Analytics** serve the loop. Everything runs locally from a clean clone with one command.
+**Learning Analytics** serve the loop. Everything runs from a clean clone with one command: on the
+team's copy, whose database, files and passwords Supabase keeps, when the team's `.env` is present,
+and on a local copy otherwise (§15, ADR-0019).
 
 ### 1.3 Claimed modules — 18 points (5 Majors, 8 Minors), threshold 14
 
@@ -63,20 +72,20 @@ Target policy: survive two Majors failing (18 − 4 = 14).
 | **Major — user interaction** (`:498`) | 2 | Chat: 1:1 Direct Messages (§11.4). Profile: §6.2. Friends: request/accept/decline/end, list (§11.1, §6.4). |
 | **Major — standard user management** (`:592`) | 2 | Profile edit (§6.2); avatar with default (§9.6, §6.3); Friends with online status (Presence, §7.6); profile page (§6.2). |
 | **Major — advanced permissions** (`:622`) | 2 | Users table: view, edit, delete-by-Removal (§6.12); roles `STUDENT`/`PEER_MODERATOR`/`ADMIN` managed on the role column; three distinct views (Student: none; Peer Moderator: `/moderation`; Admin: `/admin/*`). |
-| **Minor — ORM** (`:516`) | 1 | Prisma `^7` (§3.3, §4). |
+| **Minor — ORM** (`:516`) | 1 | Prisma `^7`, on Supabase's Postgres (§3.3, §4). |
 | **Minor — advanced search** (`:534`) | 1 | `GET /api/students` with Skill filters, sort, pagination over TanStack Table (§6.2). |
 | **Minor — gamification** (`:848`) | 1 | Exactly three of `:850`: XP/Level, Badges, Leaderboard; persisted; progress bar + earn panels; `/rules` page (§10). |
 | **Minor — design system** (`:526`) | 1 | Project-owned palette, type scale, icon set and ≥ 10 reusable components (§3.5.3). |
-| **Minor — file upload** (`:536`) | 1 | Avatar (PNG/JPEG) and Evidence (PDF/PNG/JPEG); client + server validation; `bytea` storage behind authorised routes; preview; progress; delete (§9.5–9.6, §6.3). |
-| **Minor — OAuth 2.0** (`:620`) | 1 | Sign in with 42 (§5.6). **Identity mapping and a successful sign-in Blocked by #24 (§5.6 B).** |
+| **Minor — file upload** (`:536`) | 1 | Avatar (PNG/JPEG) and Evidence (PDF/PNG/JPEG); client + server validation; storage in two private Supabase Storage buckets, every byte through authorised NestJS routes; preview; progress; delete (§9.5–9.6, §6.3, §9.8). |
+| **Minor — OAuth 2.0** (`:620`) | 1 | Sign in with 42, run by NestJS with no part for Supabase Auth; a 42 login finds its Student by 42's account `id` (§5.6). |
 | **Minor — additional browsers** (`:574`) | 1 | Firefox + Brave pass in week 5, limitations documented in `README.md` (§16.7, ADR-0016 d9). |
 | **Minor — user activity analytics** (`:642`) | 1 | `/admin/analytics` Learning Analytics (§13), a scoped V2 pull-forward (ADR-0015). |
 
 Mandatory part (`:300`–`:389`) is met by: containerised single command (§15); Chrome, clean console
 (§3.8.2, §15.7, §16.7); Privacy Policy and Terms routes with footer links (§3.5.1, §3.5.4); multi-user concurrency
 (§3.6); responsive Tailwind UI (§3.5); `.env` + `.env.example` (§15.4); clear schema (§4); email +
-password with salted argon2id (§5.1); validation on both ends (§3.5.2, §6.0); HTTPS for every
-browser connection on the deployment path (§15.2).
+password, hashed and salted by Supabase Auth's bcrypt (§5.1); validation on both ends (§3.5.2,
+§6.0); HTTPS for every browser connection on the deployment path (§15.2).
 
 ### 1.4 In scope and out of scope
 
@@ -91,7 +100,15 @@ Problem Solver, Top Mentor, Most Improved and Longest Learning Streak Badges; em
 password reset and any Admin-set password; self-service account deletion; appeals; a reporter
 status surface; read receipts; `last_seen_at` or any stored Presence; Mission completion tracking;
 XP ledger, ranking history, analytics snapshots, exports; a public deployment, `mkcert`, LAN access
-on either path; a `SESSION_SECRET`; JWT anywhere; any fourth Compose service.
+on either path; a `SESSION_SECRET`; JWT anywhere, except the token a password check through
+Supabase Auth returns, which lives only inside that request on the server (§5.1, ADR-0003 d1's
+note); any Compose service beyond the six of §15.1.
+
+**Out of scope with the move to Supabase** (map #85, ADR-0019): everything Supabase offers beyond
+its three stores, namely its sessions and tokens past one request, its browser client, the Data
+API and row-level security, Realtime (Socket.IO stays), sign-in through outside providers, its
+email and Edge Functions; Google sign-in; password reset by email; features only for 42 students,
+and 42 projects as Skills; hosting PeerConnect anywhere, Vercel included.
 
 ### 1.5 User stories
 
@@ -102,12 +119,14 @@ on either path; a `SESSION_SECRET`; JWT anywhere; any fourth Compose service.
 2. As a visitor, I want to sign up with an email, a password and a display name, ticking the
    acceptance checkbox, so that I can join.
 3. As a visitor, I want to sign in with my email and password, so that I reach my account.
-4. As a visitor on a copy with 42 OAuth configured, I want a Sign in with 42 button, so that I can
-   use my 42 account (**Blocked by #24** for which account it reaches).
+4. As a visitor on a copy with 42 OAuth configured, I want a Sign in with 42 button that reaches the
+   Student who connected my 42 account, or, when none has, a sign-up form pre-filled from 42, so
+   that I can use my 42 account.
 5. As a visitor on a copy without OAuth configured, I want no 42 button at all, so that nothing on
    the page is broken.
-6. As a visitor who mistypes a password repeatedly, I want one generic refusal and then a
-   temporary throttle, so that nobody can enumerate accounts or guess passwords.
+6. As a visitor who mistypes a password, I want to be told whether no account uses the email or the
+   password is wrong, and then a temporary throttle, so that I know what to fix and nobody can keep
+   guessing; a Suspension or Removal is told only once the right password is typed.
 
 **Student — account and profile**
 
@@ -230,9 +249,20 @@ on either path; a `SESSION_SECRET`; JWT anywhere; any fourth Compose service.
 66. As an evaluator, I want to sign in as any seeded Student with one shared password.
 67. As an evaluator, I want a clean browser console in Chrome, Firefox and Brave.
 68. As a developer, I want the dev overlay at `http://localhost:8081` with Vite HMR through nginx.
-69. As a developer, I want `npx vitest run` to run the whole suite, and CI on every PR to show
-    typecheck, migrations from empty, the seed from empty and the suite.
+69. As a developer, I want `make test` to run the whole suite (`npx vitest run`) against Supabase's
+    own containers, and CI on every PR to show typecheck, migrations from empty, the seed from empty
+    and the suite.
 70. As a reviewer, I want to know from a PR's file list alone whether it is inside the schema gate.
+71. As a team member, I want `make up` with the team's `.env` to run PeerConnect on the team's copy,
+    so that every member and the defense see the same data.
+
+**Student — Sign in with 42**
+
+72. As a Student, I want to connect my 42 account to my account, and disconnect it, with my current
+    password, so that I can sign in with 42 and nobody at a computer I left signed in can attach
+    theirs.
+73. As a Student who connected 42 and forgot my password, I want to confirm with 42 and then set a
+    new password within ten minutes, so that I can get back into my account.
 
 ---
 
@@ -255,43 +285,46 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0002 d7 | Admin hand-made Match inside the open Round; creation vs close serialize; nothing commits into a closed Round. |
 | ADR-0002 d8 | Decline terminates the Match; both drop to unmatched; no automatic replacement. |
 | ADR-0002 d9 | Prompt answer with no open Round earns XP, not Streak; Round attribution at the answer's serialization point. |
-| ADR-0003 d1 | Opaque session id in one HttpOnly, Secure, SameSite=Lax cookie; no JWT; the cookie also carries the OAuth pre-authentication attempt. |
+| ADR-0003 d1 | Opaque session id in one HttpOnly, Secure, SameSite=Lax cookie; no JWT; the cookie also carries the OAuth pre-authentication attempt. A password check through Supabase Auth's password grant returns a JWT that lives only inside that request on the server: used once to sign its Supabase Auth session out, never stored, logged or sent to the browser (d1's notes of 2026-09-30 and 2026-10-02). |
 | ADR-0003 d2 | Single origin for bundle, API and socket. |
-| ADR-0003 d3 | argon2id via `@node-rs/argon2`, m = 19 MiB, t = 2, p = 1. |
+| ADR-0003 d3 | Replaced (d3's note of 2026-10-02): Supabase Auth keeps each password, bcrypt at cost 10; a password is 8 characters to 72 UTF-8 bytes, no composition rule, checked in the SPA and again in the API; PeerConnect hashes and stores no password. |
 | ADR-0003 d4 | 30-day sliding expiry, renewed only when `expires_at` is more than an hour old; `Max-Age` derived from `expires_at`. |
-| ADR-0003 d5 | Session row holds id, student_id, expires_at; role and sanction flags read from `Student` on every request; sanctioned resolution fails. |
-| ADR-0003 d6 | Logout deletes one session; password change, Suspension, Removal delete all; role change deletes none. |
+| ADR-0003 d5 | Session row holds id, student_id, expires_at; role and sanction flags read from `Student` on every request; sanctioned resolution fails. Resolving a session reads PeerConnect's tables only and never calls Supabase Auth (d5's note). |
+| ADR-0003 d6 | Logout deletes one session; password change, Suspension, Removal delete all; role change deletes none. Only the password change writes to Supabase Auth: check the current password, delete every session, admin update, delete every session again, `password_version` raised each time (d6's note of 2026-10-02); after Confirm with 42 the check is skipped (note of 2026-10-08). |
 | ADR-0003 d7 | Socket authenticates by the cookie; WebSocket-only; Origin must equal `PUBLIC_ORIGIN` before session resolution; rejection stops retry. |
 | ADR-0003 d8 | Deleting sessions force-disconnects live sockets via the Presence registry. |
 | ADR-0003 d9 | No privileged action over the socket; a DM is the only client write. |
-| ADR-0003 d10 | CSRF: SameSite=Lax + JSON content type on every mutation; upload exception with Origin + `X-PeerConnect-CSRF: 1`; no GET changes a domain row except lazy renewal and the OAuth callback; `state` mandatory; throttle 5 / 15 min keyed on client address **and** email, in memory, nginx the only trusted proxy. |
-| ADR-0003 d11 | Logout ships; email verification, password reset and Admin-set passwords do not. |
-| ADR-0004 d1–d3 | Three services `proxy`/`api`/`db`; nginx serves the bundle and proxies `/api` and `/socket.io`. |
+| ADR-0003 d10 | CSRF: SameSite=Lax + JSON content type on every mutation; upload exception with Origin + `X-PeerConnect-CSRF: 1`; no GET changes a domain row except lazy renewal and the OAuth callback; `state` mandatory; throttle 5 / 15 min keyed on client address **and** email, in memory, nginx the only trusted proxy. Sign-in says what is wrong, a sanction only after the right password; a Supabase 429 is `too_many_attempts`, not counted; Supabase Auth unreachable is `busy_retry_later` (d10's note of 2026-10-02). The 42 callback writes only a found Student's session or a Connect 42 link; Connect 42 and Disconnect 42 ask for the current password; the 42 sign-up form's own request creates the Student (note of 2026-10-08). |
+| ADR-0003 d11 | Logout ships; email verification, password reset by email and Admin-set passwords do not. A Student who connected 42 may set a new password without the current one within ten minutes of Confirm with 42 (d11's note of 2026-10-08). |
+| ADR-0004 top notes | `make up` runs on the team Supabase project when `.env` holds its values, for `main` and the defense, and on the local fallback otherwise; nothing falls back by itself. Kamel keeps the Free project active. Still no public deployment. The team `.env` stays with the team (note of 2026-10-11). |
+| ADR-0004 d1–d3 | Six services: `proxy`, `api`, and the fallback's `db` (Supabase's Postgres image), `auth`, `storage` and `api-gw` (d1's notes of 2026-10-03 and 2026-10-04); the fallback's services load `.env.example` alone; only `proxy` publishes ports; nginx serves the bundle and proxies `/api` and `/socket.io`. |
 | ADR-0004 d2 notes | Upload locations admit 6 MiB; request log in nginx standard fields, path and referrer without query; container logs capped with rotation. |
 | ADR-0004 d4 | Dev overlay keeps nginx; Vite is a host process reached through `host.docker.internal`; verified bridge bind, no silent wildcard. |
 | ADR-0004 d5, d7 | `http://localhost:8081` (dev, `127.0.0.1:8081`) and `https://localhost:8443` (base, `127.0.0.1:8443` + redirect `127.0.0.1:8080`); LAN out of scope on both. |
 | ADR-0004 d6 | Self-signed certificate generated at image build; never committed. |
-| ADR-0004 d8 | `make up` and bare `docker compose up --build` both work, independently; `.env.example` first, optional `.env` second; Compose ≥ 2.24 (`env_file.required`'s own floor — the toolchain floor is §3.3). |
-| ADR-0004 d9 | Fifteen `.env.example` entries; OAuth pair ships empty; staff and seed credentials are dev defaults with a change-it warning. |
+| ADR-0004 d8 | `make up` and bare `docker compose up --build` both work, independently; `.env.example` first, optional `.env` second; Compose ≥ 2.24 (`env_file.required`'s own floor — the toolchain floor is §3.3). Of the targets that start a stack, only `make up` reads `.env`; `make local`, `make dev` and `make test` always run the fallback; the boot check is the chain's first step and never falls back by itself; `make test` runs a copy of its own (d8's notes of 2026-10-03 and 2026-10-04). |
+| ADR-0004 d9 | Twenty-seven `.env.example` entries, all the fallback's (note of 2026-10-04); the team project's values only in `.env`; OAuth pair ships empty; staff and seed credentials are development defaults for the fallback, 8 characters to 72 bytes, set to other values in the team `.env` before its first boot; the team `.env` is never handed to an evaluator (note of 2026-10-11). |
 | ADR-0004 d10 | No `SESSION_SECRET`. |
-| ADR-0004 d11 | Boot: db healthcheck → migrate → idempotent seed, on both paths. |
+| ADR-0004 d11 | Boot: the boot check → migrate → seed, whose first step makes the buckets, the same chain on both targets; on the team project the session pooler, TLS verified against Supabase's certificate, a pool of 5; `make reset-team` and `make reset-local`, each emptying one fixed target (d11's notes of 2026-10-03 to 2026-10-11). |
 | ADR-0004 d12 | Kamel owns the infrastructure slice in week 1 as a gate, README Instructions included. |
-| ADR-0004 amendment | OAuth credentials `FT_OAUTH_CLIENT_ID`/`FT_OAUTH_CLIENT_SECRET`; redirect URI derived from `PUBLIC_ORIGIN`; platform fully usable with OAuth unconfigured; 42 token used once, discarded. |
-| ADR-0005 | Prisma `^7`; one `schema.prisma`; gate = `prisma/**`, root `prisma.config.ts`, every Config discovery path, the seed and its fixture; Kamel reviews, Ahmad deputises past 24 h and reviews any gated PR Kamel authors (d3's 2026-09-24 annotation); developer authors; immutable merged migrations; rebase-then-regenerate own migration; Conventional Commits; squash-merge; `<type>/<slice>-<short>` branches; explicit `prisma generate`; `prisma-client` generator with explicit output; `@prisma/adapter-pg`; Node `^20.19`/`^22.12`/`^24`; TS ≥ 5.4. |
+| ADR-0004 amendment | OAuth credentials `FT_OAUTH_CLIENT_ID`/`FT_OAUTH_CLIENT_SECRET`; redirect URI derived from `PUBLIC_ORIGIN`; platform fully usable with OAuth unconfigured; 42 token used once, discarded. NestJS runs Sign in with 42 and finds a Student by 42's account `id`; one team application on Kamel's 42 account, its keys only in the team `.env`; its secret lasts 28 days, with a warning in the last seven; 42 is off under `make local`, `make dev` and `make test` (note of 2026-10-08). |
+| ADR-0005 | Prisma `^7`; one `schema.prisma`; gate = `prisma/**`, root `prisma.config.ts`, every Config discovery path, the seed and its fixture, plus `supabase/**`, every `compose*.yaml`, the buckets' settings and `prisma/reset/**` (d5's note of 2026-10-10); a PR moving a gated file updates the gate list and is gated; the team project's dashboard settings change by a PR to `supabase/team-project.md` first; Kamel reviews, Ahmad deputises past 24 h and reviews any gated PR Kamel authors (d3's 2026-09-24 annotation); developer authors; immutable merged migrations (`migrate deploy` skips an edited one silently, d6's correction of 2026-10-10); rebase-then-regenerate own migration; Conventional Commits; squash-merge; `<type>/<slice>-<short>` branches; explicit `prisma generate`; `prisma-client` generator with explicit output; `@prisma/adapter-pg`; Node `^20.19`/`^22.12`/`^24`; TS ≥ 5.4. |
 | ADR-0006 | Skill-only Score, `cover(n)=1−0.5ⁿ`, 0.7/0.3, +10 Mentee Learning Goal bonus, clamp, exact half-up rounding; floor 25; orientation by higher Score, tie lower id is Mentor; priority = Score − 2·max(0, ΔLevel − 2); most-constrained-first with recompute; tie-break `priority DESC, Score DESC, pair key ASC`; no-repeats over every Match row of any status; Block unconditional; hand-made Match: no Score (`NULL`, so the 25 floor has nothing to gate), exempt from the no-repeats history check only, oriented by steps 3–4, both currently unmatched, serialized; a Block does not end an existing Match. |
 | ADR-0007 | One live Prompt = greatest durable publication order; publish-only, no edit/delete/draft/schedule; answer is the Post; one answer per (Prompt, Student) in the schema; answer + 20 XP + Knowledge Sharer + qualifying activity atomic; answer rejected after supersession; roles `STUDENT`/`PEER_MODERATOR` answer, `ADMIN` does not; answers visible immediately. |
-| ADR-0008 | One role per Student; Peer Moderator participates, Admin does not; Peer Moderator authority = open Post-report groups + Remove Post/dismiss; manual role assignment only; three sanctions; Suspension reversible, Removal final; both terminate in-progress Matches as `TERMINATED_BY_ADMIN`, delete sessions, drop sockets; soft delete on Student and Post only; Removed rows view-only, email burned; Admin edits only Student-editable fields + role; self-guards and ≥ 1 active Admin, serialized; Users table is the roles surface; seed bootstraps Admin and Peer Moderator. |
-| ADR-0009 | Evidence on the Learning Outcome; bytes in Postgres `bytea`; authenticated opaque routes; Evidence readable by the originating pair + Admins; Mentee-only mutation while active; 5 MiB / 2 MiB exact; Evidence PDF/PNG/JPEG, Avatar PNG/JPEG; server byte validation; canonical type + `nosniff`; atomic replacement; Removal deletes avatar, keeps Evidence; Suspension touches neither. |
+| ADR-0008 | One role per Student; Peer Moderator participates, Admin does not; Peer Moderator authority = open Post-report groups + Remove Post/dismiss; manual role assignment only; three sanctions; Suspension reversible, Removal final; both terminate in-progress Matches as `TERMINATED_BY_ADMIN`, delete sessions, drop sockets; soft delete on Student and Post only; Removed rows view-only, email burned; Admin edits only Student-editable fields + role; self-guards and ≥ 1 active Admin, serialized; Users table is the roles surface; seed bootstraps Admin and Peer Moderator. No sanction writes to Supabase Auth, and a Removed Student's Supabase Auth user and hash are kept (d5, d7 notes); the Removed row keeps `forty_two_id`; an email edit writes `Student.email` alone; no Admin sets a password or touches `forty_two_id` (d8 notes); nobody deletes a Student's Supabase Auth user outside a reset or the seed's guarded run (d9 notes); the bootstrap accounts go through Supabase's admin create (d12's note). |
+| ADR-0009 | Evidence on the Learning Outcome; bytes in two private Supabase Storage buckets, `avatars` and `evidence`, opened only by the `api`, every read through NestJS, no signed link; file written before its row and deleted after it; files no row names deleted by the `api` once more than an hour old, at every start and every hour (d2's note of 2026-10-05); authenticated opaque routes; Evidence readable by the originating pair + Admins; Mentee-only mutation while active; 5 MiB / 2 MiB exact; Evidence PDF/PNG/JPEG, Avatar PNG/JPEG; server byte validation; canonical type + `nosniff`; atomic replacement; Removal deletes avatar, keeps Evidence; Suspension touches neither. |
 | ADR-0010 | 80 XP each per completed Match + 40 to the Mentee; 20 XP per Prompt answer; `Level = min(10, 1 + floor(XP/250))`; First Mentor, Knowledge Sharer, Consistent Learner; one Leaderboard by XP, top ten + pin, `XP DESC, id ASC`, filtered to active `STUDENT`/`PEER_MODERATOR`; XP paths serialize per Student; BadgeAward contention converges; progress bar, earn panels, `/rules`. |
 | ADR-0011 | Likes ship, Comments do not; targets Post or Student; one table, two nullable FKs, CHECKs; reason enum + optional capped text; immutable; two partial unique indexes; states `OPEN`/`ACTIONED`/`DISMISSED`; group = open rows per target; first resolution wins; Peer Moderator sees eligible open Post groups without reporter identity; whole-group conflict guard; Admin self-interest hiding; Remove Post and Remove Student auto-action; Suspension resolves nothing; reporter learns nothing; Report and Block separate. |
 | ADR-0012 | Mission = one of six enum values, round-robin by zero-based index within the Round, never updated, text rendered by the frontend. |
 | ADR-0013 | Optional 1–5 rating on Private Feedback; no aggregate anywhere; Mentor reads received feedback on a private route, newest first; Mentee re-reads own; Removed author shown as tombstone. |
-| ADR-0014 | 19 tables, 9 enums, UUIDv7 ids, `uuid(4)` file tokens; Review split across Review/PrivateFeedback/Post; six Match statuses; Skill catalogue + StudentSkill + Learning Goal reference; Friendship directed, unique unordered pair; Like revocable; DM without Conversation, `read_at` for recipient only, non-GET mark-read; Streak stored, recomputed at close skipping Suspended/Removed; outbound-only socket with three rooms; frozen explanation state; database invariants and the one service invariant. |
+| ADR-0014 | 19 tables, 9 enums, UUIDv7 ids, UUIDv4 file tokens; `Student.id`, `Avatar.token` and `Evidence.token` made by NestJS before the row, so with no Prisma default (d10's note of 2026-10-10); `Student` holds `password_version`, `display_name_search` and `forty_two_id`, no `password_hash`; `Avatar` and `Evidence` hold no bytes; no foreign key into Supabase's `auth` or `storage`, no row-level security (top note of 2026-10-10); Review split across Review/PrivateFeedback/Post; six Match statuses; Skill catalogue + StudentSkill + Learning Goal reference; Friendship directed, unique unordered pair; Like revocable; DM without Conversation, `read_at` for recipient only, non-GET mark-read; Streak stored, recomputed at close skipping Suspended/Removed; outbound-only socket with three rooms; frozen explanation state; database invariants and the one service invariant. |
 | ADR-0015 | `/admin/analytics`, Admin-only; Demand/Supply/Gap over the candidate pool; completion over closed Rounds, per closed Round series, absent when zero; state now + outcomes, no dwell or funnel; Round-indexed; nothing stored; refresh on `round:opened`/`round:closed`; Recharts; no export. |
-| ADR-0016 | Vitest, one command, real Postgres, ten closed categories, shared fixture, C3/C4/C6/C7, clean-clone check in two fresh clones from an empty database, Done = merged PR with every box ticked, advisory CI, Firefox + Brave in week 5. |
-| ADR-0017 | Seed drives real write paths; four closed Rounds, ends idle; 62-Match target; suspension in Round 3, Removal in Round 4 with prerequisites; `SEED_STUDENT_PASSWORD`; four Report rows in three fixture groups (two grouped on one Post, one Student, one resolved) asserted per role; 27-Skill catalogue; both gap forms; social graph; completion-based idempotence, loud failure; both boot paths; no Presence seeding. |
-| ADR-0018 | Pages describe the model as built; one cookie; the browser loads nothing from third parties (Sign in with 42 the one chosen exception); logs clean and capped; throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes, footer everywhere; acceptance checkbox validated, not stored; Removal on request only; 42 data minimisation; immutable 42 identifier as the only key; Privacy Policy moves with personal data. |
+| ADR-0016 | Vitest, one command, a real Postgres, Auth and Storage (Supabase's own containers, never a stand-in, d1's note of 2026-10-04), twelve closed categories, shared fixture, C3/C4/C6/C7, clean-clone check in two fresh clones from an empty database (triggers also `supabase/**` except Markdown, and `.env.example`), Done = merged PR with every box ticked, advisory CI running `make test`'s copy, Firefox + Brave in week 5. |
+| ADR-0017 | Seed drives real write paths; four closed Rounds, ends idle; 62-Match target; suspension in Round 3, Removal in Round 4 with prerequisites; `SEED_STUDENT_PASSWORD`, a Supabase Auth password; four Report rows in three fixture groups (two grouped on one Post, one Student, one resolved) asserted per role; 27-Skill catalogue; both gap forms; social graph; completion-based idempotence, loud failure; a run that writes first checks its guard, then deletes our rows, every Supabase Auth user and every file in the two buckets; the lock on a connection of its own; minutes on the team project (d10's notes of 2026-10-03 and 2026-10-11); both boot paths; no Presence seeding. |
+| ADR-0018 | Pages describe the model as built; two kinds of copy, the team's (Supabase, Frankfurt) and a local one (d1's note of 2026-10-11); one cookie; the browser loads nothing from third parties and never contacts Supabase (Sign in with 42 the one chosen exception); logs clean and capped, the team project's `postgres` role with four log settings (d6's note of 2026-10-11); throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes, footer everywhere; acceptance checkbox validated, not stored, on the 42 sign-up form too; Removal on request only, keeping the hash and the 42 account number; 42 data minimisation; 42's account `id` in `Student.forty_two_id` as the only key; recovery through 42 only; Privacy Policy moves with personal data. |
+| ADR-0019 | Supabase is three stores and nothing more: Postgres as the database, Storage for the two buckets, Auth as the place each password is kept and checked. The browser never talks to Supabase; PeerConnect keeps its session, Prisma, Socket.IO and Sign in with 42. One team project in Frankfurt, which Kamel owns and keeps available. |
 | Map #1 | Stack: NestJS, PostgreSQL, Prisma, socket.io, React, Tailwind, TanStack, Recharts, Vitest, Docker Compose. Vertical slices DB-through-UI. |
+| Map #85 | Supabase provides the database, the file storage and the password check; Socket.IO stays; `make up` on any machine serves `https://localhost:8443`; hosting comes later. |
 
 ### 2.2 Mechanisms chosen by this spec
 
@@ -305,20 +338,20 @@ Every item below was delegated to `/to-spec #1` by the record named, or is a gap
 | M4 | BadgeAward contention convergence | ADR-0010 d2, ADR-0014 d7 | Insert `ON CONFLICT DO NOTHING` inside the SSI tx; conflicts surface as serialization failures and the whole event retries. A backstop no schedule reaches under M1 (§10.4). | 10.4 |
 | M5 | Learning Goal integrity | ADR-0014 d3 | Composite FK `(id, learning_goal_student_skill_id) → StudentSkill(student_id, id)`; `LEARN` kind and text pairing checked in the service; removing the Goal's Skill clears the Goal. | 4.3.1 |
 | M6 | Session id representation | ADR-0003 d1 vs ADR-0014 d10 (§2.3 R2) | 256-bit random token in the cookie; `Session.id` stores its SHA-256. | 5.2 |
-| M7 | OAuth attempt: cookie representation, store, expiry, single use, verification order | ADR-0018 d5, ADR-0003 d10 | `a.`-prefixed token in the one cookie; in-memory store; 10 minutes; one live attempt per browser (a new start deletes the one its cookie names); take-and-delete; fixed verification order; PKCE S256 in addition to `state`. | 5.6 |
+| M7 | OAuth attempt: cookie representation, store, expiry, single use, verification order | ADR-0018 d5, ADR-0003 d10 and its note of 2026-10-08 | `a.`-prefixed token in the one cookie for `sign_in`, the session's key for `link` and `confirm`; in-memory store; 10 minutes; one live attempt per browser (a new start deletes the one its cookie names); take-and-delete, so `state` and the verifier are used once; a first 42 login's sign-up draft, and Confirm with 42's permission, kept in the same store for ten minutes; fixed verification order; PKCE S256 in addition to `state`. | 5.6 |
 | M8 | Callback route | ADR-0004 amendment | `GET /api/auth/42/callback`; redirect URI `${PUBLIC_ORIGIN}/api/auth/42/callback`. | 5.6 |
 | M9 | Trusted client address | ADR-0003 d10 | nginx overwrites `X-Real-IP` with `$remote_addr`; the API reads only that header; Express `trust proxy` stays off. | 5.5 |
 | M10 | Request-log format | ADR-0004 d2, ADR-0018 d6 | Custom `log_format` with query-stripped path and referrer. | 3.9 |
 | M11 | nginx error log | ADR-0018 *Not settled* | http-level `error_log /dev/null` (no request-context entry is ever written); main-level process log only, which never carries a request line. | 3.9 |
 | M12 | Container log cap | ADR-0018 d6 | `json-file`, `max-size: 10m`, `max-file: 3` on every service. | 15.1 |
-| M13 | API and database log hygiene | ADR-0018 d6 | No request logging in the API; error logs without messages from Prisma; Postgres `log_error_verbosity=terse`, `log_min_error_statement=panic`. | 3.9 |
-| M14 | Seed idempotence | ADR-0017 d10, ADR-0004 d11 | Completion record = a fixed `COMMENT ON DATABASE`, written only after every end-state assertion passes; absent marker + existing rows → truncate and re-run. | 14.9 |
+| M13 | API and database log hygiene | ADR-0018 d6 and its note of 2026-10-11 | No request logging in the API; error logs without messages from Prisma; the fallback's `db` runs with `log_error_verbosity=terse`, `log_min_error_statement=panic`, `auto_explain.log_min_duration=-1` and `log_statement=none`; the team project's `postgres` role carries `log_min_messages = fatal`, `log_min_error_statement = panic`, `auto_explain.log_min_duration = -1` and `log_statement = none` (`supabase/team-project.md`). | 3.9 |
+| M14 | Seed idempotence | ADR-0017 d10 and its notes, ADR-0004 d11 | Completion record = `COMMENT ON DATABASE` with the text `peerconnect:seed:complete:fixture-v<N>`, written only after every end-state assertion passes; a run that writes first passes the guard (every Student one the seed makes, by email), then deletes our rows, every Supabase Auth user and every file in `avatars` and `evidence`; the lock and the record on a connection of the seed's own. | 14.9 |
 | M15 | Seed and fixture paths | ADR-0005 d6, CONTRIBUTING rule 3 | `prisma/seed/**` and `prisma/fixtures/**`, both inside `prisma/**`. | 3.2, 17.2 |
 | M16 | Prisma Config pinning | ADR-0005 d5 | Every Prisma CLI call passes `--config prisma.config.ts`; every other discovery path is forbidden and gated by three file-list patterns (`/prisma.config*`, `/prisma7.config*`, `/.config/prisma*`). | 3.2, 15.5 |
 | M17 | Module format | ADR-0005 Consequences | API, seed and Prisma client are CommonJS (`moduleFormat = "cjs"`); the SPA is ESM (Vite). | 3.3 |
-| M18 | Where the suite runs; what CI provisions | ADR-0016 d8, *Not settled* | In the api dev container (`make test`); tests boot the app in-process on a derived `<db>_test` database; the upload category runs through a harness-spawned nginx using the real `proxy/snippets/api.conf`; CI provisions Postgres and nginx on the runner, never Compose. | 16.2 |
+| M18 | Where the suite runs; what CI provisions | ADR-0016 d8, *Not settled* and their notes of 2026-10-04 | `make test` starts a copy of its own of the local fallback (Compose project `peerconnect-test`, from empty, deleted with its volumes after) and runs the suite in a fresh api dev container; tests boot the app in-process on a derived `<db>_test` database against the copy's own Supabase Auth and Storage; the upload category runs through a harness-spawned nginx using the real `proxy/snippets/api.conf`; CI runs the same copy, with no service container and `nginx` from the `dev` image, and never the boot. | 16.2 |
 | M19 | Test file location and naming | ADR-0016 *Not settled* | `test/<NN>-<category>/*.test.ts`. | 16.3 |
-| M20 | Clearing Compose state before a clean-clone check | ADR-0016 d5 | `make wipe` = `docker compose down --volumes --remove-orphans`. | 16.5 |
+| M20 | Clearing Compose state before a clean-clone check | ADR-0016 d5 | `make wipe` = `docker compose down --volumes --remove-orphans`, which drops the fallback's database and Storage volumes and never touches the team project. | 16.5 |
 | M21 | Seed/boot regression detection before defense | Map #1 ⚠️ (open, unowned) | CI: `migrate deploy` from empty, then the seed from empty, then the seed again (must skip). | 16.4 |
 | M22 | Legal page rendering | ADR-0018 d14 | Markdown bundled with Vite `?raw`, rendered by a project-owned subset renderer that fails the build on unsupported syntax; no library added. | 3.5.4 |
 | M23 | Whether a Block can be lifted | ADR-0018 *Not settled* (§2.3 R1) | Yes: the blocker may delete their Block. | 11.3 |
@@ -327,12 +360,15 @@ Every item below was delegated to `/to-spec #1` by the record named, or is a gap
 | M26 | Response envelope and status policy | gap; `en.subject.md:318` | Refusals reachable in normal use return 200 `{ok:false}`; protocol failures keep 4xx/5xx. | 3.8 |
 | M27 | Socket client retry and origin handling | ADR-0003 d7 | `unauthorized` connect error is terminal → sign-in; transport failure triggers an HTTP probe; origin mismatch is terminal. | 7.5 |
 | M28 | Seed script: transaction boundaries, selection rules | ADR-0017 d2 | Each step is one application operation (one SSI tx); deterministic per-Round script in §14.5. | 14 |
-| M29 | Duplicated configuration sources | gap (user brief) | Boot-time consistency checks: `DATABASE_URL` vs `POSTGRES_*`, `PUBLIC_ORIGIN` port vs `HTTPS_PORT`; Compose defaults equal `.env.example`. | 15.4 |
+| M29 | Duplicated configuration sources | gap (user brief); ADR-0004 d8's note of 2026-10-03 | Boot-time consistency checks: `DATABASE_URL` and `SUPABASE_URL` name one target (the boot check's step 2), `DATABASE_URL` vs `POSTGRES_*` on the fallback only, `PUBLIC_ORIGIN` port vs `HTTPS_PORT`; Compose defaults equal `.env.example`. | 15.4, 15.5 |
 | M30 | Upload validators | ADR-0009 d5 ("a contract, not a library") | `pngjs`, `jpeg-js`, `pdf-lib` plus structural end-marker checks. | 9.5 |
-| M31 | Race-forcing test seam | ADR-0016 (tests bind outcomes) | Named `checkpoint()` in the Unit of Work, no-op in production, barrier in tests. | 3.6.4 |
+| M31 | Race-forcing test seam | ADR-0016 (tests bind outcomes), d1's note of 2026-10-04 | Named `checkpoint()` in the Unit of Work, no-op in production, barrier in tests; plus one named pause outside a transaction, in the password change between its first sign-out and Supabase's admin update, through the same `CheckpointHook`. | 3.6.4 |
 | M32 | Post-commit event dispatch | ADR-0014 d8, ADR-0015 d8 | Per-attempt `afterCommit` queue flushed only after the successful commit. | 3.7 |
 | M33 | Partial unique indexes on Report | ADR-0014 top note | Prisma `partialIndexes` preview (Prisma ≥ 7.4) with a defined raw-SQL fallback. | 4.4 |
 | M34 | Production security headers | ADR-0018 d5 (structural) | CSP `default-src 'self'` family on the base path only; `nosniff` on files; **no HSTS**. | 3.10 |
+| M35 | Sign in with 42's routes and outcomes beyond start and callback | ADR-0003 d10's and d11's notes of 2026-10-08 ("for example by its own route") | Intents `sign_in`, `link`, `confirm`; `GET /api/auth/42/draft`, `POST /api/auth/42/signup`, `POST /api/auth/42/disconnect`, `POST /api/auth/42/password`; the callback's outcomes `?oauth=failed`, `removed`, `suspended`, `in_use`, `connected`, `confirmed`; codes `oauth_failed`, `forty_two_connected`, `forty_two_not_connected`, `confirmation_required`. | 5.6, 6.15 |
+| M36 | Sign-in's refusal codes | ADR-0003 d10's note of 2026-10-02, whose ticket left the names to this spec | `no_account`, `password_incorrect`, `account_removed`, `account_suspended`; `invalid_credentials` is retired. | 5.1, 6.15 |
+| M37 | Whether a wrong current password counts toward the throttle | gap, found in review of the Sign in with 42 notes on 2026-10-09 and left to §5.5 | It counts, as a failed attempt under the client address and the signed-in Student's own email, for the password change, Connect 42's start and Disconnect 42; the new password after Confirm with 42 checks no password and is not throttled. | 5.5 |
 
 ### 2.3 Contradictions and gaps resolved
 
@@ -386,20 +422,34 @@ browser ──https://localhost:8443──▶ proxy (nginx) ──┬─ /      
         (dev: http://localhost:8081)                 │               Vite on the host (dev overlay only)
                                                      ├─ /api/…       ─▶ api:3000 (NestJS, HTTP)
                                                      └─ /socket.io/  ─▶ api:3000 (Socket.IO, WebSocket only)
-api ──postgresql──▶ db:5432 (Postgres, internal network only)
+team project, when .env holds its values:
+api ──postgresql + TLS──▶ aws-<n>-eu-central-1.pooler.supabase.com:5432 (session pooler, Frankfurt)
+api ──https──▶ https://<ref>.supabase.co (Supabase Auth and Storage, server-side keys)
+local fallback, otherwise:
+api ──postgresql──▶ db:5432 (Supabase's Postgres image, internal network only)
+api ──http──▶ api-gw:8000 (Supabase's gateway ─▶ auth:9999, storage:5000)
 api ──https──▶ api.intra.42.fr (OAuth token exchange and /v2/me only, when configured)
 ```
 
-- **Three Compose services, `proxy`, `api`, `db`** (ADR-0004 d1). Only `proxy` publishes ports:
+- **`make up` runs on the team Supabase project when `.env` holds its values, and on the local
+  fallback otherwise** (ADR-0004's top note of 2026-10-03, ADR-0019 d3): the same `api` code, one
+  `DATABASE_URL` and one `SUPABASE_URL` naming one target (§15.5). The browser never talks to
+  Supabase on either target: every byte it receives comes through `proxy` (ADR-0019 d1).
+- **Six Compose services**: `proxy`, `api`, and the fallback's `db`, `auth`, `storage` and `api-gw`
+  (ADR-0004 d1's notes of 2026-10-03 and 2026-10-04; §15.1). The fallback's four start on both
+  targets and sit unused on the team project. Only `proxy` publishes ports:
   `127.0.0.1:${HTTPS_PORT:-8443}:8443` and `127.0.0.1:${HTTP_PORT:-8080}:8080` on the base path; the
-  dev overlay replaces them with `127.0.0.1:8081:8081` (§15.2). `api` and `db` publish nothing.
+  dev overlay replaces them with `127.0.0.1:8081:8081` (§15.2). No other service publishes anything,
+  so nothing of the fallback is reachable from outside the machine.
 - **One origin per path**, structural: `https://localhost:8443` (base, `wss` socket) and
   `http://localhost:8081` (dev overlay, `ws` socket and HMR). `PUBLIC_ORIGIN` holds the one value
   for the running path; no code hardcodes either string (ADR-0004 Consequences).
 - Every subresource a PeerConnect page loads (script, style, font, image, frame, `fetch`, socket)
   comes from PeerConnect's own origin. The only third-party traffic is Sign in with 42, when a
   Student chooses it: the browser's top-level navigation to 42's authorize page and 42's redirect
-  back, and the API's server-side token exchange and `/v2/me` call (ADR-0018 d5).
+  back, for Sign in with 42, Connect 42 and Confirm with 42 alike, and the API's server-side token
+  exchange and `/v2/me` call (ADR-0018 d5 and its note of 2026-10-08). The API's calls to Supabase
+  are server-side too, and the browser never sees them.
 
 ### 3.2 Repository layout (fixed paths)
 
@@ -411,16 +461,23 @@ template and `CONTRIBUTING.md` already name them.
 /                              NestJS API package (package.json, package-lock.json, tsconfig*.json, nest-cli.json)
 ├── src/                       API source (§3.4)
 │   ├── generated/prisma/      generated Prisma client (gitignored; `prisma generate` output)
-│   └── shared/                constants shared with web/: field limits, enum mirrors (§6.0.3)
+│   └── shared/                shared with web/: field limits, enum mirrors (§6.0.3), `fold-name.ts` (§4.3.1)
 ├── test/                      the Vitest suite, test/<NN>-<category>/*.test.ts (§16.3)
 │   └── harness/               in-process app boot, test DB, nginx harness, fixtures loader
 ├── prisma/                    ── SCHEMA GATE (ADR-0005 d5) ──
 │   ├── schema.prisma
 │   ├── migrations/
-│   ├── seed/                  the seed: entry `main.ts` and every seed-only module (M15)
+│   ├── seed/                  the seed: entry `main.ts` and every seed-only module (M15); its first step sets the buckets
 │   │   └── assets/            the two seeded files: avatar.png, evidence.pdf
+│   ├── reset/                 `make reset-team` and `make reset-local` (§15.6)
 │   └── fixtures/              `cohort.ts`, the shared fixture module (ADR-0016 d3)
 ├── prisma.config.ts           the only Prisma Config (gate)
+├── supabase/                  ── SCHEMA GATE (ADR-0005 d5's note of 2026-10-10) ──
+│   ├── README.md              what the folder holds; inside the gate, no clean-clone check
+│   ├── db/                    the fallback database's start-up SQL (the Auth and Storage roles' passwords, the JWT expiry)
+│   ├── api/                   the fallback gateway's routes (Envoy)
+│   ├── prod-ca-2021.crt       Supabase's CA certificate, which the team connection is verified against (§15.5)
+│   └── team-project.md        the record of the team project's dashboard settings (§17.2); Markdown, no clean-clone check
 ├── vitest.config.ts
 ├── Dockerfile                 api image: targets `build`, `runtime`, `dev`
 ├── web/                       React SPA package (own package.json)
@@ -428,10 +485,11 @@ template and `CONTRIBUTING.md` already name them.
 │   ├── snippets/api.conf      the /api and /socket.io locations shared by every server block and the test harness
 │   ├── templates/             base-path server blocks (envsubst: PUBLIC_ORIGIN)
 │   └── templates-dev/         dev-overlay server block
-├── compose.yaml               base (top-level `name: peerconnect`)
-├── compose.dev.yaml           dev overlay (overrides only)
+├── compose.yaml               base (top-level `name: peerconnect`); gate, since it holds the fallback's `GOTRUE_*` settings
+├── compose.dev.yaml           dev overlay (overrides only); gate
+├── compose.local.yaml         overlay giving `api` and `proxy` `.env.example` alone (`make local`, `make dev`, `make test`); gate
 ├── Makefile                   convenience only (§15.6)
-├── .env.example               the fifteen entries (§15.4); `.env` gitignored
+├── .env.example               the twenty-seven entries, all the fallback's (§15.4); `.env` gitignored
 ├── .github/workflows/ci.yml   the one advisory workflow (§16.4)
 ├── .github/workflows/no-bot-text.yml  the required bot/AI-text check on PRs (§17.4)
 ├── README.md                  critical path (§17.5)
@@ -447,8 +505,11 @@ files from `prisma/seed/assets/`, resolved against the working directory, which 
 repository root: `/app` in every api image, the checkout in CI (§16.4). The api runtime image copies
 `prisma/` whole, which `migrate deploy` needs anyway.
 
-`.gitignore` covers `.env`, `node_modules/`, `dist/`, `src/generated/`, `web/dist/`. `.dockerignore`
-excludes the same plus `.git/`. **No Prisma Config file other than the root `prisma.config.ts` may
+`.gitignore` covers `.env`, `.env.*` except `.env.example` (so a second file such as `.env.team`
+cannot be committed by mistake, ADR-0004 d8's note of 2026-10-03), `node_modules/`, `dist/`,
+`src/generated/`, `web/dist/`. `.dockerignore` excludes `.env`, `.git/`, `node_modules/` (at any
+depth), `dist/`, `web/dist/` and `src/generated/`; the images `COPY` named paths only, so no other
+`.env.*` file reaches one. **No Prisma Config file other than the root `prisma.config.ts` may
 exist anywhere** (ADR-0005 d5): nothing may sit at any path the pinned Prisma 7 CLI can discover a
 Config at. Read off a file list, that is three patterns; each matches every extension and a directory
 of that name, so it also covers the `…/index.*` forms `c12` resolves:
@@ -476,9 +537,10 @@ goes through the map; a new runtime library needs a PR sentence saying why.**
 | Module format | API, seed, fixture and Prisma client **CommonJS**; SPA **ESM** (M17) | ADR-0005 left it open |
 | ORM | `prisma` and `@prisma/client` **`^7.4.0`** (still the `^7` major; 7.4 is the first with `partialIndexes`); `prisma` is a **runtime** dependency because the runtime image runs `migrate deploy` and the seed | ADR-0005 d6, ADR-0014 |
 | Prisma generator | `provider = "prisma-client"`, `output = "../src/generated/prisma"`, `moduleFormat = "cjs"`, `previewFeatures = ["partialIndexes"]` | ADR-0005 Consequences |
-| DB driver | `@prisma/adapter-pg` + `pg`, `new PrismaClient({ adapter })` | ADR-0005 Consequences |
-| Database | PostgreSQL 17 (`postgres:17-alpine`) | map |
-| Passwords | `@node-rs/argon2`, argon2id m = 19456 KiB, t = 2, p = 1 | ADR-0003 d3 |
+| DB driver | `@prisma/adapter-pg` + `pg`, `new PrismaClient({ adapter })`; the pool capped at 5 connections, and on the team project TLS verified against `supabase/prod-ca-2021.crt` (§15.5) | ADR-0005 Consequences, ADR-0004 d11's note |
+| Database | PostgreSQL 17 from Supabase: the team project's, in Frankfurt (`eu-central-1`), through its session pooler; on the fallback, `supabase/postgres:17.6.1.136` | map #85, ADR-0004 d1 and d11's notes |
+| Passwords | Supabase Auth (bcrypt, cost 10), called from the API only; on the fallback `supabase/gotrue:v2.196.0` | ADR-0003 d3's note |
+| Files | Supabase Storage, two private buckets, called from the API only with the secret key; on the fallback `supabase/storage-api:v1.74.0`, behind Supabase's gateway (`envoyproxy/envoy:v1.39.1`) | ADR-0009 d2's note, ADR-0004 d1's note |
 | Validation | `class-validator` + `class-transformer` via a global `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`, `transform`) | `en.subject.md:381` |
 | Realtime | `socket.io` 4 via `@nestjs/websockets` + `@nestjs/platform-socket.io`; `socket.io-client` 4 in the SPA and tests | map, ADR-0003 d7 |
 | Uploads | Multer memory storage (bundled with platform-express); `pngjs`, `jpeg-js`, `pdf-lib` for byte validation (M30) | ADR-0009 d5 |
@@ -494,7 +556,10 @@ goes through the map; a new runtime library needs a PR sentence saying why.**
 | CI | GitHub Actions, one advisory workflow; plus one required check that tests nothing (§17.4) | ADR-0016 d8 |
 
 **Not in the stack, by rule:** JWT libraries, Passport, Redis or any shared store, a Markdown
-library (M22), an icon or font package fetched from a CDN, analytics SDKs, `mkcert`, Caddy.
+library (M22), an icon or font package fetched from a CDN, analytics SDKs, `mkcert`, Caddy,
+`@node-rs/argon2`, any `@supabase/*` package in `web/` and any `VITE_SUPABASE_*` variable (ADR-0019
+d1), and Supabase's Studio, Realtime, REST service, Edge Functions, image resizer and pooler
+containers (ADR-0004 d1's note).
 
 ### 3.4 Backend module boundaries
 
@@ -506,7 +571,7 @@ sanction flags inside its own SSI transaction and refuses if they no longer allo
 HTTP guard is a fast pre-check, never the authority for a write (ADR-0003 d5, ADR-0011 d7). A
 read-only method runs outside the Unit of Work (§3.6.2) and relies on the guard's fresh per-request
 read of role and flags (§5.3). Three kinds take no `Actor`: the operations that establish or resolve
-one — `signup`, `login`, `start42`, `complete42`, `resolveSession` — each reading the Student row it
+one — `signup`, `login`, `start42` with `sign_in`, `complete42`, `signup42`, `resolveSession` — each reading the Student row it
 acts on itself, inside the transaction when it writes (§5.1, §5.3, §5.6); pure functions — the matcher engine, the byte
 validators, Level arithmetic; and the `tx` helpers, which run inside a caller's transaction that
 has already read its actor. The seed and the tests call the same service methods, with a
@@ -514,10 +579,10 @@ constructed `Actor` where the method takes one.
 
 | Module | Owns | Public operations (service level) |
 | --- | --- | --- |
-| `core` | env validation (§15.4), Prisma client, Unit of Work (§3.6), `RealtimePublisher` port (§3.7), envelope + exception filter (§3.8), guards (session, role, JSON-mutation, upload-CSRF), throttle store (§5.5), logger (§3.9) | — |
-| `auth` | `Session`, the OAuth attempt store | `signup`, `login`, `logout`, `resolveSession`, `changePassword`, `start42`, `complete42` |
+| `core` | env validation and the boot check (§15.4, §15.5), Prisma client, Unit of Work (§3.6), `RealtimePublisher` port (§3.7), envelope + exception filter (§3.8), guards (session, role, JSON-mutation, upload-CSRF), throttle store (§5.5), logger (§3.9), the Supabase Auth and Storage clients (server-side, §5.1, §9.8) | — |
+| `auth` | `Session`, the OAuth attempt store (attempts, sign-up drafts, Confirm with 42 permissions), the password check | `signup`, `login`, `logout`, `resolveSession`, `changePassword`, `start42`, `complete42`, `signup42`, `disconnect42`, `setPasswordAfter42` |
 | `students` | `Student` profile fields, `StudentSkill`, Learning Goal, search, `Avatar` | `getProfile`, `updateOwnProfile`, `setSkills`, `setLearningGoal`, `clearLearningGoal`, `search`, `putAvatar`, `deleteAvatar` |
-| `files` | byte validation, file serving | `validateAvatar`, `validateEvidence`, `readAvatar`, `readEvidence` |
+| `files` | byte validation, file serving, the buckets and the cleanup (§9.8) | `validateAvatar`, `validateEvidence`, `readAvatar`, `readEvidence`, `ensureBuckets`, `cleanup` |
 | `social` | `Friendship`, `Block` | `requestFriend`, `acceptFriend`, `declineFriend`, `cancelFriend`, `endFriendship`, `block`, `unblock`, `listFriends`, `listRequests`, `listBlocks` |
 | `messaging` | `DirectMessage` | `send`, `listThreads`, `readThread`, `markThreadRead` |
 | `realtime` | Socket.IO gateway, Presence registry, rooms, forced disconnect | implements `RealtimePublisher`; handles `dm:send` by calling `messaging.send` |
@@ -543,7 +608,8 @@ criteria tests (§16.3).
 #### 3.5.1 Routes and guards
 
 A single SPA under TanStack Router. **Signed-out readable routes are exactly four** (ADR-0018 d12):
-`/sign-in`, `/sign-up`, `/privacy`, `/terms`. Every other route requires a session; the router's
+`/sign-in`, `/sign-up`, `/privacy`, `/terms`; the 42 sign-up form is `/sign-up?from=42`, the same
+route (§5.6 B). Every other route requires a session; the router's
 `beforeLoad` redirects to `/sign-in` when `GET /api/session` reports `authenticated: false`. Role
 routes redirect a Student without the role to `/`; the server enforces the same rule again.
 
@@ -556,7 +622,7 @@ routes redirect a Student without the role to `/`; the server enforces the same 
 | `/matches/:matchId/review` | the Mentee | Review form, then earn panel, then Evidence upload |
 | `/feedback` | signed-in | Private Feedback received (Mentor's private route, ADR-0013 d5) |
 | `/students`, `/students/:studentId` | signed-in | Search (filters, sort, pagination); profile |
-| `/me` | signed-in | Edit profile, Skills, Learning Goal, avatar, email, password; own progress |
+| `/me` | signed-in | Edit profile, Skills, Learning Goal, avatar, email, password; Connect 42, Disconnect 42, Confirm with 42 and the new password after it, when 42 is configured (§5.6); own progress |
 | `/friends` | signed-in | Friends with Presence, incoming/outgoing requests, Blocks |
 | `/messages`, `/messages/:peerId` | signed-in | Threads with unread counts; conversation |
 | `/leaderboard` | signed-in | Top ten + own pin |
@@ -584,6 +650,16 @@ wherever another Student sees them (ADR-0018 d4).
   send `X-PeerConnect-CSRF: 1`.
 - Browser storage: `localStorage` may hold interface preferences only (e.g. a collapsed panel). Never
   a token, never Student data, never OAuth state (ADR-0018 d5).
+- **The browser never talks to Supabase.** `web/` has no `@supabase/*` package, and no Supabase URL
+  or key reaches the bundle: there is no `VITE_SUPABASE_*` variable (ADR-0003's top note of
+  2026-09-30, ADR-0019 d1). Every file the SPA shows comes from PeerConnect's own file routes
+  (§6.3).
+- **Names and text in any direction** (from the database's French and Arabic settlement, map #85):
+  screens show a Student's display name through `PersonName`, inside `<bdi>`, wherever markup can
+  go; where it cannot (`alt`, `title`, `aria-label`, `<option>`), the name stays plain text. Text a
+  person wrote that is shown at length (Posts, messages, Reviews, the Learning Goal sentence, Report
+  text, Prompts) gets `dir="auto"`, and `TextField` and `TextArea` default to `dir="auto"`, so Arabic
+  aligns right while it is typed.
 - Responsive from 360 px width upward; all layouts are Tailwind utilities.
 
 #### 3.5.3 Design system (Minor `:526`)
@@ -593,7 +669,7 @@ success, warning, danger, each with a 50–900 scale), a type scale on the syste
 font is downloaded — ADR-0018 d5), and an icon set of hand-authored inline SVG React components (no
 icon package, no CDN). **At least these ≥ 10 reusable components**, each used by at least two
 screens: `Button`, `IconButton`, `TextField`, `TextArea`, `Select`, `Checkbox`, `Card`, `Avatar`
-(with default image), `RoleLabel` (Admin chip), `SkillChip`, `Modal`, `Tabs`, `DataTable` (TanStack
+(with default image), `RoleLabel` (Admin chip), `PersonName` (a display name inside `<bdi>`, §3.5.2), `SkillChip`, `Modal`, `Tabs`, `DataTable` (TanStack
 Table wrapper with sort and pagination), `Pagination`, `ProgressBar`, `FileDrop` (drag/drop, type and
 size pre-check, preview, progress), `EmptyState`, `Banner`. A favicon ships in the bundle.
 
@@ -615,7 +691,9 @@ in a build-time check), so a page can never silently mis-render. No Markdown lib
 
 **Every operation that writes a domain row runs inside exactly one `SERIALIZABLE` transaction opened
 by the Unit of Work, and every read that the decision depends on happens inside that same
-transaction.** PostgreSQL's serializable snapshot isolation then guarantees that committed results are
+transaction.** One exception: the password change, and the new password after Confirm with 42,
+run two transactions, one for each sign-out, with Supabase's admin update between them (§5.1,
+ADR-0003 d6's note of 2026-10-02). PostgreSQL's serializable snapshot isolation then guarantees that committed results are
 equivalent to one serial order, and that a transaction which committed before another began is
 ordered first — which is the literal wording of every serialization contract in ADR-0002, 0006, 0007,
 0008, 0009, 0010, 0011, 0012 and 0014. The only per-operation obligation left to implementers is
@@ -643,7 +721,9 @@ TxContext = {
   backstop; when a partial or unordered index fires anyway, the Unit of Work maps it per operation:
   `round_single_open` → `round_already_open` (§8.4); the `Student.email` unique → `email_unavailable`
   (§6.1, §6.2); `friendship_unordered_pair` → `friendship_exists` (§6.4); the Report partial uniques →
-  `already_reported` (§12.2); the `Block` unique → `already_blocked` (§6.4); `UNIQUE Review(match_id)` →
+  `already_reported` (§12.2); the `Student.forty_two_id` unique → `oauth_failed` on the 42 sign-up
+  form and the `in_use` outcome on Connect 42 (§5.6 B); the `Block` unique → `already_blocked` (§6.4);
+  `UNIQUE Review(match_id)` →
   `already_reviewed` (§9.2); `UNIQUE(prompt_id, author_id)` → `already_answered` (§8.12). Standing-Match
   races have no backing constraint — the schema cannot express them (ADR-0014 d13) — so the service
   check refuses with the existing `already_matched` and no `23505` arises. The refusal
@@ -654,8 +734,10 @@ TxContext = {
   so the client may retry, and every event constraint (Review per Match, answer per Prompt and
   Student, report per reporter and target, BadgeAward per Student and Badge) prevents a double
   effect.
-- `work` performs database work only. No network call, no socket emit, no file-system write inside it.
-  Byte validation of uploads happens **before** `run` (§9.5).
+- `work` performs database work only. No network call, a call to Supabase Auth or Storage included,
+  no socket emit, no file-system write inside it. Byte validation of uploads, and the upload of the
+  new file to Storage, happen **before** `run` (§9.5, §9.8); deleting a file happens after commit
+  (§3.7).
 - Nested `run` is forbidden; helpers that must join a transaction take the caller's `tx`.
 - Reads that serve no mutation (GET handlers) run as plain queries. A GET that needs several
   mutually consistent reads (analytics, queue views) uses one `REPEATABLE READ READ ONLY` transaction.
@@ -675,7 +757,8 @@ TxContext = {
 | XP accumulation and thresholds (ADR-0010 d2) | Review vs answer vs close for one Student | the Student row (all update it) and the Badge counts |
 | Sanction vs Round close (ADR-0010 d4) | Suspension/Removal vs close | the Student row (both write it) |
 | Active-Admin invariant (ADR-0008 d9) | demote/suspend/remove vs each other | the set of active Admins |
-| Sessions die with the password or a sanction (ADR-0003 d6) | sign-in, 42 callback vs password change, Suspension, Removal | the Student's `password_hash` and flags (session creation, §5.1); the Student's sessions (the change or sanction) |
+| Sessions die with the password or a sanction (ADR-0003 d6 and its note of 2026-10-02) | sign-in, 42 callback vs password change, Suspension, Removal; password change vs password change | the Student's `password_version` and flags (session creation, §5.1); the Student's sessions and `password_version` (each of the change's two sign-outs, or the sanction) |
+| One 42 account, one Student (ADR-0014's top note of 2026-10-08) | 42 sign-up form vs Connect 42, in any pair | whether any row holds the 42 `id`; the `forty_two_id` unique is the backstop |
 | Block vs Friendship (ADR-0014 d4) | block vs request | Friendship rows of the pair (block); Block rows of the pair (request) |
 | Report group resolution (ADR-0011 d6) | resolve vs resolve vs file vs target Removal | the group's `OPEN` rows; the target's `removed_at` |
 | Block vs moderation action (ADR-0011 d7) | Block create/remove vs Peer Moderator action | Blocks between the moderator and the group's author and reporters |
@@ -689,6 +772,13 @@ harness binds it to a barrier so a test can hold two transactions at the point w
 and neither has written, then release them, forcing the race deterministically. A barrier releases a
 given participant only on its first arrival, so the retried attempt passes straight through.
 
+**One named pause sits outside a transaction** (ADR-0016 d1's note of 2026-10-04): the password
+change (§5.1) reaches the same barrier, through `CheckpointHook`, as `password-change:admin-update`,
+between its first sign-out (step 4) and Supabase's admin update (step 5). No transaction spans that
+gap, so `checkpoint` cannot hold it, and `12-sign-in` needs it for the one order only the second
+sign-out catches (§16.3). In production it is a no-op like `checkpoint`. Every other race still goes
+through `checkpoint`.
+
 ### 3.7 Post-commit events (M32)
 
 `RealtimePublisher` is a port in `core` with one method per server-to-client event (§7.4) plus
@@ -698,6 +788,11 @@ retried attempt and flushes the successful attempt's queue in order after commit
 throws is logged (§3.9) and does not fail the request: every DB-derived event is an invalidation or
 an insert that a reload also recovers. The socket gateway implements the port; the seed and the test
 harness bind a no-op or a recording implementation.
+
+**Deleting a file is an after-commit effect too** (ADR-0009 d2's note of 2026-10-05): a replaced or
+deleted avatar or Evidence file, and the avatar of a Removal, is deleted from its bucket only after
+the commit that stopped naming it. A failed delete is logged and left to the cleanup (§9.8), which
+deletes it within two hours as long as the `api` runs and its hourly cleanup succeeds.
 
 ### 3.8 Response envelope and status policy (M26)
 
@@ -724,7 +819,8 @@ console error. So:
 | Authenticated but the role or relation forbids it; CSRF gate; file not readable | 403 | `forbidden` / `csrf_rejected` |
 | Unknown resource or route | 404 | `not_found` |
 | Upload over the transport envelope / non-multipart upload | 413 / 415 | `payload_too_large` / `unsupported_media_type` |
-| Unit of Work exhausted | 503 | `busy_retry_later` |
+| Unit of Work exhausted, or Supabase Auth unreachable (§5.1) | 503 | `busy_retry_later` |
+| A file row whose file Storage cannot give (§6.3); a file save stopped by the 30-minute rule (§9.8) | 500 | `internal_error`, logged |
 | Anything else | 500 | `internal_error` |
 
 `GET /api/session` returns 200 with `authenticated: false` when signed out, so a signed-out visitor
@@ -737,7 +833,9 @@ ADR-0009 d3's 401/403 file contract is unchanged; it is a security boundary, not
 
 **The rule the build inherits (ADR-0018 d6):** no log — nginx's, the API's, the database's — ever
 contains a password, a cookie, a request body, message text, file contents, a query string, an OAuth
-`code` or `state`, or a search term.
+`code` or `state`, or a search term. Since 2026-10-11 it binds the team project too, where the
+database is Supabase's (ADR-0018 d6's note of that date), and no Supabase key or token is ever
+logged either.
 
 **nginx — `proxy/nginx.conf` must contain exactly these logging directives, and no other
 `access_log`, `error_log` or `log_format` anywhere in the proxy image** (the official image's own
@@ -767,8 +865,13 @@ http {
   The main-context log keeps process-level messages (startup, configuration, worker exits), which
   nginx writes without request context. Startup failures still appear in `docker compose logs proxy`.
   The diagnostic cost is accepted: the request log's status field still shows every 413, 502 and 504.
-  **The Privacy Policy's single disclosed request log therefore stays exactly true; no second log is
-  disclosed because none holds a request.**
+  **The Privacy Policy's disclosed request log therefore stays exactly true.** It also discloses,
+  since 2026-10-11, the logs of the services that store a copy's data, which record PeerConnect's
+  own requests to them (ADR-0018 d6's note): on the team's copy, Supabase's gateway, Auth, Storage
+  and Postgres logs, which the team sees for up to a day and Supabase keeps for a period it does not
+  publish; on a local copy, the same services' container logs, capped like the rest. They hold the
+  time, the path and PeerConnect's server address, never a browser's, and Auth's events name the
+  account by `<id>@peerconnect.invalid`, never the real email.
 - **API** (`src/core/logger`): Nest's logger at `log`/`warn`/`error`, JSON lines to stdout. No HTTP
   request logging of any kind. The global exception filter logs a 5xx as `{ level, time, method,
   route: <matched route pattern, never the URL>, error: <class name>, code: <Prisma code if any>,
@@ -776,12 +879,30 @@ http {
   For those errors `stack` is the call frames only: a V8 `stack` begins with `<name>: <message>`,
   so logging it whole would log the message.
   Validation errors, refusals and 4xx are not logged. Socket handlers never log payloads. The seed
-  logs step names and counts, the demo Student's email, never a password. The throttle never logs
-  its keys. Prisma's own `log` option is empty.
-- **Postgres**: the `db` service runs `postgres -c log_error_verbosity=terse -c
-  log_min_error_statement=panic`. `terse` drops `DETAIL`/`HINT`/`QUERY`/`CONTEXT`, where PostgreSQL
-  would otherwise print the violating key values or the whole failing row (a Report's text, a Post's
-  body); `panic` stops it logging the statement of a failed query. Constraint names still appear.
+  logs step names and counts, the demo Student's email and how long its run took (§14.8), never a
+  password. The throttle never logs its keys. Prisma's own `log` option is empty. The token a
+  password check returns, the Supabase keys and the 42 secret are never logged; the boot check and
+  the test harness name a variable and a host, never a secret value (§15.5, §16.2). The file
+  cleanup logs one line only when it deletes a file, and a failed run (§9.8). Sign in with 42 logs
+  a warning naming `secret_valid_until` in the secret's last seven days (§5.6).
+- **Postgres on the fallback**: the `db` service runs Supabase's image with `-c
+  config_file=/etc/postgresql/postgresql.conf -c log_error_verbosity=terse -c
+  log_min_error_statement=panic -c auto_explain.log_min_duration=-1 -c log_statement=none`.
+  `terse` drops `DETAIL`/`HINT`/`QUERY`/`CONTEXT`, where PostgreSQL would otherwise print the
+  violating key values or the whole failing row (a Report's text, a Post's body); `panic` stops it
+  logging the statement of a failed query. Constraint names still appear. Supabase's image also
+  preloads `auto_explain`, which logs any statement over 10 seconds with its values, and logs DDL;
+  the last two flags turn both off (the fallback's build, #121, 2026-10-04).
+- **Postgres on the team project** (ADR-0018 d6's note of 2026-10-11): a hosted project takes no
+  command-line settings, the `postgres` role may not set `log_error_verbosity`, and the hosted
+  `csvlog` keeps `DETAIL` whatever it says. So the `postgres` role, which the `api`, `prisma
+  migrate` and the seed connect as, carries `log_min_messages = fatal`, `log_min_error_statement =
+  panic`, `auto_explain.log_min_duration = -1` and `log_statement = none`. They are recorded in
+  `supabase/team-project.md`, which has the SQL and the check through the session pooler; Kamel
+  applied them in the dashboard on 2026-10-12. The cost: the dashboard's Postgres log no longer shows
+  our errors, and the `api`'s own log still records every 5xx with its Prisma code. Supabase's own
+  Auth and Storage roles keep Supabase's defaults, which only Supabase can change; their rows hold
+  no Student's text and no real email.
 - **Retention**: every service's container log is capped and rotated by Compose (M12, §15.1).
 
 ### 3.10 Security headers (M34)
@@ -791,7 +912,7 @@ http {
   font-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'self'; frame-ancestors 'self';
   base-uri 'self'; form-action 'self'`. This makes ADR-0018 d5's "nothing loaded from another
   server" structural for every subresource; the top-level navigation to 42 (§3.1) is outside CSP's
-  reach and is that decision's stated exception. It is not set in the dev overlay, where Vite injects inline scripts. The
+  reach and is that decision's stated exception. `connect-src 'self'` also keeps the browser off every Supabase address (ADR-0019 d1). It is not set in the dev overlay, where Vite injects inline scripts. The
   browser pass (§16.7) confirms it produces no console violation.
 - Every file response carries `X-Content-Type-Options: nosniff` (ADR-0009 d5); authenticated JSON
   carries `Cache-Control: no-store`.
@@ -804,26 +925,46 @@ http {
 
 ### 4.1 Conventions
 
-- **Nineteen tables, nine enums** (ADR-0014). Prisma model names are the table names (`"Student"`,
-  `"Match"`, …, as ADR-0014's SQL quotes them); columns are `snake_case` via `@map`.
+- **Nineteen tables, nine enums** (ADR-0014, unchanged by the move to Supabase: its top note of
+  2026-10-10). Prisma model names are the table names (`"Student"`, `"Match"`, …, as ADR-0014's SQL
+  quotes them); columns are `snake_case` via `@map`.
 - **Identifiers**: `uuid` with `@default(uuid(7))` everywhere (ADR-0014 d10), except
-  `Session.id` (M6, §5.2) and the composite primary keys of `MatchSkillCoverage`, `Like` and
-  `BadgeAward`. `Avatar.token` and `Evidence.token` are `uuid` with `@default(uuid(4))` and appear in
-  routes instead of the id (ADR-0014 d10). **"Lower Student id"** in every tie-break means the lower
-  `Student.id` in PostgreSQL `uuid` order, which equals lexicographic order of the canonical
-  lowercase string. Every tie-break needs only that deterministic total order. A UUIDv7 leads with
-  the millisecond it was generated (Prisma's `uuid(7)` is the `uuid` package's `v7()`, monotonic
-  within one process), so id order follows creation order, as ADR-0014 d10 wants; under concurrent
-  sign-ups it is the order the ids were generated, not the order they committed. The seed, whose
-  script needs id order to equal its position order, creates Students one at a time and asserts it
-  (§14.3).
+  `Session.id` (M6, §5.2), the composite primary keys of `MatchSkillCoverage`, `Like` and
+  `BadgeAward`, and three values **NestJS makes before it writes their row**, which therefore have no
+  `@default` (ADR-0014 d10's note of 2026-10-10):
+  - `Student.id`, made with the `uuid` package's `v7()` before sign-up creates the Supabase Auth user
+    that shares it (§5.1). A create that forgets it still compiles, because the Learning Goal's
+    composite foreign key (M5) makes `id` a relation field, which Prisma's checked create input
+    leaves out; the database then refuses the row. So sign-up passes `id` with the other scalar
+    fields, in Prisma's unchecked create input.
+  - `Avatar.token` and `Evidence.token`, random UUIDv4s (`randomUUID()`) made before the file they
+    name is uploaded (§9.8). A create that forgets one fails to compile. They appear in routes
+    instead of the id (ADR-0014 d10, ADR-0009 d3).
+
+  With a default, either create would write a row that names no Supabase Auth user or no file; a
+  required field only catches a missing value, and writing the id the Supabase Auth user got, and
+  the token that was uploaded, stays the path's job. **"Lower Student id"** in every tie-break means
+  the lower `Student.id` in PostgreSQL `uuid` order, which equals lexicographic order of the
+  canonical lowercase string. Every tie-break needs only that deterministic total order. A UUIDv7
+  leads with the millisecond it was generated (`v7()`, the function Prisma's `uuid(7)` uses,
+  monotonic within one process), so id order follows creation order, as ADR-0014 d10 wants; under
+  concurrent sign-ups it is the order the ids were generated, not the order they committed. The
+  seed, whose script needs id order to equal its position order, creates Students one at a time and
+  asserts it (§14.3).
+- **Nothing reaches into Supabase's schemas** (ADR-0014's top note of 2026-10-10, ADR-0019 d8): no
+  foreign key, and no SQL, from our tables into `auth` or `storage`. A Student shares its id with its
+  Supabase Auth user, and a file is named by its row's token; neither is a constraint. So the test
+  database can be dropped and rebuilt alone (§16.2). There is **no row-level security and no grants
+  step**: the team project's Data API is off, and the fallback runs no REST service.
 - **Times** are `timestamptz(3)`. Descriptive only: no rule orders by a timestamp where a
   serialization point is meant (R3).
 - **Text** columns are `text`; their length limits are service-enforced (§6.0.3), not `varchar`.
 - **Foreign keys are `ON DELETE RESTRICT ON UPDATE RESTRICT` everywhere.** Only leaf rows are ever
   hard-deleted (`Session`, `Avatar`, `Evidence`, `StudentSkill`, `Block`, `Friendship`, `Like`), and
   the one referenced leaf (`StudentSkill`, referenced by a Learning Goal) is cleared before deletion
-  (§4.3.1). `Student` and `Post` are soft-deleted; every other table is append-only history.
+  (§4.3.1). `Student` and `Post` are soft-deleted; every other table is append-only history. The
+  seed's run that writes its fixture and the two resets delete every row of every table (§14.9,
+  §15.6), which no application path does.
 - **Soft delete exists on `Student.removed_at` and `Post.removed_at` only** (ADR-0008 d6). Every read
   of those two tables applies the surface rule in §4.6; no other table has or needs the flag.
 
@@ -855,10 +996,12 @@ Legend for each table: **PK**; **columns** (type, null, default); **unique**; **
 
 | Column | Type | Null | Default | Notes |
 | --- | --- | --- | --- | --- |
-| `id` | uuid | no | uuid(7) | PK |
-| `email` | text | no | | stored trimmed and lower-cased; UNIQUE; survives Removal (burned) |
-| `password_hash` | text | no | | argon2id PHC string (salt and parameters embedded). **Blocked by #24**: becomes nullable only if #24 allows OAuth-created accounts |
-| `display_name` | text | no | | 1–40 chars |
+| `id` | uuid | no | none | PK; made by NestJS with `v7()` before the Supabase Auth user that shares it (§4.1) |
+| `email` | text | no | | stored trimmed and lower-cased; UNIQUE; survives Removal (burned); the only copy of the real email, never in Supabase Auth (§5.1) |
+| `password_version` | integer | no | 0 | raised by each sign-out of a password change; what sign-in re-reads (§5.1). It replaces `password_hash`: PeerConnect stores no password (ADR-0014's top note of 2026-10-02) |
+| `display_name` | text | no | | 1–40 chars; collation `und-x-icu`, set by the ninth raw-SQL step (§4.4), so every stack sorts names with the same collation |
+| `display_name_search` | text | no | | the display name folded by `foldName` (`src/shared/fold-name.ts`): lower case, NFKD with combining marks dropped, `ة` → `ه`, `ى` → `ي`, no tatweel; never returned by the API |
+| `forty_two_id` | integer | yes | | 42's account `id`; UNIQUE; set by a 42 sign-up or Connect 42, cleared by Disconnect 42, kept on a Removed row, never set by an Admin (§5.6) |
 | `role` | `Role` | no | `STUDENT` | |
 | `xp` | integer | no | 0 | written only by the three XP paths (§10) |
 | `streak` | integer | no | 0 | written only by Round close (§8.7) |
@@ -868,7 +1011,7 @@ Legend for each table: **PK**; **columns** (type, null, default); **unique**; **
 | `removed_at` | timestamptz | yes | | set once by Removal; never cleared |
 | `created_at` | timestamptz | no | now() | |
 
-- **Unique**: `email`.
+- **Unique**: `email`; `forty_two_id` (a plain Prisma unique; Postgres admits any number of nulls).
 - **FK**: `(id, learning_goal_student_skill_id) → StudentSkill(student_id, id)` (composite; `MATCH
   SIMPLE`, so a null Goal is unchecked). This makes "the Goal is one of **this** Student's own rows"
   a database fact (M5, ADR-0014 d3).
@@ -878,8 +1021,13 @@ Legend for each table: **PK**; **columns** (type, null, default); **unique**; **
 - **Service invariants**: the referenced `StudentSkill.kind` is `LEARN`; `learning_goal_text` is
   non-null exactly when the reference is; removing the Goal's Skill from the list clears both Goal
   columns in the same transaction; a Removed row accepts no update of any column; `xp` and `streak`
-  never negative and never set by any edit path; `password_hash` changed only by its owner (§5.1);
-  `role` changed only by another Admin (§12.7).
+  never negative and never set by any edit path; `password_version` changed only by the owner's
+  password change (§5.1); `forty_two_id` changed only by the owner (§5.6); `role` changed only by
+  another Admin (§12.7). **`display_name_search` always equals `foldName(display_name)`**: every
+  path that writes a name, sign-up, the 42 sign-up form, the Student's own edit, the Admin edit and
+  the seed's direct inserts, writes both through one helper, `nameFields`, which returns both
+  fields. The schema cannot hold it, like ADR-0014 d13's Takeaway author rule (ADR-0014's top note
+  of 2026-10-02; tested by `11-name-search`, §16.3, and asserted by §14.8).
 - **Serialization**: XP writes, Streak writes, sanctions and role changes all update this row, so
   they conflict and serialize (§3.6.3). The active-Admin invariant reads the set of active Admins.
 
@@ -891,17 +1039,25 @@ Legend for each table: **PK**; **columns** (type, null, default); **unique**; **
 | `student_id` | uuid | no | FK `Student` |
 | `expires_at` | timestamptz | no | sliding, 30 days (§5.2) |
 
-- **Index**: `student_id`. **Delete**: hard (logout, password change, Suspension, Removal, expired-row
-  purge in the sign-up, sign-in and successful-42-callback transactions, §5.2). No other column: the role is never stored here (ADR-0003 d5).
+- **Index**: `student_id`. **Delete**: hard (logout, each of a password change's two sign-outs,
+  Suspension, Removal, expired-row purge in the sign-up, 42 sign-up form, sign-in and successful-42-callback transactions, §5.2). No other column: the role is never stored here (ADR-0003 d5). The table
+  stays with the move to Supabase: PeerConnect's `Session` row decides who is signed in, and the
+  tokens of a Supabase Auth session never outlive one password check (ADR-0014's top note of
+  2026-09-30).
 
 #### 4.3.3 `Avatar` — 0..1 per Student
 
-Columns: `id` uuid PK; `student_id` uuid UNIQUE FK; `token` uuid UNIQUE `uuid(4)`; `bytes` bytea;
-`mime` text; `size` integer; `uploaded_at` timestamptz.
-- **Delete**: hard (owner or Admin removes; Removal deletes). **Replace** rewrites `bytes`, `mime`,
-  `size`, `uploaded_at` **and issues a new `token`** so a cached URL never shows the old face.
+Columns: `id` uuid PK; `student_id` uuid UNIQUE FK; `token` uuid UNIQUE, no default (made by NestJS,
+§4.1); `mime` text; `size` integer; `uploaded_at` timestamptz. **No bytes**: the file is in the
+private `avatars` bucket, named by the token, with no path column (ADR-0014 d12's note of
+2026-10-05, §9.8).
+- **Delete**: hard (owner or Admin removes; Removal deletes), the row in the transaction and the file
+  after commit. **Replace** is a new file under a **new `token`**, uploaded before the transaction;
+  the transaction rewrites `token`, `mime`, `size` and `uploaded_at`, and the old file is deleted
+  after commit, so a cached URL never shows the old face.
 - **Service invariants**: `mime ∈ {image/png, image/jpeg}` and `size ≤ 2,097,152`, both derived from
-  validated bytes (ADR-0009 d5); a Removed Student has no row (ADR-0009 d6).
+  validated bytes (ADR-0009 d5); a Removed Student has no row (ADR-0009 d6); the row's token names a
+  file in `avatars` (§9.8).
 
 #### 4.3.4 `Skill` — the shared catalogue
 
@@ -1006,11 +1162,15 @@ deleted. Its own table so no feed query can reach it (ADR-0014 d1).
 
 #### 4.3.14 `Evidence` — 0..1 per Review
 
-Columns: `id` uuid PK; `review_id` uuid UNIQUE FK; `token` uuid UNIQUE `uuid(4)`; `bytes` bytea;
-`mime` text; `size` integer; `filename` text (1–255, sanitised original name); `uploaded_at`.
-- **Delete**: hard, by the originating Mentee. **Replace** rewrites the row in place with a new token.
+Columns: `id` uuid PK; `review_id` uuid UNIQUE FK; `token` uuid UNIQUE, no default (made by NestJS,
+§4.1); `mime` text; `size` integer; `filename` text (1–255, sanitised original name); `uploaded_at`.
+**No bytes**: the file is in the private `evidence` bucket, named by the token (§9.8).
+- **Delete**: hard, by the originating Mentee: the row in the transaction, the file after commit.
+  **Replace** rewrites the row in place with the new token of a file uploaded before the
+  transaction, and the old file is deleted after commit (§9.4).
 - **Service invariants**: `mime ∈ {application/pdf, image/png, image/jpeg}`, `size ≤ 5,242,880`, both
-  from validated bytes; mutations only by the Review's Match's Mentee while Active.
+  from validated bytes; mutations only by the Review's Match's Mentee while Active; the row's token
+  names a file in `evidence` (§9.8).
 - **Serialization**: create/replace/delete on one Review serialize; `UNIQUE(review_id)` holds at
   every commit.
 
@@ -1079,7 +1239,7 @@ Columns: `post_id` uuid FK; `student_id` uuid FK; `created_at`. **PK** `(post_id
 Columns: `student_id` uuid FK; `badge` `Badge`; `awarded_at`. **PK** `(student_id, badge)` — each
 Badge once. Never updated or deleted.
 
-### 4.4 Raw-SQL migration steps (exactly eight) and native partial indexes
+### 4.4 Raw-SQL migration steps (exactly nine) and native partial indexes
 
 Written by hand in the migration that creates the table, named as below, and asserted by test
 category 2 (§16.3):
@@ -1094,6 +1254,7 @@ category 2 (§16.3):
 | 6 | `friendship_unordered_pair` | `CREATE UNIQUE INDEX friendship_unordered_pair ON "Friendship" (LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id));` |
 | 7 | `round_single_open` | `CREATE UNIQUE INDEX round_single_open ON "Round" ((closed_at IS NULL)) WHERE closed_at IS NULL;` |
 | 8 | `match_pair_history` | `CREATE INDEX match_pair_history ON "Match" (LEAST(mentor_id, mentee_id), GREATEST(mentor_id, mentee_id));` — **non-unique**: hand-made Matches may repeat a pair (ADR-0014 d13 correction) |
+| 9 | `Student.display_name` collation | `ALTER TABLE "Student" ALTER COLUMN display_name TYPE text COLLATE "und-x-icu";`, in the migration that creates `Student` — holds no invariant: it gives display names the same collation on every stack, since the hosted database's default `C.UTF-8` sorts by code point and Prisma's `orderBy` cannot name a collation (ADR-0014's *Consequences* count note of 2026-10-02) |
 
 **Report's two partial unique indexes** are declared natively (`@@unique([reporterId, postId],
 where: { postId: { not: null } }, map: "report_one_per_reporter_post")` and the Student twin) under
@@ -1102,12 +1263,21 @@ the `partialIndexes` preview feature, available from Prisma 7.4 (ADR-0014's note
 upstream as prisma/prisma#29263, closed as fixed for 7.5 on 2026-03-11, with follow-ups for other
 predicate shapes still open, e.g. #29446 and #29386) that the gate cannot suppress by editing the
 generated SQL, the two indexes move to raw SQL with the same names and the raw count becomes
-**ten**, exactly as ADR-0014's count revision foresees.
+**eleven**, exactly as ADR-0014's count revisions foresee.
 
-**Gate rule for generated migrations**: Prisma does not represent objects 1–8. When `prisma migrate
+**The move to Supabase adds no step** (ADR-0014's *Consequences* count note of 2026-10-10):
+`password_version`, `display_name_search` and `forty_two_id` are plain Prisma, and there is no
+row-level security or grants step. Two stacks on different ICU versions can still order some names
+differently, and an ICU upgrade under one database can shift its order, which PostgreSQL then reports
+as a collation version mismatch.
+
+**Gate rule for generated migrations**: Prisma does not represent objects 1–9. When `prisma migrate
 dev` emits a statement that drops or alters any of them, or drops and recreates an unchanged partial
-index, the author deletes that statement before committing, and the gate reviewer checks for it.
-Category 2 fails the suite if any of the ten named objects is missing after `migrate deploy`.
+index, the author deletes that statement before committing, and the gate reviewer checks for it. A
+later `ALTER COLUMN … TYPE` on `display_name` silently puts it back on the database's default
+collation. Category 2 fails the suite if any of the ten named objects (objects 1–8 and the two
+Report partial uniques) is missing after `migrate deploy`, or `display_name`'s collation is not
+`und-x-icu`.
 
 ### 4.5 Where each invariant is held
 
@@ -1129,6 +1299,8 @@ Category 2 fails the suite if any of the ten named objects is missing after `mig
 | Like once per Student per Post | PK | — | — |
 | Badge once per Student | PK | — | converge on conflict (M4) |
 | Email unique and burned after Removal | `UNIQUE email` | Removed row never edited | — |
+| 42 account unique and kept after Removal | `UNIQUE forty_two_id` | Removed row never edited; no Admin path writes it | 42 sign-up vs Connect 42 |
+| Folded name equals the display name | — (not expressible) | `nameFields` on every name write | — |
 | Learning Goal is the Student's own row | composite FK | kind = `LEARN`; text ⇔ reference | — |
 | One standing Match per Student per Round | — (not expressible) | standing-Match check | hand-made vs hand-made |
 | No Match into a closed Round | — | Round open check | hand-made vs close |
@@ -1141,18 +1313,25 @@ Category 2 fails the suite if any of the ten named objects is missing after `mig
 | ≥ 1 active Admin | — | predicate §12.7 | demote/suspend/remove vs each other |
 | Removed row is view-only | — | every mutation checks `removed_at` | sanction vs other writes |
 | At most one Evidence per Review | `UNIQUE Evidence.review_id` | Mentee check | put/replace/delete |
+| A file row names an existing file | — (two stores, no transaction covers both) | file written before its row, deleted after it; the cleanup (§9.8) | — |
+| Every Student has its Supabase Auth user | — (no foreign key into `auth`) | sign-up's order (§5.1); only a reset or the seed's guarded run deletes one (§14.9, §15.6) | — |
 | Avatar ≤ 2 MiB PNG/JPEG; Evidence ≤ 5 MiB PDF/PNG/JPEG | — | byte validation §9.5 | — |
 | Live Prompt unique | `UNIQUE publication_order` | max + 1 | publish vs publish |
 
 ### 4.6 Visibility (who reads what, in the application)
 
-Database operators can read everything stored; nothing is encrypted at rest and Direct Messages are
-not end-to-end encrypted (ADR-0018 d13). **In the application:**
+Whoever can open a copy's database directly can read everything stored in it: for the team's copy,
+only the team, and Supabase as its host; for a local copy, whoever runs it. Supabase encrypts the
+team project's disks and backups, a local copy is not encrypted at rest, and Direct Messages are not
+end-to-end encrypted (ADR-0018 d13 and its note of 2026-10-11, ADR-0018 d1's note). **In the
+application:**
 
 | Data | Readers |
 | --- | --- |
 | Profile: display name, avatar, Skills, Learning Goal and sentence, XP, Level, Streak, Badges, Posts | every signed-in Student; a Removed Student renders as the tombstone *"Former student"* with the default avatar and no profile |
 | Email | its owner and Admins; never on a profile or in search |
+| 42 account number (`forty_two_id`) | nobody: its owner sees only whether a 42 account is connected (§6.2) |
+| `display_name_search` | nobody: never returned by the API (§4.3.1) |
 | Role | `ADMIN` shown as an "Admin" label to everyone signed in; `PEER_MODERATOR` shown only to its holder and Admins |
 | Presence | accepted Friends only |
 | Friends list | its owner only |
@@ -1181,28 +1360,97 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
 
 ### 5.1 Accounts and passwords
 
+- **Where the password lives** (ADR-0003 d3's note of 2026-10-02, ADR-0019 d5): every Student has one
+  Supabase Auth user with the Student's own id, whose login is `<id>@peerconnect.invalid`, a reserved
+  name that never receives mail. It keeps the password and nothing else of the Student's: the real
+  email is `Student.email` alone. Supabase Auth hashes with bcrypt at cost 10 and a salt per hash;
+  PeerConnect hashes and stores no password. Only the API calls Supabase Auth, from the server, with
+  `SUPABASE_PUBLISHABLE_KEY` for the password grant and `SUPABASE_SECRET_KEY` for admin create,
+  admin update and admin delete (ADR-0004 d9's note of 2026-10-03).
+- **A password check**, wherever this spec says so, is Supabase Auth's password grant on the
+  Student's login. The token it returns is a JWT that lives only inside that request: the API uses
+  it once to sign that Supabase Auth session out, then drops it with its refresh token, never
+  stored, logged or sent to the browser. If that sign-out fails, the request still goes on
+  (ADR-0003 d1's notes). Its answers: accepted; refused → `password_incorrect`; a Supabase `429`
+  from its shared per-IP bucket → `too_many_attempts`, not counted as the Student's failure (§5.5);
+  Supabase Auth unreachable → `busy_retry_later` (503), never a credentials refusal (ADR-0003 d10's
+  note of 2026-10-02).
+- **The password rule**: at least 8 characters and at most 72 bytes in UTF-8, so an accented or
+  Arabic letter counts two bytes or more, with no composition rule (§6.0.3). The SPA refuses a password outside it,
+  and the API checks again before it calls Supabase Auth. The Supabase project's own minimum length
+  is 8 too.
 - **Sign-up** takes email, password, display name and the acceptance checkbox *"I agree to the Terms
   of Service and have read the Privacy Policy"* (ADR-0018 d12). The checkbox is validated on both
-  ends and **not stored**. Email is trimmed and lower-cased; password is 8–128 characters with no
-  composition rule; display name 1–40 characters after trimming.
-- **Hashing**: `@node-rs/argon2` `hash(password, { algorithm: Argon2id, memoryCost: 19456,
-  timeCost: 2, parallelism: 1 })`; the PHC string carries the salt (ADR-0003 d3).
-- **Sign-in** verifies against the stored hash. An unknown email is verified against a fixed dummy
-  hash so the timing does not reveal existence. **Wrong password, unknown email, Suspended and
-  Removed all return the same refusal** `invalid_credentials` — *"Email or password is incorrect, or
-  this account cannot sign in."* (ADR-0003 d10; a Removal is never disclosed).
-- **The argon2 check runs before the transaction (§3.6.2); the write re-checks what it read.**
-  Sign-in's SSI tx re-reads the Student's `password_hash`, `suspended_at` and `removed_at` and
-  creates the Session only if the hash is the one just verified and neither flag is set, else
-  `invalid_credentials`. Password change's tx refuses with `password_incorrect` if the hash changed
-  since its check. So a sign-in with the old password racing a password change, Suspension or
-  Removal is either ordered first, and its session is deleted with the rest, or refused: it never
-  leaves a session the change missed (ADR-0003 d6).
-- **Password change** requires the current password, deletes **every** session of the Student
-  including the current one, force-disconnects every socket, and clears the cookie; the SPA returns
-  to `/sign-in` with a notice (ADR-0003 d6).
-- **No reset, no email, no Admin-set password** (ADR-0003 d11, ADR-0018 d8). A forgotten password is
-  unrecoverable, as the Terms state.
+  ends and **not stored**. Email is trimmed and lower-cased; display name 1–40 characters after
+  trimming. In this order:
+  1. validation, then the throttle (§5.5);
+  2. read: any Student holds the email, Removed ones included → `email_unavailable`;
+  3. NestJS makes the Student's id, a UUIDv7 (§4.1);
+  4. Supabase admin create, with the secret key: that id, the login, the password and
+     `email_confirm: true`. Supabase Auth unreachable → `busy_retry_later`, with nothing written;
+  5. one SSI tx writes the `Student`, its `id` passed in, and its `Session`; then the cookie is
+     set. Two sign-ups of one email: the unique index admits one, the loser gets
+     `email_unavailable`, and the API deletes the Supabase Auth user it just made, best effort.
+
+  **The 42 sign-up form runs this same sign-up**, its transaction also writing `forty_two_id`
+  (§5.6 B). The project's public sign-up is off, so no account is made except through PeerConnect. Supabase
+  Auth goes first because the other order could leave a Student with no password, whose real email
+  would then be blocked for good. A crash between steps 4 and 5, or a failed delete, leaves a
+  Supabase Auth user that no Student has: it holds no real email, and nobody can sign in with it,
+  since sign-in starts from a Student's email. There is no repair code; Kamel may delete it by hand
+  (`supabase/team-project.md`, ADR-0005 d5's note of 2026-10-10).
+- **Sign-in**, in this order (ADR-0003 d10's note of 2026-10-02):
+  1. the throttle (§5.5);
+  2. find the Student by the normalised email, reading its `password_version`; none →
+     `no_account`, *"No account uses this email."*;
+  3. a password check on that Student's login; refused → `password_incorrect`, *"Wrong password."*;
+  4. one SSI tx re-reads `password_version`, `removed_at` and `suspended_at`, in this order: a
+     version that moved since step 2 → `password_incorrect`; Removed → `account_removed`, *"This
+     account was removed and can't sign in again."*; Suspended → `account_suspended`, *"Your
+     account is suspended. Contact an Admin."*; otherwise it creates the Session (§5.2).
+
+  **A sanction is told only after the right password**, so someone who only knows the email never
+  learns of it (ADR-0008 d5's note). Saying that no account uses an email discloses nothing new,
+  since sign-up's `email_unavailable` already answers that for any email, so there is no dummy hash.
+- **The password check runs before the transaction (§3.6.2); the write re-checks what it read.**
+  `password_version` (§4.3.1) is what the transactions re-read in place of a hash: sign-in creates
+  its Session only if the version is unchanged since before its check, and every sign-out of a
+  password change raises it. So a sign-in with the old password racing a password change,
+  Suspension or Removal is either ordered first, and its session is deleted with the rest, or
+  refused: it never leaves a session the change missed (ADR-0003 d6's note of 2026-10-02).
+- **Password change** (`POST /api/auth/password`) requires the current password, in this order:
+  1. validate the new password, then the throttle (§5.5);
+  2. read `password_version`;
+  3. a password check of the current password; refused → `password_incorrect`, counted (§5.5);
+  4. one SSI tx: a version that moved since step 2 → `password_incorrect`; otherwise version + 1
+     and delete **every** session of the Student, the current one included;
+  5. Supabase admin update by id, with the secret key, sets the new password. If it fails →
+     `busy_retry_later`: the Student is already signed out, and the password is unchanged;
+  6. one SSI tx: version + 1 and delete every session again.
+
+  Steps 4 and 6 each queue `revokeSessions(studentId)` after commit, the cookie is cleared, and the
+  SPA returns to `/sign-in` with a notice. Step 6 catches a sign-in with the old password that lands
+  between steps 4 and 5, while the old password still works at Supabase; step 4 makes a crash before
+  step 5 safe, signed out everywhere with the password unchanged. A crash between steps 5 and 6
+  leaves the new password set and at most a session created in that gap: accepted. The test seam's
+  one named pause outside a transaction sits between steps 4 and 5 (§3.6.4).
+- **A new password after Confirm with 42** (§5.6 C) is the same change with step 3 replaced by the
+  confirmation; steps 4 to 6 and the version guards stand (ADR-0003 d6's note of 2026-10-08). Its
+  step 1 validates the new password with no throttle: the route checks no password, so it counts
+  nothing and has nothing to slow down (§5.5).
+- **What writes to Supabase Auth.** In use, only sign-up and a password change. An email change, a
+  Suspension, a reinstatement and a Removal each stay one PeerConnect transaction: no ban, no
+  delete. A Removed Student's Supabase Auth user, with its hash, is kept, so that sign-in can still
+  check the password before telling of the Removal (ADR-0008 d5, d7 and d8's notes). The two resets
+  (§15.6) and the seed's guarded run (§14.9) delete every Supabase Auth user.
+- **Supabase Auth's settings**: public sign-up off, minimum password length 8, the email provider on
+  (the password grant needs it), confirmation emails off, and the audit log's copy in the database
+  off. On the fallback they are `GOTRUE_*` variables of the `auth` service in `compose.yaml`; on the
+  team project, dashboard settings recorded in `supabase/team-project.md` (ADR-0004 d1's note of
+  2026-10-03, ADR-0005 d5's note of 2026-10-10).
+- **No reset by email, no email, no Admin-set password** (ADR-0003 d11, ADR-0018 d8). A Student who
+  connected 42 can set a new password through Confirm with 42 (§5.6 C); a Student who never
+  connected 42 cannot recover a forgotten password, as the Terms state.
 
 ### 5.2 Sessions and the one cookie (M6)
 
@@ -1213,7 +1461,8 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   `<token>` is 32 bytes from `crypto.randomBytes`, base64url-encoded (43 characters).
 - **Storage**: `Session.id` = lowercase hex SHA-256 of the token. A database read never yields a
   usable cookie.
-- **Creation** (sign-up, sign-in, successful 42 callback): `expires_at = now + 30 days`; the same
+- **Creation** (sign-up, the 42 sign-up form, sign-in, a successful 42 sign-in callback):
+  `expires_at = now + 30 days`; the same
   transaction deletes that Student's already-expired rows (the only purge; it runs on a non-GET or
   on the callback, never on an ordinary GET).
 - **Lazy renewal** (ADR-0003 d4): on any authenticated request, when `expires_at < now + 30 days −
@@ -1234,7 +1483,9 @@ request can never destroy an attempt in flight; then hash and run one query
 `SELECT s.student_id, st.role, st.suspended_at, st.removed_at FROM "Session" s JOIN "Student" st …
 WHERE s.id = $1 AND s.expires_at > now()`. No row, Suspended or Removed → 401 `unauthenticated`, the
 response clears that `s.` cookie, **nothing is written**. The role is read here, fresh, on every request, so
-a role change takes effect on the next request with no session change (ADR-0003 d5–d6). `RolesGuard`
+a role change takes effect on the next request with no session change (ADR-0003 d5–d6). **Resolving a
+session reads PeerConnect's tables only and never calls Supabase Auth**, on a request or a socket
+handshake (ADR-0003 d5's note), so the flags it refuses on are PeerConnect's own. `RolesGuard`
 checks the coarse role for `/api/admin/*` (`ADMIN`) and `/api/moderation/*` (`PEER_MODERATOR` or
 `ADMIN`). **A writing service re-reads role and sanction flags inside its transaction** and refuses
 if they no longer allow the action (ADR-0011 d7); a read relies on this per-request read (§3.4).
@@ -1242,7 +1493,10 @@ if they no longer allow the action (ADR-0011 d7); a read relies on this per-requ
 ### 5.4 CSRF and the GET rule
 
 - **No GET request creates, changes or deletes a domain row** (ADR-0003 d10). The two exceptions are
-  §5.2's lazy renewal and §5.6's callback. Marking a thread read and logging out are `POST`s.
+  §5.2's lazy renewal and §5.6's callback, which writes only the session for a Student a 42 login
+  finds and the Connect 42 link on the signed-in Student's own row (ADR-0003 d10's note of
+  2026-10-08). Creating a Student through 42 is the 42 sign-up form's JSON request. Marking a thread
+  read and logging out are `POST`s.
 - **`JsonMutationGuard`** (global): every `POST`, `PUT`, `PATCH`, `DELETE` must carry
   `Content-Type: application/json` (a body of `{}` where nothing else is needed), else 415. A
   cross-site form cannot send it and no CORS permission exists, so a script cannot either.
@@ -1258,7 +1512,7 @@ if they no longer allow the action (ADR-0011 d7); a read relies on this per-requ
 - `SameSite=Lax` on the one cookie is load-bearing twice: it withholds the cookie from cross-site
   subresource requests, and it still sends it on 42's top-level redirect to the callback (§5.6).
 
-### 5.5 Throttle and the trusted client address (M9)
+### 5.5 Throttle and the trusted client address (M9, M37)
 
 - nginx is the only trusted proxy. Every proxied location sets `proxy_set_header X-Real-IP
   $remote_addr;` and `proxy_set_header X-Forwarded-For $remote_addr;`, **overwriting** anything the
@@ -1266,9 +1520,21 @@ if they no longer allow the action (ADR-0011 d7); a read relies on this per-requ
   the client address **only** from `X-Real-IP`; Express `trust proxy` stays `false` and `req.ip` is
   never used.
 - **Buckets** (ADR-0003 d10): key = `clientAddress + "|" + normalisedEmail`, never the address alone.
-  Sign-in counts failed attempts; sign-up counts every attempt. Sliding window 15 minutes, limit 5;
-  the sixth is refused with `too_many_attempts` before any credential check. **In memory only**,
-  never persisted, never logged; at most 10,000 keys (oldest evicted); lost on restart (ADR-0018 d6).
+  Sign-in counts failed attempts; sign-up, the 42 sign-up form included, counts every attempt. **A
+  wrong current password counts too**: the password change, Connect 42's start and Disconnect 42
+  share one check (§5.1), and a refusal of it counts as a failed attempt under the signed-in
+  Student's own email, so someone at a computer left signed in cannot keep guessing. Sliding window
+  15 minutes, limit 5; the sixth is refused with `too_many_attempts` before any credential check. A
+  failure is `no_account` or Supabase Auth refusing the password. Not counted: a lost race (a moved
+  `password_version`, also answered `password_incorrect`), a sanction told after the right password,
+  a Supabase `429`, answered `too_many_attempts`, and Supabase Auth unreachable (ADR-0003 d10's
+  notes of 2026-10-02 and 2026-10-13, M37). The code alone cannot tell them apart, so the service
+  tells the boundary whether a refusal counts. **The new password after Confirm with 42 is not
+  throttled**: it checks no password (§5.1, §5.6 C). A Student who used up their count on the
+  change form before turning to Confirm with 42 sets the new password at once, but signs in with
+  it under the same key only once the window has passed; that is accepted. **In memory only**,
+  never persisted, never logged; at most 10,000 keys (oldest evicted); lost on restart (ADR-0018
+  d6).
 - **Layer**: enforced at the HTTP boundary, before any service call. The service methods take no
   address and enforce no throttle themselves, so the seed and any direct service call bypass it by
   construction — they never cross the guard — while every HTTP request crosses it, in-process tests
@@ -1277,87 +1543,164 @@ if they no longer allow the action (ADR-0011 d7); a read relies on this per-requ
   Production never sees absent (nginx always sets it, overwriting); the harness never sends absent
   (§16.2); `req.ip` is never a fallback.
 
-### 5.6 Sign in with 42 (M7, M8)
+### 5.6 Sign in with 42 (M7, M8, M35)
 
-Two layers, kept separate.
+**NestJS runs Sign in with 42 itself, and Supabase Auth takes no part in it.** Supabase's custom
+provider cannot read 42's identity (42 answers no `sub`), would send the browser through Supabase's
+address (ADR-0018 d5), and would be refused by the project's switched-off public sign-up (ADR-0003's
+top note of 2026-10-08, ADR-0019 d6). One transport serves three intents: **`sign_in`**, signed out;
+**`link`**, Connect 42, signed in; and **`confirm`**, Confirm with 42, signed in. (A) is the
+transport, (B) what a 42 account maps to, (C) recovery through 42.
 
-**(A) The authentication mechanism — transport and state: specified and buildable now; a successful sign-in also needs (B).**
+**(A) The authentication mechanism — transport and state.**
 
 - **Enabled** iff `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` are both non-empty. Otherwise
-  `GET /api/config` returns `oauth42Enabled: false`, the SPA renders no button, `POST
-  /api/auth/42/start` returns 404, and nothing fails at boot (ADR-0004 amendment). **Disabled,
-  `GET /api/auth/42/callback` also returns 404 `not_found`** (§6.15): no attempt lookup, no
-  external call, no cookie mutation, no redirect — the failure-path redirect below belongs to an
-  enabled flow only.
+  `GET /api/config` returns `oauth42Enabled: false`, the SPA renders no 42 button and no Connect or
+  Confirm control, every `/api/auth/42/*` route returns 404, and nothing fails at boot (ADR-0004
+  amendment). **Disabled, `GET /api/auth/42/callback` also returns 404 `not_found`** (§6.15): no
+  attempt lookup, no external call, no cookie mutation, no redirect — the failure-path redirect below
+  belongs to an enabled flow only. `make local`, `make dev` and `make test` read `.env.example`
+  alone, whose pair is empty, so 42 is off there (ADR-0004 amendment's note of 2026-10-08).
+- **The application**: one team application, *PeerConnect*, registered by Kamel under his 42 account
+  on 2026-10-07, scope `public`, one redirect URI, `https://localhost:8443/api/auth/42/callback`. Its
+  `UID` and `SECRET` are the two `FT_OAUTH_*` values of the team `.env` only (§15.4). A branch that
+  needs a real 42 sign-in runs `make up` with a `.env` holding only those two lines, which boots the
+  local fallback. Hosting later adds a second redirect URI (ADR-0004 amendment's note).
 - **Fixed endpoints** (constants, not variables): authorize `https://api.intra.42.fr/oauth/authorize`,
   token `https://api.intra.42.fr/oauth/token`, identity `https://api.intra.42.fr/v2/me`; scope
   `public`. **Redirect URI** `${PUBLIC_ORIGIN}/api/auth/42/callback`, registered on the 42
   application byte-for-byte.
-- **Start**: `POST /api/auth/42/start` `{ "intent": "sign_in" }` — a JSON mutation, so starting adds
-  no GET exception (ADR-0003 d10). `intent: "link"` is reserved and returns 404 until #24 enables it.
-  1. With a valid session and `intent: "sign_in"` → refusal `already_signed_in`.
-  2. Generate `attemptToken` (32 B), `state` (32 B, base64url) and a PKCE `codeVerifier` (32 B,
-     base64url); `bindingKey = sha256(attemptToken)` (for `link`: `sha256(sessionToken)`, and the
-     session is not displaced).
-  3. Store `{ bindingKey, state, codeVerifier, intent, expiresAt: now + 10 min }` in the in-memory
-     `OAuthAttemptStore` (at most 1,000 entries, expired evicted first, then oldest). **One live
-     attempt per browser**: a `sign_in` start first deletes the entry for `sha256(<old>)` when the
-     request carries `pc_session=a.<old>`, since every start mints a fresh token and so a fresh
-     key; a `link` start overwrites the entry already under its session's key. A superseded
-     attempt's callback therefore finds nothing and fails. Nothing is written to the database;
-     nothing to web storage.
-  4. For `sign_in`, set `pc_session=a.<attemptToken>; Max-Age=600` with the usual attributes.
-  5. Return `{ authorizeUrl }` carrying `client_id`, `redirect_uri`, `response_type=code`,
+- **Start**: `POST /api/auth/42/start` `{ "intent": "sign_in" | "link" | "confirm", "password"?: string }`
+  — a JSON mutation, so starting adds no GET exception (ADR-0003 d10).
+  1. `sign_in` with a valid session → refusal `already_signed_in`. `link` and `confirm` need a
+     valid session (§5.3), else 401 `unauthenticated`.
+  2. `link`: a Student who already has a 42 account connected → `forty_two_connected`; otherwise,
+     after the throttle, `password`, the current password, gets a password check (§5.1) before
+     anything is minted: refused → `password_incorrect`, counted (§5.5) (ADR-0003 d10's note of
+     2026-10-08).
+     `confirm`: a Student with no 42 account connected → `forty_two_not_connected`.
+  3. Generate `attemptToken` (32 B), `state` (32 B, base64url) and a PKCE `codeVerifier` (32 B,
+     base64url); `bindingKey = sha256(attemptToken)` for `sign_in`, `sha256(sessionToken)` for
+     `link` and `confirm`, whose session is not displaced.
+  4. Store `{ bindingKey, state, codeVerifier, intent, studentId (link, confirm), expiresAt: now + 10
+     min }` in the in-memory `OAuthAttemptStore` (at most 1,000 entries, expired evicted first, then
+     oldest). **One live attempt per browser**: a `sign_in` start first deletes the entry for
+     `sha256(<old>)` when the request carries `pc_session=a.<old>`, since every start mints a fresh
+     token and so a fresh key; a `link` or `confirm` start overwrites the entry already under its
+     session's key. A superseded attempt's callback therefore finds nothing and fails. Nothing is
+     written to the database; nothing to web storage.
+  5. For `sign_in`, set `pc_session=a.<attemptToken>; Max-Age=600` with the usual attributes.
+  6. Return `{ authorizeUrl }` carrying `client_id`, `redirect_uri`, `response_type=code`,
      `scope=public`, `state`, `code_challenge` = base64url(SHA-256(`codeVerifier`)),
      `code_challenge_method=S256`. The SPA navigates to it with `window.location.assign`.
 - **Callback**: `GET /api/auth/42/callback?code=…&state=…` (or `?error=…`), `Cache-Control:
   no-store`. **Verification order**, every failure taking the same failure path:
   1. Read `pc_session`; `a.` → `bindingKey = sha256(token)`; `s.` → the session must resolve (§5.3),
      `bindingKey = sha256(token)`; anything else → fail.
-  2. **Take** the attempt for `bindingKey` — removed from the store now, whatever follows (single
-     use).
+  2. **Take** the attempt for `bindingKey` — removed from the store now, whatever follows, so
+     `state` and the verifier are used once.
   3. The attempt exists and has not expired.
   4. `state` is present and equals the stored value (constant-time comparison).
   5. No `error` parameter; `code` present.
   6. Exchange the code server-side (`grant_type=authorization_code`, `code`, `redirect_uri`,
-     `client_id`, `client_secret`, `code_verifier`), 10 s timeout, **outside any transaction**.
-  7. `GET /v2/me` with the access token, 10 s timeout. Keep **only** the immutable 42 account
-     identifier (ADR-0018 d7); discard the token and the rest of the response at once. Never read
-     42's email, photo, campus, level, projects or location; never persist or log any of it.
-  8. Resolve the identifier to a Student **by the stored 42 identifier only — never by
-     `Student.email`**, so no email edit, an Admin's included, can steer a 42 login (ADR-0018 d7).
-  9. For a resolved **Active** Student with `intent: "sign_in"`: one SSI tx re-reads the Student's
-     flags and creates the Session (§5.2, §5.1); the response sets `pc_session=s.<newToken>`, **replacing** the attempt cookie — the
-     attempt token never becomes the session id — and redirects `302 /`.
+     `client_id`, `client_secret`, `code_verifier`), 10 s timeout, **outside any transaction**. The
+     answer carries `secret_valid_until`: once fewer than seven days are left, the API logs a
+     warning naming that date at each exchange. The secret lasts 28 days (the first one ends on
+     2026-11-04), and an expired one fails every trip to 42; email-and-password sign-in is
+     unaffected (ADR-0004 amendment's note).
+  7. `GET /v2/me` with the access token, 10 s timeout. Read its `id`, a number 42 never changes.
+     Read `login` and `email` only for a `sign_in` whose `id` no Student holds (B), and nothing else
+     ever: no photo, campus, level, projects or location. Discard the token and the rest of the
+     response at once; never persist or log any of it (ADR-0018 d7's note of 2026-10-08).
+  8. Go on by intent: (B) for `sign_in` and `link`, (C) for `confirm`.
   - **Failure path**: an `a.` cookie is cleared (`Max-Age=0`); an `s.` cookie is left alone; redirect
-    `302 /sign-in?oauth=failed` (for `link`, `/me?oauth=failed`). The response never distinguishes
-    the cause, so Suspension and Removal stay undisclosed. The query string never reaches a log
-    (§3.9).
-- **PKCE is defence in depth only**; `state` stays mandatory (ADR-0003 d10).
+    `302 /sign-in?oauth=failed` (for `link` and `confirm`, `/me?oauth=failed`), and the SPA shows
+    *"Sign in with 42 failed. Try again."* for every cause: cancelled on 42's page, an expired or
+    unknown attempt, a `state` mismatch, 42 unreachable, an expired secret. The only other outcomes
+    are (B)'s and (C)'s: `oauth=removed`, `suspended`, `in_use`, `connected` and `confirmed`, and the
+    sign-up form. The query string never reaches a log (§3.9).
+- **PKCE is defence in depth only**; `state` stays mandatory (ADR-0003 d10). Whether 42 checks PKCE
+  is unconfirmed; the first real sign-in shows whether 42 accepts it (ADR-0004 amendment's note).
 
-**(B) The 42 identity mapping — Blocked by
-[#24](https://github.com/ahmadmnsur/ft_transcendence/issues/24).** Step 8's inputs and every branch
-after a miss are #24's: which immutable 42 field is the key, and the `Student` column that stores it
-(a nullable unique column, added by a gated migration, with the Privacy Policy's 42 sentence updated
-in the same PR); whether a first 42 login with no linked Student **links, creates or is refused**;
-whether link or create writes happen in the callback GET or in a following JSON `POST` (ADR-0003
-d10's annotation); whether signed-in linking exists (the `link` intent above is its mechanism if it
-does); any creation path's Terms acceptance (ADR-0018 d12); whether `password_hash` becomes nullable;
-whether the Terms' *forgotten password cannot be reset* line changes if a linked 42 login restores
-access (ADR-0018 d8); the Privacy Policy's marked 42 sentence, naming the field(s) kept (ADR-0018 d7);
-and who registers the 42 application. **Until #24 resolves, no Student has a stored 42 identifier,
-so step 8 always misses and the flow ends on the failure path**. What builds and is exercisable
-without #24, with no live 42 application and no network to 42: the button/flag/disabled behaviour
-(including the disabled-callback 404 above), `start` minting (`state`, PKCE, cookie, store,
-one-live-attempt), and the callback's verification rejections of steps 1–5. Steps 6–7 (code
-exchange, `/v2/me`) and steps 8–9 (resolution, every link/create/refuse branch after a miss, and
-the session issuance only a resolved Student reaches) require a registered application and #24's
-mapping, and are not exercised until then. **No dedicated Vitest category covers OAuth**
-(ADR-0016 d7's list is closed, and OAuth's failures present loudly as 404s and redirects, not
-silent state); a full sign-in is demonstrated once #24 resolves, not suite-asserted before it.
-**Until #24 decides, a first 42 login with no linked Student produces no Student row and no
-session**: no ordinary active/password account is created as a stand-in — the link, create or
-refuse branch owned by #24 above is the only outcome.
+**(B) The 42 identity mapping** (ADR-0003's top note and d10's note of 2026-10-08, ADR-0004
+amendment's note, ADR-0018 d7's note).
+
+- **The key is 42's account `id`**, stored in `Student.forty_two_id` (§4.3.1), a nullable unique
+  integer, **never `Student.email`**, nor 42's `login` or `email`, which can change. So no email
+  edit, an Admin's included, can steer a 42 login (ADR-0018 d7).
+- **`sign_in`, a Student holds the `id`**: one SSI tx re-reads that Student. Removed → redirect
+  `302 /sign-in?oauth=removed`, *"This account was removed and can't sign in again."*; Suspended →
+  `/sign-in?oauth=suspended`, *"Your account is suspended. Contact an Admin."*. 42's confirmation
+  stands where the right password does in §5.1, so a sanction is told once 42 confirms the account.
+  Both clear the `a.` cookie. Otherwise the tx creates the Session (§5.2); the response sets
+  `pc_session=s.<newToken>`, **replacing** the attempt cookie — the attempt token never becomes the
+  session id — and redirects `302 /`.
+- **`sign_in`, no Student holds the `id`**: the callback creates nothing. In place of the attempt it
+  took, it stores a **sign-up draft** under the same key, `{ bindingKey, fortyTwoId, login, email,
+  expiresAt }`, keeping the attempt's `expiresAt`, so the draft ends with the attempt's ten minutes
+  and the `a.` cookie's `Max-Age`. The cookie stays, and the browser goes `302 /sign-up?from=42`.
+  - The sign-up form, still the signed-out route `/sign-up` (ADR-0018 d12), reads
+    `GET /api/auth/42/draft` → `{ login, email }`, or `oauth_failed` with no live draft. It is
+    pre-filled, display name with the 42 login and email with the 42 email, both editable, and asks
+    for a password and the Terms checkbox, validated on both ends and not stored (ADR-0018 d12's
+    note of 2026-10-08).
+  - Its request is **`POST /api/auth/42/signup`** `{ email, password, displayName, acceptTerms }`, a
+    route of its own, so it can never be taken for an ordinary sign-up. Without `pc_session=a.<token>`
+    or a live draft under its key, it is refused `oauth_failed`, *"Sign in with 42 failed. Try
+    again."*, and never becomes an ordinary sign-up. Otherwise it **takes** the draft and runs §5.1's
+    sign-up from step 1, whose transaction also writes `forty_two_id`; its new session replaces the
+    attempt cookie. A taken email gets `email_unavailable`, which tells its owner to sign in with
+    their password and connect 42: nothing links by email. If another row took the `id` meanwhile,
+    the `forty_two_id` unique admits one, and the loser gets `oauth_failed` and its Supabase Auth
+    user is deleted, as for a duplicate email.
+  - **An ordinary sign-up never uses a draft**, even while one is live in that browser. A 42 sign-up
+    form that goes through therefore always creates an account connected to that 42 account;
+    someone who leaves it for the ordinary sign-up creates an ordinary account and can connect 42
+    later with their password.
+- **`link`, Connect 42**: one SSI tx re-reads the Student, which must still be Active, the attempt's
+  `studentId` and without a 42 account connected, else the failure path; and whether any other row
+  holds the `id`, a Removed one included. If one does →
+  `302 /me?oauth=in_use`, *"This 42 account is connected to another PeerConnect account."*;
+  otherwise it sets `forty_two_id` on the Student's own row and redirects `302 /me?oauth=connected`.
+  The `forty_two_id` unique is the backstop and gives the same answer. The session is untouched.
+- **Disconnect 42**: **`POST /api/auth/42/disconnect`** `{ password }`, signed in. After the throttle, a
+  password check of the current password (§5.1), refused → `password_incorrect`, counted (§5.5); then one SSI tx
+  re-reads the Student: no 42 account connected → `forty_two_not_connected`; otherwise it clears
+  `forty_two_id`.
+- **Every Student has a password**, whichever way they joined, so someone 42 no longer lets in still
+  signs in with email and password. A Student created through 42 is an ordinary Student: there is
+  no 42-only kind of Student and no 42-only feature (ADR-0018 d7's note).
+- **A Removed row keeps `forty_two_id`**, like its email, so that 42 account can never make a new
+  Student, and Connect 42 on another account answers `in_use` (ADR-0008 d7's note of 2026-10-08).
+  **No Admin action sets, changes or clears it** (ADR-0008 d8's note).
+
+**(C) Recovery through Confirm with 42** (ADR-0003 d6's and d11's notes of 2026-10-08, ADR-0018
+d8's note).
+
+- A signed-in Student who connected 42 presses **Confirm with 42** on `/me`: `start` with
+  `intent: "confirm"`. At the callback, after step 7, the `id` must equal the Student's
+  `forty_two_id`, re-read then; anything else takes the failure path. The API stores a
+  **permission** in memory in the same store, `{ bindingKey: sha256(sessionToken), studentId,
+  fortyTwoId, expiresAt: now + 10 min }`, never a database row, writes nothing else, and redirects
+  `302 /me?oauth=confirmed`, where the SPA shows the new-password form.
+- That form sends **`POST /api/auth/42/password`** `{ newPassword }`, signed in, with no throttle
+  (§5.5). After validation it **takes** the permission under its session's key, so it is used once. None, an expired one, or a
+  Student whose `forty_two_id` no longer equals the confirmed one (re-read) → `confirmation_required`.
+  Then §5.1's password change runs with its step 3 replaced by this permission: the Student is
+  signed out everywhere and returns to `/sign-in`.
+- **A PeerConnect session alone cannot change the password**: Confirm with 42 also needs the
+  connected 42 account, signed in in that browser. If the 42 intranet is still signed in there, 42
+  may send the browser straight back without asking for anything: it is plain OAuth 2.0, with no
+  way to ask for a fresh login. So whoever controls the connected 42 account in a browser controls
+  the PeerConnect account, as they already could through Sign in with 42, and the Terms say so.
+  Connect 42 asks for the current password (B), so a session left open cannot attach another 42
+  account and use it here. An Admin still sets no password (ADR-0018 d8's note).
+
+**Tests.** Two checks in `12-sign-in` cover Sign in with 42, with only the two calls to 42, the token
+exchange and `/v2/me`, replaced by a fixed answer; everything after them is the real code on the
+fallback (§16.3, ADR-0016 d1's note of 2026-10-08). The real round trip to 42 is shown by hand,
+once on the registered application and again at the defense (§15.7). The rest of the flow fails
+loudly, as 404s and redirects, and has no check of its own (ADR-0016 d7).
 
 ### 5.7 Authorization matrix
 
@@ -1366,6 +1709,8 @@ refuse branch owned by #24 above is the only outcome.
 | Capability | STUDENT | PEER_MODERATOR | ADMIN | Relation condition |
 | --- | --- | --- | --- | --- |
 | Own profile, Skills, Goal, avatar, password, sign-out | ✓ | ✓ | ✓ | self |
+| Connect 42, Disconnect 42, Confirm with 42 | ✓ | ✓ | ✓ | self; Connect and Disconnect with the current password (§5.6) |
+| Set own password without the current one | ✓ | ✓ | ✓ | self, once, within ten minutes of Confirm with 42 on the connected 42 account (§5.6 C) |
 | View profiles, feed, Posts, likers, Leaderboard, `/rules`, search | ✓ | ✓ | ✓ | — |
 | Friends, Blocks, Direct Messages, Likes | ✓ | ✓ | ✓ | no Block for requests/DMs; target not Removed |
 | Be a candidate in matching | ✓ | ✓ | ✗ | ≥ 1 Skill, Active |
@@ -1383,16 +1728,18 @@ refuse branch owned by #24 above is the only outcome.
 | Learning Analytics | ✗ | ✗ | ✓ | |
 | Read any Direct Message | ✗ | ✗ | ✗ | participants only |
 | Set a password for someone | ✗ | ✗ | ✗ | never |
+| Set, change or clear another Student's `forty_two_id` | ✗ | ✗ | ✗ | never (ADR-0008 d8's note) |
 
 ### 5.8 What invalidates sessions and sockets
 
 | Event | Sessions deleted | Sockets dropped (after commit) |
 | --- | --- | --- |
 | Logout | that one | the sockets authenticated by that session |
-| Password change | all of the Student's | all of the Student's |
+| Password change, or a new password after Confirm with 42 | all of the Student's, twice: before and after Supabase's admin update (§5.1) | all of the Student's, after each |
 | Suspension | all | all |
 | Removal | all | all |
 | Role change | none | none |
+| Connect 42, Disconnect 42, Confirm with 42 | none | none |
 | Expiry | none (row stays until the next purge) | none; the next handshake fails and the client goes to sign-in |
 
 ---
@@ -1424,8 +1771,8 @@ refuse branch owned by #24 above is the only outcome.
 | Field | Limit |
 | --- | --- |
 | email | trimmed, lower-cased, ≤ 254, one `@`, non-empty local and domain parts |
-| password | 8–128 characters |
-| display name | 1–40 characters, no control characters |
+| password | at least 8 characters and at most 72 bytes in UTF-8, so an accented or Arabic letter counts two bytes or more; no composition rule (§5.1, ADR-0003 d3's note) |
+| display name | 1–40 characters, no control characters, no Unicode format characters (`Cf`) except U+200C and U+200D (§3.5) |
 | Skill lists | each 0–15 distinct catalogue ids |
 | Learning Goal sentence | 1–200 |
 | Direct Message | 1–2000 |
@@ -1456,40 +1803,55 @@ ordinary use (§3.8.2).
 **`POST /api/auth/signup`** — Auth: public; refused `already_signed_in` if a valid session exists ·
 Input `{ email, password, displayName, acceptTerms }` · Validation §6.0.3, `acceptTerms === true` ·
 Throttle §5.5 · Rule: reads the email → `email_unavailable` if any row holds it, Removed rows
-included (ADR-0008 d7) · Persist `Student` (role `STUDENT`, xp 0, streak 0) and `Session` · Events
-none · Concurrency: two sign-ups of one email → the unique index admits one; the loser gets
-`email_unavailable` · Visibility: sets the cookie.
+included (ADR-0008 d7); NestJS makes the id; Supabase admin create, outside the transaction (§5.1)
+· Persist `Student` (its `id` passed in, role `STUDENT`, xp 0, streak 0, `password_version` 0, both
+name fields through `nameFields`) and `Session` · Events none · Refusals `email_unavailable`,
+`too_many_attempts`, `busy_retry_later` (Supabase Auth unreachable, nothing written) · Concurrency:
+two sign-ups of one email → the unique index admits one; the loser gets `email_unavailable` and its
+Supabase Auth user is deleted, best effort · Visibility: sets the cookie. Never uses a 42 sign-up
+draft (§5.6 B).
 
 **`POST /api/auth/login`** — public · `{ email, password }` · Validation §6.0.3 (malformed email →
-`validation_failed`) · throttle · verify (§5.1) · with a valid session → `already_signed_in` ·
-Persist `Session`, purge the Student's expired rows · Events none · Refusals `invalid_credentials`,
-`too_many_attempts` · Concurrency: none (each login inserts its own `Session` row) · Visibility:
-sets the cookie on success.
+`validation_failed`) · throttle · with a valid session → `already_signed_in` · find the Student,
+password check, then the SSI tx (§5.1) · Persist `Session`, purge the Student's expired rows ·
+Events none · Refusals `no_account`, `password_incorrect`, `account_removed` and `account_suspended`
+(both only after the right password), `too_many_attempts`, `busy_retry_later` · Concurrency: the SSI tx
+re-reads `password_version` and the flags (§5.1); otherwise none (each login inserts its own
+`Session` row) · Visibility: sets the cookie on success.
 
 **`POST /api/auth/logout`** — session · `{}` · delete the caller's row · Events `revokeSessions
 (sessionHash)` · clears the cookie · Refusals: a session already gone → `unauthenticated` (guard)
-· Concurrency: none (single-row delete).
+· Concurrency: none (single-row delete). Writes nothing to Supabase Auth (ADR-0003 d6's note).
 
-**`POST /api/auth/password`** — session · `{ currentPassword, newPassword }` · Validation §6.0.3
-(new password 8–128) · verify current → `password_incorrect` · Persist new hash; delete all the
-Student's sessions · Events `revokeSessions(studentId)` · clears the cookie · Concurrency:
-concurrent changes serialize on the `Student` row; each deletes all sessions.
+**`POST /api/auth/password`** — session · `{ currentPassword, newPassword }` · Validation §6.0.3 ·
+the throttle's count of a wrong current password (§5.5) · §5.1's six steps: password check of the
+current one → `password_incorrect`; SSI tx raising `password_version` and deleting all the
+Student's sessions; Supabase admin update; the same SSI tx again · Events `revokeSessions
+(studentId)` after each tx · clears the cookie · Refusals `password_incorrect`,
+`too_many_attempts`, `busy_retry_later` (Supabase Auth unreachable: at step 3 nothing changes; at
+step 5 the Student is signed out, the password unchanged) · Concurrency: a change whose version moved since its read → `password_incorrect`, so
+two changes cannot both go through; a sign-in racing it is deleted or refused (§5.1).
 
-**`POST /api/auth/42/start`**, **`GET /api/auth/42/callback`** — §5.6.
+**`POST /api/auth/42/start`**, **`GET /api/auth/42/callback`**, **`GET /api/auth/42/draft`**,
+**`POST /api/auth/42/signup`**, **`POST /api/auth/42/disconnect`**, **`POST /api/auth/42/password`**
+— §5.6. Every one returns 404 while 42 is not configured.
 
 ### 6.2 Profiles, Skills, Learning Goal, search
 
 | Endpoint | Auth | Behaviour |
 | --- | --- | --- |
 | `GET /api/skills` | session | the catalogue, by name |
-| `GET /api/me` | session | own profile with email, role, status, Skills, Goal, XP, Level, Streak, Badges, progress |
+| `GET /api/me` | session | own profile with email, role, status, Skills, Goal, XP, Level, Streak, Badges, progress, and `fortyTwoConnected` (whether a 42 account is connected, never its number) |
 | `GET /api/students/:id` | session | profile per §4.6; tombstone if Removed; **never an email, for any viewer** — email is never on a profile (§4.6, ADR-0018 d4): the owner reads their own on `GET /api/me`, Admins on `GET /api/admin/students/:id` (§6.12) |
 | `GET /api/students/:id/posts?cursor` | session | their non-removed Posts |
-| `GET /api/students?q&teaches&wants&hasGoal&sort&order&page&pageSize` | session | **Advanced search**: excludes Removed, includes Suspended and Admins; `q` matches display name only (`ILIKE`, wildcards escaped), never email; `teaches`/`wants` are Skill ids; `hasGoal` boolean; `sort ∈ name, xp, joined` (default `name`), `order ∈ asc, desc`; ties `id ASC`; returns `StudentRef` + Skills + Level + XP and `total` |
+| `GET /api/students?q&teaches&wants&hasGoal&sort&order&page&pageSize` | session | **Advanced search**: excludes Removed, includes Suspended and Admins; `q` matches the folded display name only, `displayNameSearch` `contains` `foldName(q)` (§4.3.1), so `helene` finds Hélène and `احمد` finds أحمد, never email; `%` and `_` in `q` are escaped: whoever builds it confirms whether Prisma's `contains` escapes them, and escapes them in that query if not (#95's refinement); `teaches`/`wants` are Skill ids; `hasGoal` boolean; `sort ∈ name, xp, joined` (default `name`), `order ∈ asc, desc`; ties `id ASC`; returns `StudentRef` + Skills + Level + XP and `total` |
 
 **`PATCH /api/me`** — session · `{ displayName?, email? }` · Rule: actor Active; a new email is
-unused (Removed rows included) → else `email_unavailable` · Persist `Student` · Concurrency: the
-unique index decides two concurrent claims — the loser gets `email_unavailable` with nothing written.
+unused (Removed rows included) → else `email_unavailable` · Persist `Student`: a new display name
+writes `display_name` and `display_name_search` together through `nameFields` (§4.3.1); a new email
+writes `Student.email` alone, with Supabase Auth untouched and no mail sent (ADR-0008 d8's note) ·
+Concurrency: the unique index decides two concurrent claims — the loser gets `email_unavailable`
+with nothing written.
 
 **`PUT /api/me/skills`** — session · `{ teach: uuid[], learn: uuid[] }` · Validation: ids in the
 catalogue, no duplicates within a list, ≤ 15 each · Rule: diff against current rows; delete removed
@@ -1509,14 +1871,19 @@ the stored Goal · Events none · Concurrency: single-row write on the actor's `
 
 | Endpoint | Auth | Behaviour |
 | --- | --- | --- |
-| `GET /api/files/avatars/:token` | session → else **401** | any signed-in Student; unknown token → 404; bytes with canonical `Content-Type`, `nosniff`, `Cache-Control: private, max-age=86400, immutable` |
-| `GET /api/files/evidence/:token` | session → else **401** | resolve `Evidence → Review → Match`; allow iff actor is that Match's `mentor_id` or `mentee_id`, or the actor's current role is `ADMIN` → else **403**; unknown token → 404; `Content-Disposition: inline; filename="<sanitised>"`, `nosniff`, `Cache-Control: private, no-cache` |
+| `GET /api/files/avatars/:token` | session → else **401** | any signed-in Student; unknown token → 404; the whole file read from the `avatars` bucket, then sent (§9.8), with the row's canonical `Content-Type`, `nosniff`, `Cache-Control: private, max-age=86400, immutable`; a row whose file Storage cannot give → **500** `internal_error`, logged, never 404 |
+| `GET /api/files/evidence/:token` | session → else **401** | resolve `Evidence → Review → Match`; allow iff actor is that Match's `mentor_id` or `mentee_id`, or the actor's current role is `ADMIN` → else **403**; unknown token → 404; the whole file read from the `evidence` bucket, then sent (§9.8); `Content-Disposition: inline; filename="<sanitised>"`, `nosniff`, `Cache-Control: private, no-cache`; a row whose file Storage cannot give → **500** `internal_error`, logged |
 
 **`PUT /api/me/avatar`** (multipart field `file`) — `UploadCsrfGuard` → session → Multer (one file, `limits.fileSize` 2 MiB + 1 byte) → size check (`size > 2,097,152` →
-`file_too_large`) → byte validation §9.5 · Rule: actor Active · Persist upsert `Avatar` with a new
-token · Result `{ avatarUrl }` · Refusals `file_too_large`, `file_type_not_allowed`, `file_invalid` ·
-Concurrency: two uploads serialize; the later commit wins; one row.
-**`DELETE /api/me/avatar`** — session · `{}` · Rule: actor Active · delete if present (idempotent `ok: true`) · Events none.
+`file_too_large`) → byte validation §9.5 → NestJS makes a new token and uploads the file to the
+`avatars` bucket under it, before the transaction (§9.8) · Rule: actor Active · Persist upsert
+`Avatar` with that token, `mime`, `size` and `uploaded_at` · Events: after commit, the replaced file
+is deleted · Result `{ avatarUrl }` · Refusals `file_too_large`, `file_type_not_allowed`,
+`file_invalid` (each before the upload); a save that fails deletes its new file as §9.8 says ·
+Concurrency: two uploads serialize; the later commit wins; one row, and the earlier file is deleted
+after the later commit.
+**`DELETE /api/me/avatar`** — session · `{}` · Rule: actor Active · delete the row if present
+(idempotent `ok: true`), then the file after commit (§9.8) · Events none.
 
 **`PUT /api/reviews/:reviewId/evidence`**, **`DELETE /api/reviews/:reviewId/evidence`** — §9.4.
 **Admin avatar** routes — §6.12.
@@ -1638,17 +2005,19 @@ nothing — no insert, no delete.
 
 | Endpoint | Behaviour |
 | --- | --- |
-| `GET /api/admin/students?q&role&status&sort&order&page&pageSize` | the Users table: name, email, role, status (Active/Suspended/Removed), **Removed rows included**; `q` matches name or email |
+| `GET /api/admin/students?q&role&status&sort&order&page&pageSize` | the Users table: name, email, role, status (Active/Suspended/Removed), **Removed rows included**; `q` matches the folded name (`displayNameSearch` `contains` `foldName(q)`, wildcards escaped, as §6.2) or the email |
 | `GET /api/admin/students/:id` | the §6.2 profile plus email, role, status, avatar and the Student's Matches (§4.6); **never** their Friends, pending requests, Blocks or Direct Messages, which §4.6 keeps from Admins; view-only when Removed |
-| `PATCH /api/admin/students/:id` | `{ displayName?, email? }` — target not Removed → else `student_removed` |
+| `PATCH /api/admin/students/:id` | `{ displayName?, email? }` — target not Removed → else `student_removed`; written as §6.2's `PATCH /api/me`: both name fields through `nameFields`, an email in `Student.email` alone, Supabase Auth untouched |
 | `PUT /api/admin/students/:id/skills` | as §6.2, on the target |
 | `PUT` / `DELETE /api/admin/students/:id/learning-goal` | as §6.2, on the target |
 | `PUT` / `DELETE /api/admin/students/:id/avatar` | as §6.3, on the target (upload CSRF applies) |
 | `POST /api/admin/students/:id/role` | `{ role }` |
 | `POST /api/admin/students/:id/suspend` · `/reinstate` · `/remove` | `{}` |
 
-No endpoint sets a password, XP, Level, Streak, Badge, or edits any Review, Private Feedback, Post,
-Report or Direct Message (ADR-0008 d8, ADR-0018 d8). No endpoint creates a Student.
+No endpoint sets a password, XP, Level, Streak, Badge or `forty_two_id`, or edits any Review,
+Private Feedback, Post, Report or Direct Message (ADR-0008 d8 and its notes, ADR-0018 d8). Supabase's
+admin update, which a password change uses, is never offered as an Admin action. No endpoint
+creates a Student, and none writes to Supabase Auth.
 
 ### 6.13 Admin — Rounds, Matches, Prompts (`ADMIN`) — §8 specifies each
 
@@ -1678,12 +2047,13 @@ where `MatchView` names one side's partner (§6.6).
 | `unauthenticated` | 401 | no valid session on a protected route |
 | `forbidden` | 403 | role or relation forbids (never reachable from the UI's own controls) |
 | `csrf_rejected` | 403 | upload Origin/header gate |
-| `not_found` | 404 | unknown resource, disabled OAuth start or callback |
+| `not_found` | 404 | unknown resource; any `/api/auth/42/*` route while 42 is not configured |
 | `payload_too_large` | 413 | transport envelope exceeded |
 | `unsupported_media_type` | 415 | mutation not JSON / upload not multipart |
-| `busy_retry_later` | 503 | Unit of Work retries exhausted; nothing committed |
-| `internal_error` | 500 | anything else |
-| `invalid_credentials`, `too_many_attempts`, `email_unavailable`, `password_incorrect`, `already_signed_in` | 200 | auth refusals |
+| `busy_retry_later` | 503 | Unit of Work retries exhausted, or Supabase Auth unreachable (§5.1); nothing committed by that step |
+| `internal_error` | 500 | anything else, a file row whose file Storage cannot give (§6.3) and a file save stopped by the 30-minute rule (§9.8) included |
+| `no_account`, `password_incorrect`, `account_removed`, `account_suspended`, `too_many_attempts`, `email_unavailable`, `already_signed_in` | 200 | auth refusals (§5.1; M36); `password_incorrect` also answers a wrong current password and a password change that lost a race; the two sanction codes come only after the right password |
+| `oauth_failed`, `forty_two_connected`, `forty_two_not_connected`, `confirmation_required` | 200 | Sign in with 42's JSON refusals (§5.6; M35): no live draft for the 42 sign-up form, or another account took that 42 account first; Connect 42 while connected; Confirm with 42 or Disconnect 42 while not connected; a new password with no fresh Confirm with 42 |
 | `student_removed`, `self_action_forbidden`, `last_active_admin`, `already_suspended`, `not_suspended` | 200 | Users-table refusals |
 | `goal_skill_not_listed` | 200 | Learning Goal not on the `LEARN` list |
 | `file_too_large`, `file_type_not_allowed`, `file_invalid` | 200 | upload validation (§9.5) |
@@ -1715,7 +2085,8 @@ where `MatchView` names one side's partner (§6.6).
 1. **Origin gate — Engine.IO `allowRequest`**: `req.headers.origin === PUBLIC_ORIGIN` byte-for-byte,
    else refuse. Absent, `null` or mismatched Origin is refused **before the cookie is read**, even
    with a valid session. The refusal leaves the session row untouched (ADR-0003 d7).
-2. **Session — Socket.IO middleware (`io.use`)**: parse `pc_session`, resolve as §5.3 (no renewal);
+2. **Session — Socket.IO middleware (`io.use`)**: parse `pc_session`, resolve as §5.3 (no renewal),
+   reading PeerConnect's tables only and never calling Supabase Auth (ADR-0003 d5's note);
    failure → `next(new Error("unauthorized"))`. The session row is untouched.
 3. **On connect**: register `{ socketId, studentId, sessionHash }` in the Presence registry (§7.6),
    then re-read the session row once; if it is gone, disconnect. A handshake whose step 2 read ran
@@ -2046,16 +2417,22 @@ Evidence is the one mutable attachment.
 
 - **PUT** (multipart `file`), in this order: `UploadCsrfGuard` → session → pre-check that the actor
   is the Mentee of **this Review's Match** (else 403) → Multer (one file, `limits.fileSize` 5 MiB + 1 byte) → size check (`size >
-  5,242,880` → `file_too_large`) → byte validation §9.5 — **all before any transaction** → SSI tx re-reads `Review → Match`, confirms the
+  5,242,880` → `file_too_large`) → byte validation §9.5 → NestJS makes a new token and uploads the
+  file to the `evidence` bucket under it (§9.8) — **all before any transaction** → SSI tx re-reads `Review → Match`, confirms the
   Mentee and that the actor is Active — **the role is not read**: a Mentee promoted to `ADMIN` after
   the Match was created keeps the path for their own Review (ADR-0009 d5, ADR-0014 d11, the
-  standing-Match exception of ADR-0008 d2) — then **upserts** the one `Evidence` row with a new token
-  (create or replace in one statement) → result `{ token, mime, size, filename }` · Events none ·
-  Refusals `file_too_large`, `file_type_not_allowed`, `file_invalid`, plus the pre-check's 403 ·
+  standing-Match exception of ADR-0008 d2) — then, at its last step, applies the 30-minute rule
+  (§9.8) and **upserts** the one `Evidence` row with the new token (create or replace in one
+  statement) → result `{ token, mime, size, filename }` · Events: after commit, the replaced file is
+  deleted · Refusals `file_too_large`, `file_type_not_allowed`, `file_invalid` (each before the
+  upload), plus the pre-check's 403; a refusal inside the transaction deletes the new file at once ·
   Visibility: reads via `GET /api/files/evidence/:token` and the Match detail (§9.3).
-- **DELETE** `{}` → same authorization → SSI delete if present (idempotent `ok: true`) · Events none.
-- A rejected or failed replacement leaves the old Evidence untouched, because validation precedes the
-  transaction and the transaction is atomic (ADR-0009 d5).
+- **DELETE** `{}` → same authorization → SSI delete of the row if present (idempotent `ok: true`),
+  then the file after commit · Events none.
+- **A rejected replacement, or one that fails before COMMIT, leaves the old Evidence whole**, its row
+  and its file, because validation and the upload precede the transaction, the old file is deleted
+  only after commit, and the transaction is atomic. One whose COMMIT reply is lost leaves the old
+  Evidence or the new one whole, never a row without its file (ADR-0009 d5's note of 2026-10-05).
 - Allowed after the Match is `COMPLETED`, in any later Round; a later Match is irrelevant. The Mentor
   and every Admin who is not this Review's Mentee are read-only (ADR-0009 d5). Suspension pauses the
   path (no session), reinstatement restores it, Removal ends it and the row survives (ADR-0009 d5–d6).
@@ -2089,8 +2466,10 @@ Evidence is the one mutable attachment.
    `file_type_not_allowed`; nothing is relabelled.
 6. **Persist** the canonical `mime` and the byte length from the validated bytes, never client
    metadata. Evidence `filename` = basename, path separators and control characters removed, ≤ 255,
-   `evidence.<ext>` when empty.
-7. **Serve** with the canonical type and `X-Content-Type-Options: nosniff`.
+   `evidence.<ext>` when empty. **The upload to Storage declares that canonical type**, so Storage
+   keeps the validated label; its own type check reads only that label, so these steps stay the only
+   check of the bytes (ADR-0009 d5's note).
+7. **Serve** with the canonical type from the row and `X-Content-Type-Options: nosniff`.
 
 The SPA mirrors checks 2, 3 (by extension and declared type) and 5 for immediate feedback; only the
 server decides.
@@ -2099,12 +2478,66 @@ server decides.
 
 A Student without an `Avatar` row shows the bundled default. The owner (`/api/me/avatar`) or an Admin
 (`/api/admin/students/:id/avatar`, target not Removed) may upload, replace or delete. **Removal
-deletes the row** in the Removal transaction (ADR-0009 d6); Suspension touches nothing (d7).
+deletes the row** in the Removal transaction (ADR-0009 d6), and the file after commit, beside
+`revokeSessions` (§12.7). The default avatar shows from the commit on; if the file's delete fails,
+the cleanup deletes it within two hours, as long as the `api` runs and its hourly cleanup succeeds
+(ADR-0009 d6's note of 2026-10-05). Suspension touches nothing (d7).
 
 ### 9.7 Preview and progress (`en.subject.md:544–546`)
 
 PNG and JPEG preview as `<img>`; a PDF previews in an `<iframe>` on the file URL (same origin) with a
 download link beside it. Uploads show a progress bar from `XMLHttpRequest.upload.onprogress`.
+
+### 9.8 Files on Supabase Storage (ADR-0009 d2's note of 2026-10-05, ADR-0019 d7)
+
+- **Two private buckets**: `avatars` (2,097,152 bytes; PNG, JPEG) and `evidence` (5,242,880 bytes;
+  PDF, PNG, JPEG). They have no access policies, so only the secret key opens them, and only the
+  `api` uses it. There is no public bucket and no signed link, which would work for anyone holding
+  it until it expired. The buckets' caps and types are a second guard only; §9.5 stays the check.
+  On the team project the files are in its Storage; on the fallback, in the `storage` service's
+  named volume `storage-data`, which `make wipe` deletes with the database's.
+- **The seed's first step sets the buckets, on every run** (ADR-0004 d11's note of 2026-10-05): it
+  creates a missing one and sets back one whose settings differ, made public in the dashboard or
+  given other caps or types. It runs before the seed checks whether its fixture is complete, so a
+  run that skips the fixture still does it, and so wherever the seed runs: in the boot chain after
+  the boot check, under `make seed`, and in CI. A failure stops the seed, and with it the boot, and
+  names the bucket, since every upload would fail after it. The resets keep the buckets; `make wipe`
+  drops the fallback's, and the next boot creates them again. The test harness runs the same code
+  for buckets of its own, `test-avatars` and `test-evidence` (§16.2).
+- **A file's name is its row's token**, new on every upload, in a flat bucket with no folders and no
+  path column, so an upload never overwrites a file.
+- **Reading** (§6.3): authorize, read the row, read the whole file from Storage, then send it with the
+  row's canonical type. A row whose file Storage cannot give answers 500 `internal_error`, logged,
+  never 404.
+- **Saving**, an avatar's or Evidence's, own or an Admin's: validate the bytes (§9.5), make a new
+  token, upload the file under it declaring the canonical type, then the SSI transaction writes the
+  row, and after commit the replaced file is deleted. **The file is written before its row and
+  deleted after it.**
+  - Each save's transaction sets `idle_in_transaction_session_timeout` to 15 seconds, the Unit of
+    Work's cap, so Postgres ends a transaction whose client froze after the check below instead of
+    letting it commit on waking; the client then sees a lost connection. The build checks the
+    setting once through the team project's session pooler.
+  - **The 30-minute rule**: at the transaction's last step, if more than 30 minutes have passed since
+    its upload finished, the save fails with 500 `internal_error`, logged, and deletes its own file.
+    That step reads the application's clock (`Clock.now()`) then, not the attempt's `ctx.now`, which
+    is taken before the transaction opens. A running save never comes near it; half the hour leaves
+    room for clocks a few minutes apart.
+  - **A save that fails deletes its new file at once only when nothing can have committed**: an error
+    inside the transaction's work, a refusal among them, the 30-minute rule, or the Unit of Work's
+    retries all used up. Any other failure, a lost connection or a timeout, may have committed, since
+    a COMMIT can succeed and its reply be lost, so the new file is left to the cleanup, which keeps
+    it if a row names it.
+- **Deleting**: the row in its transaction, then the file after commit (§3.7).
+- So a crash can leave a file that no row names, **never a row whose file is missing**.
+- **The cleanup**: the `api` deletes the files in `avatars` and `evidence` that no row names and that
+  are more than an hour old, when it starts and every hour while it runs. A run lists the whole bucket
+  before it deletes anything, since deleting page by page shifts the list and skips files. A failed
+  run is only logged and waits for the next, and never stops the boot. So a file a failed delete left
+  is gone within two hours, as long as the `api` runs and its hourly cleanup succeeds; the Privacy
+  Policy says so. The hour protects a save whose file exists a moment before its row, and the two
+  rules above keep a save frozen in between, a laptop put to sleep say, from writing its row after
+  another stack's cleanup deleted its file. In the test harness the cleanup never runs by itself,
+  neither at start nor hourly: `08-files` calls it on the suite's own buckets (§16.3).
 
 ---
 
@@ -2252,8 +2685,10 @@ Student set on the actor still applies. Only the blocker can lift it. The Privac
 - **No read receipts**: `read_at` feeds the recipient's unread count and nothing else.
 - History is never deleted or unsent; it stays readable to both participants after a Block or a
   Removal (tombstone). **No application route lets anyone else — any Admin included — read a Direct
-  Message.** A database operator can read stored messages because nothing is encrypted at rest; the
-  Privacy Policy states both layers (ADR-0018 d13).
+  Message.** Whoever can open a copy's database directly can read stored messages: Supabase encrypts
+  the team project's disks, a local copy is not encrypted at rest, and Direct Messages are not
+  end-to-end encrypted; the Privacy Policy states both layers (ADR-0018 d13 and its note of
+  2026-10-11, §4.6).
 
 ### 11.5 Likes (ADR-0014 d5)
 
@@ -2363,22 +2798,30 @@ must stay ≥ 1 afterwards → `last_active_admin` (ADR-0008 d9).
 | **Change role** `{ role }` | — | `role` | none — effective on the target's next request |
 | **Suspend** | not already Suspended → `already_suspended`; target's in-progress Matches | `suspended_at = now`; every `MATCHED`/`ACCEPTED` Match of the target → `TERMINATED_BY_ADMIN` (`declined_by_id` stays null); delete every Session of the target | `revokeSessions(target)` |
 | **Reinstate** | Suspended → else `not_suspended` | `suspended_at = NULL`; nothing is revived | none |
-| **Remove** | target's in-progress Matches; `Avatar`; open Reports whose `reported_student_id` is the target | `removed_at = now`; in-progress Matches → `TERMINATED_BY_ADMIN`; delete every Session; delete the `Avatar` row; every such open Report → `ACTIONED` with `resolved_by_id = actor`, `resolved_at = now` | `revokeSessions(target)` |
+| **Remove** | target's in-progress Matches; `Avatar`; open Reports whose `reported_student_id` is the target | `removed_at = now`; in-progress Matches → `TERMINATED_BY_ADMIN`; delete every Session; delete the `Avatar` row; every such open Report → `ACTIONED` with `resolved_by_id = actor`, `resolved_at = now` | `revokeSessions(target)`; delete the avatar's file from `avatars` (§9.8) |
 
+- **No sanction writes to Supabase Auth** (ADR-0008 d5's note of 2026-10-02): no ban, no delete.
+  Each stays this one PeerConnect transaction, and the flags it sets are what sign-in and session
+  resolution refuse on (§5.1, §5.3). Reinstatement and a role change write nothing there either.
 - **Suspension** is reversible and resolves no Report (ADR-0011 d10); Posts, avatar, Evidence, XP and
   Streak stay (Streak frozen by the close's skip). The other participant of a terminated Match becomes
   unmatched if still a candidate; only an Admin repairs it.
 - **Removal** is final and view-only afterwards: the email stays burned, and Posts, Matches, Reviews,
   Private Feedback, Evidence, Direct Messages, Likes, Blocks, Reports, BadgeAwards and XP all stay,
-  rendered as the tombstone (ADR-0008 d6–d7, ADR-0009 d6, ADR-0018 d3). A Student reaches it only by
-  asking an Admin; there is no self-service deletion.
+  rendered as the tombstone (ADR-0008 d6–d7, ADR-0009 d6, ADR-0018 d3). The Student's Supabase Auth
+  user and its password hash are kept, so a password sign-in tells of the Removal only after the
+  right password, and the row keeps `forty_two_id`, so that 42 account can never make a new Student
+  (ADR-0008 d7's notes of 2026-10-02 and 2026-10-08). A Student reaches it only by asking an Admin;
+  there is no self-service deletion.
 - **Removal's report side effect takes no own-report exclusion** (ADR-0011 d10): *every* open Report
   on the target — including one this Admin filed — commits `ACTIONED` with `resolved_by_id = actor`
   in the same transaction, one `resolved_at` for the batch. Afterwards §12.6 hides that batch from
   the removing Admin and shows it, with the attribution, to every other Admin. The §12.4 guard bars
   queue reads and group resolutions, never this sanction, so the two rules cannot collide.
 - **Edits** (`PATCH`, Skills, Learning Goal, avatar) are allowed on Active and Suspended targets only,
-  and never touch password, XP, Level, Streak, Badges or anything the Student wrote (ADR-0008 d8).
+  and never touch password, `forty_two_id`, XP, Level, Streak, Badges or anything the Student wrote
+  (ADR-0008 d8 and its notes). An email edit writes `Student.email` alone, since Supabase Auth logs
+  the Student in by id: Supabase Auth is not touched and no mail is sent.
 - **Concurrency**: two Admins demoting, suspending or removing each other cannot both succeed; a
   sanction vs a Review, a Round close or a Match creation involving the target has one serial order
   (§3.6.3).
@@ -2397,7 +2840,7 @@ Admin only (a Peer Moderator gets 403). One `REPEATABLE READ READ ONLY` transact
 (ADR-0015 d5): no snapshot, aggregate table, materialised view, export, date range or per-Student
 drill-down. **Always about the community, never a named Student** (ADR-0015 d9). No dedicated
 Vitest category covers it: a read-only view over committed state fails loudly (wrong numbers on the
-dashboard), so the closed list (ADR-0016 d7) needs no eleventh category for it.
+dashboard), so the closed list (ADR-0016 d7) needs no further category for it.
 
 ### 13.1 Response (ADR-0015 d2)
 
@@ -2461,7 +2904,9 @@ those events every figure is as of the last load and refreshes on reload. No oth
   `prisma/seed/assets/`; the fixture in `prisma/fixtures/cohort.ts` (M15). Compiled with the API build
   (it needs NestJS decorator metadata) to `dist/prisma/seed/main.js`, which `prisma.config.ts`
   registers as `migrations.seed`.
-- Runs on **every boot, on both paths**, after `migrate deploy` (§15.5); `make seed` re-runs it.
+- Runs on **every boot, on both paths and both targets**, after `migrate deploy` (§15.5); `make seed`
+  re-runs it. **Its first step, on every run, sets the two buckets** (§9.8), before it checks
+  whether its fixture is complete; then §14.9 decides whether it writes.
 - It boots `NestFactory.createApplicationContext(SeedModule)` — the application's own modules, a
   no-op `RealtimePublisher` — and **drives the real write paths**: every step below is one call to a
   service method from §§5–12 (with a constructed `Actor` where it takes one, §3.4), each its own SSI
@@ -2469,8 +2914,11 @@ those events every figure is as of the last load and refreshes on reload. No oth
   application API exists for the seed.
 - **Inserted directly, and nothing else**: the 27 `Skill` rows; the bootstrap Admin (`ADMIN_EMAIL`,
   `ADMIN_PASSWORD`, display name *PeerConnect Admin*, role `ADMIN`, no Skills) and the bootstrap Peer
-  Moderator (`MODERATOR_EMAIL`, `MODERATOR_PASSWORD`, display name *Yara*, role `PEER_MODERATOR`),
-  hashed with the application's own hash function. XP, Level, `BadgeAward`, Streak, Match status,
+  Moderator (`MODERATOR_EMAIL`, `MODERATOR_PASSWORD`, display name *Yara*, role `PEER_MODERATOR`).
+  Each is made the way sign-up makes every account (ADR-0008 d12's note of 2026-10-02): NestJS makes
+  the id, Supabase's admin create sets the `.env` password, then the `Student` row is written with
+  its role, both name fields through `nameFields` (§4.3.1). That bootstrap function is shared with the
+  test harness's staff helper (§16.2). XP, Level, `BadgeAward`, Streak, Match status,
   `MatchSkillCoverage`, Report state and a Friendship's deletion by a Block are **never** written
   directly.
 
@@ -2489,7 +2937,8 @@ into `test/01-matcher/` (§16.3), leaving ADR-0016 d3's module list as it is.
 - `generateCohort({ size: 30, seed: 42, unmatchable: 1 })`. Position *p* = 0…29.
 - Display name `NAMES[p mod 24]`, with a suffix " 2" for *p* ≥ 24; email
   `<NAMES[p mod 24] lower-cased>.<p+1, two digits>@peerconnect.test` (e.g. `karim.01@peerconnect.test`); password
-  `SEED_STUDENT_PASSWORD`. Created through `auth.signup` **strictly in position order**; the seed
+  `SEED_STUDENT_PASSWORD`, a Supabase Auth password (8 characters to 72 bytes). Created through
+  `auth.signup`, so through Supabase's admin create, **strictly in position order**; the seed
   then asserts that `Student.id` order equals position order (the lower-id tie-breaks depend on it).
 - Generator XP is ignored; everyone starts at 0 XP (ADR-0017 d3).
 - **Gap Skill `G` = "Valgrind"**: removed from every generated list; added to position 1's `TEACH`
@@ -2612,7 +3061,8 @@ about the Admin.
 ### 14.8 End-state assertions (all, or the seed fails)
 
 1. No open Round; exactly four closed Rounds; exactly four Prompts; the live one is Prompt 4.
-2. The Match status distribution is logged against the §14.5 targets (reported, not asserted).
+2. The Match status distribution is logged against the §14.5 targets (reported, not asserted), with
+   how long the run took (ADR-0017 d10's note of 2026-10-11).
 3. **Demo Student**: *D* exists — Active, `STUDENT`, a `COMPLETED` Match as Mentee with its Review, at
    least one `BadgeAward`, Streak ≥ 3 after Round 4's close, and at least one Private Feedback received
    as Mentor with a non-null rating. Its email is logged.
@@ -2626,41 +3076,96 @@ about the Admin.
 8. **Stronger gap**: `G` has Demand > 0, Supply > 0, no `MatchSkillCoverage` row names it, and no Match
    joins *X* and *Y* (the blocked-pair condition of #27).
 9. Each of the three Badges is held by at least one Active Student.
+10. Every Student's `display_name_search` equals `foldName(display_name)`. This covers the two
+    bootstrap accounts, which the suite never reaches (§16.3's `11-name-search`).
 
 ### 14.9 Idempotence and failure (M14)
 
+ADR-0017 d10 and its notes of 2026-10-03 and 2026-10-11, ADR-0004 d11's notes. Everything below
+holds on both targets, the team project and the fallback.
+
 - **Completion record**: `COMMENT ON DATABASE <current database> IS
   'peerconnect:seed:complete:fixture-v<N>'`, written as the very last statement, only after every
-  assertion passed. It lives in the database's own catalogue, so it survives restarts and dies with the
-  volume, and it is outside every Prisma model. `<N>` is the fixture version, bumped by any PR that
-  changes the fixture. **A marker certifies exactly the fixture at version `<N>`**: every step and
-  every §14.8 assertion that version implements, all of them passed. While the seed is being built
-  slice by slice (§18 item 12), a version implements only the steps and assertions whose slices have
-  merged; from the PR that completes ADR-0017's end state onward, `<N>` implements all of §14.4–§14.8.
-- **At start** the seed reads it (`SELECT shobj_description(oid, 'pg_database') FROM pg_database
-  WHERE datname = current_database()`):
-  - a marker and **every domain table empty** → the marker is stale: the schema was reset under a
+  assertion passed, on the lock's connection (below). It lives in the database's own catalogue, so
+  it survives restarts and dies with the fallback's volume or a reset, and it is outside every Prisma
+  model. The `postgres` role is not a superuser but owns the database on both targets (checked on
+  the fallback on 2026-10-10 and, read-only, on the team project on 2026-10-11), so it can write and
+  clear it. Both databases already carry Postgres's own comment, *"default administrative connection
+  database"*: **only text of the form `peerconnect:seed:complete:fixture-v<N>` counts as a record**,
+  and any other comment is no record. `<N>` is the fixture version, bumped by any PR that changes the
+  fixture. **A record certifies exactly the fixture at version `<N>`**: every step and every §14.8
+  assertion that version implements, all of them passed. While the seed is being built slice by
+  slice (§18 item 12), a version implements only the steps and assertions whose slices have merged;
+  from the PR that completes ADR-0017's end state onward, `<N>` implements all of §14.4–§14.8. On the
+  team project the record is read in the dashboard's SQL editor with the query below.
+- **The lock comes first.** The seed opens a connection for the lock alone, outside the `api`'s
+  pool, takes a session advisory lock on it before it reads the record, and keeps it to the end of
+  the run; the record is cleared and written on that connection. Prisma gives a connection back to
+  the pool after each operation, so a lock taken through it would not be held by the run, and an
+  idle pooled connection is closed after 10 seconds. **Losing the lock's connection stops the run at
+  once**: an error or a close on it exits 1, with no reconnect, since a second seed could take the
+  freed lock and start deleting while this run still writes. The connection sends TCP keepalives
+  every few seconds, because it sits idle for the whole run. A second seed waits for the lock, then
+  reads the record. The two resets take the same lock (§15.6). Once built, a check through the team
+  project's session pooler confirms that a dropped client connection frees the lock.
+- **At start** the seed, holding the lock, reads the record (`SELECT shobj_description(oid,
+  'pg_database') FROM pg_database WHERE datname = current_database()`). A failed read stops the seed
+  with exit 1; it never counts as no record. Then:
+  - a record for the **current** version over tables that hold rows → log *seed already complete
+    (fixture-v<N>)*, exit 0;
+  - a record for **another** version over tables that hold rows → write nothing, exit 0. An older one
+    logs a warning naming the remedy, `make reset-team` on the team project, which Kamel runs, and
+    `make wipe` on the fallback; a newer one, which an out-of-date checkout meets, says to pull
+    `main`. A completed seed never runs again, including over Rounds a demo added (ADR-0017 d10);
+  - **any record and every domain table empty** → the record is stale: the schema was reset under a
     surviving database, as `prisma migrate reset` or `migrate dev`'s reset prompt does (Prisma's
     PostgreSQL reset drops and recreates the schema, not the database, so a database comment
-    survives it) → **clear it first** (`COMMENT ON DATABASE <current database> IS NULL`, the run's
-    first write), then run from step 1, which writes the current marker at the end. Clearing first
-    is what keeps a failure during this run on the truncate-and-retry path below: left in place, the
-    stale marker would sit over the failed run's rows, and the next boot would read it as *complete*
-    and serve a partial fixture;
-  - otherwise, a marker for the **current** version → log *seed already complete*, exit 0;
-  - otherwise, a marker for an **older** version → log a warning naming `make wipe`, exit 0 — a
-    completed seed never runs again, including over Rounds a demo added (ADR-0017 d10);
-  - **no marker and every domain table empty** → run;
-  - **no marker and any domain table non-empty** → the previous attempt failed: `TRUNCATE` the nineteen
-    domain tables in one statement (never `_prisma_migrations`), then run from step 1.
-- **The invariant**: a marker is present only over the fixture it certifies. The seed writes it last,
+    survives it) → write, clearing it first;
+  - **no record and every domain table empty** → write;
+  - **no record and any domain table non-empty** → the previous attempt failed, or a reset stopped
+    partway → write.
+- **A run that writes**, before its first fixture step:
+  1. **The guard.** If any Student is not one the seed makes, by email (the thirty of §14.3,
+     `ADMIN_EMAIL` and `MODERATOR_EMAIL`), the seed deletes nothing, logs that the database holds
+     accounts the seed did not make, names the target's reset, `make reset-team` or
+     `make reset-local`, and exits 1. That state means the record was lost over real data, by a bug
+     or by hand, and **the seed never deletes real data on its own**: only a reset does, which
+     someone runs on purpose. A reset that stopped before deleting our rows is finished by running it
+     again.
+  2. **Clear a stale record** (`COMMENT ON DATABASE <current database> IS NULL`, the run's first
+     write). Left in place, it would sit over a failed run's rows, and the next boot would read it as
+     *complete* and serve a partial fixture.
+  3. **Empty**, through the one function both resets share (ADR-0004 d11's note of 2026-10-11): the
+     rows of our tables (`TRUNCATE` the nineteen domain tables in one statement, never
+     `_prisma_migrations`), then every Supabase Auth user, then every file in `avatars` and
+     `evidence`, through Supabase's admin APIs, never by SQL into `auth` or `storage`, each set
+     listed whole before any of it is deleted, since deleting page by page skips some. After a retry,
+     Supabase therefore holds exactly the seed's accounts, and the two buckets exactly its files.
+
+  Then it runs from step 1, which writes the current record at the end.
+- **The invariant**: a record is present only over the fixture it certifies. The seed writes it last,
   after every assertion, and clears a stale one before its own first write, so no failure at any
-  point leaves a marker above rows it does not certify.
-- **Why truncation is safe**: the API serves only after the seed has completed (§15.5), so a database
-  without a marker can hold nothing but a failed attempt's rows.
+  point leaves a record above rows it does not certify.
+- **Why emptying is safe**: the API serves only after the seed has completed (§15.5), and a stale
+  record sits over empty tables, so a run that writes finds a failed attempt's rows or none; the
+  guard catches the one other case. Once those rows are gone, no Student names any Supabase Auth
+  user or file left, so they are a failed attempt's or an unfinished reset's: up to thirty-two
+  Supabase Auth users per failed attempt, which truncating our tables alone would leave behind. The
+  lock keeps it to one seed at a time on a shared database.
 - **Failure is loud**: any refusal, error or failed assertion logs the step and reason and exits 1, the
-  `api` container stops, and `docker compose up` reports the dependency failure. The next boot
-  truncates and retries.
+  `api` container stops, and `docker compose up` reports the dependency failure. The next boot empties
+  and retries.
+- **On the team project a run takes minutes**: every step is its own transaction, and from a laptop
+  every statement is a round trip to Frankfurt, about 70 ms from Kamel's computer (measured
+  2026-10-01). Some 3,000 to 6,000 round trips put a full run at roughly four to seven minutes, an
+  estimate while the seed is unbuilt; on the fallback it takes seconds. Only a boot that writes the
+  fixture pays it. So the `api`'s healthcheck allows 15 minutes (§15.1), the seed logs its run's
+  duration (§14.8), and the first complete run on `main` against the team project checks that it
+  fits. Batching stays the last resort.
+- **The team project's data stays between defenses**: a later boot finds the record and skips, so the
+  Rounds a demo adds stay. Each defense after the first starts from that accumulated data, and the
+  four-Round idle start and the Round 5 beat hold only after the first seed or a reset (§15.6, §15.7).
+  Before a defense, no Round is left open.
 - Identical on `make up` and bare Compose; no Makefile target, flag or second command is involved.
 
 ### 14.10 Not seeded, and accepted
@@ -2675,40 +3180,93 @@ priority never fires on stage — accepted, not "fixed" by seeding XP).
 
 ### 15.1 Services
 
+Six services (ADR-0004 d1 and its notes of 2026-10-03 and 2026-10-04). `proxy` and `api` are
+PeerConnect's; `db`, `auth`, `storage` and `api-gw` are the **local fallback**, Supabase's own
+Postgres, Auth, Storage and gateway, pinned to the versions of Supabase's Docker setup. The
+fallback's four start on both targets and sit unused when `.env` points at the team project.
+
 | Service | Build / image | Ports | Depends on | Healthcheck | Restart |
 | --- | --- | --- | --- | --- | --- |
-| `db` | `postgres:17-alpine`, command `postgres -c log_error_verbosity=terse -c log_min_error_statement=panic`; named volume `db-data` | none | — | `pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"` — over TCP, because on first boot the image's init server listens on the Unix socket only (`listen_addresses=''`) and would pass a socket check before `api` can connect | default (no) |
-| `api` | context `.`, `dockerfile: Dockerfile`, target `runtime` (base) / `dev` (overlay) | none | `db: service_healthy` | `wget -qO- http://127.0.0.1:3000/api/health`, interval 5 s, `start_period` 180 s | **no** — a failed boot stays failed and visible |
+| `db` | `supabase/postgres:17.6.1.136`, command `postgres -c config_file=/etc/postgresql/postgresql.conf -c log_error_verbosity=terse -c log_min_error_statement=panic -c auto_explain.log_min_duration=-1 -c log_statement=none` (§3.9); named volumes `db-data` and `db-config`; `supabase/db/roles.sql` and `jwt.sql` mounted among the image's init scripts, which run only when the volume is created; its initial superuser is `supabase_admin`, while `.env.example`'s `POSTGRES_USER` stays `postgres`, the `api`'s role | none | — | `pg_isready -h 127.0.0.1 -U postgres -d postgres` — over TCP, because on first boot the image's init server listens on the Unix socket only (`listen_addresses=''`) and would pass a socket check before `api` can connect | default (no) |
+| `auth` | `supabase/gotrue:v2.196.0`; the `GOTRUE_*` settings of §5.1 in its own `environment:`, so it behaves like the team project | none | `db: service_healthy` | `GET /health` on port 9999 | default |
+| `storage` | `supabase/storage-api:v1.74.0`, file backend in the named volume `storage-data`, image transformation off | none | `db: service_healthy` | `GET /status` on port 5000 | default |
+| `api-gw` | `envoyproxy/envoy:v1.39.1` with `supabase/api/`'s routes; serves Auth and Storage under one `SUPABASE_URL`, `http://api-gw:8000`, as the team project does, so the `api` has one code path | none | `auth`, `storage`: `service_healthy` | TCP on port 8000 | default |
+| `api` | context `.`, `dockerfile: Dockerfile`, target `runtime` (base) / `dev` (overlay); the runtime image carries `supabase/prod-ca-2021.crt` (*Supabase Root 2021 CA*, valid until 2031-04-26) | none | `db`, `api-gw`: `service_healthy` | `wget -qO- http://127.0.0.1:3000/api/health`, interval 5 s, `start_period` **900 s**, so a boot that writes the fixture on the team project, which takes minutes, is not marked unhealthy (§14.9); a normal boot is still healthy within one interval of the `api` answering, and a failed seed still exits at once | **no** — a failed boot stays failed and visible |
 | `proxy` | context `.`, `dockerfile: proxy/Dockerfile`, target `runtime` / `dev` | base `127.0.0.1:${HTTPS_PORT:-8443}:8443`, `127.0.0.1:${HTTP_PORT:-8080}:8080`; overlay `!override` → `127.0.0.1:8081:8081` | `api: service_healthy` | — | default |
 
 Every service has `logging: *pc-logging` (a top-level `x-logging` anchor: `driver: json-file`,
-`options: { max-size: "10m", max-file: "3" }`, M12). Every service with container configuration
-loads `env_file: [{ path: .env.example, required: true }, { path: .env, required: false }]` in that
-order (ADR-0004 d8). The base file declares `name: peerconnect`. No fourth service exists on either
-path. **Both images build from the repository root as their build context** (`context: .` with the
-`dockerfile` paths in the table), so files outside an image's own directory — `proxy/` included —
-stay in scope on a fresh clone's build, and the `dev` targets are chosen the same way.
+`options: { max-size: "10m", max-file: "3" }`, M12). The base file declares `name: peerconnect`.
+No other service exists on either path: Supabase's Studio, Realtime (Socket.IO stays), REST service,
+Edge Functions, image resizer and pooler are left out. The REST service would let the committed
+publishable key read and write the tables in `public` through `/rest/v1/`, while the team project
+runs with its Data API off. **Both PeerConnect images build from the repository root as their
+build context** (`context: .` with the `dockerfile` paths in the table), so files outside an image's
+own directory — `proxy/` and `supabase/` included — stay in scope on a fresh clone's build, and the
+`dev` targets are chosen the same way.
 
-### 15.2 The two paths
+**Which values reach which service** (ADR-0004 d1's note of 2026-10-03):
 
-- **Base** (`make up` / `docker compose up --build`): `https://localhost:8443`, `PUBLIC_ORIGIN =
-  https://localhost:8443`, `NODE_ENV = production`; the proxy serves the built bundle over TLS, `wss`
-  socket; port 8080 only redirects (`return 301 ${PUBLIC_ORIGIN}$request_uri`).
-- **Dev overlay** (`make dev`, which is `docker compose -f compose.yaml -f compose.dev.yaml up
-  --build`): overrides only (ADR-0004 d4). `proxy` builds target `dev` (no bundle, no TLS), publishes
-  `!override` `127.0.0.1:8081:8081`, gains `extra_hosts: ["host.docker.internal:host-gateway"]`, and
-  proxies `/` and the HMR upgrade to `host.docker.internal:5173`; `api` builds target `dev`,
-  bind-mounts `.:/app` with an anonymous `/app/node_modules`, runs `prisma generate` → `nest build` →
-  migrate → seed → `nest start --watch`; both get `environment: { PUBLIC_ORIGIN:
-  "http://localhost:8081", NODE_ENV: development }`. The overlay's `!override` tag exists only from
-  Compose **2.24.4** — the first docker/compose release carrying compose-go's `!override` support —
-  so that, not 2.24.0, is the toolchain floor (§3.3, §17.5).
+- `api` and `proxy` load `env_file: [{ path: .env.example, required: true }, { path: .env, required:
+  false }]` in that order (ADR-0004 d8), except under `compose.local.yaml`, which gives them
+  `.env.example` alone with `!override` (§15.2).
+- **The fallback's four load `.env.example` alone, never `.env`.** Supabase's images read some of the
+  `api`'s names: Storage takes its database connection from `DATABASE_URL`, the gateway reads the
+  `SUPABASE_*` keys, and Auth falls back to `DATABASE_URL` when `GOTRUE_DB_DATABASE_URL` is unset.
+  Through the shared `env_file` chain a team `.env` would reach them. So Storage's and Auth's
+  database URLs, which use their own roles (`supabase_storage_admin`, `supabase_auth_admin`), are
+  written in each service's own `environment:` as plain values, with no `${…}`: Compose fills `${…}`
+  from the shell and `.env`, never from `env_file`. They repeat `.env.example`'s
+  `POSTGRES_PASSWORD`, as does `db`'s own `PGPASSWORD`, because Supabase's Postgres image gives those
+  roles that password when it initializes; the two files change together, with a comment saying so
+  beside each copy. The fallback's values therefore come only from `.env.example` and
+  `compose.yaml`, and `.env` cannot change them: with a team `.env` in place, `docker compose config`
+  shows no team value in any fallback service.
+
+### 15.2 The paths and the two targets
+
+- **Base** (`make up`, `make local` or `docker compose up --build`): `https://localhost:8443`,
+  `PUBLIC_ORIGIN = https://localhost:8443`, `NODE_ENV = production`; the proxy serves the built
+  bundle over TLS, `wss` socket; port 8080 only redirects (`return 301 ${PUBLIC_ORIGIN}$request_uri`).
+- **Dev overlay** (`make dev`, which is `docker compose --env-file .env.example -f compose.yaml -f
+  compose.dev.yaml -f compose.local.yaml up --build`): overrides only (ADR-0004 d4). `proxy` builds
+  target `dev` (no bundle, no TLS), publishes `!override` `127.0.0.1:8081:8081`, gains `extra_hosts:
+  ["host.docker.internal:host-gateway"]`, and proxies `/` and the HMR upgrade to
+  `host.docker.internal:5173`; `api` builds target `dev`, bind-mounts `.:/app` with an anonymous
+  `/app/node_modules`, runs the boot check → `prisma generate` → `nest build` → migrate → seed →
+  `nest start --watch`; both get `environment: { PUBLIC_ORIGIN: "http://localhost:8081", NODE_ENV:
+  development }`. The overlay's `!override` tag exists only from Compose **2.24.4** — the first
+  docker/compose release carrying compose-go's `!override` support — so that, not 2.24.0, is the
+  toolchain floor (§3.3, §17.5).
 - **Host Vite** (not a Compose service, not started by `make dev`): `npm --prefix web run dev --
   --host <verified host-side bridge address> --port 5173 --strictPort`, with `server.hmr.clientPort =
   8081` and `server.fs.allow` including the repository root (for `docs/legal/`). The README states
   the bind command, how the address was verified, and that nginx-to-Vite HTTP/HMR works while Vite is
   not reachable from the LAN; no silent `0.0.0.0` (ADR-0004 d4).
 - **Localhost only** on both paths: every published port binds `127.0.0.1` (ADR-0004 d5, d7).
+- **Two targets** (ADR-0004's top note and d8's notes of 2026-10-03, ADR-0019 d3): the **team
+  project**, `main`'s and the defense's, in Frankfurt; and the **local fallback**, a copy on the
+  computer that runs it, which starts from the seed. **Of the targets that start a stack, only
+  `make up` reads `.env`**, as bare `docker compose up --build` does:
+  - `make up`: the production image, on `.env`'s target: the team project when `.env` holds its
+    values; the fallback with no `.env`, or with the copy of `.env.example` that `make up` puts in
+    its place, so a fresh clone and bare Compose still work;
+  - `make local`: the production image, always on the fallback, through `compose.local.yaml` and
+    `--env-file .env.example`, which keeps Compose's own `${…}` off `.env` too: destructive tests,
+    the reset's local runs, and the last resort on defense day;
+  - `make dev`: the dev image with hot reload, always on the fallback; this is where branches are
+    coded;
+  - `make test`: `make dev`'s files under a project name of its own (§16.2).
+- **Which branch runs where**: branch work runs under `make dev` or `make local`, whatever `.env`
+  holds. Branch work that changes the database, a migration (which any boot applies) or written
+  data, never runs `make up`; branch work that only reads data may, to see the team project's data,
+  without hot reload. Migrations reach the team project only through `make up` on `main`, after
+  review (ADR-0005 d5's note of 2026-10-10). The team values pass between members privately and are
+  never committed.
+- **The team project must be available.** Kamel, its Owner, keeps the Free project active and checks
+  it before each defense, with no keep-alive job and no paid plan. A paused project answers `540` on
+  its Auth and Storage addresses, which the boot check names; only Kamel can resume it. If it is
+  paused on defense day anyway, the last resort is the fallback, `make local`, which starts from the
+  seed (ADR-0004's notes of 2026-10-03, ADR-0019 d2).
 
 ### 15.3 Proxy configuration files (what they must contain)
 
@@ -2730,96 +3288,240 @@ stay in scope on a fresh clone's build, and the `dev` targets are chosen the sam
   Content-Security-Policy "…" always; }` (§3.10).
 - `proxy/templates-dev/default.conf.template`: one `listen 8081` server with the snippet and `location
   /` proxied to Vite with the upgrade headers; no CSP.
+- **No location reaches Supabase**: the proxy never forwards to `api-gw` or to a Supabase address;
+  every file goes through the `api`'s routes (§9.8).
 - **TLS** at image build: `openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes
   -days 825 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"`. The key exists
   only in the local image, never in the repository; the image is never published (ADR-0004 d6).
 
-### 15.4 Environment (the fifteen entries, ADR-0004 d9) and duplicated sources (M29)
+### 15.4 Environment (the twenty-seven entries, ADR-0004 d9) and duplicated sources (M29)
 
-`.env.example`, committed, begins with a header comment: *these are development defaults for a local,
-throwaway copy; change the staff and seed passwords and the database password for any shared use;
-the OAuth pair ships empty and the platform works without it; copy to `.env` to override locally.*
+`.env.example`, committed, holds the fallback's values only, and begins with a header comment: *fixed
+development values for the local Supabase fallback only; every container loads this file, and only
+`api` and `proxy` can also load the team `.env`; keep the team project's values in the gitignored
+`.env`; OAuth is optional.* All twenty-seven values belong to the fallback, and the fallback's keys
+are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
 
 | Entry | Default | Read by | Notes |
 | --- | --- | --- | --- |
-| `POSTGRES_USER` | `peerconnect` | db (first boot), api (consistency check) | |
-| `POSTGRES_PASSWORD` | `peerconnect-dev-password` | db (first boot), api (check) | |
-| `POSTGRES_DB` | `peerconnect` | db (first boot), api (check) | |
-| `DATABASE_URL` | `postgresql://peerconnect:peerconnect-dev-password@db:5432/peerconnect` | api, Prisma CLI, seed | the only connection source the application uses |
+| `POSTGRES_USER` | `postgres` | api (consistency check) | the `api`'s role on the fallback; `db`'s own superuser is set in `compose.yaml` |
+| `POSTGRES_PASSWORD` | `peerconnect-dev-password` | db (first boot), api (check) | repeated as plain values in `compose.yaml` (§15.1) |
+| `POSTGRES_DB` | `postgres` | api (check) | |
+| `DATABASE_URL` | `postgresql://postgres:peerconnect-dev-password@db:5432/postgres` | api, Prisma CLI, seed | the only database connection the application uses. Team `.env`: the dashboard's plain Session pooler string, `postgresql://postgres.<ref>:<password>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres`, with no TLS settings: the code adds them, and replaces or removes any the URL carries, so none can weaken the check (§15.5) |
 | `NODE_ENV` | `production` | api | overlay sets `development` |
 | `PUBLIC_ORIGIN` | `https://localhost:8443` | api, proxy template | overlay sets `http://localhost:8081` |
 | `HTTPS_PORT` | `8443` | Compose interpolation (default `8443`), api (check) | |
 | `HTTP_PORT` | `8080` | Compose interpolation (default `8080`) | |
 | `ADMIN_EMAIL` | `admin@peerconnect.test` | seed | |
-| `ADMIN_PASSWORD` | `change-me-admin` | seed | |
-| `FT_OAUTH_CLIENT_ID` | *(empty)* | api | 42 dashboard label **UID** |
-| `FT_OAUTH_CLIENT_SECRET` | *(empty)* | api | 42 dashboard label **SECRET** |
+| `ADMIN_PASSWORD` | `change-me-admin` | seed | a Supabase Auth password, 8 characters to 72 bytes |
+| `FT_OAUTH_CLIENT_ID` | *(empty)* | api | 42 dashboard label **UID**; the team application's, in the team `.env` only |
+| `FT_OAUTH_CLIENT_SECRET` | *(empty)* | api | 42 dashboard label **SECRET**; team `.env` only; expires every 28 days (§5.6) |
 | `MODERATOR_EMAIL` | `moderator@peerconnect.test` | seed | |
-| `MODERATOR_PASSWORD` | `change-me-moderator` | seed | |
-| `SEED_STUDENT_PASSWORD` | `change-me-student` | seed | shared by the thirty seeded Students |
+| `MODERATOR_PASSWORD` | `change-me-moderator` | seed | 8 characters to 72 bytes |
+| `SEED_STUDENT_PASSWORD` | `change-me-student` | seed | shared by the thirty seeded Students; 8 characters to 72 bytes |
+| `SUPABASE_URL` | `http://api-gw:8000` | api | Team `.env`: `https://<ref>.supabase.co`; only `https:` names the team project |
+| `SUPABASE_PUBLISHABLE_KEY` | the fallback's | api (the password grant), api-gw | Team `.env`: the project's publishable key |
+| `SUPABASE_SECRET_KEY` | the fallback's | api (admin create, update and delete; Storage), api-gw | Team `.env`: a secret key. It opens every account and file, so only the `api` uses it, and it is never committed or sent to the browser |
+| `ANON_KEY`, `SERVICE_ROLE_KEY`, `GOTRUE_JWT_KEYS`, `JWT_JWKS`, `GOTRUE_JWT_SECRET`, `AUTH_JWT_SECRET`, `SERVICE_KEY`, `ANON_KEY_ASYMMETRIC`, `SERVICE_ROLE_KEY_ASYMMETRIC` | the fallback's | the fallback's `auth`, `storage` and `api-gw`, each under its image's own name | nine entries: the fixed local signing secret and the keys made from it. Development defaults that open only a local copy; never in a team `.env` |
 
 - **No other entry**: no `SESSION_SECRET` (ADR-0004 d10), no callback URL, no test database URL (the
-  suite derives it, §16.2), no feature flag.
+  suite derives it, §16.2), no feature flag, and no `VITE_` entry: the web bundle reads none of these
+  values (ADR-0019 d1).
+- **The team `.env`** (ADR-0004 d9's notes of 2026-10-03 and 2026-10-11) holds only the team
+  project's values: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
+  `SUPABASE_SECRET_KEY`, the three passwords and the `FT_OAUTH_*` pair; never the fallback's own
+  names, such as `POSTGRES_PASSWORD`. Every other value comes from `.env.example`, so the file is
+  never a copy of it. **It sets all three passwords to values other than the defaults before the
+  first boot on the team project**, which is shared use. It holds the `postgres` role's password and
+  the secret key, so whoever has it can read and change every account and file on the team project:
+  only the team holds it, it passes between members privately, it is never committed, and **it is
+  never handed to an evaluator**. It is not rotated after a defense; rotating stays cheap if that
+  changes, since secret keys are created and revoked one at a time and the database password is one
+  reset.
 - **Only `HTTPS_PORT` and `HTTP_PORT` are interpolated by Compose**, each with a Compose-level default
-  equal to its `.env.example` value; everything else reaches containers through `env_file`, so bare
-  Compose works with no `.env` (ADR-0004 d8).
-- **Boot validation** (shared by `src/main.ts` and the seed entry; failure → one message naming the
-  variable, never its value, exit 1): the required entries are non-empty (all but the OAuth pair);
-  `PUBLIC_ORIGIN` is a bare origin; the staff and seed passwords satisfy the password policy.
+  equal to its `.env.example` value; everything else reaches containers through `env_file` or as a
+  plain value in `compose.yaml`, so bare Compose works with no `.env` (ADR-0004 d8).
+- **Boot validation**: the boot check's steps 1 and 2 (§15.5), shared by the boot chain, the seed
+  entry, both resets and the test harness. A failure prints one message naming the variable and,
+  for a URL, its host, never a secret value, and exits 1. Step 1 checks that the `api`'s entries
+  are non-empty (all but the OAuth pair and the fallback's nine signing secrets and keys, which the
+  `api` never reads), that `PUBLIC_ORIGIN` is a bare origin and that the staff and seed passwords
+  meet the password rule (§5.1).
 - **Duplicated sources, resolved by checks rather than new entries**:
-  - `DATABASE_URL`'s user, password and database must equal `POSTGRES_USER`, `POSTGRES_PASSWORD` and
-    `POSTGRES_DB`, else the api fails at boot telling the operator to change both together — and to run
-    `make wipe` if the database was already initialised, because Postgres applies `POSTGRES_*` only to
-    an empty data directory.
+  - `DATABASE_URL` and `SUPABASE_URL` must name one target (the boot check's step 2). Compose layers
+    `.env` over `.env.example` one variable at a time, so a `.env` that missed one would otherwise
+    run the database on one target and Auth and Storage on the other.
+  - **On the fallback only**, `DATABASE_URL`'s user, password and database must equal
+    `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`. The fallback's credentials are fixed:
+    its `db` always initializes from `.env.example`'s password, so a `.env` that changes
+    `POSTGRES_*` and `DATABASE_URL` together passes this rule but names a password the fallback's
+    database never read, and the boot check's step 4 refuses it with the remedy (§15.5). Changing
+    the database password for shared use no longer applies: shared use is the team project. An old
+    `.env` from before the fallback (`POSTGRES_USER=peerconnect`) is deleted, and `make wipe` run,
+    as the README says.
   - When `PUBLIC_ORIGIN` is `https:`, its port must equal `HTTPS_PORT`.
-  - `compose.yaml`'s interpolation defaults must equal `.env.example`'s port values, and the overlay's
-    `PUBLIC_ORIGIN` literal must match its published port; the reviewer checks them together.
+  - `compose.yaml`'s interpolation defaults must equal `.env.example`'s port values, its plain copies
+    of the password must equal `POSTGRES_PASSWORD`, and the overlay's `PUBLIC_ORIGIN` literal must
+    match its published port; the reviewer checks them together.
 
-### 15.5 Boot sequence (ADR-0004 d11)
+### 15.5 Boot sequence (ADR-0004 d11 and its notes)
 
-1. `db` becomes healthy.
-2. `api` runtime command: `npx prisma migrate deploy --config prisma.config.ts && npx prisma db seed
-   --config prisma.config.ts && exec node dist/src/main.js`. The seed validates the environment first.
-3. `main.js` validates the environment, then listens; `/api/health` answers; `proxy` starts.
-4. Any failure stops the chain; `api` exits non-zero and is not restarted; `proxy` never starts;
-   `docker compose up` reports it. **The API never serves before the seed has completed**, which is what
-   makes §14.9's truncation safe.
+The chain is the same on both targets.
+
+1. The fallback's services become healthy: `db`, then `auth` and `storage`, then `api-gw`.
+2. `api` runtime command: `node dist/src/core/check-env.js && npx prisma migrate deploy --config
+   prisma.config.ts && npx prisma db seed --config prisma.config.ts && exec node dist/src/main.js`.
+   **The boot check comes first**, before anything touches a database (ADR-0004 d8's note of
+   2026-10-03). In order, it checks that:
+   1. every value the `api` reads is present and well formed (§15.4);
+   2. the values name **one target**: `DATABASE_URL` and `SUPABASE_URL` both point at the fallback's
+      services, or both carry the same project ref, in the pooler user `postgres.<ref>` and in
+      `https://<ref>.supabase.co`;
+   3. Supabase Auth and Supabase Storage accept the keys. They come before the database because only
+      their HTTP addresses answer `540` for a paused project; the pooler just refuses the
+      connection;
+   4. the database accepts `DATABASE_URL`. On the fallback, a refusal says to use `make dev` or
+      `make local`, or to remove `.env` or replace it with a copy of `.env.example`, since the
+      fallback's database never reads `.env`.
+
+   A failure ends the boot with the problem named, for example `Supabase check failed: Auth rejected
+   SUPABASE_SECRET_KEY (401)` or `Supabase check failed: https://<ref>.supabase.co answered 540: the
+   project is paused`. **The boot never falls back by itself**: an evaluator who believes they are on
+   the team project must never be quietly on an empty local copy. To use the fallback on purpose,
+   run `make local` or `make dev`.
+3. `migrate deploy`, then the seed, whose first step sets the two buckets on every run (§9.8, §14.1),
+   then §14.9.
+4. `main.js` validates the environment, starts the file cleanup, whose failure is only logged
+   (§9.8), then listens; `/api/health` answers; `proxy` starts.
+5. Any failure stops the chain; `api` exits non-zero and is not restarted; `proxy` never starts;
+   `docker compose up` reports it. **The API never serves before the seed has completed**, which is
+   what makes §14.9's emptying safe.
+
+The dev image runs the same check first, from a copy outside the bind mount, then `prisma generate`,
+`nest build`, migrate, seed and `nest start --watch` (§15.2).
+
+**On the team project** (ADR-0004 d11's notes of 2026-10-03, 2026-10-06 and 2026-10-11):
+
+- **One `DATABASE_URL`, the session pooler**, for `prisma migrate` and the `api`. The direct
+  connection is IPv6-only on Free, and the transaction pooler drops the lock `prisma migrate` holds.
+  `40001` and `40P01` come back through the session pooler unchanged (tested on 2026-10-03), so the
+  Unit of Work's retry works (§3.6.2).
+- **The connection is encrypted and verified.** When `DATABASE_URL` and `SUPABASE_URL` name the team
+  project, `src/core/prisma.service.ts` gives the `api`'s pool `supabase/prod-ca-2021.crt` with full
+  verification, after removing every TLS setting the URL carries (each `ssl…` key and
+  `uselibpqcompat`): node-postgres lays the URL's settings over its config, so a pasted
+  `?sslmode=no-verify` would otherwise switch the check off. For `prisma migrate`, whose engine takes
+  TLS from the URL only, `prisma.config.ts` sets `sslmode=require`, `sslaccept=strict` and
+  `sslcert=<absolute path>` on the query of a URL on Supabase's pooler, replacing any it has; the
+  engine does not find a relative path. A wrong or missing certificate stops both connections. The
+  project also enforces SSL, so an unencrypted connection is refused, and the boot check names it.
+- **Each `api`'s pool is capped at 5 connections.** In session mode the pooler accepts at most the
+  project's Pool Size, 15 (the default for its compute size), per role and database. Two members'
+  stacks of 5, `prisma migrate deploy`, and the seed's two connections, its pool's and its lock's,
+  make 13, with 2 to spare.
 
 `prisma.config.ts` imports `dotenv/config`, sets `schema: "prisma/schema.prisma"`, `migrations: {
 path: "prisma/migrations", seed: "node dist/prisma/seed/main.js" }` and `datasource: { url:
-process.env.DATABASE_URL }`. **Every Prisma CLI invocation — boot, Makefile, CI, docs — passes
-`--config prisma.config.ts`** (M16), so no pinned invocation can load another Config. Pinning does
-not stop an unpinned run — an editor extension, a developer's bare `npx prisma` — from discovering
-one, which is why §3.2 forbids the files themselves and the gate reads them off the file list; the
-two layers are meant together. `dotenv` is therefore a runtime dependency too: the runtime image's
-Prisma CLI loads `prisma.config.ts`, which imports it.
+process.env.DATABASE_URL }`, with the TLS settings above on a Supabase pooler URL. **Every Prisma CLI
+invocation — boot, Makefile, CI, docs — passes `--config prisma.config.ts`** (M16), so no pinned
+invocation can load another Config. Pinning does not stop an unpinned run — an editor extension, a
+developer's bare `npx prisma` — from discovering one, which is why §3.2 forbids the files themselves
+and the gate reads them off the file list; the two layers are meant together. `dotenv` is therefore
+a runtime dependency too: the runtime image's Prisma CLI loads `prisma.config.ts`, which imports it.
+Because it loads `.env` by itself, the test harness checks its own target (§16.2).
 
 ### 15.6 Makefile (convenience only; ADR-0004 d8)
 
 | Target | Command |
 | --- | --- |
-| `up` | `env`, then `docker compose up --build` |
-| `dev` | `env`, then `docker compose -f compose.yaml -f compose.dev.yaml up --build` |
-| `down` | `docker compose down` (keeps the volume) |
-| `wipe` | `docker compose down --volumes --remove-orphans` (M20) |
-| `seed` | `docker compose exec api npx prisma db seed --config prisma.config.ts` |
-| `test` | `docker compose -f compose.yaml -f compose.dev.yaml run --rm api npx vitest run` |
+| `up` | `env`, then `docker compose up --build` — the only stack target that reads `.env` |
+| `local` | `docker compose --env-file .env.example -f compose.yaml -f compose.local.yaml up --build` — the production image, always on the fallback |
+| `dev` | `docker compose --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml up --build` — always on the fallback |
+| `down` | `docker compose down` (keeps the volumes) |
+| `wipe` | `docker compose down --volumes --remove-orphans` (M20): the fallback's database and Storage volumes, never the team project |
+| `seed` | `docker compose exec api npx prisma db seed --config prisma.config.ts`, in whichever stack is up |
+| `test` | under `-p peerconnect-test` with `make dev`'s files and `--env-file .env.example`: remove any copy an interrupted run left, with its volumes; build `api`; start `db`, `auth`, `storage` and `api-gw`; `run --rm api npx vitest run`; remove the copy with its volumes even if the suite fails (§16.2) |
 | `logs` | `docker compose logs -f` |
 | `env` | copy `.env.example` to `.env` when absent |
+| `reset-team` | empty the team project (below) |
+| `reset-local` | empty the fallback (below) |
 
 Every target's full command is also in the README. Bare `docker compose up --build` needs none of them.
 
+**The two resets** (ADR-0004 d11's notes of 2026-10-03 and 2026-10-11, ADR-0019 d10), whose code is
+under `prisma/reset/**`, inside the gate. `make reset-team` empties the team project and reads
+`.env`; `make reset-local` empties the fallback and reads `.env.example` alone, as `make local`
+does. Each deletes the rows of our tables (the tables and migrations stay), **every** Supabase Auth
+user and **every** file in `avatars` and `evidence`, not only what the seed made, since pre-defense
+checks and defenses add accounts and files too, through the seed's own function (§14.9); the next
+boot seeds afresh. Each leaves the project or the stack, its settings, the buckets and the keys.
+There is no single command for both: wanting a fresh local copy must never empty the shared project.
+In order:
+
+1. `make reset-team` only: it refuses unless the checkout is on `main`, has no uncommitted change
+   and, after a fetch, equals `origin/main`, since the reset is code and the boot after it writes the
+   fixture of whatever checkout runs `make up`. `make reset-local` has no such check.
+2. **It checks what it read** with the boot check's steps 1 and 2, since neither reset runs the boot
+   chain. `make reset-team` refuses unless `DATABASE_URL` and `SUPABASE_URL` both name the team
+   project with the same ref (with no `.env`, or a copy of `.env.example`, it has no ref and
+   refuses), then prints that ref and asks for it to be typed before it deletes anything.
+   `make reset-local` refuses unless both name the fallback. A mixed `.env` would otherwise delete
+   Auth users and files on one target and rows on the other.
+3. **It takes the seed's lock**, on a connection of its own, and refuses before any write, saying a
+   seed is running on that target, while a seed holds it. It keeps the lock until it has deleted, so
+   a seed that starts meanwhile waits; losing that connection stops it at once, with no reconnect.
+4. **Its first write clears the completion record**, on the lock's connection, so a reset that stops
+   partway leaves no record over the rows left, and the next boot empties and seeds, or, if a
+   Student the seed does not make is left, the guard stops it and running the reset again finishes
+   it (§14.9).
+5. Then it deletes. `make reset-team` ends by saying to run `make up` from the same checkout.
+
+**Kamel runs `make reset-team` whenever he chooses**, never as part of `make up`: when the seed's
+fixture changes; when the pre-defense run finds anything an earlier defense changed in the way, a
+changed password or a suspended, demoted or removed account, for which the reset is the one remedy
+(the only one for a removed account, since Removal has no reinstate); and whenever a defense should
+start from the seed's end state. Every stack connected to the team project is stopped first, and
+every other stack stays stopped until the boot after it has finished writing the fixture. It is
+proven on the fallback first, with `make reset-local` under `make local`: boot; add a sign-up and an
+avatar the seed did not make; reset; boot again; check that only the seed's accounts and files are
+left, with four closed Rounds and none open. `make wipe` is different again: it drops the
+fallback's volumes without running the deletions through Auth and Storage, and it is the only
+command that removes the suite's own buckets left in a `make dev` stack (§16.2).
+
 Prisma commands a developer runs by hand (`migrate dev`, `generate`, `db seed`) run inside the dev
-overlay's `api` container, because `db` publishes no port and `DATABASE_URL` names the Compose host
-`db`; the bind mount puts the generated migration and client back in the working tree. They are
-pinned like every other invocation, e.g. `docker compose -f compose.yaml -f compose.dev.yaml exec api
-npx prisma migrate dev --config prisma.config.ts --name <slice>_<change>`. `CONTRIBUTING.md` →
-*Schema changes* carries the same commands.
+overlay's `api` container, on the fallback, because no database port is published and `DATABASE_URL`
+names the Compose host `db`; the bind mount puts the generated migration and client back in the
+working tree. They are pinned like every other invocation, e.g. `docker compose -f compose.yaml -f
+compose.dev.yaml exec api npx prisma migrate dev --config prisma.config.ts --name
+<slice>_<change>`. `CONTRIBUTING.md` → *Schema changes* carries the same commands. Repairing a
+migration that failed partway on the team project is one of Kamel's four changes by hand
+(`supabase/team-project.md`).
 
-### 15.7 Pre-defense checklist (ADR-0004 Consequences, ADR-0016 d5)
+### 15.7 Pre-defense checklist (ADR-0004 Consequences and its notes, ADR-0016 d5)
 
-Both boot paths, each from its own fresh clone **and an empty database** (§16.5); expect the certificate
-interstitial; confirm the console is clean in Chrome, Firefox and Brave after accepting it.
+- **Both boot paths on the fallback**, each from its own fresh clone **and an empty database**
+  (§16.5); expect the certificate interstitial; confirm the console is clean in Chrome, Firefox and
+  Brave after accepting it.
+- **One run on the team project**, from a team member's own computer, with the team `.env` (ADR-0004
+  *Consequences*' note of 2026-10-03): Kamel checks that the project is active; `make up` boots on
+  it; the bootstrap Admin, the Peer Moderator and the demo Student sign in with the team `.env`'s
+  passwords; one sign-up succeeds, which also confirms that the team project accepts
+  `<id>@peerconnect.invalid` logins; and one avatar upload succeeds. If anything an earlier defense
+  changed is in the way, Kamel runs `make reset-team` (§15.6), boots with `make up` and runs the
+  three sign-ins again, so the defense is never the first sign-in after a reset; the sign-up and the
+  upload are not repeated. Unless he resets, the run's writes stay in the data the defense starts
+  from. No Round is left open.
+- **The dashboard matches `supabase/team-project.md`**, compared by Kamel, and the `postgres` role's
+  four log settings are checked through the session pooler with that record's `psql -f` check and
+  its two probes, not `rolconfig`, which shows only what the role stores (ADR-0018 d6's note).
+- **The 42 secret's `secret_valid_until`** is checked; an expired secret fails every trip to 42 (the
+  first ends on 2026-11-04).
+- **The evaluator is told only the three sign-in passwords**, `ADMIN_PASSWORD`, `MODERATOR_PASSWORD`
+  and `SEED_STUDENT_PASSWORD`; the team `.env` stays with the team. If a defense ever runs on another
+  computer, never one an evaluator controls, a team member puts the `.env` there, shows it to
+  nobody, and at the end runs `make down`, which removes the containers that hold its values, and
+  deletes it (ADR-0004 d9's note of 2026-10-11).
+- **A real Sign in with 42** is shown by hand, the round trip the suite replaces (§5.6).
 
 ---
 
@@ -2828,25 +3530,59 @@ interstitial; confirm the console is clean in Chrome, Firefox and Brave after ac
 ### 16.1 Principles
 
 Test only what fails silently; everything else fails loudly and the demo is its detector. One level:
-integration tests against a real Postgres. **The ten categories are closed**; an eleventh needs the
-*does it fail silently?* argument. Tests assert outcomes, never a PostgreSQL technique. No coverage
-target; roughly 20–40 tests. Vitest is the one runner; the API side builds tests with `unplugin-swc`
-for decorator metadata. **`npx vitest run` is the command** the Done box names.
+integration tests against **Supabase's own Postgres, Auth and Storage**, the local fallback's
+containers, never a plain Postgres or a stand-in for either service (ADR-0016 d1's note of
+2026-10-04, ADR-0019 d9): a stand-in would prove the code against itself, and a seed or a file check
+could pass on it and fail on Supabase. **The twelve categories are closed**; a thirteenth needs the
+*does it fail silently?* argument (ADR-0016 d7's notes). Tests assert outcomes, never a PostgreSQL
+technique. No coverage target; roughly 20–40 tests. Vitest is the one runner; the API side builds
+tests with `unplugin-swc` for decorator metadata. **`npx vitest run` is the command** the Done box
+names, run locally as `make test`.
 
 ### 16.2 Where the suite runs (M18)
 
-- **Locally** (the Done box's run): `make test` runs `npx vitest run` in a fresh `api` dev container on
-  the Compose network, beside the running `db`. That container has the dev dependencies, the
-  bind-mounted repository and an `nginx` binary (installed in the Dockerfile's `dev` target only).
+- **Locally** (the Done box's run): **`make test` runs a copy of its own** (ADR-0004 d8's note of
+  2026-10-04, ADR-0016 *Not settled*'s note). Under the Compose project `peerconnect-test`, with
+  `compose.yaml`, `compose.dev.yaml` and `compose.local.yaml` and `--env-file .env.example`, it
+  removes any copy an interrupted run left, starts the fallback's `db`, `auth`, `storage` and
+  `api-gw` from empty, runs `npx vitest run` in a fresh `api` dev container, and deletes the copy
+  with its volumes when the run ends, even if the suite fails. It never starts `proxy`, so it
+  publishes no port. Supabase Auth and Storage write each test's users and files to the copy's own
+  main database, which is why the copy never shares `make dev`'s or `make local`'s containers, and a
+  run from empty means what CI's run means. **One `make test` runs at a time per machine**: every
+  copy has the same project name, so a second run's first step would delete a running copy. The `api`
+  dev container has the dev dependencies, the bind-mounted repository and an `nginx` binary
+  (installed in the Dockerfile's `dev` target only).
 - **The harness** (`test/harness/`):
+  - **its first step, before any connection, refuses any target but the fallback**, with the check
+    `make reset-local` runs (the target function of `src/core/env.ts`): `DATABASE_URL` and
+    `SUPABASE_URL` must both name the fallback, or the run stops and names the variable and the host
+    it points at, never the password. `make test` reads `.env.example` alone, but `npx vitest run`
+    can be typed anywhere, and `prisma.config.ts` loads `.env` by itself;
   - global setup derives the test database name `<database of DATABASE_URL>_test`, drops and recreates
     it (`DROP DATABASE … WITH (FORCE)`), runs `npx prisma generate --config prisma.config.ts` first —
     the client is gitignored (§3.2), a fresh clone has none, so nothing may import it before it exists,
     and this is what lets `make test` run on a fresh clone — then `npx prisma migrate deploy
-    --config prisma.config.ts` against it; the development database is never touched;
-  - each test file boots the real `AppModule` in-process against the test database on an ephemeral
-    port, with a recording `RealtimePublisher` (the socket category boots the real gateway);
-  - tables are truncated between tests; `fileParallelism: false`;
+    --config prisma.config.ts` against it. The main database is never emptied, so a suite run inside
+    a `make dev` container leaves the developer's tables alone. No table references Supabase's
+    `auth` or `storage` schemas (§4.1), so `<db>_test` can be dropped and rebuilt on its own;
+  - each test file boots the real `AppModule` in-process against the test database and the copy's
+    own Supabase Auth and Storage, on an ephemeral port, with a recording `RealtimePublisher` (the
+    socket category boots the real gateway);
+  - **every test account is made the real way**: a Student through the sign-up code, Supabase's
+    admin create and then the `Student` and its `Session`; the bootstrap staff through the seed's
+    bootstrap code (§14.1). The Student and session helpers land with Accounts and sessions (§18
+    item 3), and the staff helper with the seed that builds the shared bootstrap function. A staff
+    session is opened by the code sign-in runs after the password check, so only the tests of
+    sign-in itself pay for a real password check;
+  - tables are truncated between tests; `fileParallelism: false`. **Supabase Auth users and files
+    outlive the truncation** and are deleted with the copy. Their ids never repeat, so they collide
+    with nothing: a test checks a user or a file by its id, never by a count, and a file's name is
+    its row's token (§9.8);
+  - **the suite's files go to buckets of its own**, `test-avatars` and `test-evidence`, made by the
+    bucket code of §9.8 with those names passed in; the cleanup never runs by itself in the harness,
+    neither at start nor hourly, and `08-files` calls it on those buckets. Run inside `make dev`, the
+    suite therefore never lists or deletes the developer's files;
   - **the nginx harness** starts the `nginx` binary with a generated configuration that carries, at
     `http` scope, `map $http_upgrade $connection_upgrade { default upgrade; "" close; }` — the
     snippet's `/socket.io/` location reads `$connection_upgrade` (§15.3) and nginx refuses a config
@@ -2859,68 +3595,91 @@ for decorator metadata. **`npx vitest run` is the command** the Done box names.
     carries an explicit `X-Real-IP` (one fixed address per test; varied only where a test asserts the
     throttle), so §5.5's key is deterministic. This is **test-only** injection — production keeps nginx
     as the sole writer of `X-Real-IP` and the API still trusts no other source (§5.5, ADR-0003 d10);
-  - `checkpoint` is bound to a barrier registry (§3.6.4).
-- **In CI**: the same `npx vitest run` on the runner, with a `postgres:17-alpine` service container and
-  `nginx` installed from the distribution. No Compose, no image build (ADR-0016 d8). Postgres is never
-  published to the developer's host.
+  - `checkpoint`, and the password change's named pause, are bound to a barrier registry (§3.6.4);
+  - only the two calls to 42, the token exchange and `/v2/me`, are replaced by a fixed answer, in
+    `12-sign-in` (§5.6); nothing of Supabase is.
+- **Inside a `make dev` container** (`npx vitest run` typed there): the harness leaves the
+  developer's tables alone, but the Supabase Auth users the run makes stay in that stack until
+  `make reset-local`, `make wipe` or the next seed run there that writes its fixture, and the files in
+  the suite's own buckets stay until `make wipe` (ADR-0016's note of 2026-10-11).
+- **In CI**: the same copy as `make test` (§16.4), with no service container and `nginx` from the
+  `dev` image. No production image, no `proxy`, no TLS and no boot chain (ADR-0016 d8's note of
+  2026-10-04). No database port is ever published to the developer's host.
 - The suite never runs the seed; the seed has its own checks (§16.4, §14.8).
 
-### 16.3 The ten categories — files and exact assertions (M19)
+### 16.3 The twelve categories — files and exact assertions (M19)
 
 Files live at `test/<NN>-<category>/*.test.ts`.
 
 | # | Directory | Seam | Assertions |
 | --- | --- | --- | --- |
 | 1 | `01-matcher` | pure engine + services + DB | Over `generateCohort({ size: 20, seed: 42 })` and six Rounds with every Match accepted and reviewed through the services: **C3** every Match has ≥ 1 FORWARD row; **C4** every stored Score equals §8.2 recomputed from its coverage and goal flag, and its explanation names a FORWARD Skill; **C6** two runs on fresh databases with the same action log give identical sequences of (mentor position, mentee position, Score, Mission, coverage); **C7** no Match below 25. The five half-values round up. **No-repeats**: a pair with a prior `DECLINED`, and one with `TERMINATED_BY_ADMIN`, is never proposed, while a hand-made Match may pair it; a blocked pair is never proposed and a hand-made Match refuses it. Most-constrained-first picks the constrained Student first on the prototype's `starvation` cohort. C1, C2, C5 are **not** asserted. |
-| 2 | `02-migrations` | SQL on the migrated test DB | Each of the eight raw objects and both Report partial uniques exists by name with its definition (catalog queries); each CHECK rejects a violating row; `friendship_unordered_pair` rejects the reversed duplicate; `round_single_open` rejects a second open Round; `match_pair_history` exists and is non-unique. |
+| 2 | `02-migrations` | SQL on the migrated test DB | Each of the eight named raw objects and both Report partial uniques exists by name with its definition (catalog queries), and `Student.display_name`'s collation, the ninth raw step, is `und-x-icu`, since a later `ALTER COLUMN … TYPE` would silently put it back on the database default (ADR-0016 d1's notes of 2026-10-02); each CHECK rejects a violating row; `friendship_unordered_pair` rejects the reversed duplicate; `round_single_open` rejects a second open Round; `match_pair_history` exists and is non-unique. |
 | 3 | `03-standing-match` | services + checkpoint | Two concurrent hand-made creations sharing a Student, both held after their reads, admit exactly one Match; the other returns `already_matched` and writes nothing. |
 | 4 | `04-file-access` | HTTP | Evidence URL signed out → 401; signed in as an unrelated Student → 403; the pair and an Admin → 200. Avatar signed out → 401, any signed-in → 200. |
 | 5 | `05-socket-origin` | real Socket.IO server + client, real session | Exact `PUBLIC_ORIGIN` connects; absent, `null` and mismatched `Origin` are refused with the session row still present; an HTTP long-polling request is refused; a good origin with no session gets `unauthorized`. |
 | 6 | `06-prompt-serialization` | services + checkpoint | Publication vs answer in both orders (old answer committed or refused with nothing written); two publications with an identical injected `published_at` get distinct orders and exactly one live Prompt; answer vs close in both orders (`answer_round_id` and the close's Streak agree with the order); duplicate and retried answers → one Post, one +20, Knowledge Sharer once; the answer transaction never writes `streak`; an unreviewed Match plus an answer in the Round increments Streak, no activity resets it, Suspended and Removed are skipped. |
 | 7 | `07-lifecycle-lockout` | services + checkpoint | The candidate predicate excludes `ADMIN`, Suspended, Removed and Skill-less Students; role, Suspension and Removal vs Round open and vs hand-made creation, both orders; hand-made creation vs close, both orders — never a Match in a closed Round; Block vs friend request, both orders — never a Block beside a Friendship row; a Removed row refuses every mutation and its email refuses sign-up; two Admins demoting, suspending or removing each other leave ≥ 1 active Admin. |
-| 8 | `08-files` | HTTP **through the nginx harness** | Exactly 5,242,880-byte PDF, PNG and JPEG Evidence and a 2,097,152-byte Avatar reach the API and are stored; one byte more → `file_too_large` from the API's §9.5 size check (`size > cap`), not an nginx 413; malformed, truncated, extension-spoofed, `Content-Type`-spoofed and Avatar-PDF payloads are refused; Evidence reads anchor to the owning Review's Match (a Student paired with the uploader in another Match → 403; a Peer Moderator outside the pair → 403; inside it → 200); only the originating Mentee mutates (Mentor, an Admin outside the pair → 403), including after `COMPLETED` and including a Mentee promoted to `ADMIN` after the Review (→ 200); Suspension blocks mutation and keeps the row, reinstatement restores, Removal ends mutation and keeps the row; a failed replacement leaves the old bytes; a missing or wrong `Origin` or `X-PeerConnect-CSRF` → 403 before any parsing. |
+| 8 | `08-files` | HTTP **through the nginx harness** | Exactly 5,242,880-byte PDF, PNG and JPEG Evidence and a 2,097,152-byte Avatar reach the API and are stored; one byte more → `file_too_large` from the API's §9.5 size check (`size > cap`), not an nginx 413; malformed, truncated, extension-spoofed, `Content-Type`-spoofed and Avatar-PDF payloads are refused; Evidence reads anchor to the owning Review's Match (a Student paired with the uploader in another Match → 403; a Peer Moderator outside the pair → 403; inside it → 200); only the originating Mentee mutates (Mentor, an Admin outside the pair → 403), including after `COMPLETED` and including a Mentee promoted to `ADMIN` after the Review (→ 200); Suspension blocks mutation and keeps the row, reinstatement restores, Removal ends mutation and keeps the row; a failed replacement leaves the old row and its file; a missing or wrong `Origin` or `X-PeerConnect-CSRF` → 403 before any parsing. **Storage** (ADR-0016 d1's note of 2026-10-05; the suite's own buckets, §16.2): (1) after a replace or a delete, the old file is gone from Storage; (2) a save that fails before anything can commit leaves no new file: a refusal, and a failure by the 30-minute rule (§9.8) with the save held inside its transaction while the clock moves; (3) the cleanup deletes a file no row names once it is more than an hour old, skips one an hour old or younger, and never deletes a file a row names, run with a page size small enough that the bucket takes several pages, so a run that skips files fails it; (4) on an empty Supabase the bucket step creates both buckets, private, with their caps and types, and where a bucket exists with other settings, made public or given other caps or types, it sets it back. Checks 2 and 3 move the application's clock rather than waiting. |
 | 9 | `09-review-xp-badges` | services + checkpoint | A duplicate or retried Review → one Review, Private Feedback, Post and XP payment; Review vs close, Decline, Suspension and Removal, both orders; a Match created before promotion completes with 80/120 XP and First Mentor, the Admin's Level and Badge still on the profile and absent only from the Leaderboard and its pin; a Review and a Prompt answer paying one Student concurrently both land; **the one same-Badge race that can be staged (§10.4)**: a Student with two answers answers Prompt *n* (held after its reads) while Prompt *n+1* is published and answered by them (held). Released in either order, or together, the answer to Prompt *n* is refused `prompt_not_live` and writes nothing (no Post, no XP). The answer to Prompt *n+1* commits one Post, +20 XP and exactly one Knowledge Sharer, so the threshold is still crossed once. The test never asserts two Posts or +40: no serial order consistent with both held reads admits them. An older answer can still commit — category 6's "old answer committed" order — but only when no newer answer by the same Student has read first; Suspension or Removal vs close with prior qualifying activity, both orders; the pin never reintroduces an Admin, Suspended or Removed viewer. |
 | 10 | `10-reports` | services + HTTP | The two partial uniques and the Report CHECKs; two concurrent filings by one reporter on one target → one row and `already_reported`, winner unchanged; two concurrent resolutions → one winner, `already_resolved`, a losing removal leaves the Post; every row of a batch shares state, resolver and time; filing vs resolution and vs target Removal, both orders; Remove Post and Remove Student action their open rows atomically — Remove Student includes an open row the removing Admin personally filed, `ACTIONED` with `resolved_by_id` = that Admin, the batch then hidden from that Admin's own resolved audit and visible to another Admin with reporters — Suspension leaves them open; a Peer Moderator sees only eligible open Post groups with no reporter identity and no resolved history, and one conflicting open reporter hides the whole group; an Admin cannot read or resolve their own-target group or any open group or resolved batch containing their own report, while another Admin can, with reporters; a stale queue read followed by demotion is refused on action; a Block create/remove racing a Peer Moderator action, both orders. |
+| 11 | `11-name-search` | services + DB | Sign-up, the Student's own edit and the Admin edit, and any path added later that sets a name, each write a name, and searching its plain form (`helene`, `احمد`, `فاطمه`) finds the Student; after a rename to a name whose folded form does not contain the old folded form, the old one no longer does. Binds the outcome, not the fold's technique; the seed's two directly inserted bootstrap accounts are asserted by §14.8 instead (ADR-0016 d1's note of 2026-10-02). |
+| 12 | `12-sign-in` | HTTP + services + `checkpoint` and the named pause (§3.6.4); for 42, only the token exchange and `/v2/me` replaced by a fixed answer | **A sanction is told only after the right password**: a Suspended or Removed Student signed in with a wrong password gets `password_incorrect`, never the sanction's code; with the right password, `account_suspended` or `account_removed`. **A completed password change leaves no session the old password opened**: a sign-in with the old password racing the change ends refused or signed out in every order staged, held at its own transaction's `checkpoint` and at the change's, and run whole between the change's first sign-out and Supabase's admin update, with the change held at `password-change:admin-update`, then released, and the session gone. **A 42 login finds its Student only by `forty_two_id`**: after an Admin sets another Student's email to the email the fixed `/v2/me` answer returns for a connected Student's 42 account, a 42 login with that account reaches the Student who connected it, never the other. **A password is set without the current one only within a fresh Confirm with 42**: without the confirmation, and eleven minutes after it, the request is refused `confirmation_required`; within ten minutes, once, it succeeds (ADR-0016 d1's notes of 2026-10-04 and 2026-10-08). Untested on purpose: a concurrent duplicate sign-up that fails to delete its spare Supabase Auth user, which harms nothing, and a Supabase `429`, which no test can make Supabase answer on demand. |
 
 ### 16.4 CI — one advisory workflow (ADR-0016 d8, M21)
 
-`.github/workflows/ci.yml`, on every pull request:
+`.github/workflows/ci.yml`, on every pull request. **CI runs the same copy as `make test`** (ADR-0016
+d8's note of 2026-10-04): GitHub starts a workflow's service containers before it checks the
+repository out, and Supabase's containers need files from it, the database's setup SQL and the
+gateway's configuration, so there is no service container.
 
 1. Check out; set up Node 22; `npm ci`; `npm --prefix web ci`.
-2. Load `.env.example` into the job environment, with `DATABASE_URL` pointed at the service container.
-   The `postgres:17-alpine` service is started with `.env.example`'s own `POSTGRES_USER`,
-   `POSTGRES_PASSWORD` and `POSTGRES_DB`, and only `DATABASE_URL`'s host and port change (to the
-   runner's mapped `localhost` port). Any other credentials would fail §15.4's consistency check when
-   the seed validates the environment at step 5.
-3. `npx prisma generate --config prisma.config.ts`; typecheck the API and the SPA; `npx nest build`.
-4. **Schema from empty**: `npx prisma migrate deploy --config prisma.config.ts` on the empty service
-   database.
-5. **Seed from empty**: `npx prisma db seed --config prisma.config.ts` — the fixture at its current
-   version (§14.9) through the real write paths, ending with the §14.8 assertions that version
-   implements; any failure fails the step.
+2. `npx prisma generate --config prisma.config.ts`; typecheck the API and the SPA; build the SPA;
+   `npx nest build`.
+3. **Start the copy**: under `-p peerconnect-test`, with `--env-file .env.example` and
+   `compose.yaml`, `compose.dev.yaml` and `compose.local.yaml`, remove any leftover copy with its
+   volumes, build the `api` dev image, and start `db`, `auth`, `storage` and `api-gw`. Every value
+   comes from `.env.example`, so §15.4's consistency check passes unchanged.
+4. **Schema from empty**: inside one `run --rm api` dev container for steps 4–7, `npx prisma migrate
+   deploy --config prisma.config.ts` on the copy's empty main database.
+5. **Seed from empty**: `npx prisma db seed --config prisma.config.ts` — its first step makes the
+   buckets (§9.8), then the fixture at its current version (§14.9) through the real write paths,
+   ending with the §14.8 assertions that version implements; any failure fails the step.
 6. **Seed idempotence**: run the seed again; it must log *already complete* and exit 0.
-7. Install `nginx`; `npx vitest run` (the suite uses its own `_test` database).
+7. `npx vitest run` (the suite uses its own `_test` database and its own buckets), with `nginx` from
+   the `dev` image.
+8. **Delete the copy** with its volumes, even if a step failed.
 
 **The workflow grows with the slices, as the seed does.** A step that cannot pass before its
 prerequisite exists is added by the PR that creates the prerequisite, never made conditional or
-tolerant: `ci.yml` lands with the infrastructure gate (§18 item 1) carrying steps 1–5; step 6 is added
-by the PR that lands the seed skeleton's completion record (§18 item 3), since the week-1 seed entry
-writes none and a second run could not log *already complete*; step 7 is added by the PR that adds the
-first test file (§16.8). Vitest's `passWithNoTests` is never set: an empty run fails, so a broken test
-path can never pass as green.
+tolerant: `ci.yml` landed with the infrastructure gate (§18 item 1), the local fallback's build
+(#121) moved it onto `make test`'s copy, step 6 is added by the PR that lands the seed skeleton's
+completion record (§18 item 3), since the week-1 seed entry writes none and a second run could not
+log *already complete*, and step 7 was added by the first test file's PR (#112, 2026-10-02; §16.8). Vitest's
+`passWithNoTests` is never set: an empty run fails, so a broken test path can never pass as green.
+The price is a `dev` image build and the Supabase images' download on each run.
 
 It stays advisory: making the workflow a required check is an open governance decision (#28, ADR-0005
 d7). The only required check on `main` is *No bot or AI text* (§17.4), which tests nothing.
-The Compose boot is not in CI.
+**What stays out of CI is the boot**: no production image, no `proxy`, no TLS and no boot chain; the
+clean-clone boot stays a human check (§16.5).
 
 ### 16.5 Clean-clone boot verification (ADR-0004 d8, ADR-0016 d5)
 
-Required on any PR touching `prisma/**` (the seed at `prisma/seed/**` and the fixture at
-`prisma/fixtures/**` included), `prisma.config.ts`, `compose.yaml`, `compose.dev.yaml`, `Dockerfile`
-or `proxy/Dockerfile`, and before defense:
+Required on any PR touching `prisma/**` (the seed at `prisma/seed/**`, the fixture at
+`prisma/fixtures/**` and the resets at `prisma/reset/**` included), `prisma.config.ts`, any
+`compose*.yaml`, `Dockerfile`, `proxy/Dockerfile`, `supabase/**` except its Markdown files, or
+`.env.example`, and before defense. Parts of `supabase/**` and `.env.example` act only when a
+database volume is created: `compose.yaml` mounts `supabase/db/`'s SQL into the folder Postgres runs
+only then, and the fallback's database passwords take effect only then. So a broken change there can
+pass on a working stack with an old volume and fail on a fresh clone (ADR-0016 d5's note of
+2026-10-10). Both clones run on the fallback: a fresh clone has no team `.env`, and the team project's
+own run is §15.7's.
 
 1. **Clear state**: `make wipe` (or `docker compose down --volumes --remove-orphans`) from any clone —
-   every clone shares the project name `peerconnect`. Clearing is not setup.
+   every clone shares the project name `peerconnect`. It drops the fallback's database and Storage
+   volumes and never touches the team project; `make test`'s copy has a project name of its own, so
+   clearing never involves it. Clearing is not setup.
 2. **Clone 1**: fresh clone, `make up`.
 3. Clear state again.
 4. **Clone 2**: a different fresh clone, nothing run first, no `.env`: `docker compose up --build`.
@@ -2934,25 +3693,27 @@ or `proxy/Dockerfile`, and before defense:
    inside §16.5's trigger lists the criteria it could check in its clean-clone box. The ones that
    bind from the first PR, the infrastructure gate's (§18 item 1), are the same on both clones:
    both boot paths come up from an empty database with no step run first; the §15.5 chain runs in
-   order and `api` turns healthy only after it — `migrate deploy`, then the seed entry, which at that
-   stage may do no more than log completion, then `main.js`; `https://localhost:8443` serves the
-   bundle's `index.html` after the interstitial, and port 8080 redirects to it; the console is
-   clean. The seed logging completion of the fixture version as it stands (§14.9) and the bootstrap
-   Admin's sign-in join from §18 item 3; the sign-in page from the SPA's sign-in slice; the demo
-   Student's sign-in and four closed Rounds from item 12. Four closed Rounds is never required of a
-   PR that precedes the slices producing them.
+   order and `api` turns healthy only after it — the boot check, `migrate deploy`, then the seed
+   entry, which at that stage may do no more than log completion, then `main.js`;
+   `https://localhost:8443` serves the bundle's `index.html` after the interstitial, and port 8080
+   redirects to it; the console is clean. The seed logging completion of the fixture version as it
+   stands (§14.9) and the bootstrap Admin's sign-in join from §18 item 3; the sign-in page from the
+   SPA's sign-in slice; the demo Student's sign-in and four closed Rounds from item 12. Four closed
+   Rounds is never required of a PR that precedes the slices producing them.
 
 ### 16.6 Detecting a seed or boot regression before defense — four distinct layers
 
 | Layer | Catches | Runs |
 | --- | --- | --- |
-| **Schema migration checks** | a migration that fails from empty, a lost raw object, checksum drift | CI step 4 on every PR; category 2 on every suite run; the gate review; `migrate deploy` at every boot |
-| **Application integration tests** | the ten silent-failure categories | the Done box's `npx vitest run`; CI step 7 |
-| **Seed fixture assertions** | an application change the seed drives that breaks the fixture or its end state — the case no earlier check saw (map #1's open ⚠️) | inside every seed run: at every boot from empty, and CI steps 5–6 on every PR |
-| **Empty-database clean-clone boot** | Compose, Dockerfile, env, TLS, nginx or boot-order breakage | the two-clone procedure on the PRs listed in §16.5 and before defense |
+| **Schema migration checks** | a migration that fails from empty, a lost raw object or collation; **checksum drift**, an edited merged migration, is caught by the gate review alone, since CI step 4 deploys onto an empty database and the boot's `migrate deploy` skips an edited migration, printing *No pending migrations to apply* (ADR-0005 d6's correction of 2026-10-10) | CI step 4 on every PR; category 2 on every suite run; the gate review; `migrate deploy` at every boot |
+| **Application integration tests** | the twelve silent-failure categories | the Done box's `npx vitest run`, as `make test`; CI step 7 |
+| **Seed fixture assertions** | an application change the seed drives that breaks the fixture or its end state — the case no earlier check saw (map #1's open ⚠️) | inside every seed run that writes: at every boot from empty, and CI steps 5–6 on every PR |
+| **Empty-database clean-clone boot** | Compose, Dockerfile, env, TLS, nginx or boot-order breakage, and a change to the fallback's Supabase services that acts only when a volume is created | the two-clone procedure on the PRs listed in §16.5 and before defense |
 
-Developers' own databases already hold a completed seed and skip it, which is why the seed is checked
-from empty in CI rather than trusted to surface at the next local boot.
+Developers' own databases already hold a completed seed and skip it, and so does the team project,
+which is why the seed is checked from empty in CI rather than trusted to surface at the next boot.
+None of the four reaches the team project itself: its settings, its availability and the seeded
+accounts' passwords are checked by §15.7's run before each defense.
 
 ### 16.7 Browser pass (ADR-0016 d9)
 
@@ -2980,7 +3741,7 @@ file, so no PR before the first `test/<NN>-<category>/*.test.ts` can show it gre
 infrastructure gate's among them. Until a PR's branch holds at least one such file, the box is ticked
 *not applicable*; from the PR that adds the first one — at the latest §18 item 4, category 1 — the
 suite must pass, on every PR after it. The test harness (§18 item 2) adds no test of its own: each of
-the ten categories needs the slice it covers. `passWithNoTests` is never set (§16.4), so this is the
+the twelve categories needs the slice it covers. `passWithNoTests` is never set (§16.4), so this is the
 only way an empty suite is excused, and it ends for good with the first test file.
 
 ---
@@ -2991,9 +3752,9 @@ only way an empty suite is excused, and it ends for good with the first test fil
 
 | | Role | Also |
 | --- | --- | --- |
-| **Ahmad** | Product Owner · Scrum Master | Developer · schema-gate deputy · fixture port and matcher tests (week 2) · browser pass (week 5) |
-| **Kamel** | Technical Lead / Architect | Developer · schema gate · week-1 infrastructure gate |
-| **Hussein** | Developer | — |
+| **Ahmad** | Product Owner · Scrum Master | Developer · schema-gate deputy · fixture port and matcher tests (week 2) · browser pass (week 5) · Developer member of the team Supabase project |
+| **Kamel** | Technical Lead / Architect | Developer · schema gate · week-1 infrastructure gate · Owner of the team Supabase project: keeps it available, the only member who changes it by hand (§17.2), and runs `make reset-team` (§15.6) |
+| **Hussein** | Developer | — (not a member of the team Supabase project) |
 
 > **Updated 2026-10-09.** The table's third row was *Fadel: Scrum Master; Developer · fixture port
 > and matcher tests (week 2) · browser pass (week 5)*. Fadel left the team on 2026-10-01, and Ahmad
@@ -3003,23 +3764,52 @@ only way an empty suite is excused, and it ends for good with the first test fil
 
 ### 17.2 The schema gate (ADR-0005 d3–d6)
 
-- **Scope, read off the file list**: `prisma/**` — which contains the seed (`prisma/seed/**`) and the
-  fixture module (`prisma/fixtures/**`) — and every Prisma Config discovery path, read as the three
-  patterns of §3.2: `/prisma.config*` (which holds the root `prisma.config.ts`), `/prisma7.config*`
-  and `/.config/prisma*`. A PR adding any file matching one other than `prisma.config.ts` is inside
-  the gate and refused. The application code the seed drives stays round-robin.
+- **Scope, read off the file list**: `prisma/**` — which contains the seed (`prisma/seed/**`), the
+  fixture module (`prisma/fixtures/**`) and the two resets (`prisma/reset/**`) — and every Prisma
+  Config discovery path, read as the three patterns of §3.2: `/prisma.config*` (which holds the root
+  `prisma.config.ts`), `/prisma7.config*` and `/.config/prisma*`. A PR adding any file matching one
+  other than `prisma.config.ts` is inside the gate and refused. **Supabase's files are inside too**
+  (ADR-0005 d5's note of 2026-10-10): `supabase/**` (the fallback database's start-up SQL, the
+  gateway's routes, the CA certificate and `supabase/team-project.md`), and every `compose*.yaml`,
+  since the fallback's Auth settings are `GOTRUE_*` variables in `compose.yaml` beside the `api` and
+  `proxy` services, which a path cannot tell apart. The buckets' settings are set by the seed's first
+  step, so under `prisma/seed/**` they are gated already; a build that puts them anywhere else names
+  that file in the gate list. **A PR that moves or renames a gated file updates the gate list, here,
+  in `CONTRIBUTING.md`, in the PR template and in `.coderabbit.yaml`, in the same PR, and is gated
+  itself.** The application code the seed drives stays round-robin, and so does the code that calls
+  Supabase: sign-up and the password change, the file cleanup and the boot check, which `08-files`
+  and `12-sign-in` cover.
 - **Kamel reviews; Ahmad deputises when Kamel is blocked more than 24 hours**; Ahmad also watches
   for the stall. The developer authors the migration. **When the gate holder authors a gated PR,
   Ahmad reviews it** — nobody reviews their own PR (§17.4), and Ahmad is already the gate's deputy.
 
   > **Updated 2026-10-09:** this read *"Fadel watches for the stall"*. Fadel left the team on
   > 2026-10-01, and Ahmad has watched for the stall since (#28; §17.1's note).
-- **Rules**: a merged migration is immutable (fix forward); rebase onto `main` before merging and
+- **Rules**: a merged migration is immutable (fix forward): `prisma migrate deploy` matches applied
+  migrations by name, so an edited merged migration is skipped silently, exit 0, and the database
+  keeps the old version (ADR-0005 d6's correction of 2026-10-10); rebase onto `main` before merging and
   regenerate only your own unmerged migration; `schema.prisma` and its migration are committed
   together; `npx prisma generate` is run explicitly; migrations are named `<slice>_<change>`; the seed
   stays idempotent; generated statements touching the raw objects are removed (§4.4); `prisma` and
   `@prisma/client` stay in the `^7` major; a personal-data change moves the Privacy Policy in the same
   PR.
+- **The five Supabase checks of the PR template's gate section** (ADR-0016 d6's note of 2026-10-10):
+  no foreign key or SQL into Supabase's `auth` or `storage` schemas; any migration ran only on the
+  fallback (`make dev`, `make local`, `make test`), never on the team project before merge; a team
+  project setting changed together with `supabase/team-project.md` and, where it names one, the
+  matching `GOTRUE_*` line; no new route, port or service exposing the database or a Data API; a
+  moved gated file carried into the gate lists.
+- **The team project changes outside git**, in its dashboard, where no PR shows it, so
+  `supabase/team-project.md` records what is set there. A new setting is a PR changing that record,
+  and the matching `GOTRUE_*` line where one exists, before Kamel changes the dashboard and comments
+  `Applied in the dashboard on <date>` on the merged PR; the dashboard goes first only to undo a
+  breakage, with the PR the same day. **Nobody changes the team project's tables, rows, settings or
+  Supabase Auth users by hand**, in the dashboard, its SQL editor or with the `.env`'s keys, except in
+  four cases the record lists, each Kamel's: resuming a paused project, `make reset-team`, deleting
+  a Supabase Auth user whose id no Student has, and repairing a migration that failed partway.
+  Nobody deletes or edits a Student's Supabase Auth user, a Removed Student's included. Migrations
+  reach the team project only through `make up` on `main`. Reading is always fine. Before each
+  defense Kamel compares the dashboard with the record (§15.7).
 - The week-1 infrastructure gate (ADR-0004 d12) and the schema gate are sequential, not concurrent
   (ADR-0005 d3). **One overlap is unavoidable**: the week-1 boot chain (§15.5) needs the Prisma
   scaffolding — `prisma.config.ts`, a `prisma/schema.prisma` with its generator and datasource, and
@@ -3062,7 +3852,7 @@ conventions. The Makefile is never a hiding place for required setup.
 Instructions (prerequisites: Docker Engine with Compose ≥ 2.24.4; Node 22 for the host Vite process; the
 `.env` model; both boot commands; the certificate interstitial; the dev overlay and the verified Vite
 bind command with its LAN restriction), Resources and AI usage sections, **Team Information**, **Project
-Management**, **Technical Stack** with justifications, **Database Schema** (§4, or a diagram generated
+Management**, **Technical Stack** with justifications (the database system's from ADR-0019, through #71), **Database Schema** (§4, or a diagram generated
 from the schema), **Features List** with the member(s) behind each, **Modules** with the 18-point
 calculation (§1.3), the browser-limitations section (§16.7), the credential variables and the demo
 Student's email. **Owners recorded**: Instructions — Kamel (ADR-0004 d12); browser limitations —
@@ -3089,6 +3879,15 @@ module-contingency dates are discharged (#7).
 
 Internal ordering `/to-tickets` should encode as blocking edges; product decisions are already made.
 
+> **The move to Supabase** (ADR-0019) changes many of the slices below. [Rewrite the affected build
+> tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) rewrites their
+> tickets and opens the ones the move adds; `docs/ticket-plan.md` carries notes where its reasoning
+> no longer holds. Two build tickets outside the plan have already changed item 1's and item 2's
+> merged code: the local Supabase fallback (#121: Compose services, make targets, the boot check's
+> steps 1 and 2, CI on `make test`'s copy) and the team project's verified TLS and pool cap (#124).
+> The boot check's steps 3 and 4, which let `make up` run on the team project, come with a build
+> ticket #104 opens; until then a team `.env` stops the boot.
+
 1. **Infrastructure gate** (Kamel, week 1): Compose files, both Dockerfiles, nginx files, `.env.example`,
    boot command, env validation, `/api/health`, Makefile, `.github/workflows/ci.yml` with §16.4's
    steps 1–5, README Instructions. Gates every slice. The boot command brings the Prisma scaffolding
@@ -3100,10 +3899,14 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
    check passes on §16.5 step 6's first-PR criteria.
 2. **Core** (Unit of Work with retry, `checkpoint` and `afterCommit`; envelope and exception filter;
    guards; logger; `RealtimePublisher` port) and the **test harness** (test DB, in-process app, nginx
-   harness). Gate every slice.
-3. **Accounts and sessions** (`Student`, `Session`, sign-up, sign-in, sign-out, password change,
-   throttle) and the **seed skeleton** (catalogue, bootstrap accounts, completion record, truncation
-   logic), whose PR adds CI step 6 (§16.4). Gate every signed-in feature.
+   harness, the fallback-only check, the named pause; on the fallback's own Supabase Auth and
+   Storage, so after #121). Gate every slice.
+3. **Accounts and sessions** (`Student`, `Session`, sign-up, sign-in, sign-out, password change and
+   its two sign-outs, throttle, all through Supabase Auth, §5.1) and the **seed skeleton** (the bucket
+   step, catalogue, bootstrap accounts through Supabase's admin create, completion record, the guard,
+   the deletions and the lock, §14.9), whose PR adds CI step 6 (§16.4). `12-sign-in` lands with
+   Accounts and sessions (#36). Gate every signed-in feature. The two resets (§15.6) share the
+   seed's deletion function and lock, so they come with or after the skeleton.
 4. **Fixture port + matcher engine + category 1** (Fadel, week 2, independent of the database layer for
    the pure part). If no earlier PR has added a test file, this one adds the first: from it the Done
    box's suite must be green and CI gains step 7 (§16.4, §16.8).
@@ -3115,10 +3918,13 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
 6. **Prompts** → **feed and Likes** → **Reports and moderation**.
 7. **Socket gateway and Presence** → **Friends** (Presence) → **Direct Messages**; **Blocks** before
    Friends' request rule and before matching's blocked-pair input.
-8. **Files** (validation, avatar, Evidence) after Reviews for Evidence.
+8. **Files** (validation, avatar, Evidence, on Supabase Storage with the order of writes and the
+   hourly cleanup, §9.8) after Reviews for Evidence.
 9. **Users table and sanctions** after Matches (termination) and Reports (auto-action).
-10. **Sign in with 42**: transport and state any time after 3; a **successful sign-in** and its
-    identity mapping **Blocked by #24**.
+10. **Sign in with 42**: transport and state any time after 3; the identity mapping and a
+    successful sign-in, the 42 sign-up form, Connect and Disconnect 42, and recovery through Confirm
+    with 42, after 3 as well (§5.6). #24's questions were answered on 2026-10-08, and #24 closed on
+    2026-10-12.
 11. **Legal pages rendering** any time after the SPA shell; sign-off by 2026-10-15.
 12. **The full seed** grows with each slice it drives; each seed PR is inside the gate, bumps the
     fixture version and adds its end-state assertions. It reaches ADR-0017's complete end state only
@@ -3154,13 +3960,18 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
 
 Rules every ticket inherits; a PR breaking one is not done.
 
-1. No GET writes a domain row, except lazy session renewal and the 42 callback (§5.4).
-2. One cookie, `pc_session`; no JWT; no token, Student data or OAuth state in web storage.
+1. No GET writes a domain row, except lazy session renewal and the 42 callback, which writes only a
+   found Student's session or a Connect 42 link (§5.4).
+2. One cookie, `pc_session`; no JWT, except the token a password check through Supabase Auth returns,
+   which lives only inside that request on the server (§5.1); no token, Student data or OAuth state
+   in web storage.
 3. No page loads a subresource from another origin: no CDN, web font, analytics or hotlinked image.
    The only cross-origin browser traffic is the top-level navigation to and from 42's authorize page
-   when a Student chooses Sign in with 42 (§3.1).
+   when a Student chooses Sign in with 42, Connect 42 or Confirm with 42 (§3.1). The browser never
+   talks to Supabase: no `@supabase/*` package in `web/`, no `VITE_SUPABASE_*` variable.
 4. Every domain write goes through the Unit of Work at `SERIALIZABLE`, reading inside the transaction
-   everything its decision depends on; no network call inside a transaction.
+   everything its decision depends on; no network call inside a transaction, a call to Supabase
+   included.
 5. Every DB-derived socket event and every forced disconnect runs after commit.
 6. Nothing a client sends over the socket performs a privileged action; `dm:send` is the only client
    event.
@@ -3177,25 +3988,39 @@ Rules every ticket inherits; a PR breaking one is not done.
 13. XP changes only by +80/+120 on Review and +20 on a Prompt answer; Streak only at Round close;
     Badges only by their three tests; nothing is revoked or set by hand.
 14. No aggregate over ratings is computed or displayed anywhere, including as a UI convenience.
-15. No Admin sets or resets a password; no application route shows a Direct Message to anyone but its
-    two participants.
-16. A 42 login resolves to a Student only through the stored immutable 42 identifier, never through
-    `Student.email`; only the identifier is kept from 42.
+15. No Admin sets or resets a password or touches `forty_two_id`; no application route shows a Direct
+    Message to anyone but its two participants.
+16. A 42 login resolves to a Student only through `Student.forty_two_id`, 42's account `id`, never
+    through `Student.email`; only that number is kept from 42, and its login and email only as a
+    Student submits them on the 42 sign-up form.
 17. A Removed row is view-only; Suspension and Removal delete every session and drop every socket.
 18. Only `Student` and `Post` are soft-deleted; every read of them applies §4.6's surface rule.
 19. No log contains a password, cookie, request body, message text, file contents, query string, OAuth
-    `code`/`state` or search term (§3.9); no route carries a search term in its path.
+    `code`/`state`, search term, Supabase key or token (§3.9); no route carries a search term in its
+    path; the team project's `postgres` role keeps its four log settings.
 20. Refusals reachable in normal use return 200 with `ok: false`; the console stays clean.
-21. The seed writes directly only the catalogue and the two bootstrap accounts; everything else goes
-    through the application's own service methods.
+21. The seed writes directly only the catalogue and the two bootstrap accounts, through Supabase's
+    admin create (§14.1); everything else goes through the application's own service methods. It
+    deletes only in a run that writes, after its guard (§14.9).
 22. No entity, column, enum value or index beyond §4 without a gated migration and the records moving
     with it; `schema.prisma` is one file; `prisma.config.ts` is the only Config and every CLI call pins
-    it.
-23. Three Compose services; the Makefile hides no required setup; both boot paths work from a fresh
-    clone and an empty database.
+    it; no foreign key or SQL into Supabase's `auth` or `storage`, and no row-level security.
+23. Six Compose services, the fallback's four loading `.env.example` alone; of the targets that start
+    a stack only `make up` reads `.env`; the boot never falls back by itself; the Makefile hides no
+    required setup; both boot paths work from a fresh clone and an empty database.
 24. A change to stored personal data, its visibility or retention updates the Privacy Policy in the same
     PR; a change to `ReportReason` updates the Terms.
-25. Tests are added only for what fails silently, inside the ten categories.
+25. Tests are added only for what fails silently, inside the twelve categories.
+26. Supabase is three stores and nothing more: Postgres, Storage and Auth as the place each password
+    is kept (ADR-0019 d1). Only the `api` calls Supabase, and only the `api` uses the team project's
+    secret key, which is never committed or sent to the browser.
+27. Every file byte goes through NestJS's routes; no public bucket, no signed link; a file is written
+    before its row and deleted after it (§9.8).
+28. In use, only sign-up and a password change write to Supabase Auth; nobody deletes a Student's
+    Supabase Auth user outside a reset or the seed's guarded run (§5.1).
+29. Branch work that changes the database never runs on the team project; the team project changes
+    only through `supabase/team-project.md` and Kamel's four changes by hand (§17.2).
+30. The team `.env` is never committed and never handed to an evaluator (§15.4).
 
 ---
 
@@ -3208,7 +4033,7 @@ Rules every ticket inherits; a PR breaking one is not done.
 - [x] All nineteen tables with columns, keys, indexes, FKs, delete behaviour and the DB / service /
       serialization split (§4).
 - [x] Authentication, sessions, CSRF, throttle, authorization matrix; OAuth mechanism specified and
-      its #24-owned parts marked Blocked (§5).
+      its #24-owned parts marked Blocked (§5) until 2026-10-13.
 - [x] Every endpoint with auth, validation, rule, persistence, events, refusals, concurrency and
       visibility (§§6–12).
 - [x] Socket admission, the one client event and the complete server event list (§7).
@@ -3370,6 +4195,17 @@ Rules every ticket inherits; a PR breaking one is not done.
 
       **Records moved:** the §18 note and the ADR-0016 d10 annotation name the issues; map #1
       noted. Each is *uncommitted* until this lands on `main`.
+- [x] **Brought to the move to Supabase, 2026-10-13** ([Update the spec and the legal pages for
+      Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/103)). Every section the move
+      changed is corrected in place to [ADR-0019](adr/0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md)
+      and the ADR notes it names, each rule citing its note; `main` at `62eb070` holds the text
+      before. **Mechanisms chosen here**, where the records left the name or the detail to this
+      document: Sign in with 42's routes, intents and outcomes (M35), sign-in's refusal codes (M36),
+      the throttle's count of a wrong current password (M37), the named pause's name (§3.6.4), and
+      `fortyTwoConnected` on `GET /api/me` (§6.2). The #24-owned parts of §5.6 are specified, and
+      §5.6 B is no longer Blocked. `CONTRIBUTING.md` → *Testing* and `docs/ticket-plan.md` moved with
+      it; the legal pages had already moved on [docs: record what the Privacy Policy and Terms say
+      about Supabase](https://github.com/ahmadmnsur/ft_transcendence/pull/138).
 - [ ] External decisions below — they block only the tickets that name them.
 
 ---
@@ -3379,34 +4215,25 @@ Rules every ticket inherits; a PR breaking one is not done.
 Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choosing is left here.
 
 1. **[#24 — Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24)
-   (open).** Owns: which **immutable 42 account identifier** is the key, and the `Student` column that
-   stores it; whether a first 42 login with no linked Student **links, creates or is refused**; whether
-   link or create writes happen **inside the callback GET or in a following JSON `POST`** (ADR-0003 d10's
-   annotation); whether **signed-in linking** ships (§5.6 reserves `intent: "link"`); the Terms
-   acceptance on any 42 creation path; whether `password_hash` becomes nullable; whether the Terms'
-   *forgotten password cannot be reset* line changes if a linked 42 login restores access; the Privacy
-   Policy's marked 42 sentence; and **who registers the 42 application** — one shared application or one
-   per developer. **Blocks**: exercising callback steps 6–7 (code exchange, `/v2/me`), which need a registered
-   42 application — who registers it is this item's — and a **successful** Sign in with 42: step 8's
-   resolution, the branches after a miss and the session issuance they lead to (§5.6 B), and its
-   demo. What builds and is exercised now, with no registered application and no network to 42: the
-   button and the enabled/disabled flag (the disabled callback's 404 included), `start` (`state`,
-   PKCE, cookie, store, one live attempt) and the callback's verification steps 1–5 with the failure
-   path. Steps 6–7 are written against §5.6 now but not exercised until an application is
-   registered; steps 8–9 wait for #24's mapping.
-
-   > **Sequenced on the ticket plan's readiness review, 2026-09-25** (*uncommitted*). #24 also
-   > blocks the legal-page sign-off (#69): item 3 below and ADR-0018 *Consequences* make sign-off wait
-   > on #24's field for the Privacy Policy's 42 sentence. The sign-off's 2026-10-15 date is
-   > unchanged, and no build ticket beyond the successful sign-in waits on #24.
+   (closed 2026-10-12).** Its questions were answered on 2026-10-08 by [Settle how a 42 login finds
+   its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93), and §5.6 now
+   specifies each answer: 42's account `id` in `Student.forty_two_id`; a first 42 login gets a
+   sign-up form whose own JSON request creates the Student, with a password and the Terms checkbox;
+   Connect 42 and Disconnect 42 with the current password; nothing becomes nullable but
+   `forty_two_id`; recovery through Confirm with 42, which the Terms now state; the Privacy Policy's 42
+   sentence, worded on [docs: record what the Privacy Policy and Terms say about
+   Supabase](https://github.com/ahmadmnsur/ft_transcendence/pull/138); and one team application,
+   registered by Kamel on 2026-10-07. It blocks neither a build ticket nor the legal-page sign-off
+   (#69) any more.
 
 2. **The residue of [#26](https://github.com/ahmadmnsur/ft_transcendence/issues/26)** (closed, a fact not
    a decision): whether 42 accepts plain `http://localhost:8081/api/auth/42/callback` as a registered
-   redirect URI. It affects only exercising Sign in with 42 on the dev overlay; the base path's
-   `https://localhost:8443` is unaffected. Feeds #24's registration question.
-3. **Legal-page sign-off inputs** (ADR-0018 Consequences): Kamel's and Hussein's **42 logins**,
-   which no record holds, and #24's field. Ahmad signs off and Kamel verifies the technical claims
-   by **2026-10-15**.
+   redirect URI. **It no longer matters**: `make dev` reads `.env.example` alone, so 42 is off on the
+   dev overlay, and a branch that needs a real 42 sign-in runs `make up` on the base path (§5.6;
+   ADR-0004 amendment's note of 2026-10-08).
+3. **Legal-page sign-off inputs** (ADR-0018 Consequences): Kamel's and Hussein's **42 logins** and
+   #24's field, both in since 2026-10-11 and 2026-10-12. Ahmad signs off and Kamel verifies the
+   technical claims by **2026-10-15**.
 
    > **Updated 2026-10-09:** this read *"Kamel's and Fadel's"*. Fadel left the team on 2026-10-01,
    > and Hussein Dakdouk joined on 2026-10-04 (§17.1).
@@ -3423,7 +4250,8 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
    > 2026-10-04, landed `5d58d3c` (#127). #16 closes with the `.mailmap`.
 5. **[#28 — repository governance](https://github.com/ahmadmnsur/ft_transcendence/issues/28) (open)**:
    `CODEOWNERS` (which must map `/prisma/`, `/prisma.config*`, `/prisma7.config*` and
-   `/.config/prisma*`, §3.2 — the seed paths now sit inside `prisma/**`); squashing migrations before
+   `/.config/prisma*`, §3.2 — the seed and reset paths sit inside `prisma/**` — and `/supabase/` and
+   every `compose*.yaml`, §17.2); squashing migrations before
    defense; long-lived branches; and whether to enforce reviews and make CI a required check
    (ADR-0005 d7, ADR-0016 *Not settled*). A PR into `main` has been required since 2026-09-27.
 6. **The demo script's running order** (ADR-0017 *Not settled*): a rehearsal question for whoever

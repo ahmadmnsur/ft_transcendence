@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 12 October 2026
+**42 PeerConnect** · Last updated: 13 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -210,8 +210,9 @@ sets. For a local copy, they stay on that computer, capped and overwritten like 
 **No log ever contains a password, a cookie, the content of what you submit, message text or a
 file.**
 
-To slow down password guessing, PeerConnect counts recent sign-in and sign-up attempts by network
-address and email address. Those counts live only in the server's memory and are never saved.
+To slow down password guessing, PeerConnect counts recent sign-in and sign-up attempts, and the wrong
+passwords typed when you change your password or connect or disconnect 42, by network address and
+email address. Those counts live only in the server's memory and are never saved.
 
 ## How long your data is kept
 
@@ -239,7 +240,8 @@ Some things end sooner:
   because a Match's explanation never changes.
 - **A Like** is deleted when you take it back, **a Friendship** when either of you ends it, and **a
   Block** when you lift it.
-- **Online status** is never stored, and **sign-in and sign-up attempt counts** live only in memory.
+- **Online status** is never stored, and **attempt counts** (sign-in, sign-up and wrong passwords)
+  live only in memory.
 
 Some things are permanent:
 

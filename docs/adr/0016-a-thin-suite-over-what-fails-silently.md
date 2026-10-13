@@ -292,6 +292,10 @@ done when the PR template already is one.**
    > seed's two directly inserted bootstrap accounts are checked by the seed's own end-state
    > assertions instead. It binds the outcome, not the fold's technique;
    > [`docs/spec.md`](../spec.md) §16.3 and §14.8 hold the exact assertions once updated.
+   >
+   > > **Updated 2026-10-13** ([Update the spec and the legal pages for
+   > > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/103)): §16.3's row for
+   > > `11-name-search` and §14.8's check 10 hold them.
 
    > **Changed 2026-10-04 by [Settle how tests and CI run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/99): the real Postgres is Supabase's
    > own, beside a real Supabase Auth and Storage.** Sign-up and the bootstrap staff are made
