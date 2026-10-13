@@ -289,9 +289,12 @@ production build behaves like the dev server for `rtl:`/`ltr:`, unless `build.cs
   with `@source inline()`, where braces expand. **Run** with Tailwind 4.3.3:
   `@source inline("ml-{1..2}")` generated `.ml-1` and `.ml-2`, though neither is written anywhere.
   `web/src` has no `@source` at `0d20fcb`. **Run:** the experiment's token
-  scanner found the 15 uses above. It must strip variant prefixes (`focus:left-4`), a leading `-`
-  or `!`, and must skip prose words like `right-aligned` in comments. A comment that holds a real
-  class (`mr-auto` at `Modal.tsx:17`) generates CSS.
+  scanner found the 15 uses above. It is on this branch as
+  [`rtl-mirroring/physical-scan.mjs`](rtl-mirroring/physical-scan.mjs), added 2026-10-13 after
+  Ahmad's review. It also lists every `@source inline(` line, and exits with 1 when it finds a
+  class outside a comment or such a line. A scanner must strip variant prefixes (`focus:left-4`),
+  a leading `-` or `!`, and must skip prose words like `right-aligned` in comments. A comment that
+  holds a real class (`mr-auto` at `Modal.tsx:17`) generates CSS.
 - **A text scan does not see** the JavaScript in section 1 (`scrollLeft` math, arrow keys, inline
   `scaleX`), nor Recharts' inline styles (section 6).
 - **Existing shapes in the repo:** `web/vite.config.ts` L14–37 already fails `vite build` from a
