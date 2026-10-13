@@ -692,8 +692,8 @@ in a build-time check), so a page can never silently mis-render. No Markdown lib
 **Every operation that writes a domain row runs inside exactly one `SERIALIZABLE` transaction opened
 by the Unit of Work, and every read that the decision depends on happens inside that same
 transaction.** One exception: the password change, and the new password after Confirm with 42,
-run two, its two sign-outs, with Supabase's admin update between them, each sign-out one
-transaction (§5.1, ADR-0003 d6's note of 2026-10-02). PostgreSQL's serializable snapshot isolation then guarantees that committed results are
+run two transactions, one for each sign-out, with Supabase's admin update between them (§5.1,
+ADR-0003 d6's note of 2026-10-02). PostgreSQL's serializable snapshot isolation then guarantees that committed results are
 equivalent to one serial order, and that a transaction which committed before another began is
 ordered first — which is the literal wording of every serialization contract in ADR-0002, 0006, 0007,
 0008, 0009, 0010, 0011, 0012 and 0014. The only per-operation obligation left to implementers is
@@ -1844,7 +1844,7 @@ two changes cannot both go through; a sign-in racing it is deleted or refused (�
 | `GET /api/me` | session | own profile with email, role, status, Skills, Goal, XP, Level, Streak, Badges, progress, and `fortyTwoConnected` (whether a 42 account is connected, never its number) |
 | `GET /api/students/:id` | session | profile per §4.6; tombstone if Removed; **never an email, for any viewer** — email is never on a profile (§4.6, ADR-0018 d4): the owner reads their own on `GET /api/me`, Admins on `GET /api/admin/students/:id` (§6.12) |
 | `GET /api/students/:id/posts?cursor` | session | their non-removed Posts |
-| `GET /api/students?q&teaches&wants&hasGoal&sort&order&page&pageSize` | session | **Advanced search**: excludes Removed, includes Suspended and Admins; `q` matches the folded display name only, `displayNameSearch` `contains` `foldName(q)` (§4.3.1), so `helene` finds Hélène and `احمد` finds أحمد, never email; `%` and `_` in `q` are escaped, since whoever builds it confirms whether Prisma's `contains` escapes them and escapes them in that query if not (#95's refinement); `teaches`/`wants` are Skill ids; `hasGoal` boolean; `sort ∈ name, xp, joined` (default `name`), `order ∈ asc, desc`; ties `id ASC`; returns `StudentRef` + Skills + Level + XP and `total` |
+| `GET /api/students?q&teaches&wants&hasGoal&sort&order&page&pageSize` | session | **Advanced search**: excludes Removed, includes Suspended and Admins; `q` matches the folded display name only, `displayNameSearch` `contains` `foldName(q)` (§4.3.1), so `helene` finds Hélène and `احمد` finds أحمد, never email; `%` and `_` in `q` are escaped: whoever builds it confirms whether Prisma's `contains` escapes them, and escapes them in that query if not (#95's refinement); `teaches`/`wants` are Skill ids; `hasGoal` boolean; `sort ∈ name, xp, joined` (default `name`), `order ∈ asc, desc`; ties `id ASC`; returns `StudentRef` + Skills + Level + XP and `total` |
 
 **`PATCH /api/me`** — session · `{ displayName?, email? }` · Rule: actor Active; a new email is
 unused (Removed rows included) → else `email_unavailable` · Persist `Student`: a new display name
@@ -3373,7 +3373,7 @@ The chain is the same on both targets.
    prisma.config.ts && npx prisma db seed --config prisma.config.ts && exec node dist/src/main.js`.
    **The boot check comes first**, before anything touches a database (ADR-0004 d8's note of
    2026-10-03). In order, it checks that:
-   1. every value is present and well formed (§15.4);
+   1. every value the `api` reads is present and well formed (§15.4);
    2. the values name **one target**: `DATABASE_URL` and `SUPABASE_URL` both point at the fallback's
       services, or both carry the same project ref, in the pooler user `postgres.<ref>` and in
       `https://<ref>.supabase.co`;
