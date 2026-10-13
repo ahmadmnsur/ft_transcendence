@@ -340,6 +340,17 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > one message, "Sign in with 42 failed. Try again.": cancelled on 42's page, an expired or
     > unknown attempt, a `state` mismatch, or 42 unreachable.
 
+    > **The throttle widened, 2026-10-13 by [Update the spec and the legal pages for
+    > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/103), Kamel's choice.** A wrong
+    > current password also counts: the password change, Connect 42's start and Disconnect 42 share
+    > one check of it through Supabase Auth (the notes above), and each refusal counts as a failed
+    > attempt under the signed-in Student's own email and the client address, so someone at a
+    > computer left signed in cannot keep guessing, slowed only by Supabase's shared per-IP limit.
+    > The limit, the window, the key and the in-memory store stand. A lost race, a sanction told
+    > after the right password, a Supabase `429` and Supabase Auth unreachable count as nothing
+    > (`docs/spec.md` §5.5, M37). The Privacy Policy's sentence on attempt counts moves with it
+    > (ADR-0018 d6).
+
 11. **Logout ships. Email verification and password reset do not.** Neither is mandated by
     either source; both are Version 2 under the standing "anything not shipped is Version 2"
     rule. Email verification in particular would put SMTP deliverability on the critical path

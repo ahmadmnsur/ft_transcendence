@@ -14,6 +14,25 @@ every acceptance criterion cites the spec section it comes from.
 
 The issues are the live record from here. This file keeps the plan's reasoning.
 
+> **Changed 2026-10-13 for the move to Supabase** ([ADR-0019](adr/0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md);
+> [`docs/spec.md`](spec.md) as updated that day by [Update the spec and the legal pages for
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/103)). The reasoning below predates
+> the move. Where it names argon2id, `password_hash`, `bytea`, `postgres:17-alpine`, three Compose
+> services, fifteen `.env.example` entries, ten test categories, a Postgres service container in CI,
+> or #24 as an open blocker, the spec now says otherwise: Supabase Auth keeps the passwords (§5.1),
+> files live in two Storage buckets (§9.8), six services and twenty-seven entries (§15.1, §15.4),
+> twelve categories on `make test`'s own copy of the local fallback (§16), and #24 closed on
+> 2026-10-12, its questions answered on 2026-10-08 (§5.6). The issues stay the live record:
+> [Rewrite the Test harness and SPA shell tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/106)
+> rewrote T03 (#31) and T05 (#33); [Local Supabase fallback: Compose services, make targets,
+> environment check and CI](https://github.com/ahmadmnsur/ft_transcendence/issues/121) and [Team
+> project database: verified TLS and the api's pool cap](https://github.com/ahmadmnsur/ft_transcendence/issues/124)
+> changed T01's and T02's merged code; [Design system: PersonName and text
+> direction](https://github.com/ahmadmnsur/ft_transcendence/issues/116) added to T04's; and [Rewrite
+> the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104)
+> rewrites the open tickets the move changes and opens the ones it adds. The notes below mark the
+> places that issues #106 and #121 named.
+
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
 - **Accounts:** password change is merged into accounts.
@@ -279,6 +298,12 @@ behaviour-free ticket after Rounds.
 5. **`GET /api/config` goes in T02; `src/shared/limits.ts` goes in T05.**
 6. **The harness can create staff the way the seed bootstraps them (§14.1).** Tests need an Admin
    and a Peer Moderator before any role-change path exists.
+
+   > **No longer so since 2026-10-04, noted 2026-10-13** ([Rewrite the Test harness and SPA shell tickets for
+   > Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/106); spec §16.2): every account
+   > is made through Supabase Auth, so the harness ships no account helper. The Student and session
+   > helpers land with T08, and the staff helper with T09, which builds the bootstrap function the
+   > seed and the harness share.
 7. **Socket reactions** (decided on review):
    - T17 implements every `RealtimePublisher` event.
    - T18 (`presence:update`) and T19 (`dm:message`) wire their own reactions, after the gateway
@@ -320,6 +345,15 @@ behaviour-free ticket after Rounds.
 ### Foundation — §18 items 1, 2 and 4, and the frontend frame
 
 #### T01 — Infrastructure gate: one command, both boot paths
+
+> **Beside T01, 2026-10-13:** its merged code was changed by two build tickets outside this plan,
+> [Local Supabase fallback: Compose services, make targets, environment check and
+> CI](https://github.com/ahmadmnsur/ft_transcendence/issues/121) (merged `ab23e2b`: the six
+> services, `make local`, `make dev` and `make test` on the fallback, the boot check's steps 1 and 2,
+> CI on `make test`'s copy) and [Team project database: verified TLS and the api's pool
+> cap](https://github.com/ahmadmnsur/ft_transcendence/issues/124) (merged `76dfbed`). The boot check's
+> steps 3 and 4, which let `make up` run on the team project, and the two resets come with tickets
+> [Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) opens (spec §15.5, §15.6).
 - **Owner:** Kamel (ADR-0004 d12; §18 item 1). **Reviewer:** Ahmad — a gated PR its gate holder
   authored (§17.2).
 - **Blocked by:** none. **Blocks:** T02–T42.
@@ -487,6 +521,14 @@ behaviour-free ticket after Rounds.
 - **Files / areas:** `vitest.config.ts` (created or extended, see criterion 1), `test/harness/**`,
   `Dockerfile` (dev target), and dev dependencies (`vitest`, `unplugin-swc`, `@swc/core`,
   `supertest`, `socket.io-client`).
+
+  > **Changed 2026-10-04, noted 2026-10-13** (#106's rewrite of #31; spec §16.2, §3.6.4): *Files / areas* gains
+  > `src/core/core.module.ts`, which exports `CheckpointHook`; *Blocked by* gains the local fallback's
+  > build ticket, #121. Criterion 2 gains a first step that refuses anything but the fallback, through
+  > #121's target function; criterion 3 runs against the fallback's own Supabase Auth and Storage;
+  > criterion 6 gains the named pause outside a transaction, reached through `CheckpointHook`;
+  > criterion 7 runs in `make test`'s own copy, and CI runs that copy with `nginx` from the `dev`
+  > image; criterion 8 is replaced (A.3 item 6's note). #31's notes of 2026-10-04 have the wording.
 - **Acceptance criteria:**
   1. **Whichever of T03 and T07 merges first creates `vitest.config.ts` and the Vitest dev
      dependencies; the other extends it**, as with CI step 7. The config carries the §16
@@ -564,6 +606,10 @@ behaviour-free ticket after Rounds.
      re-probes `/api/session` and routes to `/sign-in` (§3.8.2).
   5. `src/shared/limits.ts` holds the §6.0.3 table, and the SPA imports it through a Vite alias
      (§3.5.2, §6.0.3).
+
+     > **Changed 2026-10-04, noted 2026-10-13** (#106's rewrite of #33): the table's two changed rows, the password at
+     > 8 characters to 72 bytes and the display name's `Cf` rule, are in it; and T05 gains two
+     > criteria: no `@supabase/*` package in `web/`, and no `VITE_SUPABASE_*` variable (spec §3.5.2).
   6. `localStorage` holds interface preferences only (§3.5.2, §19 item 2).
   7. The layout is responsive from 360 px, using Tailwind utilities only (§3.5.2).
 - **Tests / verification:** none — fails loudly (§16.1). **Records:** none.
@@ -633,6 +679,9 @@ behaviour-free ticket after Rounds.
      C1, C2 and C5 are not asserted (ADR-0016 d4).
   5. If no earlier PR added a test file, this one does. From it the suite box binds, and `ci.yml`
      gains step 7: install nginx, then `npx vitest run` (§16.4, §16.8, §18 item 4).
+
+     > **No longer so since 2026-10-04, noted 2026-10-13** (spec §16.4): CI runs the suite inside `make test`'s copy, with
+     > `nginx` from the `dev` image, so the step installs nothing.
   6. **Whichever of T03 and T07 merges first creates `vitest.config.ts` and the Vitest dev
      dependencies; the other extends it**, as with CI step 7. The config carries the §16
      invariants (§16.1–§16.4, A.3 item 1):
@@ -2230,6 +2279,12 @@ From T08 to T40 the critical path is **12 serial tickets** (was 16).
 Only **#24** blocks tickets. It directly blocks T42, a build ticket, and T41, the legal sign-off.
 Through T41 it also reaches T45, pre-defense readiness. The others block no ticket and are listed
 against the milestone they affect.
+
+> **#24 closed 2026-10-12**: [Settle how a 42 login finds its Student on
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93) answered its questions on
+> 2026-10-08, and the Privacy Policy's 42 sentence landed on `main` at `0d20fcb`. It blocks nothing
+> now. The #26 residue no longer matters either: 42 is off under `make dev` (spec §5.6, Remaining
+> Dependencies 2).
 
 | Item | Blocks | Affects |
 | --- | --- | --- |

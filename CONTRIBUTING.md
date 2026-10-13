@@ -180,6 +180,14 @@ npx prisma generate
 > it at the gate, and test category 2 fails the suite if any of the ten is missing after
 > `migrate deploy`, but getting the migration right is the author's job first.
 
+> **Nine since 2026-10-02** ([`docs/spec.md`](docs/spec.md) §4.4; [ADR-0014](docs/adr/0014-the-entity-set-and-relations.md)'s
+> *Consequences* count note). A ninth hand-written step, in the migration that creates `Student`,
+> gives display names one sort order on every stack:
+> `ALTER TABLE "Student" ALTER COLUMN display_name TYPE text COLLATE "und-x-icu";`. A later
+> `ALTER COLUMN … TYPE` on `display_name` silently puts it back on the database's default, so delete
+> one that `migrate dev` emits as well. Category 2 checks the ten named objects and the column's
+> collation. The move to Supabase adds no step.
+
 **`migrate dev` no longer runs `prisma generate`.** Prisma 7 keeps migration and client generation
 as separate steps, so run the explicit generation command above after schema changes when the
 generated client needs updating. *(ADR-0005 Consequences, added 2026-09-20.)*
@@ -294,6 +302,12 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
    > unique indexes exist by name after `migrate deploy` — declared natively today, raw SQL if the
    > preview fallback is ever taken — so the category checks ten named objects, not eight.
 
+   > **Nine steps, 2026-10-02** ([`docs/spec.md`](docs/spec.md) §4.4, §16.3; ADR-0016 d1). The
+   > ninth sets `Student.display_name`'s collation to `und-x-icu`. Without it names fall back to the
+   > database's default order, code point on the hosted project, and nothing says so, so the category
+   > asserts the column's collation beside the ten named objects. With the preview fallback, the
+   > raw steps are eleven.
+
 3. **At most one standing Match per Student per Round** — the one invariant the schema cannot
    hold, violable through an Admin's hand-made Match. Two concurrent hand-made creations sharing a
    Student must admit exactly one Match and reject the other with nothing written.
@@ -330,6 +344,15 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
    > ADR-0016 d1). "The owning Review's Match" decides writes whatever the writer's current role:
    > a Mentee promoted to `ADMIN` after the Review still creates, replaces and deletes that Review's
    > Evidence, while the Mentor and every Admin outside the pair get 403.
+
+   > **Four checks join, 2026-10-05** ([`docs/spec.md`](docs/spec.md) §9.8, §16.3; ADR-0016 d1).
+   > Files live in Supabase Storage and their rows in Postgres, two stores no transaction covers:
+   > after a replace or a delete the old file is gone; a save that fails before anything can commit,
+   > a refusal or the 30-minute rule, leaves no new file; the cleanup deletes a file no row names
+   > only once it is more than an hour old, across several pages, and never one a row names; and the
+   > bucket step creates both buckets, private, and sets back one whose settings differ. The suite's
+   > files go to buckets of its own, `test-avatars` and `test-evidence`, and the cleanup never runs
+   > by itself in the harness.
 
 9. **Review, XP and Badge transaction integrity** — asserts one atomic Review/status/Takeaway/
    Private Feedback/XP/Badge success under duplicate or retried submission; serial outcomes against
@@ -371,9 +394,29 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
     > Admin's resolved audit and shown to another Admin with its reporters. The test asserts that
     > case.
 
+11. **Name search** — `display_name_search`, the folded copy of the display name, agrees with
+    `display_name` only because every path that writes a name saves both through `nameFields`. A
+    path that skips the helper raises no error: the Student is simply not found under the new name.
+    The category writes a name through sign-up, the Student's own edit and the Admin edit, and any
+    path added later, and asserts that searching its plain form (`helene`, `احمد`, `فاطمه`) finds
+    the Student, and that after a rename to a name whose folded form does not contain the old one,
+    the old one no longer does. *(Added 2026-10-02; ADR-0016 d1, [`docs/spec.md`](docs/spec.md)
+    §16.3.)*
+
+12. **Sign-in** — Supabase Auth checks the password outside PeerConnect's transaction, and two of
+    the decisions after it can go wrong behind a normal-looking answer. A Suspension or Removal is
+    told only after the right password: a wrong one gets `password_incorrect`. A completed password
+    change leaves no session the old password opened, in every order the test stages, the one
+    between the change's first sign-out and Supabase's admin update included, held at the named
+    pause outside a transaction. Two checks cover Sign in with 42, with only the two calls to 42
+    replaced by a fixed answer: a 42 login finds its Student only by `forty_two_id`, even after an
+    Admin edits emails; and a password is set without the current one only within a fresh Confirm
+    with 42. *(Added 2026-10-04 and 2026-10-08; ADR-0016 d1, [`docs/spec.md`](docs/spec.md)
+    §16.3.)*
+
 **Adding a test outside that list needs an argument.** The rule is *does it fail silently?* —
-anything the compiler or a demo step would catch is not tested. Ten categories, closed until
-someone argues an eleventh.
+anything the compiler or a demo step would catch is not tested. Twelve categories, closed until
+someone argues a thirteenth. *(Ten until 2026-10-02, eleven until 2026-10-04; ADR-0016 d7.)*
 
 **CI is advisory for the current repository setup.** Branch protection is unavailable on this
 plan, so the workflow cannot block a merge. Its job is evidence for

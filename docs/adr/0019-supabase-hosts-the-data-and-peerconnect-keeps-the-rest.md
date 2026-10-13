@@ -308,6 +308,11 @@ Unaffected:
 - **The spec and the build tickets follow.** [Update the spec and the legal pages for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/103) updates `docs/spec.md` to this ADR, and
   [Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) rewrites the build tickets the move changes.
 
+  > **The spec followed, 2026-10-13.** `docs/spec.md` is corrected in place to this ADR and the
+  > notes it names. The names the notes left to it (Sign in with 42's routes, the sign-in codes) and
+  > one rule Kamel chose there, that a wrong current password counts toward the throttle (ADR-0003
+  > d10's note of that date), are listed in its §2.2 as M35–M37.
+
 ## Not settled by this decision
 
 - **Putting PeerConnect online**, one reason for the move but outside [Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85). It reverses ADR-0004's
