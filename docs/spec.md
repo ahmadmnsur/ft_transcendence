@@ -3885,8 +3885,9 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
 > no longer holds. Two build tickets outside the plan have already changed item 1's and item 2's
 > merged code: the local Supabase fallback (#121: Compose services, make targets, the boot check's
 > steps 1 and 2, CI on `make test`'s copy) and the team project's verified TLS and pool cap (#124).
-> The boot check's steps 3 and 4, which let `make up` run on the team project, come with a build
-> ticket #104 opens; until then a team `.env` stops the boot.
+> #104 rewrote the seventeen open tickets the move changes on 2026-10-14 and opened three: the boot
+> check's steps 3 and 4, which let `make up` run on the team project (#155; until it lands, a team
+> `.env` stops the boot), the two resets (#156), and recovery through Confirm with 42 (#157).
 
 1. **Infrastructure gate** (Kamel, week 1): Compose files, both Dockerfiles, nginx files, `.env.example`,
    boot command, env validation, `/api/health`, Makefile, `.github/workflows/ci.yml` with §16.4's
@@ -3902,11 +3903,11 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
    harness, the fallback-only check, the named pause; on the fallback's own Supabase Auth and
    Storage, so after #121). Gate every slice.
 3. **Accounts and sessions** (`Student`, `Session`, sign-up, sign-in, sign-out, password change and
-   its two sign-outs, throttle, all through Supabase Auth, §5.1) and the **seed skeleton** (the bucket
-   step, catalogue, bootstrap accounts through Supabase's admin create, completion record, the guard,
-   the deletions and the lock, §14.9), whose PR adds CI step 6 (§16.4). `12-sign-in` lands with
-   Accounts and sessions (#36). Gate every signed-in feature. The two resets (§15.6) share the
-   seed's deletion function and lock, so they come with or after the skeleton.
+   its two sign-outs, throttle, all through Supabase Auth, §5.1) and the **seed skeleton** (catalogue,
+   bootstrap accounts through Supabase's admin create, completion record, the guard, the deletions
+   and the lock, §14.9), whose PR adds CI step 6 (§16.4). `12-sign-in` lands with Accounts and
+   sessions (#36). Gate every signed-in feature. The two resets (§15.6) share the seed's deletion
+   function and lock, so they come after the skeleton, in a ticket of their own (#156).
 4. **Fixture port + matcher engine + category 1** (Fadel, week 2, independent of the database layer for
    the pure part). If no earlier PR has added a test file, this one adds the first: from it the Done
    box's suite must be green and CI gains step 7 (§16.4, §16.8).
@@ -3918,13 +3919,15 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
 6. **Prompts** → **feed and Likes** → **Reports and moderation**.
 7. **Socket gateway and Presence** → **Friends** (Presence) → **Direct Messages**; **Blocks** before
    Friends' request rule and before matching's blocked-pair input.
-8. **Files** (validation, avatar, Evidence, on Supabase Storage with the order of writes and the
-   hourly cleanup, §9.8) after Reviews for Evidence.
+8. **Files** (validation, avatar, Evidence, on Supabase Storage with the bucket step, the order of
+   writes and the hourly cleanup, §9.8) after Reviews for Evidence. The avatar slice (#43) comes
+   first and builds what both files share: the bucket step, which it puts first in the seed, the
+   Storage calls, the cleanup, and the files part of the seed's deletion function.
 9. **Users table and sanctions** after Matches (termination) and Reports (auto-action).
 10. **Sign in with 42**: transport and state any time after 3; the identity mapping and a
-    successful sign-in, the 42 sign-up form, Connect and Disconnect 42, and recovery through Confirm
-    with 42, after 3 as well (§5.6). #24's questions were answered on 2026-10-08, and #24 closed on
-    2026-10-12.
+    successful sign-in, the 42 sign-up form, Connect and Disconnect 42, after 3 as well; and
+    recovery through Confirm with 42 after the identity mapping, which adds the column it needs
+    (§5.6; #157). #24's questions were answered on 2026-10-08, and #24 closed on 2026-10-12.
 11. **Legal pages rendering** any time after the SPA shell; sign-off by 2026-10-15.
 12. **The full seed** grows with each slice it drives; each seed PR is inside the gate, bumps the
     fixture version and adds its end-state assertions. It reaches ADR-0017's complete end state only

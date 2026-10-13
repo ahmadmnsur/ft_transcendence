@@ -32,6 +32,16 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104)
 > rewrites the open tickets the move changes and opens the ones it adds. The notes below mark the
 > places that issues #99 and #106 named.
+>
+> **Done 2026-10-14:** [Rewrite the affected build tickets for
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) rewrote the seventeen open
+> tickets the move changes (T08, T09, T11–T15, T17, T26, T37, T38 and T40–T45), each changed
+> criterion under a dated note citing the spec, and opened three outside this plan: [Team project
+> boot: the boot check's steps 3 and 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155),
+> [The two resets: make reset-local and make
+> reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156), and [Sign in with 42:
+> recovery through Confirm with 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157), so
+> recovery is not in T42. T15 builds the seed's bucket step, which T09 does not.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
@@ -183,6 +193,10 @@ picked up as soon as its slice lands.
 | v5 | T34 | Prompts 1–4 and their answers | 1 (Prompt half), 3 (names *D*), 9 | T27 Prompts, T29 XP/Badges, T30 Streak |
 | v6 | T39 | Social graph, Likes, Direct Messages (§14.6) and the report fixtures (§14.7) | 6 | T18 Friends, T19 DMs, T28 Likes, T36 moderation |
 | v7 | T40 | *S* suspended in Round 3; *R*'s avatar and Evidence, then *R* removed in Round 4 — **ADR-0017's complete end state** | 5 (all nine now pass) | T38 sanctions, T15 avatars, T26 Evidence, and every §18 item 5–9 ticket |
+
+> **Corrected 2026-10-14:** v1 adds §14.8's check 10, every Student's `display_name_search`
+> equals `foldName(display_name)`, which came with #95's refinement of 2026-10-02 (T09, [#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)).
+> So §14.8 has ten checks, and v7 makes all ten pass.
 
 Each version runs its steps in §14.4's order. v6 (T39) needs no sanctions code. It excludes *D*,
 *S*, *R* and the reserved positions from the eligible Students by §14.6's rule, and it identifies
@@ -354,6 +368,10 @@ behaviour-free ticket after Rounds.
 > cap](https://github.com/ahmadmnsur/ft_transcendence/issues/124) (merged `76dfbed`). The boot check's
 > steps 3 and 4, which let `make up` run on the team project, and the two resets come with tickets
 > [Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) opens (spec §15.5, §15.6).
+>
+> **Opened 2026-10-14:** [Team project boot: the boot check's steps 3 and
+> 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155) and [The two resets: make
+> reset-local and make reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156).
 - **Owner:** Kamel (ADR-0004 d12; §18 item 1). **Reviewer:** Ahmad — a gated PR its gate holder
   authored (§17.2).
 - **Blocked by:** none. **Blocks:** T02–T42.
@@ -777,6 +795,9 @@ behaviour-free ticket after Rounds.
 - **Schema gate:** yes (the `Skill` model and its migration; `prisma/seed/**`).
 - **Implements:** §4.3.4; §14.1; §14.4 step 1 (catalogue, bootstrap accounts); §14.9; §16.4 step 6;
   §18 item 3. Mechanisms: M14, M15, M28.
+
+  > **Corrected 2026-10-14:** also §14.8's check 10 ([#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)'s criterion 9).
+
 - **Acceptance criteria:**
   1. `Skill` has `id` and a unique `name`. Its rows are inserted by the seed's catalogue step and
      by migrations only, and are never updated or deleted (§4.3.4).
@@ -812,6 +833,9 @@ behaviour-free ticket after Rounds.
 - **Tests / verification:** none — fails loudly (§16.1; the suite never runs the seed, §16.2). CI
   steps 5–6. Clean-clone: CC1–CC7 (CC5 and CC6 join here).
 - **Records the PR moves:** **Fixture version** v1 (it implements none of §14.8's checks yet).
+
+  > **Corrected 2026-10-14:** v1 implements §14.8's check 10, as [#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)'s
+  > *Records* line now says.
 
 ### Signed-out surfaces and Sign in with 42 — §18 items 10 and 11
 
@@ -1940,6 +1964,12 @@ behaviour-free ticket after Rounds.
   4. §14.8 check 5 passes (§14.8).
   5. **All nine §14.8 checks pass, and the record is written last.** From this version on, the
      fixture implements all of §14.4–§14.8 (§14.9).
+
+     > **Corrected 2026-10-14:** §14.8 has ten checks, here and in *Implements* above. Check 10,
+     > every Student's `display_name_search` equals `foldName(display_name)`, came with #95's
+     > refinement of 2026-10-02, and T09 implements it from v1
+     > ([#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)).
+
   6. The first complete run's Match distribution is logged against §14.5's targets (62 = 46 / 8 /
      6 / 2, 74 %), and *D*'s email is logged (§14.5, §14.8, §18 item 12).
   7. The fixture version is v7 (§14.9).
