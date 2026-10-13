@@ -28,4 +28,9 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 RUN apk add --no-cache nginx
 COPY --from=build /app/dist/src/core/check-env.js /opt/peerconnect/check-env.js
 COPY --from=build /app/dist/src/core/env.js /opt/peerconnect/env.js
+COPY --from=build /app/dist/src/core/supabase-check.js /opt/peerconnect/supabase-check.js
+COPY --from=build /app/dist/src/core/database-connection.js /opt/peerconnect/database-connection.js
+# The copy sits outside /app, so steps 3 and 4 reach pg through this link to the
+# image's modules, which the overlay keeps in its anonymous /app/node_modules.
+RUN ln -s /app/node_modules /opt/peerconnect/node_modules
 CMD ["sh", "-c", "node /opt/peerconnect/check-env.js && npx prisma generate --config prisma.config.ts && npx nest build && npx prisma migrate deploy --config prisma.config.ts && npx prisma db seed --config prisma.config.ts && exec npx nest start --watch"]
