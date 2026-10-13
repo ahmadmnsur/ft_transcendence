@@ -1,5 +1,11 @@
 # Prisma, and a schema gate that reviews rather than authors
 
+> **Annotated 2026-10-12 for the move to Supabase.** Decisions 5 and 6 and *Not settled* carry
+> notes of 2026-10-10 from [Settle how the schema gate covers Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/97): the gate also covers Supabase's files, and
+> decision 6 is corrected, since `prisma migrate deploy` skips an edited migration rather than
+> refusing it. Prisma stays the ORM, on Supabase's Postgres. The text below is kept as written;
+> [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md) sums up the move.
+
 The subject asks only for "an ORM for the database" (`document/en.subject.md:516`) — a single
 bullet, no sub-bullets, worth one point. Any ORM earns it. So this ADR is not really about
 which ORM is best; it is about **which ORM makes three developers writing migrations in

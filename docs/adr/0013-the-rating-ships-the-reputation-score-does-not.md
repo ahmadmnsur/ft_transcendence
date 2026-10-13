@@ -106,6 +106,12 @@ silent. Reading `:225` as scope now would retroactively argue the map owed all s
    Postgres so every read necessarily passes through NestJS. Admins read it through the admin
    surface, as ADR-0008 already provides.
 
+   > **Evidence moves to Supabase Storage, noted 2026-10-13.** Since
+   > [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94) settled it on 2026-10-05, Evidence goes in a private Storage
+   > bucket, not in Postgres, and every read still passes through NestJS (ADR-0009 decision 2's note). The
+   > reasoning above and this decision stand.
+   > [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md) sums up the move.
+
 6. **The list is every Private Feedback received, each with its optional rating, newest first.**
    This is the honest replacement for the score: five entries with their stars tell a Mentor
    everything a mean of those five would have, without inventing a statistic, without a formula

@@ -5,6 +5,9 @@
 > holds no real email, and that no sanction writes to Supabase Auth. Decisions 5, 7, 8, 9 and 12
 > carry notes. The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records
 > what the move changes.
+>
+> > **Recorded 2026-10-12 in [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md)**,
+> > which sums up the move to Supabase and names which of this ADR's decisions carry its notes.
 
 The claimed **advanced permissions** module asks for three things: user CRUD, roles
 management, and different views per role. Only the third was paid for. ADR-0003 decision 5

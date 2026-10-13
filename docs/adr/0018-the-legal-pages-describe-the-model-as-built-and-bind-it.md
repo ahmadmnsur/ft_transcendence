@@ -8,6 +8,9 @@
 > [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100) settles the new text,
 > before the sign-off on 2026-10-15; decision 15 keeps the pages moving with the model.
 > The text below is kept as written; [Write the Supabase ADR and annotate the ADRs it changes](https://github.com/ahmadmnsur/ft_transcendence/issues/102) records what the move changes.
+>
+> > **Recorded 2026-10-12 in [ADR-0019](0019-supabase-hosts-the-data-and-peerconnect-keeps-the-rest.md)**,
+> > which sums up the move to Supabase and names which of this ADR's decisions carry its notes.
 
 > **The one cookie stays, 2026-09-30.** [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91)
 > keeps PeerConnect's own session: the one cookie is still `pc_session`, set by PeerConnect's
