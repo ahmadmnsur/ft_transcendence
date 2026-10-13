@@ -82,6 +82,13 @@ here; see the
 source, and say so. Every claim says whether it was read in source, read in a spec or the docs, or
 run, and where.
 
+> **Corrected 2026-10-13** after Ahmad's
+> [review of `56f3ea2`](https://github.com/ahmadmnsur/ft_transcendence/issues/141#issuecomment-6149195105):
+> only Linux was run, and there no family in the stack covers Arabic. On macOS, which face draws
+> Arabic is CoreText's choice, and Apple lists SF Arabic as part of the system font. `truncate` also
+> cuts the top and bottom of vowel marks. A `unicode-range` font is fetched by any page that shows a
+> character in its range. Smaller corrections in the Short answer and sections 1, 2, 5, 6 and 7.
+
 ## Question
 
 How do Arabic and French text look in PeerConnect without extra work, and what would change that?
@@ -94,20 +101,24 @@ they do to Arabic; and what the SPA's styles and `Intl` do to French text.
 
 ## Short answer
 
-- **Fonts.** None of the families the stack names covers Arabic on Linux or macOS, so Arabic is
-  drawn by a fallback font that each browser picks. **Run on Linux:** both browsers drew it with
+- **Fonts.** **Run on Linux:** no family the stack names covers Arabic, so Arabic is drawn by a
+  fallback font that each browser picks. Both browsers drew it with
   Noto Sans Arabic, and the letters joined correctly. But `font-medium` gave the Regular face in both
   browsers, `font-semibold` gave a **fake bold** in Chrome (the Regular face thickened) and the real
   Bold face in Firefox, `italic` gave a slanted Regular face in both, and `tabular-nums` did not make
   the Arabic-Indic digits equal width. **Read, not run:** on Windows the stack names Segoe UI, which
-  Microsoft lists with Arabic. On macOS, Firefox names Geeza Pro, while Safari and Chrome leave the
-  choice to the system (CoreText).
+  Microsoft lists with Arabic. On macOS, which face draws Arabic is CoreText's choice, and Apple
+  lists SF Arabic as part of the system font, so the stack's first family may cover Arabic there.
+  Firefox names Geeza Pro for Arabic, while Safari and Chrome leave the choice to CoreText.
 - **A bundled font.** Eight Arabic families on Google Fonts were measured. All are under the SIL
-  Open Font License 1.1, and two declare a Reserved Font Name. Subset to Arabic and Latin, one
-  woff2 file weighs 17–117 kB for seven of them, and 343 kB for Noto Sans Arabic's variable font
-  (102 kB when limited to weights 400–600). Vite emits it as a file with a hashed name. With `unicode-range` it was downloaded **only on
-  the Arabic page**. A font under 4 KiB would be inlined as `data:`, which the SPA's CSP blocks
-  with a console error.
+  Open Font License 1.1, and two declare a Reserved Font Name. A variable font is one file; a
+  static family needs one file per weight. Subset to Arabic and Latin and limited to the weights the
+  SPA uses (400, 500 and 600), a family weighs 35–174 kB: Readex Pro 35 kB, Cairo 40 kB, Vazirmatn
+  55 kB, Rubik 61 kB and Noto Sans Arabic 102 kB in one file each; Tajawal 52 kB in three files
+  (700 stands in for 600), Almarai 94 kB in two (400 and 700) and IBM Plex Sans Arabic 174 kB in
+  three. Vite emits each as a file with a hashed name. With `unicode-range` set to Arabic, a page
+  fetches it only when it shows an Arabic character; in the run, only the Arabic page did. A font
+  under 4 KiB would be inlined as `data:`, which the SPA's CSP blocks with a console error.
 - **Digits.** Since **CLDR 46** (2024-10-24), plain `ar` defaults to Western digits (`1,234`),
   while `ar-LB`, `ar-EG`, `ar-SA` and 18 other Arabic locales keep Arabic-Indic digits (`١٬٢٣٤`).
   Node 22.22.1, Chrome 154 and Firefox 157 all ship CLDR 48 and gave the same French and Arabic
@@ -116,19 +127,22 @@ they do to Arabic; and what the SPA's styles and `Intl` do to French text.
   differ: Firefox ESR 128 (CLDR 43) and the ICU in Apple's `macos-145` tag (CLDR 44) give
   Arabic-Indic digits for `ar` (read, not run).
 - **Dates.** All three languages use the Gregorian calendar. Arabic numeric dates carry invisible
-  right-to-left marks (U+200F), and show in day, month, year order only inside a right-to-left box. In a
-  `dir="ltr"` box, `ar` printed 5 January 2026 as `52026/1/`. `ar` and `ar-LB` use different month
-  names (`أكتوبر` against `تشرين الأول`).
+  right-to-left marks (U+200F). With Western digits, they show in day, month, year order only inside
+  a right-to-left box: in a `dir="ltr"` box, `ar` printed 5 January 2026 as `52026/1/`. The `ar-LB`
+  dates, with Arabic-Indic digits, kept their order in both boxes. `ar` and `ar-LB` use different
+  month names (`أكتوبر` against `تشرين الأول`).
 - **Styles.** Both browsers ignore `letter-spacing` between Arabic letters, as CSS Text 3 requires
   when a browser cannot stretch the joins, so `tracking-wide` and `tracking-tight` do nothing to an
   Arabic word. `uppercase` does nothing to
   Arabic. With vowel marks, glyphs at `text-2xl` and `text-3xl` reach up into the line above.
-  `truncate` cut slivers of about one device pixel off the edges of Arabic button labels.
+  `truncate` cut slivers of about one device pixel off the edges of Arabic button labels, and on a
+  label with vowel marks, the top and bottom of the marks.
 - **French.** `Intl` writes `1 234,5` with a narrow no-break space (U+202F) and `42 %` with a
   no-break space (U+00A0). `uppercase` keeps the accents (`ÉLÈVE`). Neither browser adds the French
   space before `: ; ! ?`, and neither supports `text-autospace: punctuation`. With a plain space
   typed before them, both browsers broke the line just before the mark at more than half the widths
-  tried. With U+00A0 or U+202F they did not, except where one word did not fit the box.
+  tried. With U+00A0 or U+202F they did not, except where the word and its mark did not fit the
+  box.
 
 ## 1. The system font stack and Arabic
 
@@ -216,10 +230,13 @@ the text's width, to 0.001 px, against the same text set in each installed candi
   list the San Francisco system fonts. Apple's developer page says SF Pro covers *"Latin, Greek, and
   Cyrillic scripts"*, and lists **SF Arabic** among the *"extensions to the Apple system font"*,
   with *"nine weights"*.
-- **Safari:** `system-ui` is CoreText's UI font for the element's language, and fallback follows
-  CoreText's cascade list for that language
-  ([`SystemFontDatabaseCoreText.cpp` L52–60, L169–173](https://github.com/WebKit/WebKit/blob/963125d1f1440dca433af8e41e3530abd975dd10/Source/WebCore/platform/graphics/cocoa/SystemFontDatabaseCoreText.cpp#L52-L60)).
-  Which font CoreText puts there is not published.
+- **Safari:** `system-ui` is `CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, size, locale)`,
+  CoreText's UI font for the element's language, and fallback follows CoreText's cascade list for
+  that language
+  ([`SystemFontDatabaseCoreText.cpp` L52–63, L169–183](https://github.com/WebKit/WebKit/blob/963125d1f1440dca433af8e41e3530abd975dd10/Source/WebCore/platform/graphics/cocoa/SystemFontDatabaseCoreText.cpp#L52-L63)).
+  Since Apple lists SF Arabic as an extension of the system font (above), the stack's first family
+  may cover Arabic itself on a Mac. Which face CoreText actually picks is not published, and it was
+  not run.
 - **Chrome:** `system-ui` is CoreText's UI font with no language
   ([`font_matcher_mac.mm` L545](https://github.com/chromium/chromium/blob/154.0.8037.97/third_party/blink/renderer/platform/fonts/mac/font_matcher_mac.mm#L540-L545)),
   and missing glyphs come from CoreText's substitution
@@ -236,8 +253,9 @@ the text's width, to 0.001 px, against the same text set in each installed candi
 Rules in: the system stack as a way to show correctly joined Arabic on Linux (run). Rules out:
 expecting the same Arabic face, or real 500 and 600 weights, in every browser and system. On Linux
 Chrome fakes the bold and both browsers drop 500 to Regular (run). On macOS, Firefox names Geeza
-Pro while Safari and Chrome leave the choice to CoreText (read). Not confirmed: Windows and macOS, and Linux machines without
-an Arabic font installed.
+Pro while Safari and Chrome leave the choice to CoreText, and Apple lists SF Arabic as part of the
+system font (read). Not confirmed: Windows and macOS, and Linux machines without an Arabic font
+installed.
 
 ## 2. A bundled Arabic font: candidates, licences, sizes and Vite
 
@@ -255,7 +273,7 @@ an Arabic font installed.
 
 How they were found: a search of the `google/fonts` repository for `subsets: "arabic"` returned 60
 families (a search can miss files); 29 of them list the category `SANS_SERIF`. The table measures
-eight of those: the two the ticket names (Noto Sans Arabic, IBM Plex Sans Arabic) and six others
+eight of those: two well-known families (Noto Sans Arabic, IBM Plex Sans Arabic) and six others
 with several weights. It is a sample, not a ranking. Sizes are bytes, measured with fontTools 4.66.1
 at `6692879`. *Arabic + Latin* keeps the code points of Google Fonts' own `arabic` (1,511)
 and `latin` (235) subset files plus U+202F, U+200F and U+2009, with fontTools' default layout
@@ -329,8 +347,11 @@ JavaScript (120.92 kB gzip) and 28.98 kB of CSS (6.51 kB gzip). woff2 files are 
   ([CSS Fonts 4 L3464–3469](https://github.com/w3c/csswg-drafts/blob/50337328484f7fcdd9ab6fe9ded6011815b1707e/css-fonts-4/Overview.bs#L3464-L3469)).
   The subject requires a console with no warnings or errors (`document/en.subject.md:318`).
 
-Rules in: a same-origin woff2 file under the current CSP, fetched only by Arabic pages when its
-`unicode-range` covers Arabic alone. Rules out: a font inlined as `data:` under the current
+Rules in: a same-origin woff2 file under the current CSP, with a `unicode-range` that covers Arabic
+alone. It is fetched by any page that shows a character in its `unicode-range`, so an English or
+French page with an Arabic display name, Post or Direct Message on it fetches it too
+(`PersonName.tsx:11` shows a name as written); in the run, only the Arabic page did, since the
+English and French pages had no Arabic on them. Rules out: a font inlined as `data:` under the current
 `font-src 'self'`. Rules out, for a subset: keeping the names "Plex" or "RevReading Lexend".
 
 ## 3. Digits: CLDR's default and what `Intl` gives
@@ -492,7 +513,7 @@ Rules out: showing `ar` numeric dates inside a left-to-right box without isolati
 | `italic` | `legal/markdown.tsx:33` (`*emphasis*`) | the Regular face slanted, in both |
 | `leading-relaxed` (1.625) | `legal/markdown.tsx:103` (tables), `:213` (the article) | room for marks (below) |
 | `text-xs` … `text-3xl` with their own line heights | `tokens.css:80–93`, used 47 times | below |
-| `truncate` (`overflow: hidden`) | `Button.tsx:51`, `ProgressBar.tsx:24` | cut slivers about one device pixel wide off Arabic button labels (below) |
+| `truncate` (`overflow: hidden`) | `Button.tsx:51`, `ProgressBar.tsx:24` | cut slivers about one device pixel wide off Arabic button labels, and the top and bottom of vowel marks (below) |
 | `whitespace-nowrap` | `DataTable.tsx:164` | header stays on one line |
 | `tabular-nums` | `DataTable.tsx:205`, `FileDrop.tsx:289`, `Pagination.tsx:60`, `ProgressBar.tsx:27` | no effect on Arabic-Indic digits with the installed Linux font (section 1) |
 | `font-mono` | `legal/markdown.tsx:24` (inline code) | DejaVu Sans Mono on Linux (section 1) |
@@ -644,8 +665,8 @@ Not confirmed: Safari's letter spacing on Arabic (source says it is applied).
   `lang="tr"` turned `istanbul` into `İSTANBUL`.
 - The Académie française: *"On veille donc, en bonne typographie, à utiliser systématiquement les
   capitales accentuées, y compris la préposition À"*.
-- `uppercase` with `tracking-wide` in `DataTable.tsx:164` spaced the French letters by 0.4 px each
-  (section 5).
+- `uppercase` with `tracking-wide` in `DataTable.tsx:164` spaces the French letters by 0.3 px each:
+  0.025em of `text-xs`, which is 12 px (`tokens.css:80`). Section 5's 0.4 px is its 16 px probe.
 
 ### Spaces before `: ; ! ?` and inside « »
 
@@ -703,7 +724,7 @@ and the bundled-font loading. They differed in:
 | What | Chrome 154 | Firefox 157 |
 | --- | --- | --- |
 | Arabic at `font-semibold` with no Arabic font in the stack | Regular face thickened (fake bold) | real Bold face |
-| `truncate` on the `sm`, `md`, `lg` Arabic Button labels | 10, 4 and 5 device pixels cut | 1, 3 and 0 |
+| `truncate` on the `sm`, `md`, `lg` Arabic Button labels | 10, 4 and 5 device pixels differed (`hidden` against `visible`) | 1, 3 and 0 |
 | `text-autospace: insert` | not supported | supported (neither supports `punctuation`) |
 
 Safari was not run. From source and Apple's data: its `Intl` digits follow the macOS ICU
