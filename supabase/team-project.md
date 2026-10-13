@@ -13,6 +13,11 @@ dashboard ([ADR-0005](../docs/adr/0005-prisma-and-the-schema-gate.md) d5).
 > `540`; the bucket step ([Avatars, and PNG/JPEG byte validation](https://github.com/ahmadmnsur/ft_transcendence/issues/43)); and the two reset
 > commands, whose ticket is not opened yet ([Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) lists them).
 > The ADRs record what each will do, and the steps below that use them wait for them.
+>
+> **Opened 2026-10-14:** the boot check's steps 3 and 4 are [Team project boot: the boot check's
+> steps 3 and 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155), and the two reset
+> commands are [The two resets: make reset-local and make
+> reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156).
 
 ## Members
 

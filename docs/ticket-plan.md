@@ -32,6 +32,16 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104)
 > rewrites the open tickets the move changes and opens the ones it adds. The notes below mark the
 > places that issues #99 and #106 named.
+>
+> **Done 2026-10-14:** [Rewrite the affected build tickets for
+> Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) rewrote the seventeen open
+> tickets the move changes (T08, T09, T11–T15, T17, T26, T37, T38 and T40–T45), each changed
+> criterion under a dated note citing the spec, and opened three outside this plan: [Team project
+> boot: the boot check's steps 3 and 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155),
+> [The two resets: make reset-local and make
+> reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156), and [Sign in with 42:
+> recovery through Confirm with 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157), which
+> takes recovery out of T42. T15 builds the seed's bucket step, which T09 does not.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
@@ -354,6 +364,10 @@ behaviour-free ticket after Rounds.
 > cap](https://github.com/ahmadmnsur/ft_transcendence/issues/124) (merged `76dfbed`). The boot check's
 > steps 3 and 4, which let `make up` run on the team project, and the two resets come with tickets
 > [Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) opens (spec §15.5, §15.6).
+>
+> **Opened 2026-10-14:** [Team project boot: the boot check's steps 3 and
+> 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155) and [The two resets: make
+> reset-local and make reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156).
 - **Owner:** Kamel (ADR-0004 d12; §18 item 1). **Reviewer:** Ahmad — a gated PR its gate holder
   authored (§17.2).
 - **Blocked by:** none. **Blocks:** T02–T42.

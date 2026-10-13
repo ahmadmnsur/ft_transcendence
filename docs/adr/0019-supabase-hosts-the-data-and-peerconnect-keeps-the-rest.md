@@ -313,6 +313,12 @@ Unaffected:
   > one rule Kamel chose there, that a wrong current password counts toward the throttle (ADR-0003
   > d10's note of that date), are listed in its §2.2 as M35–M37.
 
+  > **The build tickets followed, 2026-10-14.** [Rewrite the affected build tickets for Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/104) rewrote the seventeen open build tickets
+  > the move changes, each changed criterion under a dated note citing the spec and this ADR, and
+  > opened three: [Team project boot: the boot check's steps 3 and 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155), which lets `make up` run on the
+  > team project (decision 3); [The two resets: make reset-local and make reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156) (decision 10); and
+  > [Sign in with 42: recovery through Confirm with 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157) (decision 6).
+
 ## Not settled by this decision
 
 - **Putting PeerConnect online**, one reason for the move but outside [Map: PeerConnect moves to Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/85). It reverses ADR-0004's
