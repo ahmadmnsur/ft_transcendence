@@ -368,8 +368,8 @@ production build behaves like the dev server for `rtl:`/`ltr:`, unless `build.cs
   - **CSS.** In the compiled CSS of the 11,858 classes, it flags each of the 1,418 one-sided
     classes, and 264 more whose declarations set one side each but the class as a whole sets both
     (`mask-x-`, `rounded-t-`, `rounded-b-`), since it judges each declaration alone.
-  - **Every case from Ahmad's three reviews,** alone in a file (66 cases, physical and not): the
-    expected exit code each time.
+  - **Every case named in Ahmad's three reviews, and more,** alone in a file (66 cases, physical
+    and not): the expected exit code each time.
   - **Output in a pipe.** Captured by another Node program, in one series of ten runs, `52957a1`
     printed 1,995, 3,983 and 3,614 lines instead of 4,003 three times; the exit code was right.
     The scanner now sets `process.exitCode` instead, and printed all 4,003 lines in ten of ten
