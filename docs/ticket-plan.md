@@ -194,6 +194,10 @@ picked up as soon as its slice lands.
 | v6 | T39 | Social graph, Likes, Direct Messages (§14.6) and the report fixtures (§14.7) | 6 | T18 Friends, T19 DMs, T28 Likes, T36 moderation |
 | v7 | T40 | *S* suspended in Round 3; *R*'s avatar and Evidence, then *R* removed in Round 4 — **ADR-0017's complete end state** | 5 (all nine now pass) | T38 sanctions, T15 avatars, T26 Evidence, and every §18 item 5–9 ticket |
 
+> **Corrected 2026-10-14:** v1 adds §14.8's check 10, every Student's `display_name_search`
+> equals `foldName(display_name)`, which came with #95's refinement of 2026-10-02 (T09, [#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)).
+> So §14.8 has ten checks, and v7 makes all ten pass.
+
 Each version runs its steps in §14.4's order. v6 (T39) needs no sanctions code. It excludes *D*,
 *S*, *R* and the reserved positions from the eligible Students by §14.6's rule, and it identifies
 *S* and *R* by §14.5's selection rules over the Round script, not by their status. v7 (T40), which
@@ -791,6 +795,9 @@ behaviour-free ticket after Rounds.
 - **Schema gate:** yes (the `Skill` model and its migration; `prisma/seed/**`).
 - **Implements:** §4.3.4; §14.1; §14.4 step 1 (catalogue, bootstrap accounts); §14.9; §16.4 step 6;
   §18 item 3. Mechanisms: M14, M15, M28.
+
+  > **Corrected 2026-10-14:** also §14.8's check 10 ([#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)'s criterion 9).
+
 - **Acceptance criteria:**
   1. `Skill` has `id` and a unique `name`. Its rows are inserted by the seed's catalogue step and
      by migrations only, and are never updated or deleted (§4.3.4).
@@ -826,6 +833,9 @@ behaviour-free ticket after Rounds.
 - **Tests / verification:** none — fails loudly (§16.1; the suite never runs the seed, §16.2). CI
   steps 5–6. Clean-clone: CC1–CC7 (CC5 and CC6 join here).
 - **Records the PR moves:** **Fixture version** v1 (it implements none of §14.8's checks yet).
+
+  > **Corrected 2026-10-14:** v1 implements §14.8's check 10, as [#37](https://github.com/ahmadmnsur/ft_transcendence/issues/37)'s
+  > *Records* line now says.
 
 ### Signed-out surfaces and Sign in with 42 — §18 items 10 and 11
 
