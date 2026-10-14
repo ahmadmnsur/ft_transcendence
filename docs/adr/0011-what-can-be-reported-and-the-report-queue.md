@@ -97,6 +97,10 @@ every place they could do social damage.**
    > PeerConnect's own. Adding, removing or renaming a reason changes
    > `docs/legal/terms-of-service.md` in the same PR, so the rules a Report enforces stay the rules
    > the Terms state.
+   >
+   > > **Noted 2026-10-13 by [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143):** once the
+   > > French and Arabic translations exist, that PR changes all three versions of the Terms, with
+   > > one date (ADR-0018 decision 15's note of this date).
 
    > **Noted 2026-10-13 by [Settle what counts as user-facing text](https://github.com/ahmadmnsur/ft_transcendence/issues/142): the coupling holds in
    > every language.** The report form's reason labels are translated into French and Arabic with

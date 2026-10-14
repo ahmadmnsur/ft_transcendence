@@ -892,6 +892,11 @@ six weeks and three developers.
   > routes readable signed out, and the footer shows on every screen, because the signup
   > checkbox (ADR-0018 d12) links terms a visitor has to be able to read before an account
   > exists.
+  >
+  > > **Noted 2026-10-13 by [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143):** the
+  > > deadline covers the English pages. Their French and Arabic translations come later, on their
+  > > own build ticket finished before [Pre-defense readiness](https://github.com/ahmadmnsur/ft_transcendence/issues/73), and Ahmad signs them off
+  > > before they merge (ADR-0018 decision 14's note of this date).
 
 * **What fixture data makes every claimed module demonstrable.** Decision 11 settles the
   mechanism and the bootstrap Admin only; the demo strategy is still open.

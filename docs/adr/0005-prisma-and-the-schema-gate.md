@@ -127,6 +127,12 @@ TypeORM, so a future reader will assume we defaulted without thinking. We didn't
    > `docs/legal/privacy-policy.md` moved in the same PR. The gate still covers only `prisma/**`
    > and the root `prisma.config.ts`; a personal-data change outside those paths, such as a new
    > visibility rule, is caught by the PR template's Done box rather than by widening the gate.
+   >
+   > > **Noted 2026-10-13 by [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143):** once the
+   > > French and Arabic translations exist, this check covers all three versions of the Privacy
+   > > Policy, `privacy-policy.md`, `privacy-policy.fr.md` and `privacy-policy.ar.md`, with one date
+   > > (ADR-0018 decision 15's note of this date). The build compares only the dates, so the gate
+   > > holder also confirms that the French and the Arabic text moved.
 
    > **Config discovery paths gated, 2026-09-23 before `/to-spec #1`.** Prisma 7.10+ loads a root
    > `prisma7.config.*`, then `.config/prisma7.*`, **before** this project's `prisma.config.ts`
