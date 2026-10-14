@@ -1986,6 +1986,11 @@ behaviour-free ticket after Rounds.
 #### T41 — Legal pages sign-off
 - **Owner:** Ahmad signs off; Kamel verifies the technical claims (ADR-0018 d14; §17.6).
   **Deadline:** end of week 4, 2026-10-15.
+
+  > **Moved 2026-10-14** (ADR-0018 d14's note of 2026-10-14; spec §17.6): the sign-off and Kamel's
+  > check (criterion 2) are due 2026-10-25, a Sunday in week 6. The date holds only if T08 (#36)
+  > and T11 (#39) merge before it. Criterion 4's pages being live keeps 2026-10-15 and was met on
+  > 2026-10-11, when T10 (#38) landed as `592bf58`.
 - **Blocked by:** #24 (external) [ADR-0018 *Consequences*: sign-off is blocked on #24's field for
   the Privacy Policy's 42 sentence], T10 [§17.6: *"live"*], and derived from ADR-0018 d14's claims
   (cookie, logs, TLS, 42): T01, T02, T08, T11. **Blocks:** T45.
@@ -2302,6 +2307,10 @@ From T08 to T40 the critical path is **12 serial tickets** (was 16).
 | Module-contingency dates | 2026-10-02 / 10-05 / 10-22 | — | Discharged by #7 (§17.6). |
 | Pre-defense | not dated in the records | T43, T45 (and T42 if #24 resolves) | T45 waits on T41, which #24 blocks, so an unresolved #24 also holds pre-defense readiness. The map records only *"~6 weeks from 2026-09-18"* of capacity. No defense date is settled, so none is assumed here. |
 
+> **Moved 2026-10-14** (ADR-0018 d14's note of 2026-10-14; spec §17.6): T41's sign-off is due
+> 2026-10-25, a Sunday in week 6, and holds only if T08 (#36) and T11 (#39) merge before it. The
+> pages went live on 2026-10-11, before the old date (T41's note). The browser pass keeps week 5.
+
 ---
 
 ## E. External items
@@ -2324,6 +2333,9 @@ against the milestone they affect.
 | **#28 — repository governance** (open) | none | CI (T01): whether it becomes a required check. A `CODEOWNERS` file mapping `/prisma/`, `/prisma.config*`, `/prisma7.config*` and `/.config/prisma*` would automate the gate reviewer. **Pre-defense (T45):** whether migrations are squashed first. |
 | **Legal sign-off inputs** — Kamel's and Fadel's 42 logins (#24's field is the #24 row above) | none as an issue edge: no issue records the logins, but T41's criterion 3 needs them | The **2026-10-15** legal milestone (T41). |
 | **The demo script's running order** (ADR-0017 *Not settled*) | none | Pre-defense rehearsal (T45). T34 selects the demo Student and T40 confirms *D*. |
+
+> **Moved 2026-10-14:** the legal milestone these rows name is now T41's sign-off on 2026-10-25,
+> and the pages went live on 2026-10-11, before the old date (D's note of 2026-10-14).
 
 ---
 

@@ -716,6 +716,9 @@ done when the PR template already is one.**
    Week 5 (2026-10-16 to 10-22) because features must exist first, and it stays clear of week 4,
    which is already Ahmad's hard deadline for the Privacy Policy and Terms of Service.
 
+   > **Moved 2026-10-14:** that deadline is now 2026-10-25, in week 6 (ADR-0018 decision 14's note
+   > of 2026-10-14). The pass stays in week 5.
+
 10. **Fadel ports the fixture and writes the matcher tests in week 2, and Ahmad deputises.**
     Ahmad wrote the prototype and the criteria and would be faster, and that is exactly why this
     is recorded as a decision rather than left to fall to him. **[#16](https://github.com/ahmadmnsur/ft_transcendence/issues/16)

@@ -897,6 +897,10 @@ six weeks and three developers.
   > > deadline covers the English pages. Their French and Arabic translations come later, on their
   > > own build ticket finished before [Pre-defense readiness](https://github.com/ahmadmnsur/ft_transcendence/issues/73), and Ahmad signs them off
   > > before they merge (ADR-0018 decision 14's note of this date).
+  >
+  > > **Moved 2026-10-14 by [Legal pages sign-off](https://github.com/ahmadmnsur/ft_transcendence/issues/69):** the sign-off is now due 2026-10-25, in
+  > > week 6. The pages have been live since 2026-10-11, before the old date (ADR-0018 decision
+  > > 14's note of 2026-10-14).
 
 * **What fixture data makes every claimed module demonstrable.** Decision 11 settles the
   mechanism and the bootstrap Admin only; the demo strategy is still open.
