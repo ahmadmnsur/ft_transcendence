@@ -497,6 +497,14 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     >   checkbox, the Admin label, the Report reasons and each domain term, as [Settle what counts as user-facing text](https://github.com/ahmadmnsur/ft_transcendence/issues/142)
     >   point 7 has it for the reasons.
 
+    > **Moved 2026-10-14 by [Legal pages sign-off](https://github.com/ahmadmnsur/ft_transcendence/issues/69): the sign-off is due 2026-10-25, a Sunday in
+    > week 6.** Ahmad, who signs off, set the date. Kamel verifies the claims against the merged
+    > code, and the code behind the cookie and 42 claims is not built yet: [Accounts and sessions: sign-up, sign-in, sign-out, password change](https://github.com/ahmadmnsur/ft_transcendence/issues/36)
+    > and [Sign in with 42: transport and state](https://github.com/ahmadmnsur/ft_transcendence/issues/39) are open. **The date holds only if both merge before it.**
+    > Kamel's check moves with the sign-off. The pages being live does not move: they have rendered
+    > at `/privacy` and `/terms`, with their footer links, since 2026-10-11 (`592bf58`), before the
+    > old date.
+
 15. **The Privacy Policy moves with personal data, in the same PR.** Once it exists it is a record of
     the data model in plain language, and it goes stale the first time someone adds a column. Any PR
     that changes what personal data is stored, who can see it, or how long it is kept updates the
@@ -575,6 +583,8 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
   Direct Messages to Friends; if `/to-spec` does, the Contact sections change.
 - **No module point moves.** This is mandatory-part work with the highest rejection risk on the map;
   the writing risk moves from week 4 to week 1, and week 4 keeps the review.
+
+  > **Moved 2026-10-14:** the review is due 2026-10-25, in week 6 (decision 14's note of 2026-10-14).
 
 ## Not settled by this decision
 

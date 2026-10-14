@@ -3874,6 +3874,12 @@ module-contingency dates are discharged (#7).
 > 2026-10-01, and Ahmad took the fixture port and the matcher tests (#34, #35; §17.1): the port
 > landed as `e15d2c0` (#110) and the tests as `ab26e78` (#112).
 
+> **Moved 2026-10-14** (ADR-0018 d14's note of 2026-10-14): Ahmad's sign-off and Kamel's check of
+> the technical claims are due **2026-10-25**, a Sunday in week 6. Kamel checks the cookie and 42
+> claims against merged code, so the date holds only if Accounts (#36) and Sign in with 42's
+> transport and state (#39) merge before it. The pages have been live since 2026-10-11
+> (`592bf58`, #38), before the old date. The browser pass keeps week 5.
+
 ---
 
 ## 18. Build dependencies
@@ -3930,6 +3936,9 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
     recovery through Confirm with 42 after the identity mapping, which adds the column it needs
     (§5.6; #157). #24's questions were answered on 2026-10-08, and #24 closed on 2026-10-12.
 11. **Legal pages rendering** any time after the SPA shell; sign-off by 2026-10-15.
+
+    > **Moved 2026-10-14:** sign-off by 2026-10-25 (§17.6's note of 2026-10-14).
+
 12. **The full seed** grows with each slice it drives; each seed PR is inside the gate, bumps the
     fixture version and adds its end-state assertions. It reaches ADR-0017's complete end state only
     when 5–9 exist; the first complete deterministic run confirms or corrects the §14.5 targets and
@@ -4244,6 +4253,9 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
 
    > **Logins recorded 2026-10-11:** Kamel's 42 login is `kabbas` and Hussein's is `hdakdouk`, and
    > both legal pages carry them, so the logins no longer hold up sign-off.
+
+   > **Moved 2026-10-14:** the sign-off and Kamel's check are due **2026-10-25** (§17.6's note of
+   > 2026-10-14).
 4. **[#16 — a commit from every member](https://github.com/ahmadmnsur/ft_transcendence/issues/16)
    (met)**: `en.subject.md:306`–`:312` is a rejection criterion. Every member has a commit on
    `main`, and the root `.mailmap` gives each of them one name in the author list.
