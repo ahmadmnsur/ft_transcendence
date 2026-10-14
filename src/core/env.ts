@@ -169,7 +169,9 @@ export function validateEnv(env: EnvRecord): EnvResult {
   return { ok: true };
 }
 
-// Single exit path shared by the API entry point and the seed entry point.
+// The boot check's steps 1 and 2 (§15.5): one exit path shared by the boot
+// check, the API entry point and the seed entry point. Both targets pass; the
+// boot check's own entry then adds steps 3 and 4.
 export function assertEnvOrExit(env: EnvRecord): void {
   const result = validateEnv(env);
   if (!result.ok) {
@@ -181,12 +183,6 @@ export function assertEnvOrExit(env: EnvRecord): void {
   if (target.kind === 'none') {
     console.error(
       `Supabase check failed: DATABASE_URL host ${target.databaseHost} and SUPABASE_URL host ${target.supabaseHost} do not name one target`,
-    );
-    process.exit(1);
-  }
-  if (target.kind === 'team') {
-    console.error(
-      `Supabase check failed: DATABASE_URL host ${target.databaseHost} and SUPABASE_URL host ${target.supabaseHost} name a team project; use make local or make dev until the boot check's remaining steps land`,
     );
     process.exit(1);
   }

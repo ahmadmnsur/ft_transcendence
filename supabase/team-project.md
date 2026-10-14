@@ -18,6 +18,12 @@ dashboard ([ADR-0005](../docs/adr/0005-prisma-and-the-schema-gate.md) d5).
 > steps 3 and 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155), and the two reset
 > commands are [The two resets: make reset-local and make
 > reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156).
+>
+> **Added 2026-10-14:** the boot check's steps 3 and 4 land with [Team project boot: the boot
+> check's steps 3 and 4](https://github.com/ahmadmnsur/ft_transcendence/issues/155). A team `.env` no
+> longer stops the boot: `make up` on `main` runs the check's four steps, naming a paused project's
+> `540`, then migrates and seeds the team project. Its first run there is Kamel's, from `main` after
+> the merge, reported on that issue. The bucket step and the two resets still wait.
 
 ## Members
 
