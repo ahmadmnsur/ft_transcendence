@@ -547,8 +547,9 @@ done when the PR template already is one.**
    > build's `tsc -b` fails on a missing text, plural form or placeholder ([Settle the translation library and how text is keyed](https://github.com/ahmadmnsur/ft_transcendence/issues/144)).
    > Decision 8's workflow runs it and stays advisory; the box makes the build's result part of
    > Done, so a PR merged with it red is not done. Until the foundation build ticket creates
-   > `web/src/i18n/`, the box asks instead for the English in one object per area, shaped like the
-   > dictionary. It sits in the template for the same reason as the fourth and fifth checks.
+   > `web/src/i18n/`, the box asks for the text in English only, in one object per area shaped like
+   > the dictionary, and still for the build. It sits in the template for the same reason as the
+   > fourth and fifth checks.
 
    **This deliberately invents no second concept.** A separately written definition of done drifts
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be

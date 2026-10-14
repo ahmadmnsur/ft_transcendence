@@ -464,7 +464,8 @@ If it changes what personal data is stored, who can see it, or how long it is ke
 Policy moved with it in the same PR** — see *Personal data moves the Privacy Policy* below.
 
 If it adds or changes text the SPA shows, **that text is in English, French and Arabic in the same
-PR, and the SPA build passes** — see *Text ships in three languages* below.
+PR, and the SPA build passes** — see *Text ships in three languages* below, which also says what a
+slice does until `web/src/i18n/` exists.
 
 ### Records move together
 
