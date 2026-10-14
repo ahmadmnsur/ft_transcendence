@@ -1,10 +1,18 @@
-// The plural forms each language must write (CLDR 48, Intl.PluralRules).
+// The plural forms each language writes (CLDR 48, Intl.PluralRules).
 export interface PluralForms {
   en: 'one' | 'other';
   fr: 'one' | 'many' | 'other';
   ar: 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
 }
 export type Language = keyof PluralForms;
+
+// The forms that hold a single number, and so may write it in words and
+// leave out {count}. French `one` holds both 0 and 1, so it writes {count}.
+interface SingleNumber {
+  en: 'one';
+  fr: never;
+  ar: 'zero' | 'one' | 'two';
+}
 
 // '{name} sent {count}' -> 'name' | 'count'
 export type Placeholders<S> = S extends `${string}{${infer P}}${infer Rest}` ? P | Placeholders<Rest> : never;
@@ -15,38 +23,114 @@ export type EnPlural = { one: string; other: string };
 export type EnParts = { text: string; parts: Record<string, EnPlural> };
 export type EnGroup = { [key: string]: string | EnPlural | EnParts | EnGroup };
 
+// A message is told from a group by its exact keys, as over() does at run
+// time, so a group never uses these as keys.
+type Reserved = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other' | 'text' | 'parts';
+type Exactly<T, K> = [keyof T] extends [K] ? ([K] extends [keyof T] ? true : false) : false;
+export type IsPlural<T> = T extends string ? false : Exactly<T, 'one' | 'other'>;
+export type IsParts<T> = T extends string ? false : Exactly<T, 'text' | 'parts'>;
+export type TextOf<T> = T extends { text: infer S } ? S : never;
+export type PartsOf<T> = T extends { parts: infer P } ? P : never;
+export type Forms<T> = T[keyof T];
+
 type UnionToIntersection<U> = (U extends unknown ? (u: U) => void : never) extends (i: infer I) => void ? I : never;
 
-// A translation must contain every placeholder the English text has.
+// A text that contains every placeholder in P.
 type Containing<P extends string> = [P] extends [never]
   ? string
   : UnionToIntersection<P extends string ? `${string}{${P}}${string}` : never>;
 
-type PluralFor<L extends Language, E extends EnPlural> = Record<
-  PluralForms[L],
-  Containing<Exclude<Placeholders<E[keyof E]>, 'count'>>
->;
+// What one form of a plural must contain: every placeholder of the English
+// forms, and {count} unless the form holds a single number.
+type MessageNames<E> = Exclude<Placeholders<Forms<E>>, 'count'>;
+type Needs<L extends Language, F, E> = MessageNames<E> | (F extends SingleNumber[L] ? never : 'count');
+type PluralFor<L extends Language, E> = { [F in PluralForms[L]]: Containing<Needs<L, F, E>> };
+type PartNames<E> = keyof PartsOf<E> & string;
 
-// What French or Arabic must write, derived from the English file.
+// What French or Arabic must write, derived from the English area. Each area
+// file is `as const satisfies` this, so tsc points at the line.
 export type Catalogue<L extends Language, E> = {
   [K in keyof E]: E[K] extends string
     ? Containing<Placeholders<E[K]>>
-    : E[K] extends EnParts
-      ? { text: Containing<Placeholders<E[K]['text']>>; parts: { [N in keyof E[K]['parts']]: PluralFor<L, E[K]['parts'][N]> } }
-      : E[K] extends EnPlural
+    : IsParts<E[K]> extends true
+      ? {
+          text: Containing<Placeholders<TextOf<E[K]>> | PartNames<E[K]>>;
+          parts: { [N in keyof PartsOf<E[K]>]: PluralFor<L, PartsOf<E[K]>[N]> };
+        }
+      : IsPlural<E[K]> extends true
         ? PluralFor<L, E[K]>
         : Catalogue<L, E[K]>;
 };
 
-// Placeholders a translation has that English does not: must be never.
-type Leaves<T> = T extends string ? T : T extends object ? { [K in keyof T]: Leaves<T[K]> }[keyof T] : never;
-export type ExtraPlaceholders<T, E> = {
-  [K in keyof T & keyof E]: T[K] extends string
-    ? Exclude<Placeholders<T[K]>, Placeholders<E[K]>>
-    : E[K] extends EnPlural
-      ? Exclude<Placeholders<Leaves<T[K]>>, Placeholders<Leaves<E[K]>> | 'count'>
-      : E[K] extends EnParts
-        ? Exclude<Placeholders<Leaves<T[K]>>, Placeholders<Leaves<E[K]>> | 'count'>
-        : ExtraPlaceholders<T[K], E[K]>;
-}[keyof T & keyof E];
-export type NoExtra<T, E> = [ExtraPlaceholders<T, E>] extends [never] ? true : { extra: ExtraPlaceholders<T, E> };
+// Everything a language must get right, as one union of readable problems.
+// Each language's index.ts holds `Checked<…> = true` once, so an area file
+// that forgets its `satisfies` is still checked.
+type Lower = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z';
+type Alnum = Lower | Uppercase<Lower> | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+type AlnumTail<S> = S extends `${infer C}${infer R}` ? (C extends Alnum ? AlnumTail<R> : false) : true;
+type CamelCase<S> = S extends `${Lower}${infer R}` ? AlnumTail<R> : false;
+type BadName<P> = P extends string ? (CamelCase<P> extends true ? never : P) : never;
+
+// A text with nothing to read: empty, or only white space.
+type Blank<S> = S extends '' ? true : S extends `${' ' | '\u00a0' | '\n' | '\t'}${infer R}` ? Blank<R> : false;
+
+type Join<P extends string, K> = P extends '' ? `${K & string}` : `${P}.${K & string}`;
+
+type TextProblems<T, Need extends string, Allowed extends string, Path extends string> = T extends string
+  ? string extends T
+    ? `${Path}: not a literal type (write as const)`
+    :
+        | (Blank<T> extends true ? `${Path}: empty` : never)
+        | `${Path}: {${Exclude<Need, Placeholders<T>>}} missing`
+        | `${Path}: {${Exclude<Placeholders<T>, Allowed>}} not in English`
+        | `${Path}: {${BadName<Placeholders<T>>}} not a camelCase name`
+  : `${Path}: should be a text`;
+
+type KeyProblems<T, E, Path extends string> =
+  | `${Join<Path, Exclude<keyof E, keyof T>>}: missing`
+  | `${Join<Path, Exclude<keyof T, keyof E>>}: not in English`;
+
+type FormProblems<L extends Language, T, E, Path extends string> = T extends string
+  ? `${Path}: should be a plural`
+  :
+      | `${Join<Path, Exclude<PluralForms[L], keyof T>>}: missing`
+      | `${Join<Path, Exclude<keyof T, PluralForms[L]>>}: not a form ${L} writes`
+      | {
+          [F in keyof T & PluralForms[L]]: TextProblems<T[F], Needs<L, F, E>, MessageNames<E> | 'count', Join<Path, F>>;
+        }[keyof T & PluralForms[L]];
+
+type PartsProblems<L extends Language, T, E, Path extends string> = T extends string
+  ? `${Path}: should be a text with parts`
+  :
+      | KeyProblems<T, E, Path>
+      | ('text' extends keyof T
+          ? TextProblems<T['text'], Placeholders<TextOf<E>> | PartNames<E>, Placeholders<TextOf<E>> | PartNames<E>, Join<Path, 'text'>>
+          : never)
+      | ('parts' extends keyof T ? PartFormsProblems<L, T['parts'], PartsOf<E>, Join<Path, 'parts'>> : never);
+
+type PartFormsProblems<L extends Language, T, E, Path extends string> =
+  | KeyProblems<T, E, Path>
+  | { [N in keyof T & keyof E]: FormProblems<L, T[N], E[N], Join<Path, N>> }[keyof T & keyof E];
+
+type GroupProblems<L extends Language, T, E, Path extends string> = T extends string
+  ? `${Path}: should be a group`
+  :
+      | KeyProblems<T, E, Path>
+      | (L extends 'en' ? `${Join<Path, keyof E & Reserved>}: a reserved name, not a key` : never)
+      | { [K in keyof T & keyof E]: ProblemsAt<L, T[K], E[K], Join<Path, K>> }[keyof T & keyof E];
+
+type ProblemsAt<L extends Language, T, E, Path extends string> = E extends string
+  ? TextProblems<T, Placeholders<E>, Placeholders<E>, Path>
+  : IsPlural<E> extends true
+    ? FormProblems<L, T, E, Path>
+    : IsParts<E> extends true
+      ? PartsProblems<L, T, E, Path>
+      : GroupProblems<L, T, E, Path>;
+
+// Each problem rebuilt as a new string, so tsc prints the list, not a type's name.
+type Listed<P> = P extends string ? `${P}.` : never;
+
+// English is checked against itself: Checked<'en', typeof en, typeof en>.
+export type Checked<L extends Language, T, E> = [GroupProblems<L, T, E, ''>] extends [never]
+  ? true
+  : Listed<GroupProblems<L, T, E, ''>>;
