@@ -92,6 +92,14 @@ export class BarrierRegistry extends CheckpointHook {
     this.barrier(name).armed = true;
   }
 
+  // Stops holding new arrivals at the named barrier; ones already held stay
+  // until released, so a test disarms when it releases its staged arrival
+  // and everything after passes straight through.
+  disarm(name: string): void {
+    const barrier = this.barriers.get(name);
+    if (barrier !== undefined) barrier.armed = false;
+  }
+
   isArmed(name: string): boolean {
     return this.barriers.get(name)?.armed ?? false;
   }

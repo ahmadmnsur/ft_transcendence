@@ -11,6 +11,9 @@ function nonEmpty(value: string | undefined): value is string {
 @Injectable()
 export class AppConfig {
   readonly publicOrigin: string;
+  readonly supabaseUrl: string;
+  readonly supabasePublishableKey: string;
+  readonly supabaseSecretKey: string;
 
   // Sign in with 42 is enabled only when both variables are non-empty
   // (§5.6 A); otherwise nothing fails at boot.
@@ -20,6 +23,17 @@ export class AppConfig {
     const publicOrigin = process.env['PUBLIC_ORIGIN'];
     if (!nonEmpty(publicOrigin)) throw new Error('PUBLIC_ORIGIN is required');
     this.publicOrigin = publicOrigin;
+    // Like PUBLIC_ORIGIN: the Supabase Auth client refuses to construct
+    // without them (§5.1).
+    const supabaseUrl = process.env['SUPABASE_URL'];
+    if (!nonEmpty(supabaseUrl)) throw new Error('SUPABASE_URL is required');
+    this.supabaseUrl = supabaseUrl;
+    const publishableKey = process.env['SUPABASE_PUBLISHABLE_KEY'];
+    if (!nonEmpty(publishableKey)) throw new Error('SUPABASE_PUBLISHABLE_KEY is required');
+    this.supabasePublishableKey = publishableKey;
+    const secretKey = process.env['SUPABASE_SECRET_KEY'];
+    if (!nonEmpty(secretKey)) throw new Error('SUPABASE_SECRET_KEY is required');
+    this.supabaseSecretKey = secretKey;
     this.oauth42Enabled =
       nonEmpty(process.env['FT_OAUTH_CLIENT_ID']) &&
       nonEmpty(process.env['FT_OAUTH_CLIENT_SECRET']);

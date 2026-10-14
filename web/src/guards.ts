@@ -28,3 +28,12 @@ export async function requireRole(
   if (!roles.includes(student.role)) throw redirect({ to: '/' });
   return { student };
 }
+
+// The signed-out pages (`/sign-in`, `/sign-up`): a signed-in visitor goes to
+// `/` instead, so normal use never reaches the `already_signed_in` refusal a
+// signed-in sign-up or sign-in would answer (§3.8.2: a correctly built UI
+// never shows a refusal it could avoid).
+export async function requireSignedOut({ context }: GuardArgs): Promise<void> {
+  const session = await context.queryClient.fetchQuery({ ...sessionQueryOptions(), staleTime: 0 });
+  if (session.authenticated) throw redirect({ to: '/' });
+}

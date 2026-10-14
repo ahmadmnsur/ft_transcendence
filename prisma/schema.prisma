@@ -8,3 +8,39 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// §4.2: one role per Student.
+enum Role {
+  STUDENT
+  PEER_MODERATOR
+  ADMIN
+}
+
+// §4.3.1: the account; every person is one. `id` has no default: sign-up
+// makes it with `v7()` before the Supabase Auth user that shares it (§4.1).
+model Student {
+  id                String    @id @db.Uuid
+  email             String    @unique
+  passwordVersion   Int       @default(0) @map("password_version")
+  displayName       String    @map("display_name")
+  displayNameSearch String    @map("display_name_search")
+  role              Role      @default(STUDENT)
+  xp                Int       @default(0)
+  streak            Int       @default(0)
+  suspendedAt       DateTime? @map("suspended_at") @db.Timestamptz(3)
+  removedAt         DateTime? @map("removed_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  sessions          Session[]
+}
+
+// §4.3.2: ADR-0003's session row. `id` is the lowercase hex SHA-256 of the
+// 32-byte token the cookie carries (M6), so it is the noted exception to
+// uuid(7) ids (§2.3 R2). The role is never stored here (ADR-0003 d5).
+model Session {
+  id        String   @id
+  studentId String   @map("student_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([studentId])
+}

@@ -15,7 +15,9 @@ export type ErrorCode =
 // The refusals a correctly built UI can reach in normal use. Answered
 // 200 with ok: false, except dm_unavailable, which is a socket ack (§7.3).
 export type RefusalCode =
-  | 'invalid_credentials'
+  | 'no_account'
+  | 'account_removed'
+  | 'account_suspended'
   | 'too_many_attempts'
   | 'email_unavailable'
   | 'password_incorrect'

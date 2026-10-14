@@ -59,6 +59,10 @@ export function answerFailure(
   const body: Envelope<never> = { ok: false, error: { code, message } };
   // A failed file stream has already set its own type and disposition.
   response.removeHeader('Content-Disposition');
+  // `Cache-Control: no-store` on every JSON response, success and failure
+  // (§3.10). Set beside, never instead of, the headers the handler already
+  // set: a `Set-Cookie` written before the failure still reaches the browser.
+  response.setHeader('Cache-Control', 'no-store');
   response.status(status).type('application/json').json(body);
 }
 

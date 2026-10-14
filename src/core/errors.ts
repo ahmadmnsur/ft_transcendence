@@ -30,6 +30,14 @@ export class Refusal extends Error {
   }
 }
 
+// A refusal the HTTP boundary counts toward the throttle (§5.5): `no_account`
+// or Supabase Auth refusing the password. Every other refusal — a lost race
+// (a moved `password_version`, also answered `password_incorrect`), a sanction
+// told after the right password, a Supabase 429, Supabase Auth unreachable —
+// is a plain Refusal and is not counted. Only this subclass is counted, so a
+// new refusal is uncounted unless it opts in here.
+export class CountedRefusal extends Refusal {}
+
 // A protocol failure with its §6.15 code.
 export class ApiError extends HttpException {
   constructor(readonly code: ErrorCode) {

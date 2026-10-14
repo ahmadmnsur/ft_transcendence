@@ -9,6 +9,11 @@ import { ApiExceptionFilter } from './exception.filter';
 import { AppLogger } from './logger';
 import { PrismaService } from './prisma.service';
 import { NoopRealtimePublisher, RealtimePublisher } from './realtime-publisher';
+import { RolesGuard } from './roles.guard';
+import { SessionResolver } from './session-resolver';
+import { SessionGuard } from './session.guard';
+import { SupabaseAuthClient } from './supabase-auth';
+import { ThrottleStore } from './throttle';
 import { CheckpointHook, UnitOfWork } from './uow';
 
 // The machinery every slice uses. Global, so a slice's module injects these
@@ -22,6 +27,9 @@ import { CheckpointHook, UnitOfWork } from './uow';
     PrismaService,
     UnitOfWork,
     CheckpointHook,
+    SupabaseAuthClient,
+    SessionResolver,
+    ThrottleStore,
     { provide: Clock, useClass: SystemClock },
     { provide: RealtimePublisher, useClass: NoopRealtimePublisher },
     {
@@ -32,7 +40,20 @@ import { CheckpointHook, UnitOfWork } from './uow';
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
     { provide: APP_GUARD, useClass: JsonMutationGuard },
     { provide: APP_GUARD, useClass: UploadCsrfGuard },
+    { provide: APP_GUARD, useClass: SessionGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [AppConfig, AppLogger, PrismaService, UnitOfWork, CheckpointHook, Clock, RealtimePublisher],
+  exports: [
+    AppConfig,
+    AppLogger,
+    PrismaService,
+    UnitOfWork,
+    CheckpointHook,
+    Clock,
+    RealtimePublisher,
+    SupabaseAuthClient,
+    SessionResolver,
+    ThrottleStore,
+  ],
 })
 export class CoreModule {}
