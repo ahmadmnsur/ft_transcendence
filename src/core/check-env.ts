@@ -11,6 +11,8 @@ async function check(): Promise<void> {
     console.error(`Supabase check failed: ${failure}`);
     process.exit(1);
   }
+  // Passed: exit now, so no socket left open can hold the boot chain.
+  process.exit(0);
 }
 
 check().catch((err: unknown) => {

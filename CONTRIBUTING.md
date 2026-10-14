@@ -605,7 +605,8 @@ interpolation. Among Makefile targets, only `make up` reads an optional `.env` f
 same base file and works without `.env` because its interpolated ports have defaults. To run the
 team project, a team member's `.env` holds only its values (`DATABASE_URL`, `SUPABASE_URL`, the two
 keys, the three passwords and the `FT_OAUTH_*` pair), never a copy of `.env.example`, and only
-`make up` reads it (`README.md` → *The `.env` model* and *Running the team project*;
+`make up` and bare `docker compose up --build` read it (`README.md` → *The `.env` model* and
+*Running the team project*;
 [ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the database runs on the
 fallback, and migrations reach the team project only through `make up` on `main` (*Schema changes*
 → *Supabase*, above). Develop through nginx at

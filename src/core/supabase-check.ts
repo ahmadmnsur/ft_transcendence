@@ -70,9 +70,13 @@ export async function checkSupabaseKeys(env: EnvRecord): Promise<string | undefi
 export async function checkDatabase(env: EnvRecord): Promise<string | undefined> {
   const host = new URL(env['DATABASE_URL'] as string).hostname;
   const client = new Client({ ...connectionConfig(env), connectionTimeoutMillis: ANSWER_TIMEOUT_MS });
-  // An error the server sends after the connection opened must not end the
-  // process with its message; the connect or end below reports it.
-  client.on('error', () => undefined);
+  // An error the server sends once the connection is open, such as a FATAL right
+  // after login, reaches only this listener: the first one is kept and fails the
+  // step, instead of ending the process with its message.
+  let closedWith: unknown;
+  client.on('error', (err) => {
+    closedWith ??= err;
+  });
   try {
     await client.connect();
   } catch (err) {
@@ -82,6 +86,20 @@ export async function checkDatabase(env: EnvRecord): Promise<string | undefined>
     }
     return `could not connect to DATABASE_URL host ${host}${errorCodeSuffix(err)}`;
   }
-  await client.end();
+  // Closing gets the same deadline, so a server that never closes its side
+  // cannot leave the boot waiting with nothing printed (§15.5).
+  const closed = await Promise.race([
+    client.end().then(
+      () => true,
+      () => true,
+    ),
+    new Promise<false>((resolve) => setTimeout(resolve, ANSWER_TIMEOUT_MS, false).unref()),
+  ]);
+  if (closedWith !== undefined) {
+    return `the database at ${host} accepted DATABASE_URL, then closed the connection${errorCodeSuffix(closedWith)}`;
+  }
+  if (!closed) {
+    return `the database at ${host} accepted DATABASE_URL but did not close the connection within ${ANSWER_TIMEOUT_MS / 1000} s`;
+  }
   return undefined;
 }
