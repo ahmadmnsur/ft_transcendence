@@ -35,4 +35,14 @@ jobs:
           "${compose[@]}" down --volumes --remove-orphans
           "${compose[@]}" build api
           "${compose[@]}" up -d db auth storage api-gw
-          "${compose[@]}" run --rm api sh -c 'npx prisma migrate deploy --config prisma.config.ts && npx prisma db seed --config prisma.config.ts && npx vitest run'
+          # Steps 4-7 in one dev container (§16.4). Step 6: the second seed run must
+          # find the first one's record, log "seed already complete" and exit 0.
+          "${compose[@]}" run --rm api sh -c '
+            set -e
+            npx prisma migrate deploy --config prisma.config.ts
+            npx prisma db seed --config prisma.config.ts
+            second=$(npx prisma db seed --config prisma.config.ts)
+            printf "%s\n" "$second"
+            printf "%s\n" "$second" | grep -q "seed already complete"
+            npx vitest run
+          '

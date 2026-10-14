@@ -29,6 +29,17 @@ export function errorFields(err: unknown): { error: string; code: string | null;
   };
 }
 
+// Node's default report prints the message, which can embed argument values
+// (§3.9); log it the filter's way, then exit as Node would. The API's and the
+// seed's entry points install it.
+export function exitOnUncaught(kind: string): (err: unknown) => void {
+  const logger = new AppLogger();
+  return (err: unknown): void => {
+    logger.entry('error', { [kind]: true, ...errorFields(err) });
+    process.exit(1);
+  };
+}
+
 // JSON lines on stdout at log, warn and error (§3.9, M13). There is no HTTP
 // request logging: the only per-request entry is a 5xx from the exception
 // filter. Nest's debug and verbose output is dropped.

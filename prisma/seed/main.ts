@@ -1,4 +1,163 @@
-import { assertEnvOrExit } from '../../src/core/env';
+import 'reflect-metadata';
+import type { INestApplicationContext } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { assertEnvOrExit, resolveSupabaseTarget } from '../../src/core/env';
+import { ApiError, Refusal } from '../../src/core/errors';
+import { AppLogger, errorFields, exitOnUncaught } from '../../src/core/logger';
+import { PrismaService } from '../../src/core/prisma.service';
+import { SupabaseAuthClient } from '../../src/core/supabase-auth';
+import { UnitOfWork } from '../../src/core/uow';
+import { bootstrapStaff, createStaffAccount } from './bootstrap';
+import { insertCatalogue } from './catalogue';
+import { assertEndState, assertOnlySeedAccounts } from './checks';
+import { anyDomainRows, emptyEverything } from './empty';
+import { SeedFailure } from './failure';
+import { openLockConnection, takeSeedLock, type LockConnection } from './lock';
+import { FIXTURE_VERSION, clearRecord, readRecord, writeRecord } from './record';
+import { SeedModule } from './seed.module';
 
+// The seed (§14): on every boot, after `migrate deploy`. It either finds its
+// completed fixture and skips, or empties and writes it whole, ending with
+// the completion record. Any failure logs the step and exits 1, so the `api`
+// never starts (§14.9, §15.5). It logs step names and counts, never a
+// password (§3.9).
+
+const started = Date.now();
+const logger = new AppLogger();
+
+process.on('uncaughtException', exitOnUncaught('uncaughtException'));
+process.on('unhandledRejection', exitOnUncaught('unhandledRejection'));
+
+function log(message: string, fields: Record<string, unknown> = {}): void {
+  logger.entry('log', { message, ...fields });
+}
+
+function elapsed(): { durationMs: number } {
+  return { durationMs: Date.now() - started };
+}
+
+class StepFailed extends Error {
+  constructor(
+    readonly step: string,
+    readonly reason: unknown,
+  ) {
+    super(step);
+  }
+}
+
+async function step<T>(name: string, work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (err) {
+    throw new StepFailed(name, err);
+  }
+}
+
+// A code that carries no value, logged beside errorFields so the reason is
+// more than a class: a refusal's or protocol error's code, a SQLSTATE from the
+// lock's connection, or Node's network code. Prisma's own code is already in
+// errorFields.
+function valueFreeCode(err: unknown): { errorCode: string } | Record<string, never> {
+  if (err instanceof Refusal || err instanceof ApiError) return { errorCode: err.code };
+  const code = (err as { code?: unknown } | null)?.code;
+  if (typeof code !== 'string' || /^P\d{4}$/.test(code)) return {};
+  return /^[0-9A-Z]{5}$/.test(code) || /^E[A-Z0-9_]+$/.test(code) ? { errorCode: code } : {};
+}
+
+function logFailure(err: unknown): void {
+  const name = err instanceof StepFailed ? err.step : 'unknown';
+  const reason = err instanceof StepFailed ? err.reason : err;
+  // Only the seed's own failures carry a message safe to log.
+  const detail =
+    reason instanceof SeedFailure
+      ? { reason: reason.message }
+      : { ...errorFields(reason), ...valueFreeCode(reason) };
+  logger.entry('error', { message: 'seed failed', step: name, ...detail, ...elapsed() });
+}
+
+// A lost lock connection stops the run at once: a second seed could take the
+// freed lock and start deleting while this one still writes (§14.9).
+function lockLost(): void {
+  logFailure(new StepFailed('lock', new SeedFailure('the lock connection was lost')));
+  process.exit(1);
+}
+
+// What each target's messages name (§14.9).
+const REMEDIES = {
+  team: { olderRecord: 'make reset-team', foreignAccounts: 'make reset-team' },
+  fallback: { olderRecord: 'make wipe', foreignAccounts: 'make reset-local' },
+} as const;
+
+async function run(): Promise<number> {
+  const remedy = REMEDIES[resolveSupabaseTarget(process.env).kind === 'team' ? 'team' : 'fallback'];
+  let app: INestApplicationContext | undefined;
+  let lock: LockConnection | undefined;
+  try {
+    app = await step('start', () =>
+      NestFactory.createApplicationContext(SeedModule, { logger, abortOnError: false }),
+    );
+    const prisma = app.get(PrismaService);
+    const supabase = app.get(SupabaseAuthClient);
+    const uow = app.get(UnitOfWork);
+
+    // The lock comes first, before the record is read, and is kept to the end.
+    lock = await step('lock', () => openLockConnection(process.env, lockLost));
+    const db = lock.client;
+    await step('lock', () =>
+      takeSeedLock(db, () => log('waiting for the seed lock: another seed or a reset holds it')),
+    );
+
+    const recordedVersion = await step('read record', () => readRecord(db));
+    const holdsRows = await step('read tables', () => anyDomainRows(db));
+    if (recordedVersion !== null && holdsRows) {
+      if (recordedVersion === FIXTURE_VERSION) {
+        log(`seed already complete (fixture-v${recordedVersion})`, elapsed());
+      } else if (recordedVersion < FIXTURE_VERSION) {
+        logger.entry('warn', {
+          message: `seed record fixture-v${recordedVersion} is older than this checkout's fixture-v${FIXTURE_VERSION}; nothing written. To seed afresh, run ${remedy.olderRecord}`,
+          ...elapsed(),
+        });
+      } else {
+        logger.entry('warn', {
+          message: `seed record fixture-v${recordedVersion} is newer than this checkout's fixture-v${FIXTURE_VERSION}; nothing written. Pull main`,
+          ...elapsed(),
+        });
+      }
+      return 0;
+    }
+
+    // A run that writes: the guard, then a stale record cleared as the first
+    // write, then the emptying, then the fixture from step 1.
+    await step('guard', () => assertOnlySeedAccounts(prisma, process.env, remedy.foreignAccounts));
+    if (recordedVersion !== null) {
+      await step('clear stale record', () => clearRecord(db));
+      log('seed: stale record cleared', { fixture: `v${recordedVersion}` });
+    }
+    const emptied = await step('empty', () => emptyEverything(db, supabase));
+    log('seed: emptied', emptied);
+
+    const skills = await step('catalogue', () => insertCatalogue(uow));
+    log('seed: catalogue', { skills });
+    const staff = bootstrapStaff(process.env);
+    await step('bootstrap accounts', async () => {
+      for (const account of staff) await createStaffAccount(account, { supabase, uow });
+    });
+    log('seed: bootstrap accounts', { accounts: staff.length });
+
+    await step('end-state assertions', () => assertEndState(prisma));
+    await step('completion record', () => writeRecord(db, FIXTURE_VERSION));
+    log(`seed complete (fixture-v${FIXTURE_VERSION})`, elapsed());
+    return 0;
+  } catch (err) {
+    logFailure(err);
+    return 1;
+  } finally {
+    // Closing on purpose is no loss; the lock ends with its connection.
+    await lock?.release().catch(() => undefined);
+    await app?.close().catch(() => undefined);
+  }
+}
+
+// Validated first: steps 1 and 2 of the boot check (§15.5).
 assertEnvOrExit(process.env);
-console.log('seed complete');
+void run().then((code) => process.exit(code));
