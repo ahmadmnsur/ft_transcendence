@@ -80,9 +80,6 @@ export function SignInPage(): React.JSX.Element {
           {notice === 'password-changed' ? (
             <Banner tone="success" title={copy.noticePasswordChanged} />
           ) : null}
-          {notice === 'password-change-signed-out' ? (
-            <Banner tone="warning" title={copy.noticeSignedOutUnchanged} />
-          ) : null}
           {notice === 'password-change-unknown' ? (
             <Banner tone="warning" title={copy.noticeSignedOutUnknown} />
           ) : null}

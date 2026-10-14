@@ -764,6 +764,15 @@ TxContext = {
 | Block vs moderation action (ADR-0011 d7) | Block create/remove vs Peer Moderator action | Blocks between the moderator and the group's author and reporters |
 | Evidence at most one (ADR-0009 d5) | put vs put vs delete | the Review's Evidence row |
 
+> **Updated 2026-10-14** (#36; ADR-0003 d6's note of 2026-10-14): in the *Sessions die with the
+> password or a sanction* row, `password_version` alone does not serialize *password change vs
+> password change*. A second change that starts during the first one's gap between §5.1's steps 4 and
+> 5, on a session signed in with the old password, reads the version the first change already raised
+> and passes its own step 4. A per-Student lock in the `auth` module, taken just before step 4 and
+> held through step 6, serializes them: the change that waited reads the moved version and is refused
+> `password_incorrect`, a lost race that §5.5 does not count. The lock is in memory, like the
+> throttle, so it relies on one `api` process (§15.1); a second process would bring the race back.
+
 #### 3.6.4 Test seam: `checkpoint` (M31)
 
 Each operation with a row in the table above calls `await ctx.checkpoint('<operation>')` exactly once,
@@ -1434,6 +1443,14 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   step 5 safe, signed out everywhere with the password unchanged. A crash between steps 5 and 6
   leaves the new password set and at most a session created in that gap: accepted. The test seam's
   one named pause outside a transaction sits between steps 4 and 5 (§3.6.4).
+
+  > **Updated 2026-10-14** (#36): step 5's "the password is unchanged" holds only when the update
+  > never took effect. When its answer is lost instead (no answer within the timeout, a dropped
+  > connection, or a gateway error after Supabase Auth applied it), the new password may already be
+  > set and the API cannot tell: it still answers `busy_retry_later` with the Student signed out, and
+  > the SPA's notice says the change may not have finished, so the Student tries the new password
+  > first, then the old one. Like a crash between steps 5 and 6, this is accepted.
+
 - **A new password after Confirm with 42** (§5.6 C) is the same change with step 3 replaced by the
   confirmation; steps 4 to 6 and the version guards stand (ADR-0003 d6's note of 2026-10-08). Its
   step 1 validates the new password with no throttle: the route checks no password, so it counts
@@ -1832,6 +1849,16 @@ Student's sessions; Supabase admin update; the same SSI tx again · Events `revo
 step 5 the Student is signed out, the password unchanged) · Concurrency: a change whose version moved since its read → `password_incorrect`, so
 two changes cannot both go through; a sign-in racing it is deleted or refused (§5.1).
 
+> **Updated 2026-10-14** (#36; §3.6.3's note of 2026-10-14): the version check alone does not make
+> *two changes cannot both go through* true. A per-Student lock, taken just before step 4 and held
+> through step 6, serializes concurrent changes; a change that waited finds the version moved and gets
+> `password_incorrect`, not counted (§5.5). The lock relies on one `api` process (§15.1), like the
+> throttle.
+
+> **Updated 2026-10-14** (#36; §5.1's note of 2026-10-14): `busy_retry_later` at step 5 leaves the
+> Student signed out, but the password is unchanged only when the update never took effect; when
+> its answer is lost, the new password may already be set.
+
 **`POST /api/auth/42/start`**, **`GET /api/auth/42/callback`**, **`GET /api/auth/42/draft`**,
 **`POST /api/auth/42/signup`**, **`POST /api/auth/42/disconnect`**, **`POST /api/auth/42/password`**
 — §5.6. Every one returns 404 while 42 is not configured.
@@ -2064,6 +2091,11 @@ where `MatchView` names one side's partner (§6.6).
 | `prompt_not_live`, `already_answered`, `admins_cannot_answer` | 200 | Prompts |
 | `post_unavailable` | 200 | the Post was removed by moderation (§6.9) |
 | `already_reported`, `report_target_invalid`, `already_resolved`, `conflict_of_interest` | 200 | Reports |
+
+> **Updated 2026-10-14** (#36; §5.1's note of 2026-10-14): in the `busy_retry_later` row, "nothing
+> committed by that step" does not hold for the password change's step 5 when the admin update's
+> answer is lost: Supabase Auth may already have set the new password. The Student is signed out
+> either way, and the SPA's notice says the change may not have finished.
 
 ---
 

@@ -3,8 +3,8 @@ import type { Actor } from '../core/actor';
 import { AppLogger } from '../core/logger';
 import { PrismaService } from '../core/prisma.service';
 import { RealtimePublisher } from '../core/realtime-publisher';
-import { parseSessionCookie } from '../core/session-cookie';
-import { SessionResolver, type ActiveSession } from '../core/session-resolver';
+import { clearSessionCookie, type ParsedCookie } from '../core/session-cookie';
+import { SessionResolver, type SessionCookieSetter } from '../core/session-resolver';
 import { SupabaseAuthClient } from '../core/supabase-auth';
 import { CheckpointHook, UnitOfWork } from '../core/uow';
 import {
@@ -14,7 +14,7 @@ import {
   type StudentView,
 } from './account-create';
 import { changePasswordCore, passwordStep3, PasswordChangeLock } from './password-change';
-import { noAccount } from './refusals';
+import { alreadySignedIn, noAccount } from './refusals';
 import { createSessionAfterPasswordCheck } from './session-create';
 
 // §3.4: every method that acts for a signed-in Student takes an Actor. The
@@ -34,23 +34,24 @@ export class AuthService {
     private readonly passwordLock: PasswordChangeLock,
   ) {}
 
-  // Whether the request carries a valid session. Used for `already_signed_in`
-  // on the public sign-up and login routes (§6.1). A sanctioned or expired
-  // session is not a valid one: the request proceeds as signed out.
-  async activeSession(cookieHeader: string | undefined): Promise<ActiveSession | null> {
-    const parsed = parseSessionCookie(cookieHeader);
-    if (parsed.kind !== 'session') return null;
-    return this.sessions.resolveActive(parsed.token);
+  // Whether a session token resolves to a valid session. A sanctioned or
+  // expired session is not a valid one: the request proceeds as signed out.
+  private async hasActiveSession(sessionToken: string | null): Promise<boolean> {
+    if (sessionToken === null) return false;
+    return (await this.sessions.resolveActive(sessionToken)) !== null;
   }
 
-  // §5.1 sign-up. Validation, the throttle and `already_signed_in` already
-  // ran at the boundary; steps 2–5 are the shared function.
+  // §5.1 sign-up. Validation and the throttle already ran at the boundary;
+  // `already_signed_in` is checked first here, keeping the boundary's order.
+  // Steps 2–5 are the shared function.
   async signup(input: {
     email: string;
     password: string;
     displayName: string;
     extra?: AccountExtraFields;
+    sessionToken: string | null;
   }): Promise<{ student: StudentView; token: string; maxAge: number }> {
+    if (await this.hasActiveSession(input.sessionToken)) throw alreadySignedIn();
     const created = await createAccountWithSession(input, {
       prisma: this.prisma,
       supabase: this.supabase,
@@ -59,13 +60,19 @@ export class AuthService {
     return { student: created.student, token: created.token, maxAge: created.maxAge };
   }
 
-  // §5.1 sign-in. Step 2 reads the Student and its `password_version`; step 3
-  // is the shared password check; step 4 is the shared session function.
-  async login(input: { email: string; password: string }): Promise<{
+  // §5.1 sign-in. `already_signed_in` first; step 2 reads the Student and its
+  // `password_version`; step 3 is the shared password check; step 4 is the
+  // shared session function.
+  async login(input: {
+    email: string;
+    password: string;
+    sessionToken: string | null;
+  }): Promise<{
     student: StudentView;
     token: string;
     maxAge: number;
   }> {
+    if (await this.hasActiveSession(input.sessionToken)) throw alreadySignedIn();
     const student = await this.prisma.student.findUnique({
       where: { email: input.email },
       select: { id: true, passwordVersion: true, displayName: true, email: true, role: true },
@@ -77,6 +84,34 @@ export class AuthService {
       { uow: this.uow },
     );
     return { student: toStudentView(student), token: session.token, maxAge: session.maxAge };
+  }
+
+  // §3.4's session resolution, backing `GET /api/session`: the parsed cookie
+  // resolves through core's `SessionResolver` (which the guard also uses),
+  // with lazy renewal when signed in. An `s.` cookie that resolves to nothing
+  // is cleared; an `a.` cookie never is (§5.3). Returns the §6.1 shape, after
+  // setting or clearing the cookie on the response.
+  async resolveSession(
+    cookie: ParsedCookie,
+    response: SessionCookieSetter,
+  ): Promise<{ authenticated: false } | { authenticated: true; student: StudentView }> {
+    if (cookie.kind !== 'session') return { authenticated: false };
+    const session = await this.sessions.resolveActive(cookie.token);
+    if (session === null) {
+      response.setHeader('Set-Cookie', clearSessionCookie());
+      return { authenticated: false };
+    }
+    await this.sessions.renewIfStale(session, cookie.token, response);
+    return {
+      authenticated: true,
+      student: {
+        id: session.studentId,
+        displayName: session.displayName,
+        email: session.email,
+        role: session.role,
+        avatarUrl: null,
+      },
+    };
   }
 
   // §5.8: deletes that one row. The guard already refused a gone session with

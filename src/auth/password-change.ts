@@ -35,12 +35,13 @@ export type PasswordChangeDeps = {
   lock: PasswordChangeLock;
 };
 
-// Serializes password changes per Student across steps 2–6. The version
-// check cannot catch two overlapping changes: B can read the version after A
-// moved it and still check the old password before A's Supabase update, so
-// both would go through and the last writer would win. The lock is a promise
-// chain keyed by `studentId`, held for the whole shared function, so #157's
-// path through it is covered too. It is in memory because there is one `api`
+// Serializes password changes per Student, taken just before step 4 and
+// held through step 6. The version check cannot catch two overlapping
+// changes on its own: without the lock, B can read the version after A moved
+// it and still go through, so the last admin update wins. With the lock, B
+// waits for A, then reads the moved version in step 4 and is refused as a
+// lost race, which the throttle does not count (§5.5). The lock is a promise
+// chain keyed by `studentId` and is in memory because there is one `api`
 // process (§15.1), like the throttle (§5.5).
 @Injectable()
 export class PasswordChangeLock {
@@ -68,9 +69,10 @@ export class PasswordChangeLock {
 }
 
 // Step 5 failed without an answer from Supabase after step 4 committed:
-// the Student is already signed out and the password unchanged. Answered
-// `busy_retry_later`, and the boundary clears the cookie for it, but not for
-// a step-3 failure (§5.1, §6.1).
+// the Student is already signed out; the password is unchanged unless
+// Supabase applied the update and its answer was lost (spec §5.1's note of
+// 2026-10-14). Answered `busy_retry_later`, and the boundary clears the
+// cookie for it, but not for a step-3 failure (§5.1, §6.1).
 export class PasswordUpdateFailed extends ApiError {
   constructor() {
     super('busy_retry_later');
@@ -78,8 +80,9 @@ export class PasswordUpdateFailed extends ApiError {
 }
 
 // Step 5 failed with a definitive refusal after step 4 committed: the
-// Student is already signed out and the password unchanged. Answered
-// `internal_error`, and the boundary clears the cookie for it.
+// Student is already signed out; the password is unchanged unless Supabase
+// applied the update and its answer was lost (spec §5.1's note of 2026-10-14).
+// Answered `internal_error`, and the boundary clears the cookie for it.
 export class SignedOutFailure extends Error {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);
@@ -88,7 +91,11 @@ export class SignedOutFailure extends Error {
 
 // §5.1's password change, steps 2 and 4–6, as one function: step 1
 // (validation, throttle) already ran at the boundary, and step 3 arrives as
-// a parameter. Each sign-out raises `password_version` and deletes every
+// a parameter. Steps 2 and 3 run outside the lock; the lock is taken just
+// before step 4 and held through step 6, so a change that waited always
+// finds `password_version` moved and is refused as a lost race
+// (`movedPasswordVersion`, not counted) rather than failing step 3 against
+// the new password, which the throttle would count. Each sign-out raises `password_version` and deletes every
 // session of the Student, the current one included, and queues
 // `revokeSessions(studentId)` after commit.
 export async function changePasswordCore(
@@ -105,10 +112,19 @@ export async function changePasswordCore(
   },
   deps: PasswordChangeDeps,
 ): Promise<void> {
-  // The whole function runs under the per-Student lock, so two concurrent
-  // changes serialize: the second reads the first's final version and its
-  // check of the old password is refused.
-  return deps.lock.runExclusive(input.studentId, () => changePasswordSteps(input, deps));
+  const { prisma } = deps;
+  const { studentId } = input;
+  // Step 2: read `password_version`.
+  const before = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { passwordVersion: true },
+  });
+  if (before === null) throw movedPasswordVersion();
+  // Step 3: the password check.
+  await input.checkCurrentPassword(studentId, input.currentPassword);
+  return deps.lock.runExclusive(studentId, () =>
+    changePasswordSteps(input, deps, before.passwordVersion),
+  );
 }
 
 async function changePasswordSteps(
@@ -120,17 +136,10 @@ async function changePasswordSteps(
     sessionHash: string | null;
   },
   deps: PasswordChangeDeps,
+  expectedVersion: number,
 ): Promise<void> {
-  const { prisma, supabase, uow, checkpoints, publisher, logger } = deps;
+  const { supabase, uow, checkpoints, publisher, logger } = deps;
   const { studentId } = input;
-  // Step 2: read `password_version`.
-  const before = await prisma.student.findUnique({
-    where: { id: studentId },
-    select: { passwordVersion: true },
-  });
-  if (before === null) throw movedPasswordVersion();
-  // Step 3: the password check.
-  await input.checkCurrentPassword(studentId, input.currentPassword);
   // Step 4: version + 1, every session deleted. The sanction flags are
   // re-read with the version (§3.4): Suspended or Removed refuses with
   // `unauthenticated`, nothing written and no Supabase update (§4.3.1: a
@@ -142,7 +151,7 @@ async function changePasswordSteps(
       where: { id: studentId },
       select: { passwordVersion: true, suspendedAt: true, removedAt: true },
     });
-    if (current === null || current.passwordVersion !== before.passwordVersion) {
+    if (current === null || current.passwordVersion !== expectedVersion) {
       throw movedPasswordVersion();
     }
     if (current.suspendedAt !== null || current.removedAt !== null) {

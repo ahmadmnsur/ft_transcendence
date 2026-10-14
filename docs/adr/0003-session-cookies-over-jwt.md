@@ -170,6 +170,16 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > password unchanged. A crash between steps 3 and 4 leaves the new password set and at most a
    > session created in that gap. That is accepted.
 
+   > **Not enough alone, 2026-10-14 by [Accounts and sessions: sign-up, sign-in, sign-out, password change](https://github.com/ahmadmnsur/ft_transcendence/issues/36).**
+   > The version check above does not stop two password changes on its own. A second change can
+   > start during the first one's gap between steps 2 and 3, on a session signed in with the old
+   > password, which still works there. It reads the version the first change has already raised, so
+   > its own step 2 lets it through, and whichever admin update comes last wins. A per-Student lock,
+   > taken just before step 2 and held through step 4, serializes the changes: one that waited finds
+   > the version moved and is refused with `password_incorrect`, a lost race that decision 10's
+   > throttle does not count. The lock is in memory, like the throttle, so it relies on a single
+   > `api` process (`docs/spec.md` §15.1); a second process would bring the race back.
+
    > **A password set through 42, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).** A Student who
    > connected 42 may set a new password without the current one, after **Confirm with 42**
    > (decision 11's note). It is the password change above with step 1 replaced: the confirmation

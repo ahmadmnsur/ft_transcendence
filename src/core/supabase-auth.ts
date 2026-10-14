@@ -73,7 +73,8 @@ export class SupabaseAuthClient {
       await SupabaseAuthClient.release(response);
       return response.status === 400 ? 'refused' : 'rate-limited';
     }
-    if (response.status === 540 || response.status >= 500) {
+    // 540, a paused project, falls under the 5xx below.
+    if (response.status >= 500) {
       await SupabaseAuthClient.release(response);
       return 'unreachable';
     }
@@ -113,7 +114,8 @@ export class SupabaseAuthClient {
       throw unreachable();
     }
     if (!response.ok) {
-      const err = response.status === 540 || response.status >= 500 ? unreachable() : internalError('admin create');
+      // 540, a paused project, falls under the 5xx below.
+      const err = response.status >= 500 ? unreachable() : internalError('admin create');
       await SupabaseAuthClient.release(response);
       throw err;
     }
@@ -139,7 +141,8 @@ export class SupabaseAuthClient {
       throw unreachable();
     }
     if (!response.ok) {
-      const err = response.status === 540 || response.status >= 500 ? unreachable() : internalError('admin update');
+      // 540, a paused project, falls under the 5xx below.
+      const err = response.status >= 500 ? unreachable() : internalError('admin update');
       await SupabaseAuthClient.release(response);
       throw err;
     }

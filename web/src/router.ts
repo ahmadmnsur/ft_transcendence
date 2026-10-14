@@ -29,7 +29,7 @@ const indexRoute = createRoute({
   component: HomePage,
 });
 
-type SignInNotice = 'password-changed' | 'password-change-signed-out' | 'password-change-unknown';
+type SignInNotice = 'password-changed' | 'password-change-unknown';
 
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -39,9 +39,7 @@ const signInRoute = createRoute({
   // notice, so a hand-written query never shows a banner.
   validateSearch: (search: Record<string, unknown>): { notice?: SignInNotice } => ({
     notice:
-      search.notice === 'password-changed' ||
-      search.notice === 'password-change-signed-out' ||
-      search.notice === 'password-change-unknown'
+      search.notice === 'password-changed' || search.notice === 'password-change-unknown'
         ? search.notice
         : undefined,
   }),

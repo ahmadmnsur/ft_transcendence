@@ -1,15 +1,14 @@
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { clearSessionCookie, parseSessionCookie } from '../core/session-cookie';
-import { SessionResolver } from '../core/session-resolver';
+import { parseSessionCookie } from '../core/session-cookie';
 import { Public } from '../core/session.guard';
+import { AuthService } from './auth.service';
 
-// `GET /api/session`, public (§6.1): `{ authenticated: false }`, or the
-// student object with lazy renewal when signed in. An `s.` cookie that
-// resolves to nothing is cleared; an `a.` cookie never is (§5.3).
+// `GET /api/session`, public (§6.1). The controller parses the cookie and
+// passes the parsed value; the service resolves the actor and answers (§3.4).
 @Controller()
 export class SessionController {
-  constructor(private readonly sessions: SessionResolver) {}
+  constructor(private readonly auth: AuthService) {}
 
   @Public()
   @Get('session')
@@ -17,23 +16,6 @@ export class SessionController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<unknown> {
-    const parsed = parseSessionCookie(request.headers.cookie);
-    if (parsed.kind !== 'session') return { authenticated: false };
-    const session = await this.sessions.resolveActive(parsed.token);
-    if (session === null) {
-      response.setHeader('Set-Cookie', clearSessionCookie());
-      return { authenticated: false };
-    }
-    await this.sessions.renewIfStale(session, parsed.token, response);
-    return {
-      authenticated: true,
-      student: {
-        id: session.studentId,
-        displayName: session.displayName,
-        email: session.email,
-        role: session.role,
-        avatarUrl: null,
-      },
-    };
+    return this.auth.resolveSession(parseSessionCookie(request.headers.cookie), response);
   }
 }

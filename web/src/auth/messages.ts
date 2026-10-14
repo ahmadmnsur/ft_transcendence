@@ -4,8 +4,6 @@
 // sentence. Every other user-visible string of these screens lives in
 // `authCopy` beside it, so translating them later is a matter of swapping
 // entries.
-import type { RefusalCode } from '@shared/codes';
-
 const GENERIC = 'Something went wrong. Try again.';
 
 const MESSAGES: Record<string, string> = {
@@ -25,10 +23,6 @@ export function authErrorMessage(code: unknown): string {
   return GENERIC;
 }
 
-export function authRefusalMessage(code: RefusalCode): string {
-  return authErrorMessage(code);
-}
-
 export const authCopy = {
   genericError: GENERIC,
   signIn: {
@@ -44,8 +38,6 @@ export const authCopy = {
     noAccountCta: 'No account yet?',
     signUpLink: 'Sign up',
     noticePasswordChanged: 'Your password was changed. Sign in with your new password.',
-    noticeSignedOutUnchanged:
-      'You were signed out and your password was not changed. Sign in and try again.',
     noticeSignedOutUnknown:
       'You were signed out, and the password change may not have finished. Try your new password first, then your old one.',
   },

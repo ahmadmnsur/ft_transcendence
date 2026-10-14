@@ -14,9 +14,9 @@ const copy = authCopy.passwordChange;
 // `/me`: for now it holds only the password-change form under a clear
 // heading (§6.1). On success the Student is signed out everywhere, so the
 // page clears the session query and returns to `/sign-in` with a notice. Any
-// protocol failure re-probes the session first: signed out returns with the
-// signed-out notice, still signed in stays on the form with the failure's
-// sentence (§5.1).
+// failure other than a refusal re-probes the session first: signed out
+// returns with the neutral notice, still signed in stays on the form with
+// the failure's sentence (§5.1).
 export function MePage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ export function MePage(): React.JSX.Element {
   }, [status]);
 
   function signOutAndGo(
-    notice: 'password-changed' | 'password-change-signed-out' | 'password-change-unknown',
+    notice: 'password-changed' | 'password-change-unknown',
   ): Promise<void> {
     queryClient.clear();
     queryClient.setQueryData(SESSION_QUERY_KEY, { authenticated: false });
@@ -89,10 +89,10 @@ export function MePage(): React.JSX.Element {
       }
       // Anything else — a protocol failure, or a dropped connection after a
       // successful update — may have signed the Student out (§5.1 accepts
-      // that crash state): the session probe decides. Signed out keeps a
-      // notice, certain "not changed" only for `busy_retry_later`, neutral
-      // otherwise; still signed in, or a failed probe, stays on the form
-      // with the failure's sentence.
+      // that crash state): the session probe decides. Signed out always
+      // takes the neutral notice, since a lost answer may already have set
+      // the new password; still signed in, or a failed probe, stays on the
+      // form with the failure's sentence.
       let signedOut = true;
       try {
         signedOut = !(await fetchSession()).authenticated;
@@ -100,11 +100,7 @@ export function MePage(): React.JSX.Element {
         signedOut = false;
       }
       if (signedOut) {
-        await signOutAndGo(
-          error instanceof ApiProtocolError && error.code === 'busy_retry_later'
-            ? 'password-change-signed-out'
-            : 'password-change-unknown',
-        );
+        await signOutAndGo('password-change-unknown');
         return;
       }
       setStatus(error instanceof ApiProtocolError ? authErrorMessage(error.code) : authErrorMessage(undefined));

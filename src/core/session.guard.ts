@@ -16,7 +16,7 @@ export const Public = (): MethodDecorator & ClassDecorator => SetMetadata(PUBLIC
 // What the guard attaches to the request on success: the Actor (§3.4) plus
 // the role and email it read in the same query, which the roles guard and
 // the password change's throttle key need (§5.3).
-export type RequestAuth = Actor & Pick<ActiveSession, 'role' | 'email' | 'displayName'>;
+export type RequestAuth = Actor & Pick<ActiveSession, 'role' | 'email'>;
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -66,7 +66,6 @@ export class SessionGuard implements CanActivate {
       sessionHash: session.sessionHash,
       role: session.role,
       email: session.email,
-      displayName: session.displayName,
     };
     await this.sessions.renewIfStale(session, parsed.token, response);
     return true;

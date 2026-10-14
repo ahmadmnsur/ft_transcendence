@@ -2,12 +2,12 @@ import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public, requestActor } from '../core/session.guard';
 import { ApiError, CountedRefusal } from '../core/errors';
-import { clearSessionCookie, serializeSessionCookie } from '../core/session-cookie';
+import { clearSessionCookie, parseSessionCookie, serializeSessionCookie } from '../core/session-cookie';
 import { ThrottleStore, type ThrottleSlot } from '../core/throttle';
 import { AuthService } from './auth.service';
 import { LoginDto, PasswordDto, SignupDto } from './dto';
 import { PasswordUpdateFailed, SignedOutFailure } from './password-change';
-import { alreadySignedIn, tooManyAttempts } from './refusals';
+import { tooManyAttempts } from './refusals';
 
 // §6.1: the throttle is enforced here, at the HTTP boundary, never inside
 // the service. The service tells this boundary whether a refusal counts by
@@ -29,8 +29,11 @@ export class AuthController {
     return slot;
   }
 
-  private async refuseWhenSignedIn(request: Request): Promise<void> {
-    if ((await this.auth.activeSession(request.headers.cookie)) !== null) throw alreadySignedIn();
+  // The session token from the request's cookie, or null when it carries no
+  // session: the service's `already_signed_in` check takes it as input (§6.1).
+  private sessionToken(request: Request): string | null {
+    const parsed = parseSessionCookie(request.headers.cookie);
+    return parsed.kind === 'session' ? parsed.token : null;
   }
 
   private settleWhenCounted(slot: ThrottleSlot, err: unknown): void {
@@ -49,11 +52,11 @@ export class AuthController {
   ): Promise<unknown> {
     const slot = this.reserveOrRefuse(request, dto.email);
     this.throttle.settleCounted(slot);
-    await this.refuseWhenSignedIn(request);
     const created = await this.auth.signup({
       email: dto.email,
       password: dto.password,
       displayName: dto.displayName,
+      sessionToken: this.sessionToken(request),
     });
     response.setHeader('Set-Cookie', serializeSessionCookie(created.token, created.maxAge));
     return created.student;
@@ -72,8 +75,11 @@ export class AuthController {
   ): Promise<unknown> {
     const slot = this.reserveOrRefuse(request, dto.email);
     try {
-      await this.refuseWhenSignedIn(request);
-      const signedIn = await this.auth.login({ email: dto.email, password: dto.password });
+      const signedIn = await this.auth.login({
+        email: dto.email,
+        password: dto.password,
+        sessionToken: this.sessionToken(request),
+      });
       response.setHeader('Set-Cookie', serializeSessionCookie(signedIn.token, signedIn.maxAge));
       return signedIn.student;
     } catch (err) {

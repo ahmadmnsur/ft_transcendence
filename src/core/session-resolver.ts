@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Role } from '../shared/roles';
 import { Clock } from './clock';
+import { AppLogger, errorFields } from './logger';
 import { PrismaService } from './prisma.service';
 import {
   SESSION_RENEW_AFTER_MS,
@@ -24,7 +25,7 @@ export type ActiveSession = {
   expiresAt: Date;
 };
 
-type SessionCookieSetter = { setHeader(name: string, value: string | string[]): unknown };
+export type SessionCookieSetter = { setHeader(name: string, value: string | string[]): unknown };
 
 // One query, `Session` JOIN `Student`, `WHERE s.id = $1 AND s.expires_at >
 // now`: resolving a session reads PeerConnect's tables only and never calls
@@ -36,6 +37,7 @@ export class SessionResolver {
     private readonly prisma: PrismaService,
     private readonly uow: UnitOfWork,
     private readonly clock: Clock,
+    private readonly logger: AppLogger,
   ) {}
 
   // The active session for a cookie token, or null for no row, an expired
@@ -86,12 +88,20 @@ export class SessionResolver {
   async renewIfStale(session: ActiveSession, token: string, response: SessionCookieSetter): Promise<void> {
     const now = this.clock.now();
     if (session.expiresAt.getTime() >= now.getTime() + SESSION_RENEW_AFTER_MS) return;
-    const written = await this.uow.run('session-renewal', (tx, ctx) => {
-      const expiresAt = new Date(ctx.now.getTime() + SESSION_TTL_SECONDS * 1000);
-      return tx.session
-        .updateMany({ where: { id: session.sessionHash }, data: { expiresAt } })
-        .then((updated) => ({ updated: updated.count, expiresAt }));
-    });
+    // A failed renewal never fails the request: it is logged, no cookie is
+    // set, and the request goes on with the session the guard resolved.
+    let written: { updated: number; expiresAt: Date };
+    try {
+      written = await this.uow.run('session-renewal', (tx, ctx) => {
+        const expiresAt = new Date(ctx.now.getTime() + SESSION_TTL_SECONDS * 1000);
+        return tx.session
+          .updateMany({ where: { id: session.sessionHash }, data: { expiresAt } })
+          .then((updated) => ({ updated: updated.count, expiresAt }));
+      });
+    } catch (err) {
+      this.logger.entry('error', { operation: 'session-renewal', ...errorFields(err) });
+      return;
+    }
     if (written.updated === 1) {
       response.setHeader('Set-Cookie', serializeSessionCookie(token, maxAgeUntil(written.expiresAt, now)));
     }
