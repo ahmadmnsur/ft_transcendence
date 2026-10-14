@@ -3,9 +3,12 @@ import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack
 import { setUnauthorizedHandler } from './api/client';
 import { SESSION_QUERY_KEY, fetchSession } from './api/session';
 import { ErrorContent, NotFoundPage, RootErrorPage, RootLayout } from './layout';
+import { requireSession, requireSignedOut } from './guards';
 import { HomePage } from './pages/HomePage';
+import { MePage } from './pages/MePage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { SignInPage } from './pages/SignInPage';
+import { SignUpPage } from './pages/SignUpPage';
 import { TermsPage } from './pages/TermsPage';
 import { queryClient } from './queryClient';
 
@@ -22,13 +25,41 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  beforeLoad: requireSession,
   component: HomePage,
 });
+
+type SignInNotice = 'password-changed' | 'password-change-signed-out' | 'password-change-unknown';
 
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-in',
+  beforeLoad: requireSignedOut,
+  // The password change returns here with a notice; anything else is no
+  // notice, so a hand-written query never shows a banner.
+  validateSearch: (search: Record<string, unknown>): { notice?: SignInNotice } => ({
+    notice:
+      search.notice === 'password-changed' ||
+      search.notice === 'password-change-signed-out' ||
+      search.notice === 'password-change-unknown'
+        ? search.notice
+        : undefined,
+  }),
   component: SignInPage,
+});
+
+const signUpRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sign-up',
+  beforeLoad: requireSignedOut,
+  component: SignUpPage,
+});
+
+const meRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/me',
+  beforeLoad: requireSession,
+  component: MePage,
 });
 
 const privacyRoute = createRoute({
@@ -43,7 +74,14 @@ const termsRoute = createRoute({
   component: TermsPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, signInRoute, privacyRoute, termsRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  signInRoute,
+  signUpRoute,
+  meRoute,
+  privacyRoute,
+  termsRoute,
+]);
 
 export const router = createRouter({
   routeTree,

@@ -1,7 +1,12 @@
-import { useEffect, useRef } from 'react';
-import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
+import { Link, Outlet, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type { ErrorComponentProps } from '@tanstack/react-router';
-import { AlertIcon, Button, EmptyState, SearchIcon, buttonClasses } from './design';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiProtocolError } from './api/client';
+import { logout } from './api/auth';
+import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from './api/session';
+import { authCopy } from './auth/messages';
+import { AlertIcon, Button, EmptyState, PersonName, SearchIcon, buttonClasses } from './design';
 
 // One string child: `${name} · 42 PeerConnect`, or the brand alone when
 // `name` is absent. React hoists it into <head> and removes it on unmount,
@@ -13,12 +18,93 @@ export function PageTitle({ name }: { name?: string }): React.JSX.Element {
 }
 
 function SiteHeader(): React.JSX.Element {
+  const copy = authCopy.header;
+  const { data: session } = useQuery(sessionQueryOptions());
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | undefined>(undefined);
+
+  function signOutLocally(): void {
+    queryClient.clear();
+    queryClient.setQueryData(SESSION_QUERY_KEY, { authenticated: false });
+  }
+
+  async function goToSignIn(): Promise<void> {
+    await navigate({ to: '/sign-in', replace: true });
+    setSigningOut(false);
+  }
+
+  async function onSignOut(): Promise<void> {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError(undefined);
+    try {
+      await logout();
+    } catch (error) {
+      // A 401 means the session was already gone. Any other failure re-probes
+      // it: signed out behaves like success, still signed in keeps the
+      // session state and shows an error to try again.
+      const gone = error instanceof ApiProtocolError && error.code === 'unauthenticated';
+      if (!gone) {
+        let signedOut = true;
+        try {
+          signedOut = !(await fetchSession()).authenticated;
+        } catch {
+          signedOut = false;
+        }
+        if (!signedOut) {
+          setSignOutError(copy.signOutFailed);
+          setSigningOut(false);
+          return;
+        }
+      }
+    }
+    signOutLocally();
+    await goToSignIn();
+  }
+
   return (
     <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-3">
+      <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
         <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
-          42 PeerConnect
+          {copy.brand}
         </Link>
+        <nav aria-label="Account" className="ms-auto flex min-w-0 items-center gap-2">
+          {session?.authenticated === true ? (
+            <>
+              <span className="hidden max-w-40 truncate text-sm text-ink-muted sm:inline">
+                <PersonName name={session.student.displayName} />
+              </span>
+              <Link
+                to="/me"
+                className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+              >
+                {copy.profileLink}
+              </Link>
+              <Button variant="secondary" size="sm" loading={signingOut} onClick={() => void onSignOut()}>
+                {signingOut ? copy.signingOut : copy.signOut}
+              </Button>
+              {signOutError !== undefined ? (
+                <span role="alert" className="max-w-48 text-xs text-ink-danger">
+                  {signOutError}
+                </span>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Link
+                to="/sign-in"
+                className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+              >
+                {copy.signInLink}
+              </Link>
+              <Link to="/sign-up" className={buttonClasses({ variant: 'primary', size: 'sm' })}>
+                {copy.signUpLink}
+              </Link>
+            </>
+          )}
+        </nav>
       </div>
     </header>
   );

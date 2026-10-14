@@ -35,6 +35,10 @@ export class EnvelopeInterceptor implements NestInterceptor {
       return next.handle();
     }
     const http = context.switchToHttp();
+    const response = http.getResponse<Response>();
+    // Authenticated JSON carries `Cache-Control: no-store` (§3.10). Set on
+    // every JSON response, success and failure, which covers it.
+    response.setHeader('Cache-Control', 'no-store');
     return next.handle().pipe(
       map((data: unknown) => {
         if (!(data instanceof StreamableFile)) return { ok: true, data: data === undefined ? {} : data };
