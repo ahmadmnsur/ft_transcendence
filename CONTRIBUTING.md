@@ -463,6 +463,9 @@ scope, status, or resolved question, **the affected records moved together in th
 If it changes what personal data is stored, who can see it, or how long it is kept, **the Privacy
 Policy moved with it in the same PR** — see *Personal data moves the Privacy Policy* below.
 
+If it adds or changes text the SPA shows, **that text is in English, French and Arabic in the same
+PR, and the SPA build passes** — see *Text ships in three languages* below.
+
 ### Records move together
 
 **A settled decision is represented across three surfaces**: its **ADR** in `docs/adr/`, the
@@ -528,6 +531,49 @@ stale the first time someone adds a column. So:
 The rules the pages already bind — one cookie, nothing fetched from third parties, no passwords or
 request bodies in logs, and the rest — are in
 [ADR-0018](docs/adr/0018-the-legal-pages-describe-the-model-as-built-and-bind-it.md).
+
+### Text ships in three languages
+
+PeerConnect claims the multi-language and right-to-left Minors
+([#139](https://github.com/ahmadmnsur/ft_transcendence/issues/139)), so every text the SPA shows,
+or gives to a screen reader, exists in English, French and Arabic. What counts, and what is never
+translated (names, text for developers, the seed's text, what the browser or 42 draws), is settled
+in [#142](https://github.com/ahmadmnsur/ft_transcendence/issues/142). The legal pages stay out of
+the dictionary: they are Markdown files, translated on their own build ticket (ADR-0018 d14's note
+of 2026-10-13). The rules below hold once the foundation build ticket has created `web/src/i18n/`;
+*Before the foundation* says what a slice does until then.
+
+* **The author writes all three languages, in the same PR.** Every text a PR adds or changes goes
+  into the area file of the same name in `web/src/i18n/en/`, `fr/` and `ar/`, with each language's
+  plural forms ([#144](https://github.com/ahmadmnsur/ft_transcendence/issues/144)). English is the
+  source, and the fallback when a text is missing.
+* **The SPA build is the check.** `npm --prefix web run build` runs `tsc -b`, which fails on a
+  missing text, plural form or placeholder and names each by its key. CI runs it but is advisory
+  (ADR-0016 d8), so the template's *Three languages* box asks for it too: a PR merged with it red
+  stops `make up` for everyone who pulls `main`.
+* **Use the domain's words.** Each term in `CONTEXT.md` has one French and one Arabic word beside
+  it; write that word, never a synonym. A PR that adds a term to `CONTEXT.md` gives it both words.
+* **One voice.** French says *vous*, and Arabic is Modern Standard Arabic. Both use the masculine as
+  the generic form, rephrased to avoid gender where that is easy, never `étudiant·e` or `طالب/ة`.
+  French capitalizes a term as English does (*un Match*, *le Tour 3*); Arabic has no capitals.
+* **Nothing is joined or typed in code.** A sentence is one message with placeholders. Numbers,
+  dates and lists are written by `Intl` in the current language, and a name goes through
+  `PersonName` or its plain-text helper. Every form sets `noValidate`, so every form error is
+  PeerConnect's own text. A text the SPA shows is read from the dictionary, never typed into a
+  component: `tsc` cannot see that, so review and CodeRabbit look for it.
+* **Before the foundation.** Until `web/src/i18n/` exists, a slice writes its text in English only,
+  in one object per area, shaped like the dictionary: nested camelCase keys, a text chosen by a code
+  keyed by that code, `{camelCase}` placeholders, and a count's text as its `one` and `other` forms.
+  `authCopy` and its code map in `web/src/auth/messages.ts` are the model. *Nothing is joined or
+  typed in code* holds already, with the object in the dictionary's place. Whichever of the slice
+  and the foundation build ticket merges second moves the object into `web/src/i18n/` and adds its
+  French and Arabic.
+* **Hussein proofreads, after merge.** At least once a week while slices merge text, he reads what
+  changed in `fr/` and `ar/` since his last pass and fixes it in one `fix:` PR, whose description
+  names the last commit it read; the next pass starts after it. A last pass merges before
+  Pre-defense readiness ([#73](https://github.com/ahmadmnsur/ft_transcendence/issues/73)). The
+  French and the Arabic of Hussein's own PRs, those passes included, are checked by the PR's
+  reviewer before merge.
 
 ### The clean-clone check
 

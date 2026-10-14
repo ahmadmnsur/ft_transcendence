@@ -540,6 +540,16 @@ done when the PR template already is one.**
    > > note of this date). The build compares only the dates, so the box is true only when the French
    > > and the Arabic text moved too.
 
+   > **Amended 2026-10-15 — a sixth check, and the decision is unchanged.** *Text ships in three
+   > languages* ([Settle how each slice ships its text in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/145)): a PR that adds or
+   > changes text the SPA shows has it in English, French and Arabic, with the French and the
+   > Arabic word `CONTEXT.md` gives each term, and `npm --prefix web run build` passes. That
+   > build's `tsc -b` fails on a missing text, plural form or placeholder ([Settle the translation library and how text is keyed](https://github.com/ahmadmnsur/ft_transcendence/issues/144)).
+   > Decision 8's workflow runs it and stays advisory; the box makes the build's result part of
+   > Done, so a PR merged with it red is not done. Until the foundation build ticket creates
+   > `web/src/i18n/`, the box asks instead for the English in one object per area, shaped like the
+   > dictionary. It sits in the template for the same reason as the fourth and fifth checks.
+
    **This deliberately invents no second concept.** A separately written definition of done drifts
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be
    "done" with a red suite. Making the template the definition also keeps it **checkable
