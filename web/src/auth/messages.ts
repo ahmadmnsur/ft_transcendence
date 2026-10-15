@@ -81,6 +81,7 @@ export const authCopy = {
   },
   header: {
     brand: '42 PeerConnect',
+    navLabel: 'Account',
     profileLink: 'My profile',
     signOut: 'Sign out',
     signingOut: 'Signing out…',
