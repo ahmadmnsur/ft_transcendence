@@ -547,7 +547,10 @@ translated (names, text for developers, the seed's text, what the browser or 42 
 in [#142](https://github.com/ahmadmnsur/ft_transcendence/issues/142). The legal pages stay out of
 the dictionary: they are Markdown files, translated on their own build ticket (ADR-0018 d14's note
 of 2026-10-13). The rules below hold once the foundation build ticket has created `web/src/i18n/`;
-*Before the foundation* says what a slice does until then, and which rules hold already.
+*Before the foundation* says what a slice does until then, and which rules hold already. The
+mechanism behind them, the dictionary, its checks and right to left, is
+[`docs/spec.md`](docs/spec.md) §3.5.2 and §3.5.5, and the decisions are
+[ADR-0020](docs/adr/0020-peerconnect-speaks-english-french-and-arabic.md).
 
 * **The author writes all three languages, in the same PR.** Every text a PR adds or changes goes
   into the area file of the same name in `web/src/i18n/en/`, `fr/` and `ar/`, with each language's

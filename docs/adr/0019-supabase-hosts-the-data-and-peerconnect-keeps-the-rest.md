@@ -330,3 +330,7 @@ Unaffected:
 - **Features only for 42 students, and 42 projects as Skills**: a later ticket ([Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93#issuecomment-6067107389)).
 - **French and Arabic**: [Map: PeerConnect in English, French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/139) claims the language modules, and the database stores nothing per
   language ([Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95)).
+
+  > **Recorded 2026-10-15 in [ADR-0020](0020-peerconnect-speaks-english-french-and-arabic.md)**:
+  > the multi-language and right-to-left Minors are claimed, and the database still stores nothing
+  > per language.

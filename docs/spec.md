@@ -13,6 +13,14 @@ the map ([#1](https://github.com/ahmadmnsur/ft_transcendence/issues/1)), `CONTEX
 > it: §§1–7, §9, §12.7, §13, §§14–19 and the final section, with the mechanisms chosen here listed in §2.2
 > (M35–M37). `main` at `62eb070` holds the text before.
 
+> **Updated 2026-10-15 for French, Arabic and right-to-left**, from
+> [ADR-0020](adr/0020-peerconnect-speaks-english-french-and-arabic.md) and the proposals it
+> summarises, by [Write the ADR for French, Arabic and right-to-left, and update the spec](https://github.com/ahmadmnsur/ft_transcendence/issues/147).
+> The multi-language and right-to-left Minors are claimed, so the claim is 20 points. Every section
+> they change is corrected in place, each changed rule citing ADR-0020's decision: §1.3, §1.4,
+> §2.1, §2.2 (M38), §3.3, §3.5 (with a new §3.5.5), §12.8, §13.3, §13.4, §16.7, §16.8, §17.5,
+> §18, §19 and the final section. `main` at `845964d` holds the text before.
+
 ## How to read this document
 
 - **The ADRs are the decisions; this document is the build.** Every rule here is traced to the
@@ -60,10 +68,12 @@ beside it: **Reflection Prompts** the Admin publishes, answered once as Posts. B
 team's copy, whose database, files and passwords Supabase keeps, when the team's `.env` is present,
 and on a local copy otherwise (§15, ADR-0019).
 
-### 1.3 Claimed modules — 18 points (5 Majors, 8 Minors), threshold 14
+### 1.3 Claimed modules — 20 points (5 Majors, 10 Minors), threshold 14
 
-Locked by [#7](https://github.com/ahmadmnsur/ft_transcendence/issues/7); all 18 firm since #14.
-Target policy: survive two Majors failing (18 − 4 = 14).
+Locked by [#7](https://github.com/ahmadmnsur/ft_transcendence/issues/7) at 18, all firm since #14;
+the multi-language and right-to-left Minors joined on 2026-10-15 (ADR-0020 d1, from
+[map #139](https://github.com/ahmadmnsur/ft_transcendence/issues/139)). Target policy: survive two
+Majors failing (20 − 4 = 16).
 
 | Module (`document/en.subject.md`) | Pts | What in this spec satisfies each bullet |
 | --- | --- | --- |
@@ -80,6 +90,8 @@ Target policy: survive two Majors failing (18 − 4 = 14).
 | **Minor — OAuth 2.0** (`:620`) | 1 | Sign in with 42, run by NestJS with no part for Supabase Auth; a 42 login finds its Student by 42's account `id` (§5.6). |
 | **Minor — additional browsers** (`:574`) | 1 | Firefox + Brave pass in week 5, limitations documented in `README.md` (§16.7, ADR-0016 d9). |
 | **Minor — user activity analytics** (`:642`) | 1 | `/admin/analytics` Learning Analytics (§13), a scoped V2 pull-forward (ADR-0015). |
+| **Minor — multiple languages** (`:554`) | 1 | English, French and Arabic, each complete: a typed dictionary of the SPA's own over `Intl`, whose build refuses a missing text (§3.5.5); the switcher in the shared header on every route (§3.5.5); every text the SPA shows or gives to a screen reader translated (§3.5.2), the legal pages included (§3.5.4). ADR-0020. |
+| **Minor — right-to-left** (`:564`) | 1 | Arabic. `<html dir>` is set before the first render and switches with the language, without a reload (§3.5.5); complete mirroring through flow-relative classes, with a build that refuses a left or right class, and the tables and the chart mirrored (§3.5.2, §13.4); the Arabic adjustments: font, digits, text rules, icons and the legal pages (§3.5.2–§3.5.4). ADR-0020. |
 
 Mandatory part (`:300`–`:389`) is met by: containerised single command (§15); Chrome, clean console
 (§3.8.2, §15.7, §16.7); Privacy Policy and Terms routes with footer links (§3.5.1, §3.5.4); multi-user concurrency
@@ -90,8 +102,9 @@ password, hashed and salted by Supabase Auth's bcrypt (§5.1); validation on bot
 ### 1.4 In scope and out of scope
 
 **In scope** is exactly what §§4–14 specify. **Out of scope**, each ruled on the map or an ADR:
-any game and every game-gated module; the four infrastructure Majors; accessibility and i18n
-modules; the AI recommendation Major; the public API (#12); the notification system; advanced chat,
+any game and every game-gated module; the four infrastructure Majors; the accessibility Major
+(WCAG 2.1 AA), a fourth language and translating text a person writes (ADR-0020 d1); the AI
+recommendation Major; the public API (#12); the notification system; advanced chat,
 PWA, SSR, real-time collaboration, organisations; **Comments** and with them a third report target;
 reportable Direct Messages and reportable Evidence; fair mentor rotation and network freshness (MVP
 cuts); availability matching, prompt categories/scheduling, per-skill endorsements, the Learning
@@ -323,8 +336,10 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0017 | Seed drives real write paths; four closed Rounds, ends idle; 62-Match target; suspension in Round 3, Removal in Round 4 with prerequisites; `SEED_STUDENT_PASSWORD`, a Supabase Auth password; four Report rows in three fixture groups (two grouped on one Post, one Student, one resolved) asserted per role; 27-Skill catalogue; both gap forms; social graph; completion-based idempotence, loud failure; a run that writes first checks its guard, then deletes our rows, every Supabase Auth user and every file in the two buckets; the lock on a connection of its own; minutes on the team project (d10's notes of 2026-10-03 and 2026-10-11); both boot paths; no Presence seeding. |
 | ADR-0018 | Pages describe the model as built; two kinds of copy, the team's (Supabase, Frankfurt) and a local one (d1's note of 2026-10-11); one cookie; the browser loads nothing from third parties and never contacts Supabase (Sign in with 42 the one chosen exception); logs clean and capped, the team project's `postgres` role with four log settings (d6's note of 2026-10-11); throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes, footer everywhere; acceptance checkbox validated, not stored, on the 42 sign-up form too; Removal on request only, keeping the hash and the 42 account number; 42 data minimisation; 42's account `id` in `Student.forty_two_id` as the only key; recovery through 42 only; Privacy Policy moves with personal data. |
 | ADR-0019 | Supabase is three stores and nothing more: Postgres as the database, Storage for the two buckets, Auth as the place each password is kept and checked. The browser never talks to Supabase; PeerConnect keeps its session, Prisma, Socket.IO and Sign in with 42. One team project in Frankfurt, which Kamel owns and keeps available. |
+| ADR-0020 | Multi-language (English, French, Arabic) and right-to-left (Arabic) claimed; WCAG stays out. Every text the SPA shows or gives to a screen reader is translated in the SPA; names, text for developers, the seed's text and what the browser or 42 draws are not; the API keeps its English `message` and `"Former student"`, which the SPA never shows. A typed dictionary over `Intl`, no package; `tsc -b` refuses a missing text, plural form or placeholder; English is the fallback. Every value isolated; numbers, dates and lists by `Intl` with `en-GB`, `fr` and `ar-u-nu-arab`. First visit from the browser's languages; the choice in `localStorage` only when picked; switcher in the shared header on every route. Flow-relative classes only, the build refusing a left or right class; tables and the chart mirror; arrows flip. A bundled Noto Sans Arabic for Arabic characters. Legal pages English until translated once, the English canonical, one date for three versions. Each slice ships its text in three languages (`CONTRIBUTING.md` → *Text ships in three languages*). |
 | Map #1 | Stack: NestJS, PostgreSQL, Prisma, socket.io, React, Tailwind, TanStack, Recharts, Vitest, Docker Compose. Vertical slices DB-through-UI. |
 | Map #85 | Supabase provides the database, the file storage and the password check; Socket.IO stays; `make up` on any machine serves `https://localhost:8443`; hosting comes later. |
+| Map #139 | PeerConnect in English, French and Arabic; Hussein owns both modules; Skill names stay English; the database stores nothing per language; switching changes language and direction at once, without a reload. |
 
 ### 2.2 Mechanisms chosen by this spec
 
@@ -369,6 +384,7 @@ Every item below was delegated to `/to-spec #1` by the record named, or is a gap
 | M35 | Sign in with 42's routes and outcomes beyond start and callback | ADR-0003 d10's and d11's notes of 2026-10-08 ("for example by its own route") | Intents `sign_in`, `link`, `confirm`; `GET /api/auth/42/draft`, `POST /api/auth/42/signup`, `POST /api/auth/42/disconnect`, `POST /api/auth/42/password`; the callback's outcomes `?oauth=failed`, `removed`, `suspended`, `in_use`, `connected`, `confirmed`; codes `oauth_failed`, `forty_two_connected`, `forty_two_not_connected`, `confirmation_required`. | 5.6, 6.15 |
 | M36 | Sign-in's refusal codes | ADR-0003 d10's note of 2026-10-02, whose ticket left the names to this spec | `no_account`, `password_incorrect`, `account_removed`, `account_suspended`; `invalid_credentials` is retired. | 5.1, 6.15 |
 | M37 | Whether a wrong current password counts toward the throttle | gap, found in review of the Sign in with 42 notes on 2026-10-09 and left to §5.5 | It counts, as a failed attempt under the client address and the signed-in Student's own email, for the password change, Connect 42's start and Disconnect 42; the new password after Confirm with 42 checks no password and is not throttled. | 5.5 |
+| M38 | How the legal check finds a plain space before French punctuation | gap; Kamel's note on [#146](https://github.com/ahmadmnsur/ft_transcendence/issues/146#issuecomment-6199250142)'s approval, for the legal-pages ticket | It reads each `.fr.md` file's parsed text, not its raw lines, so a table's delimiter row (`\| :--- \|`) never fails it; code spans and link targets are skipped, and a line break inside a paragraph counts as a plain space. | 3.5.4 |
 
 ### 2.3 Contradictions and gaps resolved
 
@@ -550,13 +566,16 @@ goes through the map; a new runtime library needs a PR sentence saying why.**
 | Styling | Tailwind CSS 4 | map, `en.subject.md:369` |
 | Frontend data | TanStack Query 5 (server state), TanStack Router 1 (routing, search params), TanStack Table 8 (Users table, search results) | map, ADR-0014 Consequences |
 | Charts | Recharts 3, `/admin/analytics` only | ADR-0015 d7 |
+| Translation | **No package**: a typed dictionary of the SPA's own over `Intl`, so §3.3's PR sentence for a runtime library does not apply (§3.5.5) | ADR-0020 d3 |
+| Fonts | The system stack; for Arabic characters only, Noto Sans Arabic 2.012, one woff2 file cut to the Arabic blocks and to weights 400–600, bundled and served from PeerConnect's origin, under the SIL Open Font License 1.1 (§3.5.3) | ADR-0020 d8, ADR-0018 d5 |
 | Tests | Vitest (current major), `unplugin-swc` + `@swc/core` for the API, `supertest`, `socket.io-client` | ADR-0016 d2 |
 | Proxy | nginx stable, Alpine image, exact tag pinned in `proxy/Dockerfile` at scaffold | ADR-0004 |
 | Orchestration | Docker Compose ≥ 2.24.4 (`env_file.required` from 2.24.0; `!override`, used by the dev overlay, only from 2.24.4) | ADR-0004 d8 |
 | CI | GitHub Actions, one advisory workflow; plus one required check that tests nothing (§17.4) | ADR-0016 d8 |
 
 **Not in the stack, by rule:** JWT libraries, Passport, Redis or any shared store, a Markdown
-library (M22), an icon or font package fetched from a CDN, analytics SDKs, `mkcert`, Caddy,
+library (M22), a translation package such as react-intl, i18next or Lingui (ADR-0020 d3), an icon
+or font package fetched from a CDN, analytics SDKs, `mkcert`, Caddy,
 `@node-rs/argon2`, any `@supabase/*` package in `web/` and any `VITE_SUPABASE_*` variable (ADR-0019
 d1), and Supabase's Studio, Realtime, REST service, Edge Functions, image resizer and pooler
 containers (ADR-0004 d1's note).
@@ -636,7 +655,9 @@ routes redirect a Student without the role to `/`; the server enforces the same 
 
 The **footer shows on every route**, signed in or out, with links to `/privacy` and `/terms`
 (ADR-0018 d12). Student surfaces never show a Peer Moderator label; an Admin carries an "Admin" label
-wherever another Student sees them (ADR-0018 d4).
+wherever another Student sees them (ADR-0018 d4). **The language switcher sits at the end of the
+shared header, on every route**, signed in or out, the four signed-out routes and the error page
+included (ADR-0020 d6, §3.5.5).
 
 #### 3.5.2 Data, validation and state
 
@@ -645,45 +666,273 @@ wherever another Student sees them (ADR-0018 d4).
 - **Every form validates on the client with the same limits the server enforces**, from
   `src/shared/limits.ts` imported through a Vite alias. The client pre-checks everything it can know
   (lengths, formats, file size and declared type) so that normal use never reaches a server
-  validation error (§3.8.2).
+  validation error (§3.8.2). Every form sets `noValidate`, so the browser draws no error bubble of
+  its own and every form error is PeerConnect's own translated text (ADR-0020 d2).
 - Uploads use `XMLHttpRequest` for `upload.onprogress` (progress indicator, `en.subject.md:546`) and
   send `X-PeerConnect-CSRF: 1`.
-- Browser storage: `localStorage` may hold interface preferences only (e.g. a collapsed panel). Never
-  a token, never Student data, never OAuth state (ADR-0018 d5).
+- Browser storage: `localStorage` may hold interface preferences only (e.g. a collapsed panel, or
+  the language choice under `peerconnect.language`, §3.5.5). Never a token, never Student data, never
+  OAuth state (ADR-0018 d5).
 - **The browser never talks to Supabase.** `web/` has no `@supabase/*` package, and no Supabase URL
   or key reaches the bundle: there is no `VITE_SUPABASE_*` variable (ADR-0003's top note of
   2026-09-30, ADR-0019 d1). Every file the SPA shows comes from PeerConnect's own file routes
   (§6.3).
-- **Names and text in any direction** (from the database's French and Arabic settlement, map #85):
-  screens show a Student's display name through `PersonName`, inside `<bdi>`, wherever markup can
-  go; where it cannot (`alt`, `title`, `aria-label`, `<option>`), the name stays plain text. Text a
-  person wrote that is shown at length (Posts, messages, Reviews, the Learning Goal sentence, Report
-  text, Prompts) gets `dir="auto"`, and `TextField` and `TextArea` default to `dir="auto"`, so Arabic
-  aligns right while it is typed.
+- **Names and text in any direction** (from the database's French and Arabic settlement, map #85;
+  ADR-0020 d4 and d7): screens show a Student's display name through `PersonName`, inside `<bdi>`,
+  wherever markup can go; where it cannot (`alt`, `title`, `aria-label`, `<option>`), the name is
+  plain text between U+2068 and U+2069, from `PersonName`'s plain-text helper, never from
+  `displayName` itself. Text a person wrote that is shown at length (Posts, messages, Reviews, the
+  Learning Goal sentence, Report text, Prompts) gets `dir="auto"`, and `TextField` and `TextArea`
+  default to `dir="auto"`, so Arabic aligns right while it is typed. An empty field follows the
+  page's direction, so its placeholder starts on the page's side; once typed, the text follows its
+  own first letter.
+- **Skill names keep their direction** (ADR-0020 d4). Inside a message, the dictionary isolates every
+  value (§3.5.5). Outside one, `SkillName`, a `<bdi>` like `PersonName`, shows every Skill name where
+  markup can go: inside `SkillChip`, in a table cell, in a heading. Where it cannot (`<option>`,
+  `title`, `aria-label`) and on the chart's axis, the name sits between U+2068 and U+2069. So `C++`
+  never shows as `++C` on an Arabic page.
+- **Every text the SPA shows on screen, or gives to a screen reader, is translated** into French and
+  Arabic, on every route, the Peer Moderator and Admin screens included (ADR-0020 d2): sentences,
+  labels and buttons; fixed text stored as codes (Mission sentences, Badges, Report reasons and
+  states, Match statuses, Role names, the Admin label, the insight sentences, the Score
+  explanation); the validation messages for the limits in `src/shared/limits.ts`; headings,
+  including those only screen readers hear, and `aria-label`, `alt`, `title` and `placeholder`; the
+  chart's title, axis titles, legend and tooltips (§13.4); `/rules`; dates and relative times; and
+  the page name `PageTitle` writes before `· 42 PeerConnect`. **Never translated:** the product name,
+  Skill names and display names; text for developers (logs, the dev proxy's message, the README,
+  `docs/`, code comments, the API's `message`); the seed's Posts, Direct Messages and Reflection
+  Prompts; and what the browser or 42 draws. A Mission's French or Arabic sentence is a rewording,
+  bound by ADR-0012 d1's note, and the report form's reason labels use each language's words of the
+  Terms (ADR-0011 d4's note).
+- **Errors by code, and the tombstone** (ADR-0020 d2). The SPA never displays the API's `message`;
+  §3.8.1 stays as written. It picks its text by `code` from one map typed over every `ErrorCode` and
+  `RefusalCode`, so a code without text fails `tsc`, and an unknown code, or a response that is not
+  the envelope (such as nginx's 502 page), shows a translated "Something went wrong". When a
+  `StudentRef` has `removed: true` (§6.0.1), the SPA ignores its `displayName` and renders its own
+  translated tombstone, through `PersonName` or its plain-text helper.
+- **Nothing is joined or typed in code** (ADR-0020 d4). A sentence with values is one message with
+  placeholders (§3.5.5), never pieces joined in code, so the merged `SkillChip`, `Banner`,
+  `Pagination`, `DataTable`, `FileDrop` and `PageTitle` are rewritten where they join pieces.
+  Numbers, dates, times and lists are written by `Intl` with the locale table (§3.5.5): a percentage
+  with `style: 'percent'`, a file size with `style: 'unit'`. The merged code that writes a number by
+  hand changes: `Pagination`'s page buttons, `ProgressBar`'s default value, `FileDrop`'s upload
+  status and its `formatBytes`, and `authCopy`'s limits, which become placeholders filled from
+  `LIMITS`. A text the SPA shows is read from the dictionary, never typed into a component.
+- **Mirroring: flow-relative classes only, and the build refuses a left or right class** (ADR-0020
+  d7). The SPA writes `ms-`/`me-`, `ps-`/`pe-`, `inset-s-`/`inset-e-`, `text-start`/`text-end`,
+  `rounded-s-`/`rounded-e-`, `border-s`/`border-e` and `float-start`/`float-end`, which follow their
+  own element's direction. `rtl:` and `ltr:` are used only where no flow-relative class exists
+  (`origin-`, a gradient's direction, an icon's flip, §3.5.3). They follow the page's direction, and
+  in the build its `lang` too, so they are never used for content whose direction can differ from the
+  page's: a name in `<bdi>`, text with `dir="auto"`, the English legal page inside an Arabic page.
+  - **The check.** The physical-class scanner lives in `web/` and runs in `npm --prefix web run
+    build`, beside the legal check, so CI and every `make up` stop on a left or right class. A class
+    behind `rtl:` or `ltr:` passes. A hit in a comment is printed and does not fail. A line the
+    scanner lists for a person (an `@source`, or CSS from a file it does not read) fails the build
+    until the PR names that line in the check's own short list. The scanner loads TypeScript and
+    PostCSS from `web/node_modules`, so `postcss` is a `devDependency` of `web/`. It cannot see a
+    style object in a script or JavaScript that assumes left to right: review and the Arabic pass
+    (§16.7) look for those.
+  - **The merged code that changes:** the 15 physical uses (`pl-6` becomes `ps-6` in `Checkbox`'s
+    hint and the legal lists; `pl-3 pr-1` becomes `ps-3 pe-1` in `SkillChip`; `text-left` and
+    `text-right` become `text-start` and `text-end` in `DataTable` and the legal tables; `right-px`
+    and `rounded-r-lg` become `inset-e-px` and `rounded-e-lg`; `bg-linear-to-l` gains
+    `rtl:bg-linear-to-r`; `origin-left` gains `rtl:origin-right`, so `ProgressBar` fills from the
+    right in Arabic; the skip link's `focus:left-4` becomes `focus:inset-s-4`). `Tabs`' arrow keys
+    follow the screen: ArrowLeft moves to the tab on the left, which is the next tab in Arabic.
+  - **Tables** run right to left in Arabic; every cell's text sits at its start, and an
+    `align: 'end'` column puts its header and its numbers on the same side. The "more columns" fade
+    sits on the end side and shows while more columns lie that way: its scroll math measures from
+    the start, since `scrollLeft` is negative right to left, and runs again when the direction
+    changes, since Firefox fires no `scroll` event then.
+  - **The page's own scroll bar** stays where the browser draws it, and the README's browser
+    limitations can name it (§16.7).
+- **Arabic and French text rules** (ADR-0020 d8). PeerConnect's own Arabic carries no vowel marks
+  (U+064B–U+0652), and `tsc` rejects one in an Arabic text; text a person writes keeps its marks.
+  Letter spacing (`tracking-*`) is reset on Arabic text. Arabic emphasis is bold, never italic.
+  French puts a no-break space before `: ; ! ?` and inside `« »` (U+202F before `; ! ?`, U+00A0
+  before `:` and inside `« »`), and `tsc` rejects a French text with a plain space there. The
+  foundation build ticket adds the two `tsc` checks and names them in `CONTRIBUTING.md` → *Text ships
+  in three languages*.
 - Responsive from 360 px width upward; all layouts are Tailwind utilities.
 
 #### 3.5.3 Design system (Minor `:526`)
 
 Project-owned, in `web/src/design/`: a colour palette as Tailwind theme tokens (primary, neutral,
-success, warning, danger, each with a 50–900 scale), a type scale on the system font stack (no web
-font is downloaded — ADR-0018 d5), and an icon set of hand-authored inline SVG React components (no
-icon package, no CDN). **At least these ≥ 10 reusable components**, each used by at least two
-screens: `Button`, `IconButton`, `TextField`, `TextArea`, `Select`, `Checkbox`, `Card`, `Avatar`
-(with default image), `RoleLabel` (Admin chip), `PersonName` (a display name inside `<bdi>`, §3.5.2), `SkillChip`, `Modal`, `Tabs`, `DataTable` (TanStack
-Table wrapper with sort and pagination), `Pagination`, `ProgressBar`, `FileDrop` (drag/drop, type and
-size pre-check, preview, progress), `EmptyState`, `Banner`. A favicon ships in the bundle.
+success, warning, danger, each with a 50–900 scale), a type scale on the system font stack, and an
+icon set of hand-authored inline SVG React components (no icon package, no CDN).
+
+- **One bundled font, for Arabic characters only** (ADR-0020 d8; ADR-0018 d5 bundles fonts). Noto
+  Sans Arabic 2.012, the variable font cut to the Arabic blocks and to weights 400–600, is one woff2
+  file served from PeerConnect's own origin, which the CSP's `font-src 'self'` allows (§3.10). It is
+  declared with a `unicode-range` on those blocks in front of the system stack, so English and French
+  keep the system stack, and a page fetches the file only when it shows an Arabic character: an
+  Arabic page, or an English or French page showing an Arabic name or Post. It is under the SIL Open
+  Font License 1.1, with no Reserved Font Name; the cut file is a Modified Version, so it keeps its
+  copyright notice, and `OFL.txt` ships beside it. Its Arabic-Indic digits share one width, so
+  `tabular-nums` lines numbers up in tables.
+- **Arrows flip in Arabic, and nothing else does** (ADR-0020 d7). An icon that points somewhere, such
+  as the `Pagination` chevrons, is marked where it is drawn as one that flips, for example by a prop
+  on `IconBase` that adds `rtl:-scale-x-100`. The check mark, the search glass, the info, alert and
+  close signs, the vertical sort and upload arrows, the star, trophy and user, the speech bubble,
+  the flag and the file stay as drawn, and the `Button` spinner keeps turning clockwise.
+
+**At least these ≥ 10 reusable components**, each used by at least two screens: `Button`,
+`IconButton`, `TextField`, `TextArea`, `Select` (its label can be hidden visually while screen
+readers still read it, for the language switcher, §3.5.5), `Checkbox`, `Card`, `Avatar` (with
+default image), `RoleLabel` (Admin chip), `PersonName` (a display name inside `<bdi>`, with a
+plain-text helper, §3.5.2), `SkillName` (a Skill name inside `<bdi>`, §3.5.2), `SkillChip`, `Modal`,
+`Tabs`, `DataTable` (TanStack Table wrapper with sort and pagination), `Pagination`, `ProgressBar`,
+`FileDrop` (drag/drop, type and size pre-check, preview, progress), `EmptyState`, `Banner`. A
+favicon ships in the bundle. Every text they show comes from the dictionary (§3.5.5).
 
 #### 3.5.4 Legal pages (M22)
 
 `/privacy` and `/terms` render `docs/legal/privacy-policy.md` and `docs/legal/terms-of-service.md`
 — the canonical text (ADR-0018 d14) — imported with Vite's `?raw`, so the text is inside the bundle
-and nothing is fetched. A project-owned renderer (`web/src/legal/markdown.tsx`) supports exactly the
-constructs the two files use: ATX headings, paragraphs, `**bold**`, `*italic*`, inline code, `-`
+and nothing is fetched. Their French and Arabic translations are four more files beside them,
+`privacy-policy.fr.md`, `privacy-policy.ar.md`, `terms-of-service.fr.md` and
+`terms-of-service.ar.md`, imported, rendered and checked the same way (ADR-0018 d14's note of
+2026-10-13; ADR-0020 d9). A project-owned renderer (`web/src/legal/markdown.tsx`) supports exactly
+the constructs the two files use: ATX headings, paragraphs, `**bold**`, `*italic*`, inline code, `-`
 bullet lists (including one nested level and indented continuation lines, as the Terms' sanctions
 list has), `1.` numbered lists, pipe tables with a header row, `[text](url)` links, and a bracketed
 `[…]` not followed by `(` as literal text (the Privacy Policy's 42-field marker). It escapes
 all text. **An unsupported construct throws during `vite build`** (the renderer runs over both files
 in a build-time check), so a page can never silently mis-render. No Markdown library is added.
+
+**In three languages** (ADR-0018 d14's and d15's notes of 2026-10-13; ADR-0020 d9):
+
+- **English until the translations merge.** `/privacy` and `/terms` follow the chosen language like
+  every other page, signed out included. Until a page's French and Arabic files exist, it shows the
+  English file in every language, in an article with `lang="en"` and `dir="ltr"`, so it reads
+  correctly inside an Arabic page. The page titles and the footer links are dictionary text
+  (§3.5.5). Hussein translates both pages once, near the end, on their own build ticket, finished
+  before Pre-defense readiness (#73); Ahmad checks and signs off the French and the Arabic before
+  they merge.
+- **The English stays the canonical text.** Each translation says under its date line: *"This is a
+  translation. If it differs from the English version, the English version applies."* When the
+  translations land, the English *Changes to this page* and *Changes to these Terms* sections say
+  that French and Arabic translations exist and that the English applies where they differ, and
+  that *"The date at the top is the same in the English, French and Arabic versions, and moves when
+  any of them changes."*
+- **One document, one date.** Once translated, a PR that changes one version of a page changes all
+  three and moves their three *Last updated* dates to the same day. **The build fails when the three
+  dates differ**: the check reads the day, the month and the year from each version's *Last
+  updated* line, with each language's twelve month names written in the check and Arabic-Indic
+  digits read as digits, and fails, naming the file, when the dates differ or a line does not read.
+  Its result never depends on the Node or CLDR version of the host or of the Docker build. The
+  French and the Arabic dates are written as the SPA writes one: *12 octobre 2026*,
+  *١٢ أكتوبر ٢٠٢٦*.
+- **The translations use the interface's words**: the buttons (**Sign in with 42**, **Connect 42**,
+  **Confirm with 42**, **Disconnect 42**), the sign-up checkbox, the Admin label, the Report reasons
+  and each domain term, as the dictionary and `CONTEXT.md` write them in that language.
+- **In Arabic**, lists hang their bullets and numbers on the right, inside the text column (`ps-6`),
+  and a nested list indents from the right; an Arabic file's numbered lists draw Arabic-Indic
+  numbers (`list-[arabic-indic]`), chosen from the file's language, not the page's, so the English
+  page inside an Arabic page keeps 1, 2, 3. Tables run right to left, each cell's text at its start.
+  The three 42 logins render as `<code dir="ltr">`, and a code span holds Latin only. The Arabic text
+  writes its numbers in Arabic-Indic digits, except the name *42* and a list item's `1.` in the
+  Markdown source, which is syntax. It uses `**bold**` where the English uses `*italic*`.
+- **The legal check's text rules.** It fails an `.ar.md` file that holds italic or a vowel mark
+  (U+064B–U+0652), and an `.fr.md` file with a plain space before `: ; ! ? »` or after `«`. It reads
+  the parsed text, not the raw lines (M38): a line break inside a paragraph counts as a plain space,
+  code spans and link targets are skipped, and a table's delimiter row never fails it.
+
+#### 3.5.5 Languages and direction (ADR-0020)
+
+The SPA shows every text in English, French or Arabic, and Arabic right to left. How a slice ships
+its text is `CONTRIBUTING.md` → *Text ships in three languages*; this section is the mechanism that
+rule points to. Until the foundation build ticket creates `web/src/i18n/`, a slice keeps its English
+in one object per area shaped like the dictionary, as that rule's *Before the foundation* says.
+
+- **A typed dictionary of the SPA's own, over `Intl`, and no translation package** (ADR-0020 d3).
+  - **Where the text lives.** `web/src/i18n/en/`, `fr/` and `ar/` hold one file per area, with the
+    same names in each folder (`shell.ts`, `auth.ts`, `errors.ts`…), and each folder's `index.ts`
+    joins its areas. The types and the helpers sit in `web/src/i18n/`. A component reads the
+    current language's dictionary from one React context: `t.auth.signIn.submit`.
+  - **How it is keyed.** Keys are nested by area, in camelCase, and so are placeholders
+    (`{partnerName}`). A group never has a key named `text`, `parts` or a plural form (`zero`,
+    `one`, `two`, `few`, `many`, `other`). Text chosen by a code is keyed by the code, spelt as
+    `src/shared/` spells it, and written `as const satisfies Record<Code, string>`: the errors over
+    `ErrorCode | RefusalCode` (§3.5.2), the Role names over `Role`, and Badges, Mission modes, Report
+    reasons and states and Match statuses once their type is in `src/shared/`.
+  - **How the files are checked.** Every language file is `as const`, so each text keeps its literal
+    type. Each English area file `satisfies` the dictionary's shape, and each French and Arabic area
+    file `satisfies` the type derived from its English area, so `tsc` points at the line. Each
+    language's `index.ts` holds one more check over the whole language, which names each problem by
+    its key (`"inbox.archived: missing."`), so an area file that forgets its own check is still
+    checked.
+  - **All three languages are in the bundle**, so switching never waits and cannot fail.
+- **The build refuses what is missing** (ADR-0020 d3). `npm run build` runs `tsc -b`, in CI (§16.4,
+  step 2) and in the Docker image, so no copy with a missing text can be built. `tsc` rejects:
+  - a text French or Arabic lacks, a key English lacks, and an area left out of a language's
+    `index.ts`;
+  - a plural form the language needs, and one it does not write; a form without `{count}`, unless it
+    holds a single number;
+  - a placeholder English has, missing or misspelt in any form of any language, English's own forms
+    included, and a placeholder English does not have; a placeholder name that is not camelCase;
+  - an empty text or form, or one of white space only; a text that has lost its literal type;
+  - a code with no English text, and an English text for a code that does not exist; a group key
+    named `text`, `parts` or a plural form;
+  - a call that leaves out a value, names a wrong one, passes a string as a number, or passes
+    `undefined`, `null`, `false` or an array; and a text with placeholders rendered unfilled.
+
+  **If one slips through**, which only `vite dev` allows since it skips the type check, French and
+  Arabic are laid over English, following English's shape per form and per part: a missing or empty
+  text shows in English, a missing plural form uses that language's `other`, and a plural without
+  `other` or a two-number sentence missing a part shows whole in English. Nothing throws, and
+  nothing reaches the console. **No test is added** (ADR-0016 d7). What `tsc` cannot see, such as
+  English typed into a component or left in a French or Arabic file, a name filled from
+  `displayName`, or a poor translation, is for the PR's reviewer, Hussein's proofreading and the
+  Arabic pass (§16.7).
+- **Messages** (ADR-0020 d4).
+  - **A count** is one entry with a text for each plural form: English `one` and `other`; French
+    `one`, `many` and `other` (0 takes `one`, 1,000,000 takes `many`); Arabic `zero`, `one`, `two`,
+    `few`, `many` and `other`. English `one` and Arabic `zero`, `one` and `two` hold a single number
+    and may write it in words (`one unread message`, `رسالة واحدة`, `رسالتان`); every other form
+    contains `{count}`, and every form contains every other placeholder.
+  - **Two numbers in one sentence** are still one message, as the insight sentences are (§13.3): its
+    text orders the parts, and each part is written once per plural form, chosen by its own number.
+  - **Every number value**, `{count}` included, is written by `Intl.NumberFormat` with the locale
+    table below.
+  - **Every value is isolated.** In markup, `format` puts a string or a number in a `<bdi>` and
+    leaves an element as it is (`PersonName`, `SkillName`, `SkillChip`). The plain-string helper,
+    for `alt`, `title`, `aria-label` and `<option>`, puts each value between U+2068 and U+2069. A
+    name is filled with `PersonName`, or in a plain string from its plain-text helper.
+  - **A list** fills one placeholder. The helper builds it from `Intl.ListFormat`'s `formatToParts`
+    and isolates each item as above, so a `SkillChip` item stays a `SkillChip`. The output is
+    `Intl.ListFormat`'s as it is: "Docker, Git and C++", "Docker, Git et C++", "Docker وGit وC++".
+- **The locale table** (ADR-0020 d5) gives `Intl` each language's tag, and says that only Arabic is
+  `rtl`. In Node 22.22.1 (ICU 78.2, CLDR 48.0), in the UTC time zone, it writes:
+
+  | Language | Tag | 1234.5 | 42 % | A date | A time | A date and time |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | English | `en-GB` | 1,234.5 | 42% | 13 October 2026 | 14:05 | 13 October 2026 at 14:05 |
+  | French | `fr` | 1 234,5 | 42 % | 13 octobre 2026 | 14:05 | 13 octobre 2026 à 14:05 |
+  | Arabic | `ar-u-nu-arab` | ١٬٢٣٤٫٥ | ٤٢٪؜ | ١٣ أكتوبر ٢٠٢٦ | ٢:٠٥ م | ١٣ أكتوبر ٢٠٢٦ في ٢:٠٥ م |
+
+  Arabic writes Arabic-Indic digits, named in its tag, so every browser agrees, with `ar`'s month
+  names. A date is `dateStyle: 'long'`, never numeric, a time `timeStyle: 'short'`, and a moment
+  both; each language keeps its own hour cycle, and times show in the browser's time zone. The
+  digits reach every number the SPA writes, the chart's axes and the legal pages' dates included;
+  text a person types keeps the digits they typed.
+- **The first visit and the choice** (ADR-0020 d6). A first visit takes the first of the browser's
+  languages (`navigator.languages`) that is English, French or Arabic, judged by its language part
+  (`fr-CA` is French), and English when none is. The choice is stored only when the person picks a
+  language in the switcher, under the `localStorage` key `peerconnect.language`, as `en`, `fr` or
+  `ar`; any other stored value is ignored, and where storage is blocked the choice lasts until the
+  page reloads. It belongs to the browser, not the account: signing out keeps it, and the database
+  stores nothing. `<html lang>` and `<html dir>` are set before the first render, and on each switch
+  in the same update as the text, without a reload (`en.subject.md:572`).
+- **The switcher** (ADR-0020 d6) is the design system's `Select`, at the end of the shared header's
+  line (`SiteHeader`, `web/src/layout.tsx`), so every route shows it (§3.5.1). It is labelled
+  "Language" in the current language, its label hidden visually while screen readers still read it.
+  Its options are each language's own name, English, Français and العربية, each with its `lang`
+  attribute, and are never translated. Choosing one switches at once. From 360 px wide the header
+  may wrap to a second line.
+- **The legal pages' text stays outside the dictionary**, in their Markdown files (§3.5.4); their
+  page titles and the footer links are dictionary text.
 
 ### 3.6 Transactions and serialization (M1)
 
@@ -2861,7 +3110,8 @@ must stay ≥ 1 afterwards → `last_active_admin` (ADR-0008 d9).
 ### 12.8 Admin label
 
 Wherever a `StudentRef` with `isAdmin: true` renders to another Student — profile, feed, search,
-messages — the design system's `RoleLabel` shows "Admin". The Peer Moderator role is never shown to
+messages — the design system's `RoleLabel` shows the Admin label: "Admin" in English and French, and
+"مسؤول" in Arabic, `CONTEXT.md`'s words (ADR-0020 d2). The Peer Moderator role is never shown to
 other Students (ADR-0018 d4).
 
 ---
@@ -2918,6 +3168,9 @@ they can teach."* when Supply is 0, else *"{demand} Students want to learn {Skil
 teach it."* For each `insights.uncovered` row: *"{Skill} is wanted by {demand} and offered by
 {supply}, but no Match has ever covered it."*
 
+Each sentence is one message of the dictionary, in each language, and each number in it chooses its
+own plural form (§3.5.5; ADR-0020 d4). The Skill's name stays English and is isolated.
+
 ### 13.4 Charts and refresh (ADR-0015 d4, d7, d8)
 
 Recharts: bar charts for most requested, most available and the gap (negative gaps below the axis);
@@ -2925,6 +3178,18 @@ a bar chart for the open-Round state; a bar chart for closed outcomes; the per-R
 on a Round-number axis with `connectNulls={false}`. No axis is a date. The page loads on mount and
 **re-queries on `round:opened` and `round:closed`**, reading nothing from their payloads; between
 those events every figure is as of the last load and refreshes on reload. No other event is added.
+
+**In three languages, and mirrored in Arabic** (ADR-0020 d2, d4, d7). The charts' titles, axis
+titles, legends and tooltips are dictionary text, and their numbers are written with the locale
+table (§3.5.5), so an Arabic chart writes Arabic-Indic digits and a percentage as
+`style: 'percent'` does. Skill names stay English, and on an axis, which is SVG text where a `<bdi>`
+cannot go, each sits between U+2068 and U+2069. In Arabic each chart runs right to left, like the
+page: its bars and its Round axis start at the right, and the number axis sits on the right. No tick
+label crosses an axis line, each legend icon keeps its gap from its text, the tooltip opens toward
+the inside of the chart, `C++` reads `C++`, and the arrow keys move the way they point.
+[Find what complete layout mirroring needs in the SPA](https://github.com/ahmadmnsur/ft_transcendence/issues/140)'s runs give a start:
+`XAxis reversed`, `YAxis orientation="right"`, and `dir="ltr"` on the chart's box or explicit
+`textAnchor` values. The build ticket checks `C++` on the axis in Chrome and Firefox.
 
 ---
 
@@ -3755,6 +4020,13 @@ Chrome as the baseline; Brave Shields against the self-signed certificate, the `
 `SameSite=Lax` cookie; the CSP and the clean console. Limitations are documented in the README
 (`en.subject.md:580`).
 
+**An Arabic pass** joins it and Pre-defense readiness (#72, #73), added by
+[Write the build tickets for French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) (ADR-0020 d7). In Arabic, right to left, it
+checks what the build cannot: the merged code's changes, the tables, the chart and the arrows
+(§3.5.2, §3.5.3, §13.4), English typed into a component, and JavaScript that assumes left to right.
+The page's own scroll bar stays on the right in Chrome and Firefox: it is browser UI, which the
+README's limitations can name.
+
 > **Updated 2026-10-09:** this read *"Fadel runs it in week 5 (2026-10-16 → 10-22), Ahmad
 > deputising"*. Fadel left the team on 2026-10-01, and the pass has been Ahmad's since (#72;
 > ADR-0016 d9's note). No deputy is recorded for it.
@@ -3766,8 +4038,12 @@ ticked — there is no second definition: branch named and based on `main`; Conv
 rebased; **one completed review** by another member; **suite green** (`npx vitest run`); **the ticket's
 acceptance criteria met**, each; no test outside the closed list without its argument; **records moved
 together** if a rule, criterion, scope, status or resolved question changed; **Privacy Policy** (and
-Terms) moved with any change to stored personal data, its visibility or retention; the **schema-gate**
-boxes when inside the gate; the **clean-clone** boxes when §16.5 applies.
+Terms) moved with any change to stored personal data, its visibility or retention; **three
+languages** when the PR adds or changes text the SPA shows, in English, French and Arabic with
+`CONTEXT.md`'s words, and `npm --prefix web run build` passing (ADR-0016 d6's note of 2026-10-15,
+ADR-0020 d10; until `web/src/i18n/` exists, the text in English only, in one object per area
+shaped like the dictionary); the **schema-gate** boxes when inside the gate; the **clean-clone**
+boxes when §16.5 applies.
 
 **The suite box binds from the first test file.** `npx vitest run` exits 1 when it finds no test
 file, so no PR before the first `test/<NN>-<category>/*.test.ts` can show it green — the
@@ -3886,11 +4162,11 @@ Instructions (prerequisites: Docker Engine with Compose ≥ 2.24.4; Node 22 for 
 `.env` model; both boot commands; the certificate interstitial; the dev overlay and the verified Vite
 bind command with its LAN restriction), Resources and AI usage sections, **Team Information**, **Project
 Management**, **Technical Stack** with justifications (the database system's from ADR-0019, through #71), **Database Schema** (§4, or a diagram generated
-from the schema), **Features List** with the member(s) behind each, **Modules** with the 18-point
-calculation (§1.3), the browser-limitations section (§16.7), the credential variables and the demo
-Student's email. **Owners recorded**: Instructions — Kamel (ADR-0004 d12); browser limitations —
-Ahmad (ADR-0016 d9; #72). **No owner is recorded for the other sections**; `/to-tickets` should
-surface that as a ticket rather than assume one.
+from the schema), **Features List** with the member(s) behind each, **Modules** with the 20-point
+calculation (§1.3), both language Minors included, the browser-limitations section (§16.7), the
+credential variables and the demo Student's email. **Owners recorded**: Instructions — Kamel
+(ADR-0004 d12); browser limitations — Ahmad (ADR-0016 d9; #72). **No owner is recorded for the
+other sections**; `/to-tickets` should surface that as a ticket rather than assume one.
 
 > **Updated 2026-10-09:** this read *"browser limitations — Fadel"*. The section has been Ahmad's
 > since Fadel left the team on 2026-10-01 (#72, which covers the pass and that section).
@@ -3976,6 +4252,16 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
     when 5–9 exist; the first complete deterministic run confirms or corrects the §14.5 targets and
     names the demo Student.
 13. **Browser pass** (week 5) after features exist.
+14. **French, Arabic and right-to-left** (ADR-0020), whose build tickets [Write the build tickets for
+    French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148)
+    opens. **No slice waits for the foundation**: until it creates `web/src/i18n/`, a slice keeps its
+    English in one object per area, and whichever of the two merges second moves it (§3.5.5). The
+    foundation (the dictionary, the locale table, the switcher, the first visit, `<html lang dir>`
+    and the two text checks, §3.5.5) moves every such object on `main` when it merges, `authCopy`
+    included. The changes to the merged design system and SPA shell (§3.5.2, §3.5.3), the scanner in
+    the build, the font, and the chart on Learning Analytics (#60, §13.4) follow their own tickets.
+    **The legal translations** come after the foundation and before Pre-defense readiness (#73),
+    with Ahmad's sign-off (§3.5.4).
 
 > **Sequenced on review of the ticket plan, 2026-09-24** (`docs/ticket-plan.md`; issues #29–#73; *uncommitted*). No
 > rule moves. Four orderings this list left open are fixed:
@@ -4066,6 +4352,11 @@ Rules every ticket inherits; a PR breaking one is not done.
 29. Branch work that changes the database never runs on the team project; the team project changes
     only through `supabase/team-project.md` and Kamel's four changes by hand (§17.2).
 30. The team `.env` is never committed and never handed to an evaluator (§15.4).
+31. Every text the SPA shows, or gives to a screen reader, comes from the dictionary in English,
+    French and Arabic, or from the legal Markdown files; nothing is joined or typed in code, and
+    every form sets `noValidate` (§3.5.2, §3.5.5).
+32. No left or right class in the SPA: the build fails on one, and `rtl:`/`ltr:` appear only where
+    no flow-relative class exists (§3.5.2).
 
 ---
 
@@ -4305,3 +4596,6 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
 6. **The demo script's running order** (ADR-0017 *Not settled*): a rehearsal question for whoever
    presents. The demo Student's identity is not a decision; §14.8 selects it deterministically and the
    first run records it.
+7. **How the evaluation shows both language Minors** (ADR-0020 *Not settled*): which accounts, which
+   screens, and when the language is switched. It is [map #139](https://github.com/ahmadmnsur/ft_transcendence/issues/139)'s
+   *Not yet specified* item, and Pre-defense readiness (#73) is its likely home.
