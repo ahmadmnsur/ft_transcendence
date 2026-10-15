@@ -40,6 +40,8 @@ export const authCopy = {
     noticePasswordChanged: 'Your password was changed. Sign in with your new password.',
     noticeSignedOutUnknown:
       'You were signed out, and the password change may not have finished. Try your new password first, then your old one.',
+    oauthButton: 'Sign in with 42',
+    oauthFailed: 'Sign in with 42 failed. Try again.',
   },
   signUp: {
     title: 'Sign up',

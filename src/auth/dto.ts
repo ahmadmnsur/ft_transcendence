@@ -2,6 +2,8 @@ import { Transform } from 'class-transformer';
 import {
   Equals,
   IsBoolean,
+  IsIn,
+  IsOptional,
   IsString,
   ValidateBy,
   type ValidationOptions,
@@ -13,6 +15,7 @@ import {
   isValidPassword,
   normalizeEmail,
 } from '../shared/limits';
+import { FORTY_TWO_INTENTS, type FortyTwoIntent } from './oauth-attempt-store';
 
 // §6.1: the DTOs validate §6.0.3 through the shared validators, so the client
 // pre-check and the server enforce the same limits. Passwords are validated
@@ -86,6 +89,21 @@ export class LoginDto {
   @Trimmed()
   @IsValidPasswordDto()
   password!: string;
+}
+
+// §5.6 A's start body: `{ intent, password? }`. `intent` is one of the three
+// intents; `link` and `confirm` are refused by the service until their own
+// tickets. `password` is Connect 42's (its own ticket reads it); the shape is
+// validated here so it is a legal field, and `sign_in` ignores it.
+export class Start42Dto {
+  @IsIn(FORTY_TWO_INTENTS)
+  intent!: FortyTwoIntent;
+
+  @IsOptional()
+  @IsString()
+  @Trimmed()
+  @IsValidPasswordDto()
+  password?: string;
 }
 
 export class PasswordDto {
