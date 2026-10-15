@@ -70,7 +70,7 @@ function SiteHeader(): React.JSX.Element {
         <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
           {copy.brand}
         </Link>
-        <nav aria-label="Account" className="ms-auto flex min-w-0 items-center gap-2">
+        <nav aria-label={copy.navLabel} className="ms-auto flex min-w-0 items-center gap-2">
           {session?.authenticated === true ? (
             <>
               <span className="hidden max-w-40 truncate text-sm text-ink-muted sm:inline">
