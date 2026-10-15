@@ -10,11 +10,16 @@ import {
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { signup } from '../api/auth';
 import { SESSION_QUERY_KEY } from '../api/session';
-import { Banner, Button, Card, Checkbox, TextField } from '../design';
+import { Banner, Button, Card, Checkbox, PasswordField, TextField } from '../design';
 import { PageTitle } from '../layout';
 import { authCopy, authErrorMessage } from '../auth/messages';
 
 const copy = authCopy.signUp;
+
+function confirmationError(password: string, confirmation: string): string | undefined {
+  if (confirmation.trim() === '') return copy.confirmPasswordEmpty;
+  return confirmation.trim() === password.trim() ? undefined : copy.confirmPasswordMismatch;
+}
 
 function failureMessage(error: unknown): string {
   if (error instanceof ApiRefusalError) return authErrorMessage(error.code);
@@ -30,16 +35,19 @@ export function SignUpPage(): React.JSX.Element {
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [emailError, setEmailError] = useState<string | undefined>(undefined);
   const [displayNameError, setDisplayNameError] = useState<string | undefined>(undefined);
   const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | undefined>(undefined);
   const [termsError, setTermsError] = useState<string | undefined>(undefined);
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const displayNameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
   const termsRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
@@ -55,10 +63,12 @@ export function SignUpPage(): React.JSX.Element {
     const nextEmailError = isValidEmail(email) ? undefined : copy.emailInvalid;
     const nextDisplayNameError = isValidDisplayName(displayName) ? undefined : copy.displayNameInvalid;
     const nextPasswordError = isValidPassword(password) ? undefined : copy.passwordInvalid;
+    const nextConfirmPasswordError = confirmationError(password, confirmPassword);
     const nextTermsError = acceptTerms ? undefined : copy.acceptTermsInvalid;
     setEmailError(nextEmailError);
     setDisplayNameError(nextDisplayNameError);
     setPasswordError(nextPasswordError);
+    setConfirmPasswordError(nextConfirmPasswordError);
     setTermsError(nextTermsError);
     setStatus(undefined);
     const firstInvalid =
@@ -68,7 +78,9 @@ export function SignUpPage(): React.JSX.Element {
           ? displayNameRef
           : nextPasswordError !== undefined
             ? passwordRef
-            : null;
+            : nextConfirmPasswordError !== undefined
+              ? confirmPasswordRef
+              : null;
     if (firstInvalid !== null) {
       firstInvalid.current?.focus();
       return;
@@ -127,15 +139,34 @@ export function SignUpPage(): React.JSX.Element {
                 onChange={(event) => setDisplayName(event.target.value)}
                 error={displayNameError}
               />
-              <TextField
+              <PasswordField
                 ref={passwordRef}
                 label={copy.passwordLabel}
                 hint={copy.passwordHint}
-                type="password"
+                {...authCopy.passwordVisibility}
                 autoComplete="new-password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (confirmPasswordError !== undefined) {
+                    setConfirmPasswordError(confirmationError(event.target.value, confirmPassword));
+                  }
+                }}
                 error={passwordError}
+              />
+              <PasswordField
+                ref={confirmPasswordRef}
+                label={copy.confirmPasswordLabel}
+                {...copy.confirmPasswordVisibility}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => {
+                  setConfirmPassword(event.target.value);
+                  if (confirmPasswordError !== undefined) {
+                    setConfirmPasswordError(confirmationError(password, event.target.value));
+                  }
+                }}
+                error={confirmPasswordError}
               />
               <div className="min-w-0">
                 <Checkbox

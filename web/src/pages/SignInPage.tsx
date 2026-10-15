@@ -5,7 +5,7 @@ import { isValidEmail, isValidPassword, normalizeEmail } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { login } from '../api/auth';
 import { SESSION_QUERY_KEY } from '../api/session';
-import { Banner, Button, Card, TextField } from '../design';
+import { Banner, Button, Card, PasswordField, TextField } from '../design';
 import { PageTitle } from '../layout';
 import { authCopy, authErrorMessage } from '../auth/messages';
 
@@ -99,10 +99,10 @@ export function SignInPage(): React.JSX.Element {
                 onChange={(event) => setEmail(event.target.value)}
                 error={emailError}
               />
-              <TextField
+              <PasswordField
                 ref={passwordRef}
                 label={copy.passwordLabel}
-                type="password"
+                {...authCopy.passwordVisibility}
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}

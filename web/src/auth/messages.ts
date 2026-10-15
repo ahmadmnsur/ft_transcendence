@@ -25,6 +25,10 @@ export function authErrorMessage(code: unknown): string {
 
 export const authCopy = {
   genericError: GENERIC,
+  passwordVisibility: {
+    showPasswordLabel: 'Show password',
+    hidePasswordLabel: 'Hide password',
+  },
   signIn: {
     title: 'Sign in',
     heading: 'Sign in',
@@ -53,6 +57,13 @@ export const authCopy = {
     passwordLabel: 'Password',
     passwordHint: 'At least 8 characters, at most 72 bytes. No other rules.',
     passwordInvalid: 'Use at least 8 characters and at most 72 bytes.',
+    confirmPasswordLabel: 'Confirm password',
+    confirmPasswordEmpty: 'Enter your password again.',
+    confirmPasswordMismatch: 'Passwords do not match. Enter the same password in both fields.',
+    confirmPasswordVisibility: {
+      showPasswordLabel: 'Show confirmation password',
+      hidePasswordLabel: 'Hide confirmation password',
+    },
     acceptTermsLabel: 'I agree to the Terms of Service and have read the Privacy Policy',
     acceptTermsLinksPrefix: 'Read the full text:',
     termsLink: 'Terms of Service',

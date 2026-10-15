@@ -5,6 +5,8 @@ export { ChevronDownIcon } from './ChevronDownIcon';
 export { ChevronLeftIcon } from './ChevronLeftIcon';
 export { ChevronRightIcon } from './ChevronRightIcon';
 export { CloseIcon } from './CloseIcon';
+export { EyeIcon } from './EyeIcon';
+export { EyeOffIcon } from './EyeOffIcon';
 export { FileIcon } from './FileIcon';
 export { FlagIcon } from './FlagIcon';
 export { InfoIcon } from './InfoIcon';
