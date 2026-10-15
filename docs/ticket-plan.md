@@ -50,9 +50,9 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > names 18 points (T43, F.1) or a type scale with no web font downloaded (T04), the spec now says
 > otherwise: 20 points, with both Minors (§1.3), and one bundled font for Arabic characters
 > (§3.5.3). The plan has no ticket for the two Minors: [Write the build tickets for French, Arabic
-> and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) opens them, rewrites
-> the merged code's tickets the claim changes, and adds the translation criterion to every open
-> build ticket that shows text. The issues stay the live record.
+> and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) opens them, the
+> tickets for the merged code the claim changes included, and adds the translation criterion to
+> every open build ticket that shows text. The issues stay the live record.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
