@@ -88,6 +88,14 @@ browser.
 > holds, side words are matched in any case, and quoted brackets, extensions and binary files are
 > read as Tailwind reads them. The count at `0d20fcb` does not change.
 
+> **Changed 2026-10-15** after Ahmad's
+> [review of `da93ab2`](https://github.com/ahmadmnsur/ft_transcendence/issues/140#issuecomment-6165144190),
+> which kept the ticket closed and recommended five fixes and one wording: the scanner now lists
+> CSS that the build takes in from a file it does not read, checks `@apply` in an HTML `<style>`,
+> reads an escaped quote in an `@apply` list, counts a one-way resize cursor as a declaration, and
+> follows a linked folder and skips a tracked file that a `.gitignore` names, as Tailwind does
+> (section 2). The count at `0d20fcb`, and on `main` at `f29d3bd`, does not change.
+
 ## Question
 
 What does *"complete layout mirroring (not just text direction)"* (`document/en.subject.md:568`)
@@ -334,7 +342,7 @@ production build behaves like the dev server for `rtl:`/`ltr:`, unless `build.cs
   [`rtl-mirroring/physical-scan.mjs`](rtl-mirroring/physical-scan.mjs), found the 15 uses above.
   It was added on 2026-10-13 after Ahmad's first review (`18e04ea`), widened after his second
   (`52957a1`), rebuilt after his third (`1c75324`), and changed again on 2026-10-14 after his
-  fourth. What each review found:
+  fourth and on 2026-10-15 after his fifth. What each review found:
   - `18e04ea` missed the 13 classes of the second review, which Tailwind 4.3.3 compiles to a
     left or right property (`border-l-ink`, `[margin-left:4px]`, `mask-r-to-80%`,
     `text-left!`…), and took `/* note */ const c = "text-left";` for a comment.
@@ -349,18 +357,30 @@ production build behaves like the dev server for `rtl:`/`ltr:`, unless `build.cs
     for one side through when its value named the other (`padding-left:
     env(safe-area-inset-right)`), knew side words only in lower case, and differed from Tailwind
     on a quoted `)` in brackets, an upper-case `.CSS` and a NUL byte in a script.
+  - `da93ab2` said nothing about CSS that the build takes in from a file it does not read: an
+    `@import` into a folder a `.gitignore` ignores or into `node_modules`, CSS a script imports,
+    and `@reference` to a file outside the folder. It checked an `index.html` `<style>` for
+    declarations only, though Vite hands it to Tailwind, which compiles its `@apply`. An escaped
+    quote in an `@apply` list (`content-['it\'s'] ml-4`) hid the classes after it. It counted
+    `cursor-e-resize` but not `[cursor:e-resize]` or a CSS `cursor: w-resize`. It skipped a
+    linked folder, which Tailwind reads, and read a tracked file that a `.gitignore` names, which
+    Tailwind skips. Its header said "style objects in scripts", where CSS strings in scripts pass
+    too.
 
-  The scanner now reads the files Tailwind reads in the folder it is given, binary files and
-  extensions as Tailwind matches them; takes a class wherever Tailwind's extractor can take one
-  (the same characters before and after it, quoted strings inside brackets, its rule for
-  `ml-4: …`, and its steps for JSON and Markdown); and reports the physical ones. A script's
-  comments come from TypeScript's own parser; in other files every class counts as code. CSS
-  files are read with PostCSS: the classes after `@apply`, each physical declaration, and the
-  lines a person must read (`@source`, `@plugin`, `@config`, `source(`, and an `@import` from
-  outside the folder). In HTML, SVG and XML it also checks `<style>` texts and `style`
-  attributes. It needs the SPA's own TypeScript and PostCSS (`npm --prefix web ci`), and its
-  header says what it reports and what it cannot see. **Run** on 2026-10-13 and 2026-10-14,
-  with Tailwind 4.3.3's own code as the reference (*How the experiments were run*):
+  The scanner now reads the files Tailwind reads in the folder it is given: binary files and
+  extensions as Tailwind matches them, linked folders and `.gitignore` as Tailwind follows them.
+  It takes a class wherever Tailwind's extractor can take one (the same characters before and
+  after it, quoted strings inside brackets, its rule for `ml-4: …`, and its steps for JSON and
+  Markdown), and reports the physical ones. A script's comments come from TypeScript's own
+  parser; in other files every class counts as code. CSS files are read with PostCSS: the classes
+  after `@apply`, each physical declaration, and the lines a person must read (`@source`,
+  `@plugin`, `@config`, `source(`, and an `@import` or `@reference` of a file it does not read).
+  In HTML, SVG and XML it also checks `<style>` texts, `@apply` included, and `style` attributes.
+  It lists, for a person to read, the CSS that a script imports or an HTML
+  `<link rel="stylesheet">` names from a file it does not read. It needs the SPA's own TypeScript
+  and PostCSS (`npm --prefix web ci`), and its header says what it reports and what it cannot
+  see. **Run** on 2026-10-13, 2026-10-14 and 2026-10-15, with Tailwind 4.3.3's own code as the
+  reference (*How the experiments were run*):
   - **The class list.** Tailwind lists 11,858 classes that compile for the SPA's theme. 1,418 of
     them compile to CSS that sets only one side, left or right, or a `transform-origin` or
     `perspective-origin` that is not centred left to right. The scanner reports all 1,418, and 166
@@ -390,7 +410,10 @@ production build behaves like the dev server for `rtl:`/`ltr:`, unless `build.cs
     108 of the first 1,471. In the compiled CSS of the 11,858 listed classes, it flags each of the
     1,418 one-sided classes, and 264 more whose declarations set one side each but the class as a
     whole sets both (`mask-x-`, `rounded-t-`, `rounded-b-`), since it judges each declaration
-    alone.
+    alone. On 2026-10-15, ten runs of 600 `@apply` rules mixing physical, flow-relative and
+    quoted classes (`content-['it\'s']`, `after:content-["x\"y"]`), with variants, compiled the
+    same way: Tailwind's output sets one side in 3,276 of the 6,000 rules, and the scanner flags
+    each of those and no other. `da93ab2` missed 131 of them.
   - **Comments.** TypeScript's parser gives them, so JSX text, strings, regular expressions and
     templates hold none. In HTML, a reader written for this missed some of the HTML standard's
     rules when compared with `parse5` on random documents (script escapes, SVG and MathML, CDATA,
@@ -400,16 +423,27 @@ production build behaves like the dev server for `rtl:`/`ltr:`, unless `build.cs
     with a `.gitignore` above it, untracked files, a lock file, a log file and a binary file,
     and on one with `up.PNG`, `low.png`, `b.LOG`, `case.CSS`, `.DS_Store`, a `.geojson` and a
     script holding a NUL byte. Outside a git repository it also reads the files a `.gitignore`
-    names, so it reads more.
+    names, so it reads more. On 2026-10-15 the lists matched again on `web/` at `0d20fcb` (65
+    files) and on `main` at `f29d3bd` (69), on a folder with a link to a folder outside it, on
+    one with a tracked file that its `.gitignore` names, and on one with a link back to a folder
+    above it and a folder that two links reach (Tailwind reads it under both names). Inside a
+    linked folder it does not ask what `.gitignore` ignores, so it may read more there.
   - **Every case named in Ahmad's four reviews, and more,** alone in a folder (88 cases, physical
-    and not): the expected exit code each time.
+    and not): the expected exit code each time. The nine shapes of his fifth review, each alone
+    in a folder, are reported with exit 1 (`da93ab2`: exit 0), and the tracked file that a
+    `.gitignore` names is no longer read. Four folders that bring in only CSS the scanner reads,
+    or name no side (`cursor: ew-resize`, `content-['it\'s'] ps-4`), give exit 0, and a
+    `<link>` into `node_modules` is listed for a person.
   - **Output in a pipe.** Captured by another Node program, in one series of ten runs, `52957a1`
     printed 1,995, 3,983 and 3,614 lines instead of 4,003 three times; the exit code was right.
     The scanner now sets `process.exitCode` instead, and printed all 4,003 lines in ten of ten
     runs.
   - **The count.** On `web/` at `0d20fcb`, `592bf58` and `15d3b47`: the same 15 uses in code, and
     7 hits in comments where the first versions had 10. The 3 gone are prose (`right-aligned;`,
-    `right-flanking,`, `left-flanking,`): Tailwind takes no class before `;` or `,`.
+    `right-flanking,`, `left-flanking,`): Tailwind takes no class before `;` or `,`. On `main` at
+    `f29d3bd` (2026-10-15): the same 15 uses and 7 comment hits, with the skip link now at
+    `layout.tsx:132`; the output of `da93ab2` and of the scanner of 2026-10-15 is the same, line
+    for line, on both commits.
 
   A comment that holds a real class (`mr-auto` at `Modal.tsx:17`) generates CSS, so hits in
   comments are shown and marked. It matches names, not CSS, so it also reports some words that
@@ -828,6 +862,21 @@ In a scratch directory outside the repository, on Node 22.22.1 and npm 9.2.0:
   - **HTML comments:** `parse5` 7.3.0, installed apart from the SPA, on 20,000 random documents of
     5 to 44 pieces: comment markers, quotes, the raw-text elements, CDATA, a doctype, SVG and
     MathML tags.
+- **The scanner of 2026-10-15,** with the same TypeScript and PostCSS. The extractor, comment
+  and affix sets were not run again, since this change leaves the class extractor and the
+  comment marking as they were; instead, the output of `da93ab2` and of this scanner was compared
+  line for line on 20 seeded runs of seven files (`.html`, `.tsx`, `.ts`, `.json`, `.svg`, `.md`,
+  `.txt`) of 3,000 random lines each, mixing 30 classes, 14 words and 44 pieces of punctuation:
+  the same in all 20. Three more checks:
+  - **`@apply`:** each run wrote 600 rules of one to five classes, drawn from 10 physical,
+    8 flow-relative and 9 quoted ones, into one CSS file. The file was compiled with `compile()`
+    from `@tailwindcss/node` after `@import 'tailwindcss'`, then `build([])`, and a rule counted
+    as one-sided when a declaration under it, nested variant rules included, names left or right
+    in its property or outside quotes in its value.
+  - **Files:** `Scanner.files` as before, on the folders listed in section 2; linked folders were
+    made with `ln -s`, and the tracked file with `git add -f`.
+  - **Review cases:** each of the fifth review's shapes, and each control, in a folder of its own
+    with `git init` and `git add`.
 
 ## Primary sources
 

@@ -1,19 +1,21 @@
 // Finds the physical (left/right) Tailwind v4 classes and CSS declarations in a folder.
 // Used for docs/research/rtl-mirroring.md, section 1; kept for #146, which settles the rule.
 // Rebuilt on 2026-10-13 and 2026-10-14 after Ahmad's reviews of 18e04ea, 52957a1 and 1c75324
-// (#140). How it was checked against Tailwind 4.3.3's own code: the doc, section 2.
+// (#140), and changed on 2026-10-15 after his review of da93ab2. How it was checked against
+// Tailwind 4.3.3's own code: the doc, section 2.
 //
 // Usage: node physical-scan.mjs web
 // It needs the SPA's own TypeScript and PostCSS (`npm --prefix web ci` first); its last line
 // names the versions it used.
 //
 // Files. It reads what Tailwind 4.3.3 reads in that folder when it is Vite's root and the CSS
-// gives no `source()`: every file except those a `.gitignore` ignores (asked of `git ls-files`),
-// the folders and files on Tailwind's ignore lists (such as `node_modules`, `.git`,
-// `package-lock.json`, `.env`, `*.log`, `*.lock`, Sass, Less and Stylus), and the files whose
-// extension is on its binary list. Extensions are matched as written, as Tailwind does, so
-// `photo.PNG` and `case.CSS` are read as text. It also reads the CSS files, from which Tailwind
-// takes no class. Outside a git repository it cannot ask what `.gitignore` ignores, so it reads
+// gives no `source()`: every file except those a `.gitignore` ignores (asked of `git ls-files`,
+// tracked files included), the folders and files on Tailwind's ignore lists (such as
+// `node_modules`, `.git`, `package-lock.json`, `.env`, `*.log`, `*.lock`, Sass, Less and Stylus),
+// and the files whose extension is on its binary list. Extensions are matched as written, as
+// Tailwind does, so `photo.PNG` and `case.CSS` are read as text. It follows a link to a folder,
+// as Tailwind does. It also reads the CSS files, from which Tailwind takes no class. Outside a git
+// repository, and inside a linked folder, it cannot ask what `.gitignore` ignores, so it reads
 // those files too.
 //
 // Classes. It takes a class where Tailwind's extractor can take one (`boundary.rs` and `mod.rs`
@@ -43,19 +45,23 @@
 // Declarations. A declaration is physical when its property names one side, whatever its value
 // holds (`padding-left: env(safe-area-inset-right)`); when its value names one side
 // (`text-align: RIGHT`; quoted text, `url(…)` and a custom property's name do not count); when
-// its origin is not centred left to right (`transform-origin: 0 0`); or when its box or corner
-// shorthand differs on the left and the right (`margin: 0 4px 0 0`). Side words are matched in
-// any case. Each declaration is judged alone, so a pair that is symmetric together
-// (`border-top-left-radius` with `border-top-right-radius`) is reported too.
+// its origin is not centred left to right (`transform-origin: 0 0`); when its box or corner
+// shorthand differs on the left and the right (`margin: 0 4px 0 0`); or when it is a resize
+// cursor that points one way (`cursor: e-resize`). Side words are matched in any case. Each
+// declaration is judged alone, so a pair that is symmetric together (`border-top-left-radius`
+// with `border-top-right-radius`) is reported too.
 //
 // CSS. Tailwind takes no class from a CSS file, so there it reports instead, reading the file with
 // PostCSS (strings, comments, `!important` and at-rules over several lines as CSS reads them):
 // the classes after `@apply`; each physical declaration, `@utility` blocks included; and, for a
-// person to read, each `@source`, `@plugin` and `@config`, each `source(`, each `@import` of CSS
-// from outside the folder other than Tailwind's own, and a file PostCSS cannot read. In HTML, SVG
-// and XML it checks each `<style>` text and `style` attribute the same way, for declarations. It
-// finds those by text, not by parsing the markup, so it also checks some inside comments and
-// scripts: that reports more, never less.
+// person to read, each `@source`, `@plugin` and `@config`, each `source(`, each `@import` and
+// `@reference` of a file it does not read (outside the folder, in `node_modules`, ignored by a
+// `.gitignore`, or a package's) other than Tailwind's own, and a file PostCSS cannot read. In HTML,
+// SVG and XML it checks each `<style>` text the same way, `@apply` included, and each `style`
+// attribute for declarations. It finds those by text, not by parsing the markup, so it also
+// checks some inside comments and scripts: that reports more, never less. The build also takes in
+// CSS that a script imports and CSS that an HTML `<link rel="stylesheet">` names, so it lists, for
+// a person to read, each of those whose file it does not read.
 //
 // Comments. In a script (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.mts`, `.cts`), a class
 // inside a comment is marked `(comment)`. TypeScript's own parser finds the comments, so JSX text,
@@ -70,11 +76,13 @@
 //   `bg-position-[10px_0]`, `object-[10px_0]`), flips (`scale-[-1_1]`, `[transform:scaleX(-1)]`),
 //   angles (`bg-linear-45`, `rotate-*`), and values held in a variable (`bg-position-(--pos)`);
 //   the same holds for CSS declarations;
-// - style objects in scripts (`style={{ marginLeft: 4 }}`);
+// - style objects and CSS strings in scripts (`style={{ marginLeft: 4 }}`,
+//   `` <style>{`.x { margin-left: 4px }`}</style> ``);
 // - classes built by joining strings (`'m' + side + '-4'`), which Tailwind cannot see either;
-// - what a `@plugin` or `@config` adds, files outside the folder that `@source` or `@import` adds,
-//   and classes that `@source inline()` makes from braces (`ml-{1..2}`): it lists those lines for
-//   a person;
+// - what a `@plugin` or `@config` adds, what a CSS file it does not read holds (above), files
+//   outside the folder that `@source` adds, and classes that `@source inline()` makes from braces
+//   (`ml-{1..2}`): it lists those lines for a person;
+// - CSS that a script imports by a name it builds (`` import(`./${theme}.css`) ``);
 // - Tailwind's steps for other languages (Vue, Svelte, Pug…): those files are read as plain text;
 // - JavaScript that assumes left to right (`scrollLeft` math, arrow keys, inline `scaleX`).
 // It matches names, not CSS, so it also reports some words Tailwind would not compile
@@ -227,6 +235,10 @@ function physicalDeclaration(property, value) {
   if (/^(transform|perspective)-origin$/.test(name)) {
     return !/^(center|top|bottom|50%)(\s|$)/i.test(value.trim());
   }
+  // a resize cursor that points one way, as `cursor-e-resize` compiles to
+  if (name === 'cursor' && /(?<![\w-])([ns]?[ew]|nesw|nwse)-resize(?![\w-])/i.test(value)) {
+    return true;
+  }
   return lopsided(name, value);
 }
 
@@ -369,32 +381,68 @@ function preProcess(text, ext) {
 
 // TypeScript's own parser finds a script's comments: the leading and trailing comment ranges at
 // every token, leaving out JSX text (`<p>image/*</p>` holds no comment) and JSDoc nodes, which lie
-// inside a comment already.
+// inside a comment already. It also finds the CSS the script imports, as [name, offset]: an
+// `import` or `export … from`, an `import()` or a `require()` whose name is written out.
 const scriptKind = { ts: ts.ScriptKind.TS, mts: ts.ScriptKind.TS, cts: ts.ScriptKind.TS,
   tsx: ts.ScriptKind.TSX, js: ts.ScriptKind.JS, mjs: ts.ScriptKind.JS, cjs: ts.ScriptKind.JS,
   jsx: ts.ScriptKind.JSX };
-function scriptComments(text, kind) {
+// The style files Vite takes in as CSS (`CSS_LANGS_RE` in `vite/src/node/constants.ts`).
+const styleFile = /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)$/;
+function parseScript(text, kind) {
   const mask = new Uint8Array(text.length);
+  const cssImports = [];
   const file = ts.createSourceFile('scanned', text, ts.ScriptTarget.Latest, true, kind);
   const mark = (pos) => {
     const ranges = [...(ts.getLeadingCommentRanges(text, pos) ?? []),
       ...(ts.getTrailingCommentRanges(text, pos) ?? [])];
     for (const r of ranges) mask.fill(1, r.pos, r.end);
   };
+  const written = (node) => node !== undefined
+    && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node));
+  const imported = (node) => {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
+      && written(node.moduleSpecifier)) {
+      return node.moduleSpecifier;
+    }
+    if (ts.isCallExpression(node) && written(node.arguments[0])
+      && (node.expression.kind === ts.SyntaxKind.ImportKeyword
+        || (ts.isIdentifier(node.expression) && node.expression.text === 'require'))) {
+      return node.arguments[0];
+    }
+    return undefined;
+  };
   (function visit(node) {
     if (node.kind === ts.SyntaxKind.JsxText) return;
     const { FirstJSDocNode, LastJSDocNode } = ts.SyntaxKind;
     if (node.kind >= FirstJSDocNode && node.kind <= LastJSDocNode) return;
+    const name = imported(node);
+    if (name !== undefined && styleFile.test(name.text.replace(/[?#].*$/, ''))) {
+      cssImports.push([name.text, name.getStart(file)]);
+    }
     const children = node.getChildren(file);
     if (children.length === 0) mark(node.pos);
     else children.forEach(visit);
   })(file);
-  return mask;
+  return { mask, cssImports };
+}
+
+// Whether the scanner reads the file that `target`, named in the file `from`, points to. A
+// package's file and one outside the folder are never read; Tailwind's own CSS is not checked.
+function readsTarget(from, target) {
+  const bare = target.replace(/[?#].*$/, '');
+  if (/^tailwindcss(\/|$)/.test(bare)) return true;
+  if (!bare.startsWith('.') && !bare.startsWith('/')) return false; // a package, or an alias
+  const full = bare.startsWith('/')
+    ? path.join(root, bare) // Vite reads `/src/x.css` from its root
+    : path.join(root, path.dirname(from), bare);
+  const relative = path.relative(root, full).split(path.sep).join('/');
+  if (relative.startsWith('..')) return false;
+  return read.has(relative) || read.has(`${relative}.css`); // `@import './tokens'` is `tokens.css`
 }
 
 // The CSS of an HTML, SVG or XML file: each `<style>` text and each `style` attribute value, as
-// [css, offset]. Found by text, not by parsing the markup, so it also takes those inside comments
-// and scripts: that checks more, never less.
+// [css, offset, isStyleText]. Found by text, not by parsing the markup, so it also takes those
+// inside comments and scripts: that checks more, never less.
 function markupStyles(text) {
   const out = [];
   for (const m of text.matchAll(/<style(?=[\s/>])[^>]*>/gi)) {
@@ -403,36 +451,83 @@ function markupStyles(text) {
     const css = text.slice(start, close < 0 ? text.length : start + close);
     // `<![CDATA[`, `]]>`, `<!--` and `-->` around the CSS become spaces, so offsets hold
     const blank = (marker) => ' '.repeat(marker.length);
-    out.push([css.replace(/<!\[CDATA\[|\]\]>|<!--|-->/g, blank), start]);
+    out.push([css.replace(/<!\[CDATA\[|\]\]>|<!--|-->/g, blank), start, true]);
   }
   for (const m of text.matchAll(/(?<![\w-])style\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi)) {
     const value = m[1] ?? m[2] ?? m[3];
     // wrapped in a rule, whose `*{` stands two characters before the value
     const valueStart = m.index + m[0].length - value.length - (m[3] === undefined ? 1 : 0);
-    out.push([`*{${value}}`, valueStart - 2]);
+    out.push([`*{${value}}`, valueStart - 2, false]);
   }
   return out;
 }
 
-function listFiles(dir) {
-  let found;
-  try {
-    // Tailwind skips what a `.gitignore` ignores; git knows which files those are.
-    found = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
-      cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28,
-    }).split('\0').filter(Boolean);
-  } catch {
-    found = [];
-    (function walk(sub) {
-      for (const entry of fs.readdirSync(path.join(dir, sub), { withFileTypes: true })) {
-        const p = path.join(sub, entry.name);
-        if (entry.isDirectory()) {
-          if (!ignoredDirs.has(entry.name)) walk(p);
-        } else found.push(p);
-      }
-    })('');
+// The file each `<link rel="stylesheet">` names, as [href, offset]. Found by text, like the above.
+function markupLinks(text) {
+  const out = [];
+  const attribute = (tag, name) => new RegExp(
+    `(?<![\\w-])${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>\`]+))`, 'i').exec(tag);
+  for (const m of text.matchAll(/<link(?=[\s/>])[^>]*>/gi)) {
+    const rel = attribute(m[0], 'rel');
+    const href = attribute(m[0], 'href');
+    if (!rel || !href || !/(^|\s)stylesheet(\s|$)/i.test(rel[1] ?? rel[2] ?? rel[3])) continue;
+    out.push([href[1] ?? href[2] ?? href[3], m.index + href.index]);
   }
-  return found
+  return out;
+}
+
+// Every file under `sub`, following links to folders, as Tailwind does. `above` holds the real
+// paths of the folders it is inside, so a link back to one of them is not followed; a folder
+// that two links reach is read under both names, as Tailwind reads it.
+function walk(dir, sub, found, above) {
+  const real = fs.realpathSync(path.join(dir, sub));
+  if (above.has(real)) return;
+  const inside = new Set(above).add(real);
+  for (const entry of fs.readdirSync(path.join(dir, sub), { withFileTypes: true })) {
+    const p = path.join(sub, entry.name);
+    const isFolder = entry.isDirectory()
+      || (entry.isSymbolicLink() && fs.existsSync(path.join(dir, p))
+        && fs.statSync(path.join(dir, p)).isDirectory());
+    if (isFolder) {
+      if (!ignoredDirs.has(entry.name)) walk(dir, p, found, inside);
+    } else found.push(p);
+  }
+}
+
+function listFiles(dir) {
+  // Tailwind skips what a `.gitignore` ignores, a tracked file included; git knows which files
+  // those are.
+  const git = (...args) => execFileSync('git', ['ls-files', '-z', ...args], {
+    cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28,
+  }).split('\0').filter(Boolean);
+  let listed;
+  let ignoredTracked;
+  try {
+    listed = git('--cached', '--others', '--exclude-standard');
+    ignoredTracked = new Set(git('--cached', '--ignored', '--exclude-standard'));
+  } catch {
+    listed = undefined; // not in a git repository
+  }
+  const found = [];
+  if (listed === undefined) walk(dir, '', found, new Set());
+  else {
+    for (const p of listed) {
+      if (ignoredTracked.has(p)) continue;
+      // git lists a link to a folder as one entry; Tailwind reads the files in it
+      const full = path.join(dir, p);
+      if (fs.lstatSync(full, { throwIfNoEntry: false })?.isSymbolicLink()
+        && fs.existsSync(full) && fs.statSync(full).isDirectory()) {
+        // the folders it is inside, so that a link back to one of them is not followed
+        const above = new Set();
+        for (let q = path.dirname(full); ; q = path.dirname(q)) {
+          above.add(fs.realpathSync(q));
+          if (path.relative(dir, q) === '') break;
+        }
+        if (!p.split('/').some((d) => ignoredDirs.has(d))) walk(dir, p, found, above);
+      } else found.push(p);
+    }
+  }
+  return [...new Set(found.map((p) => p.split(path.sep).join('/')))]
     .filter((p) => {
       const parts = p.split(/[\\/]/);
       if (parts.slice(0, -1).some((d) => ignoredDirs.has(d))) return false;
@@ -445,9 +540,20 @@ function listFiles(dir) {
     .sort();
 }
 
+const files = listFiles(root);
+const read = new Set(files);
 const hits = [];
 const declarations = [];
 const byHand = [];
+// A class is reported once where two readings find it: the class extractor and `@apply` in an
+// HTML `<style>`.
+const hitAt = new Set();
+let fileIndex = 0; // the file being read, for the order of the output
+function hit(name, lineOf, offset, text, comment) {
+  if (hitAt.has(`${name}\0${offset}`)) return;
+  hitAt.add(`${name}\0${offset}`);
+  hits.push({ where: `${name}:${lineOf(offset)}`, text, comment, file: fileIndex, offset });
+}
 
 // Checks CSS with PostCSS, so that strings, comments, `!important` and at-rules over several lines
 // read as CSS does: each physical declaration, the classes after `@apply` when `apply` is set,
@@ -478,19 +584,16 @@ function checkCss(css, at, name, lineOf, apply) {
       const start = at + rule.source.start.offset + 1 + rule.name.length + afterName;
       for (const [candidate, offset] of applyList(list)) {
         if (!isPhysical(baseOf(candidate))) continue;
-        hits.push({ where: `${name}:${lineOf(start + offset)}`, text: candidate, comment: false });
+        hit(name, lineOf, start + offset, candidate, false);
       }
       return;
     }
-    // CSS imported from outside the folder, other than Tailwind itself, is not read here
-    const imported = keyword === 'import'
+    // CSS that `@import` or `@reference` brings in from a file the scanner does not read
+    const imported = keyword === 'import' || keyword === 'reference'
       ? /^(?:url\(\s*)?["']?([^"')\s;]+)/.exec(rule.params)?.[1] : undefined;
-    const leaves = (target) =>
-      path.relative(root, path.join(root, path.dirname(name), target)).startsWith('..');
-    const outside = imported !== undefined && !/^tailwindcss(\/|$)/.test(imported)
-      && (!imported.startsWith('.') || leaves(imported));
+    const unread = imported !== undefined && !readsTarget(name, imported);
     const changesSources = ['source', 'plugin', 'config'].includes(keyword);
-    if (outside || changesSources || /\bsource\(/.test(rule.params)) {
+    if (unread || changesSources || /\bsource\(/.test(rule.params)) {
       const shown = `@${rule.name} ${rule.params}`.replace(/\s+/g, ' ');
       byHand.push(`${name}:${lineAt(rule)}\t${shown}\t(read by hand)`);
     }
@@ -514,8 +617,13 @@ function applyList(list) {
       while (i < list.length && (depth > 0 || !space.test(list[i])) && !list.startsWith('/*', i)) {
         const c = list[i];
         if (c === '\\') i++;
-        else if (c === '"' || c === "'") i = Math.max(i, list.indexOf(c, i + 1));
-        else if (c === '[' || c === '(') depth++;
+        else if (c === '"' || c === "'") {
+          // to the closing quote, where `\` escapes the next character, as in `quoteEnd()`;
+          // an unclosed quote is read as a plain character
+          let j = i + 1;
+          while (j < list.length && list[j] !== c) j += list[j] === '\\' ? 2 : 1;
+          if (j < list.length) i = j;
+        } else if (c === '[' || c === '(') depth++;
         else if ((c === ']' || c === ')') && depth > 0) depth--;
         i++;
       }
@@ -525,7 +633,8 @@ function applyList(list) {
   return out;
 }
 
-for (const name of listFiles(root)) {
+for (const [index, name] of files.entries()) {
+  fileIndex = index;
   const text = fs.readFileSync(path.join(root, name), 'utf8');
   // Extensions are matched as written, as Tailwind does: `case.CSS` is a source file.
   const ext = path.extname(name).slice(1);
@@ -546,16 +655,27 @@ for (const name of listFiles(root)) {
     continue;
   }
   // Comments are marked in scripts only; elsewhere every class counts as code.
-  const mask = scriptKind[ext] === undefined ? null : scriptComments(text, scriptKind[ext]);
+  const script = scriptKind[ext] === undefined ? null : parseScript(text, scriptKind[ext]);
+  const mask = script?.mask ?? null;
+  // CSS a script imports, or an HTML `<link>` names, from a file the scanner does not read
+  const unread = [...(script?.cssImports ?? []), ...(/^html?$/.test(ext) ? markupLinks(text) : [])]
+    .filter(([target]) => !readsTarget(name, target));
+  for (const [target, offset] of unread) {
+    const where = `${name}:${lineOf(offset)}`;
+    byHand.push(`${where}\tCSS from a file it does not read: ${target}\t(read by hand)`);
+  }
   if (/^(html|htm|svg|xml)$/.test(ext)) {
-    for (const [css, at] of markupStyles(text)) checkCss(css, at, name, lineOf, false);
+    for (const [css, at, isStyleText] of markupStyles(text)) {
+      checkCss(css, at, name, lineOf, isStyleText);
+    }
   }
   for (const [candidate, offset] of physicalClasses(preProcess(text, ext))) {
-    const comment = mask !== null && mask[offset] === 1;
-    hits.push({ where: `${name}:${lineOf(offset)}`, text: candidate, comment });
+    hit(name, lineOf, offset, candidate, mask !== null && mask[offset] === 1);
   }
 }
 
+// In file order, then by place in the file (a `<style>` is read before the rest of its file).
+hits.sort((a, b) => a.file - b.file || a.offset - b.offset);
 for (const h of hits) console.log(`${h.where}\t${h.text}${h.comment ? '\t(comment)' : ''}`);
 for (const d of declarations) console.log(d);
 for (const b of byHand) console.log(b);
