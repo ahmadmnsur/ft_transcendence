@@ -542,7 +542,7 @@ translated (names, text for developers, the seed's text, what the browser or 42 
 in [#142](https://github.com/ahmadmnsur/ft_transcendence/issues/142). The legal pages stay out of
 the dictionary: they are Markdown files, translated on their own build ticket (ADR-0018 d14's note
 of 2026-10-13). The rules below hold once the foundation build ticket has created `web/src/i18n/`;
-*Before the foundation* says what a slice does until then.
+*Before the foundation* says what a slice does until then, and which rules hold already.
 
 * **The author writes all three languages, in the same PR.** Every text a PR adds or changes goes
   into the area file of the same name in `web/src/i18n/en/`, `fr/` and `ar/`, with each language's
@@ -561,14 +561,15 @@ of 2026-10-13). The rules below hold once the foundation build ticket has create
   dates and lists are written by `Intl` in the current language, and a name goes through
   `PersonName` or its plain-text helper. Every form sets `noValidate`, so every form error is
   PeerConnect's own text. A text the SPA shows is read from the dictionary, never typed into a
-  component: `tsc` cannot see that, so review and CodeRabbit look for it.
+  component: `tsc` cannot see that, so the PR's reviewer looks for it.
 * **Before the foundation.** Until `web/src/i18n/` exists, a slice writes its text in English only,
   in one object per area, shaped like the dictionary: nested camelCase keys, a text chosen by a code
   keyed by that code, `{camelCase}` placeholders, and a count's text as its `one` and `other` forms.
-  `authCopy` and its code map in `web/src/auth/messages.ts` are the model. *Nothing is joined or
-  typed in code* holds already, with the object in the dictionary's place. Whichever of the slice
-  and the foundation build ticket merges second moves the object into `web/src/i18n/` and adds its
-  French and Arabic.
+  `authCopy` and its code map in `web/src/auth/messages.ts` are the model. Three rules hold already:
+  the SPA build passes (*The SPA build is the check*), a PR that adds a term to `CONTEXT.md` gives
+  it both words (*Use the domain's words*), and *Nothing is joined or typed in code*, with the
+  object in the dictionary's place. Whichever of the slice and the foundation build ticket merges
+  second moves the object into `web/src/i18n/` and adds its French and Arabic.
 * **Hussein proofreads, after merge.** At least once a week while slices merge text, he reads what
   changed in `fr/` and `ar/` since his last pass and fixes it in one `fix:` PR, whose description
   names the last commit it read; the next pass starts after it. A last pass merges before

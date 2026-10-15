@@ -549,7 +549,9 @@ done when the PR template already is one.**
    > Done, so a PR merged with it red is not done. Until the foundation build ticket creates
    > `web/src/i18n/`, the box asks for the text in English only, in one object per area shaped like
    > the dictionary, and still for the build. It sits in the template for the same reason as the
-   > fourth and fifth checks.
+   > fourth and fifth checks. `docs/spec.md` §16.8, which lists the template's boxes, gains this one
+   > with [Write the ADR for French, Arabic and right-to-left, and update the spec](https://github.com/ahmadmnsur/ft_transcendence/issues/147),
+   > the ticket that brings i18n into the spec's scope (§1.4).
 
    **This deliberately invents no second concept.** A separately written definition of done drifts
    from the checklist sitting next to it, and a purely per-ticket definition lets a ticket be
