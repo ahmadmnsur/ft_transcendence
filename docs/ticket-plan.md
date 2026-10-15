@@ -53,6 +53,21 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) opens them, the
 > tickets for the merged code the claim changes included, and adds the translation criterion to
 > every open build ticket that shows text. The issues stay the live record.
+>
+> **Done 2026-10-16:** [Write the build tickets for French, Arabic and
+> right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) opened four tickets
+> outside this plan: [Languages foundation: the dictionary, the switcher and the locale
+> table](https://github.com/ahmadmnsur/ft_transcendence/issues/171); [Languages: the SPA shell in
+> French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/172)
+> and [Languages: the design system in French and Arabic, right to
+> left](https://github.com/ahmadmnsur/ft_transcendence/issues/173), for the merged code of T05,
+> T10 and T04; and [Languages: the Privacy Policy and the Terms in French and
+> Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174), before T45. The 23 tickets
+> of this plan that show text, T11, T12, T14–T21, T24, T26–T32, T35–T38 and T42, gained the
+> *Three languages* criterion, and so did [Sign in with 42: recovery through Confirm with
+> 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157). T32 also gained the chart in
+> Arabic, T43 the 20-point Modules, T44 and T45 the Arabic pass, and T45 the last proofreading pass
+> and how the evaluation shows both Minors.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
