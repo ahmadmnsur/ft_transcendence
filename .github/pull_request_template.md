@@ -18,6 +18,7 @@
 - [ ] **No test outside the closed list** — or say why it fails silently (`CONTRIBUTING.md` → Testing)
 - [ ] **Records synchronized** — if this changed a rule, criterion, scope, status or resolved question in an ADR, the map or an issue, every one of those that exists moved with it (`CONTRIBUTING.md` → Records move together)
 - [ ] **Personal data** — if what is stored, who sees it or how long it is kept changed, `docs/legal/privacy-policy.md` is updated here, plus `terms-of-service.md` if a conduct rule, Report reason or sanction moved (ADR-0018)
+- [ ] **Three languages** — if this adds or changes text the SPA shows, it is in English, French and Arabic with `CONTEXT.md`'s words (until `web/src/i18n/` exists: in English only, in one object per area shaped like the dictionary), and `npm --prefix web run build` passes (`CONTRIBUTING.md` → Text ships in three languages)
 
 ## Schema gate
 

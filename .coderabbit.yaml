@@ -56,7 +56,7 @@ reviews:
     - path: "src/**/*.ts"
       instructions: "NestJS API. Flag logging of passwords, tokens or request bodies (ADR-0018) and any call to a third-party origin."
     - path: "web/src/**"
-      instructions: "Frontend. Flag anything fetched from a third party (fonts, CDNs, analytics) and any cookie other than the session cookie (ADR-0018)."
+      instructions: "Frontend. Flag anything fetched from a third party (fonts, CDNs, analytics) and any cookie other than the session cookie (ADR-0018). Flag text the SPA shows that is typed into a component rather than read from web/src/i18n/ or, until that folder exists, from its area's English object (CONTRIBUTING.md, Text ships in three languages)."
     - path: "{Dockerfile,compose*.yaml,proxy/**,.env.example}"
       instructions: "Changes here require a clean-clone boot check before merge; remind the author if the PR description does not mention it."
     - path: "docs/adr/**"

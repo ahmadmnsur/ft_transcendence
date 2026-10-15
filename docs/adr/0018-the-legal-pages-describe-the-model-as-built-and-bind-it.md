@@ -526,6 +526,16 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     > before merge by a member who did not write them: Ahmad when Hussein wrote them, Hussein
     > otherwise. The first translation's check is decision 14's note of this date.
 
+    > **Noted 2026-10-15 by [Settle how each slice ships its text in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/145): the rule is
+    > also written in `.coderabbit.yaml`**, which the list above does not name: in its instructions
+    > for `prisma/**`, and in its *Privacy Policy moves with personal data* check, which passes only
+    > if `docs/legal/privacy-policy.md` changed. Once the translations exist, the PR that adds them
+    > updates each place that names only the English files or checks only them, that file included.
+    > `CONTRIBUTING.md` → *Personal data moves the Privacy Policy* then says once that each page is
+    > three files with one date, and the other places say that the page moves in all three
+    > languages, and point there. A place that says only "the Privacy Policy" or "the Terms" means
+    > all three files, and stays as it is.
+
 ## Considered options
 
 **A GDPR-shaped policy** (rejected, decision 2). The conventional shape, and what an evaluator may

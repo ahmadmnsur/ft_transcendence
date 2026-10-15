@@ -96,7 +96,7 @@ every push: the PR already shows every push, and `Closes #<n>` links it on the i
 
 ## Project rules that are easy to miss
 
-The first four are only named here. Each is stated in full in `CONTRIBUTING.md` and the PR
+The first five are only named here. Each is stated in full in `CONTRIBUTING.md` and the PR
 template; read that section before acting on one, since its triggers and exceptions are not
 repeated here.
 
@@ -107,6 +107,8 @@ repeated here.
   template's *Clean-clone boot* lists what triggers it).
 * **Personal data** changes move the Privacy Policy in the same PR (`CONTRIBUTING.md` →
   *Personal data moves the Privacy Policy*).
+* **Three languages**: text the SPA shows ships in English, French and Arabic in the same PR
+  (`CONTRIBUTING.md` → *Text ships in three languages*).
 * **Dates are absolute** (`2026-09-27`), never "today" or "last week".
 * `prototype/*` and `research/*` branches stay out of `main`; ADRs cite them as sources.
 * **The team is Ahmad, Kamel and Hussein** (`hdakdouk42`): Fadel left on 2026-10-01, Hussein
