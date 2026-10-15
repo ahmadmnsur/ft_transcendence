@@ -82,10 +82,11 @@ function lockLost(): void {
   process.exit(1);
 }
 
-// What each target's messages name (§14.9).
+// What each target's messages name (§14.9). On the fallback `make wipe`
+// also empties everything, by dropping the volumes, so the guard names both.
 const REMEDIES = {
   team: { olderRecord: 'make reset-team', foreignAccounts: 'make reset-team' },
-  fallback: { olderRecord: 'make wipe', foreignAccounts: 'make reset-local' },
+  fallback: { olderRecord: 'make wipe', foreignAccounts: 'make reset-local or make wipe' },
 } as const;
 
 async function run(): Promise<number> {

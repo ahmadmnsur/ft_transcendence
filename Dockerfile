@@ -30,6 +30,8 @@ COPY --from=build /app/dist/src/core/check-env.js /opt/peerconnect/check-env.js
 COPY --from=build /app/dist/src/core/env.js /opt/peerconnect/env.js
 COPY --from=build /app/dist/src/core/supabase-check.js /opt/peerconnect/supabase-check.js
 COPY --from=build /app/dist/src/core/database-connection.js /opt/peerconnect/database-connection.js
+# env.js checks the passwords with the shared rule, which it requires as ../shared/limits.
+COPY --from=build /app/dist/src/shared/limits.js /opt/shared/limits.js
 # The copy sits outside /app, so steps 3 and 4 reach pg through this link to the
 # image's modules, which the overlay keeps in its anonymous /app/node_modules.
 RUN ln -s /app/node_modules /opt/peerconnect/node_modules

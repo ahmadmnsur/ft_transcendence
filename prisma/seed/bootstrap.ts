@@ -6,8 +6,14 @@ import { Refusal } from '../../src/core/errors';
 import type { SupabaseAuthClient } from '../../src/core/supabase-auth';
 import type { UnitOfWork } from '../../src/core/uow';
 import { nameFields } from '../../src/shared/fold-name';
-import { normalizeEmail } from '../../src/shared/limits';
+import {
+  isValidDisplayName,
+  isValidEmail,
+  isValidPassword,
+  normalizeEmail,
+} from '../../src/shared/limits';
 import type { Role } from '../../src/shared/roles';
+import { SeedFailure } from './failure';
 
 export type StaffRole = Exclude<Role, 'STUDENT'>;
 
@@ -19,8 +25,8 @@ export type StaffAccountInput = {
 };
 
 // The bootstrap Admin and Peer Moderator (§14.1), from the validated
-// environment: the boot check's step 1 already holds each password to
-// 8 characters to 72 bytes.
+// environment: the boot check's step 1 already holds each password to the
+// password rule.
 export function bootstrapStaff(env: EnvRecord): StaffAccountInput[] {
   return [
     {
@@ -47,8 +53,18 @@ export async function createStaffAccount(
   input: StaffAccountInput,
   deps: { supabase: SupabaseAuthClient; uow: UnitOfWork },
 ): Promise<{ id: string; email: string }> {
+  // Sign-up's validation (§6.0.3), so no staff account is made that no
+  // sign-in can match. The password is then used trimmed, as sign-up and
+  // sign-in use it (§5.1).
+  for (const [field, valid] of [
+    ['email', isValidEmail(input.email)],
+    ['password', isValidPassword(input.password)],
+    ['display name', isValidDisplayName(input.displayName)],
+  ] as const) {
+    if (!valid) throw new SeedFailure(`the ${input.role} account's ${field} breaks sign-up's rule`);
+  }
   const id = uuidv7();
-  await deps.supabase.adminCreateUser(id, input.password);
+  await deps.supabase.adminCreateUser(id, input.password.trim());
   const email = normalizeEmail(input.email);
   try {
     // The id is passed in Prisma's unchecked shape, as sign-up does (§4.1).

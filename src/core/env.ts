@@ -1,3 +1,5 @@
+import { isValidPassword } from '../shared/limits';
+
 export type EnvRecord = Record<string, string | undefined>;
 
 export type EnvFailure = {
@@ -111,11 +113,15 @@ export function validateEnv(env: EnvRecord): EnvResult {
     );
   }
 
+  // The rule sign-up and sign-in apply (§5.1, §15.4): measured after
+  // trimming, as every string is (§6.0.3), since the trimmed value is the one
+  // Supabase Auth is given and the one a sign-in sends.
   for (const name of PASSWORD_VARS) {
-    const value = env[name] as string;
-    const characters = Array.from(value).length;
-    if (characters < 8 || Buffer.byteLength(value, 'utf8') > 72) {
-      return fail(name, 'must be 8 characters to 72 bytes in UTF-8');
+    if (!isValidPassword(env[name] as string)) {
+      return fail(
+        name,
+        'must be 8 characters to 72 bytes in UTF-8 after trimming, with no control characters',
+      );
     }
   }
 
