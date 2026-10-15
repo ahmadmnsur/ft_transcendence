@@ -52,7 +52,8 @@ export type AccountCreateDeps = {
   uow: UnitOfWork;
 };
 
-const EMAIL_TAKEN: RefusalSpec = { code: 'email_unavailable', message: 'This email is already in use.' };
+// Shared with the seed's bootstrap accounts, which follow sign-up's steps.
+export const EMAIL_TAKEN: RefusalSpec = { code: 'email_unavailable', message: 'This email is already in use.' };
 
 // §5.1 sign-up, steps 2–5, as one function: validation and the throttle
 // already ran at the boundary. The id is passed with the other scalar fields

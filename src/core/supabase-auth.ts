@@ -19,6 +19,10 @@ export function supabaseLogin(studentId: string): string {
 
 const AUTH_TIMEOUT_MS = 10_000;
 
+// Users per page of the admin list. Any size works: the list ends at the
+// first empty page, so a server that caps the size still yields every user.
+const ADMIN_LIST_PAGE_SIZE = 100;
+
 function unreachable(): ApiError {
   // 503 busy_retry_later: Supabase Auth unreachable is never a credentials
   // refusal (§5.1, §3.8.2).
@@ -149,11 +153,29 @@ export class SupabaseAuthClient {
     await SupabaseAuthClient.release(response);
   }
 
-  // The losing duplicate sign-up's cleanup, and the resets: best effort,
-  // every failure swallowed (§5.1).
-  async adminDeleteUser(studentId: string): Promise<void> {
+  // Every Supabase Auth user's id, for the seed's emptying and the resets
+  // (§14.9). The list is read whole before anything is deleted, since
+  // deleting page by page skips some. Any failure throws.
+  async adminListUserIds(): Promise<string[]> {
+    const ids = new Set<string>();
+    for (let page = 1; ; page++) {
+      const users = await this.adminListPage(page);
+      // An empty page ends the list.
+      if (users.length === 0) return [...ids];
+      const before = ids.size;
+      for (const id of users) ids.add(id);
+      // A page of ids already seen means `page` was ignored: the rest of the
+      // list would never come, so this is no complete list.
+      if (ids.size === before) throw internalError('admin list');
+    }
+  }
+
+  // The emptying's delete (§14.9): unlike `adminDeleteUser`, a failure
+  // throws. A 404 is a user already gone.
+  async adminDeleteUserOrThrow(userId: string): Promise<void> {
+    let response: Response;
     try {
-      const response = await fetch(`${this.baseUrl}/auth/v1/admin/users/${studentId}`, {
+      response = await fetch(`${this.baseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
         method: 'DELETE',
         headers: {
           apikey: this.secretKey,
@@ -162,7 +184,20 @@ export class SupabaseAuthClient {
         redirect: 'manual',
         signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
       });
-      await SupabaseAuthClient.release(response);
+    } catch {
+      throw unreachable();
+    }
+    await SupabaseAuthClient.release(response);
+    if (!response.ok && response.status !== 404) {
+      throw response.status >= 500 ? unreachable() : internalError('admin delete');
+    }
+  }
+
+  // The losing duplicate sign-up's cleanup: best effort, every failure
+  // swallowed (§5.1).
+  async adminDeleteUser(studentId: string): Promise<void> {
+    try {
+      await this.adminDeleteUserOrThrow(studentId);
     } catch {
       // Best effort: nothing was promised.
     }
@@ -185,6 +220,44 @@ export class SupabaseAuthClient {
     } catch {
       // Best effort.
     }
+  }
+
+  // One page of the admin list: the ids only, nothing else read.
+  private async adminListPage(page: number): Promise<string[]> {
+    let response: Response;
+    try {
+      response = await fetch(
+        `${this.baseUrl}/auth/v1/admin/users?page=${page}&per_page=${ADMIN_LIST_PAGE_SIZE}`,
+        {
+          method: 'GET',
+          headers: {
+            apikey: this.secretKey,
+            Authorization: `Bearer ${this.secretKey}`,
+          },
+          redirect: 'manual',
+          signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
+        },
+      );
+    } catch {
+      throw unreachable();
+    }
+    if (!response.ok) {
+      const err = response.status >= 500 ? unreachable() : internalError('admin list');
+      await SupabaseAuthClient.release(response);
+      throw err;
+    }
+    let body: { users?: unknown };
+    try {
+      body = (await response.json()) as { users?: unknown };
+    } catch {
+      throw internalError('admin list');
+    }
+    if (!Array.isArray(body.users)) throw internalError('admin list');
+    return body.users.map((user: unknown) => {
+      const id = (user as { id?: unknown } | null)?.id;
+      if (typeof id !== 'string') throw internalError('admin list');
+      return id;
+    });
   }
 
   // Releases a response whose body is never read, so its connection is not

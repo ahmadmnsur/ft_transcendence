@@ -44,3 +44,10 @@ model Session {
 
   @@index([studentId])
 }
+
+// §4.3.4: the shared catalogue. Rows are inserted by the seed's catalogue
+// step and by migrations only, and are never updated or deleted (ADR-0014 d3).
+model Skill {
+  id   String @id @default(uuid(7)) @db.Uuid
+  name String @unique
+}
