@@ -59,6 +59,20 @@ export function SignInPage(): React.JSX.Element {
     };
   }, []);
 
+  // §5.6 A's failure path arrives as `?oauth=failed`: show its one message
+  // for this visit, then take only `oauth` out of the URL by replacing the
+  // history entry — the validated `notice` and the hash stay — so a refresh
+  // of the cleaned URL never repeats it. The message lives in the status
+  // slot, which a retry clears; a later `oauth=failed` delivered to this
+  // route sets it again.
+  useEffect(() => {
+    if (oauth !== 'failed') return;
+    setStatus(copy.oauthFailed);
+    void navigate({ to: '/sign-in', search: { notice }, hash: true, replace: true }).catch(() => {
+      // The URL stays as it is if the replacement fails; the message shows.
+    });
+  }, [oauth, notice, navigate]);
+
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending !== null) return;
@@ -120,7 +134,6 @@ export function SignInPage(): React.JSX.Element {
           {notice === 'password-change-unknown' ? (
             <Banner tone="warning" title={copy.noticeSignedOutUnknown} />
           ) : null}
-          {oauth === 'failed' ? <Banner tone="danger" title={copy.oauthFailed} /> : null}
           <Card>
             <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
               {status !== undefined ? (
