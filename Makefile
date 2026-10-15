@@ -10,8 +10,9 @@ LOCAL_OVERLAY := compose.local.yaml
 LOCAL_COMPOSE := $(COMPOSE) --env-file .env.example -f $(COMPOSE_FILE) -f $(LOCAL_OVERLAY)
 DEV_COMPOSE   := $(COMPOSE) --env-file .env.example -f $(COMPOSE_FILE) -f $(DEV_OVERLAY) -f $(LOCAL_OVERLAY)
 TEST_COMPOSE  := $(COMPOSE) -p peerconnect-test --env-file .env.example -f $(COMPOSE_FILE) -f $(DEV_OVERLAY) -f $(LOCAL_OVERLAY)
+RESET         := node dist/prisma/reset/main.js
 
-.PHONY: up local dev down wipe seed test logs env
+.PHONY: up local dev down wipe seed test logs env reset-team reset-local
 
 ## up — boot the whole stack
 up: env
@@ -36,6 +37,15 @@ wipe:
 ## seed — re-run the seed against a running stack
 seed:
 	$(COMPOSE) exec api npx prisma db seed --config prisma.config.ts
+
+## reset-team — empty the team project; Kamel runs it, from an up-to-date main
+reset-team:
+	@sh prisma/reset/require-main.sh
+	$(COMPOSE) run --rm --build --no-deps api $(RESET) team
+
+## reset-local — empty the fallback
+reset-local:
+	$(LOCAL_COMPOSE) run --rm --build api $(RESET) local
 
 ## test — run the suite in an isolated fallback copy
 test:
