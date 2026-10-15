@@ -26,15 +26,17 @@ export function PasswordField({ label, hint, error, id, showPasswordLabel, hideP
           type={visible ? 'text' : 'password'}
           className={`${controlClass(Boolean(error))} min-h-11 pe-12`}
         />
-        <IconButton
-          label={visible ? hidePasswordLabel : showPasswordLabel}
-          aria-controls={controlProps.id}
-          disabled={disabled}
-          onClick={() => setVisible((value) => !value)}
-          className="absolute end-0.5 top-1/2 -translate-y-1/2"
-        >
-          {visible ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
-        </IconButton>
+        {/* IconButton is itself `relative`, so it cannot also be `absolute`: the wrapper does the positioning. */}
+        <span className="absolute inset-y-0 end-0.5 flex items-center">
+          <IconButton
+            label={visible ? hidePasswordLabel : showPasswordLabel}
+            aria-controls={controlProps.id}
+            disabled={disabled}
+            onClick={() => setVisible((value) => !value)}
+          >
+            {visible ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
+          </IconButton>
+        </span>
       </div>
     </FieldShell>
   );
