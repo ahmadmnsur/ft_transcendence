@@ -43,6 +43,11 @@ on merge (verified 2026-09-27). Every PR lands on `main` as exactly one commit.
   `Co-authored-by:` line for each other person who authored a branch commit. So the title follows
   Conventional Commits (CodeRabbit warns when it doesn't), and the description says what changed
   and why: it is the permanent record.
+
+  > **Corrected 2026-10-15 — CodeRabbit warns about nothing.** Since 2026-10-11 it runs on its free
+  > plan here, which writes a summary only: no line comments and no pre-merge checks, the title's
+  > included ([#165](https://github.com/ahmadmnsur/ft_transcendence/issues/165)). The PR's reviewer
+  > checks the title, since it becomes the commit subject on `main`.
 * **No bot or AI text reaches `main`, and GitHub enforces it.** The *No bot or AI text* check
   (`.github/workflows/no-bot-text.yml`) fails a PR whose title or description carries a review
   bot's summary, a `Generated with` line or a `Co-authored-by:` line naming a bot or an AI tool,
