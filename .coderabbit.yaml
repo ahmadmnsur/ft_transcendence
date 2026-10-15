@@ -1,4 +1,8 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Since 2026-10-11 CodeRabbit runs on its free plan here, and on that plan only the summary runs:
+# no line comments, no linters, no pre-merge checks. So nothing in this file is a check anyone
+# relies on; the PR's reviewer and the PR template are the checks. The settings apply again if
+# the plan changes (#165).
 language: en-US
 
 reviews:
