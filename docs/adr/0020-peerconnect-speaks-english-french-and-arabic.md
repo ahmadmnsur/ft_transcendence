@@ -43,8 +43,9 @@ Every change below is already written as a dated note where the old wording is r
 ticket that settled it, so this ADR adds no rule to them. The list was checked against every ADR on
 2026-10-15.
 
-- **ADR-0004**: the week-4 sign-off covers the English legal pages; their French and Arabic come
-  later, on their own build ticket, and Ahmad signs them off before they merge. From [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143).
+- **ADR-0004**: the legal pages' sign-off, due 2026-10-25 since ADR-0004's note of 2026-10-14,
+  covers the English pages; their French and Arabic come later, on their own build ticket, and
+  Ahmad signs them off before they merge. From [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143).
 - **ADR-0005**: decision 5's check by the gate holder covers the three versions of the Privacy
   Policy once the translations exist, and confirms that the French and the Arabic text moved. From
   [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143).
@@ -71,18 +72,18 @@ Unaffected:
 
 - **ADR-0018 decision 5**: *"fonts, icons and scripts are bundled"*, and an interface preference may
   sit in the browser's storage. The Arabic font is bundled and served from PeerConnect's own origin
-  (decision 8), and the language choice is such a preference (decision 6). The Privacy Policy
-  already names both and does not move.
-- **ADR-0016 decisions 7 and 8**: no test is added, since the compiler is the check (decision 3),
-  and CI stays advisory; the template's box asks for the build instead (decision 10).
-- **ADR-0015**: the chart stays Recharts (decision 7) and is indexed by Round (decision 4). Its
-  mirroring in Arabic (decision 7 here) is layout, which no decision of ADR-0015 rules on, and its
-  insight sentences are translated as one message each (decision 4 here).
+  (decision 8 here), and the language choice is such a preference (decision 6 here). The Privacy
+  Policy already names both and does not move.
+- **ADR-0016 decisions 7 and 8**: no test is added, since the compiler is the check (decision 3
+  here), and CI stays advisory; the template's box asks for the build instead (decision 10 here).
+- **ADR-0015**: the chart stays Recharts (its decision 7) and is indexed by Round (its decision 4).
+  Its mirroring in Arabic (decision 7 here) is layout, which no decision of ADR-0015 rules on, and
+  its insight sentences are translated as one message each (decision 4 here).
 - **ADR-0014 and ADR-0019 decision 8**: the database stores nothing per language, as [Settle what the database stores in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/95)
   settled. ADR-0003 decision 3's note already counts an Arabic letter's bytes in the password limit.
 - **ADR-0001, ADR-0002, ADR-0006 to ADR-0010, ADR-0013 and ADR-0017**: their rules do not depend on
   the language a screen is shown in. The text they put on screen, such as the Score explanation,
-  the Badges and `/rules`, is translated like the rest (decision 2).
+  the Badges and `/rules`, is translated like the rest (decision 2 here).
 - **`CONTEXT.md`**: no new term. Each term has had its French and its Arabic word since [Settle how each slice ships its text in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/145)
   (`24e42c7`).
 
@@ -159,8 +160,13 @@ Unaffected:
    class. The merged code's 15 physical uses, the `Tabs` arrow keys, the empty text fields, the
    table's scroll fade and the numbers written by hand change. Tables and the `/admin/analytics`
    chart run right to left in Arabic. Arrows flip, and every other icon stays as drawn. The page's
-   own scroll bar stays where the browser draws it. These, with decisions 8 and 9, are the
-   *"RTL-specific UI adjustments where needed"* (`:570`).
+   own scroll bar stays where the browser draws it.
+
+   The *"RTL-specific UI adjustments where needed"* (`:570`) are the ones [Settle how Arabic looks: mirroring, font, digits and dates](https://github.com/ahmadmnsur/ft_transcendence/issues/146)'s
+   point 11 names, its points 2 to 4 and 8 to 10: the `ProgressBar`'s fill, the arrow keys, the
+   empty fields, the table fade, the chart and the chevrons (all above); the legal lists and logins
+   (decision 9); the Arabic text rules (decision 8); and the Skill names (decision 4). The font
+   (decision 8) and the legal pages' date check (decision 9) are not among them.
 
 8. **Arabic characters use a bundled Noto Sans Arabic, and four text rules hold** ([Settle how Arabic looks: mirroring, font, digits and dates](https://github.com/ahmadmnsur/ft_transcendence/issues/146), points 5
    and 9). One woff2 file of Noto Sans Arabic, cut to the Arabic blocks and to weights 400 to 600,
@@ -169,7 +175,7 @@ Unaffected:
    rules: PeerConnect's own Arabic carries no vowel marks; Arabic text gets no letter spacing;
    Arabic emphasis is bold, not italic; and French puts a no-break space before `: ; ! ?` and
    inside `« »`. `tsc` checks the vowel marks and the French spaces in the dictionary, and the legal
-   check does in the legal files.
+   check does in the legal files, where it also fails italic in an Arabic file.
 
 9. **The legal pages stay in English until near the end, are then translated once, and the English
    stays canonical** ([Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143); [Settle how Arabic looks: mirroring, font, digits and dates](https://github.com/ahmadmnsur/ft_transcendence/issues/146), points 7 to 9). Until the

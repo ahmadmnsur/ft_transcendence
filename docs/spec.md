@@ -91,7 +91,7 @@ Majors failing (20 − 4 = 16).
 | **Minor — additional browsers** (`:574`) | 1 | Firefox + Brave pass in week 5, limitations documented in `README.md` (§16.7, ADR-0016 d9). |
 | **Minor — user activity analytics** (`:642`) | 1 | `/admin/analytics` Learning Analytics (§13), a scoped V2 pull-forward (ADR-0015). |
 | **Minor — multiple languages** (`:554`) | 1 | English, French and Arabic, each complete: a typed dictionary of the SPA's own over `Intl`, whose build refuses a missing text (§3.5.5); the switcher in the shared header on every route (§3.5.5); every text the SPA shows or gives to a screen reader translated (§3.5.2), the legal pages included (§3.5.4). ADR-0020. |
-| **Minor — right-to-left** (`:564`) | 1 | Arabic. `<html dir>` is set before the first render and switches with the language, without a reload (§3.5.5); complete mirroring through flow-relative classes, with a build that refuses a left or right class, and the tables and the chart mirrored (§3.5.2, §13.4); the Arabic adjustments: font, digits, text rules, icons and the legal pages (§3.5.2–§3.5.4). ADR-0020. |
+| **Minor — right-to-left** (`:564`) | 1 | Arabic. `<html dir>` is set before the first render and switches with the language, without a reload (§3.5.5); complete mirroring through flow-relative classes, with a build that refuses a left or right class, and the tables and the chart mirrored (§3.5.2, §13.4); the RTL-specific adjustments (`:570`), as ADR-0020 decision 7 lists them: the `ProgressBar`'s fill, the arrow keys, the empty fields, the table fade, the chart, the chevrons, the legal lists and logins, the Arabic text rules and the Skill names (§3.5.2–§3.5.4, §13.4). ADR-0020. |
 
 Mandatory part (`:300`–`:389`) is met by: containerised single command (§15); Chrome, clean console
 (§3.8.2, §15.7, §16.7); Privacy Policy and Terms routes with footer links (§3.5.1, §3.5.4); multi-user concurrency
@@ -703,7 +703,9 @@ included (ADR-0020 d6, §3.5.5).
   `docs/`, code comments, the API's `message`); the seed's Posts, Direct Messages and Reflection
   Prompts; and what the browser or 42 draws. A Mission's French or Arabic sentence is a rewording,
   bound by ADR-0012 d1's note, and the report form's reason labels use each language's words of the
-  Terms (ADR-0011 d4's note).
+  Terms (ADR-0011 d4's note). Until the foundation build ticket creates `web/src/i18n/`, a slice
+  keeps its English in one object per area shaped like the dictionary, and its French and Arabic
+  come when that object moves (§3.5.5; `CONTRIBUTING.md` → *Before the foundation*).
 - **Errors by code, and the tombstone** (ADR-0020 d2). The SPA never displays the API's `message`;
   §3.8.1 stays as written. It picks its text by `code` from one map typed over every `ErrorCode` and
   `RefusalCode`, so a code without text fails `tsc`, and an unknown code, or a response that is not
@@ -717,7 +719,8 @@ included (ADR-0020 d6, §3.5.5).
   with `style: 'percent'`, a file size with `style: 'unit'`. The merged code that writes a number by
   hand changes: `Pagination`'s page buttons, `ProgressBar`'s default value, `FileDrop`'s upload
   status and its `formatBytes`, and `authCopy`'s limits, which become placeholders filled from
-  `LIMITS`. A text the SPA shows is read from the dictionary, never typed into a component.
+  `LIMITS`. A text the SPA shows is read from the dictionary, or before the foundation from its
+  area's English object, and never typed into a component.
 - **Mirroring: flow-relative classes only, and the build refuses a left or right class** (ADR-0020
   d7). The SPA writes `ms-`/`me-`, `ps-`/`pe-`, `inset-s-`/`inset-e-`, `text-start`/`text-end`,
   `rounded-s-`/`rounded-e-`, `border-s`/`border-e` and `float-start`/`float-end`, which follow their
@@ -784,14 +787,15 @@ default image), `RoleLabel` (Admin chip), `PersonName` (a display name inside `<
 plain-text helper, §3.5.2), `SkillName` (a Skill name inside `<bdi>`, §3.5.2), `SkillChip`, `Modal`,
 `Tabs`, `DataTable` (TanStack Table wrapper with sort and pagination), `Pagination`, `ProgressBar`,
 `FileDrop` (drag/drop, type and size pre-check, preview, progress), `EmptyState`, `Banner`. A
-favicon ships in the bundle. Every text they show comes from the dictionary (§3.5.5).
+favicon ships in the bundle. Once the foundation exists, every text they show comes from the
+dictionary (§3.5.5).
 
 #### 3.5.4 Legal pages (M22)
 
 `/privacy` and `/terms` render `docs/legal/privacy-policy.md` and `docs/legal/terms-of-service.md`
 — the canonical text (ADR-0018 d14) — imported with Vite's `?raw`, so the text is inside the bundle
-and nothing is fetched. Their French and Arabic translations are four more files beside them,
-`privacy-policy.fr.md`, `privacy-policy.ar.md`, `terms-of-service.fr.md` and
+and nothing is fetched. Their French and Arabic translations, once written, are four more files
+beside them, `privacy-policy.fr.md`, `privacy-policy.ar.md`, `terms-of-service.fr.md` and
 `terms-of-service.ar.md`, imported, rendered and checked the same way (ADR-0018 d14's note of
 2026-10-13; ADR-0020 d9). A project-owned renderer (`web/src/legal/markdown.tsx`) supports exactly
 the constructs the two files use: ATX headings, paragraphs, `**bold**`, `*italic*`, inline code, `-`
@@ -876,7 +880,9 @@ in one object per area shaped like the dictionary, as that rule's *Before the fo
   - a code with no English text, and an English text for a code that does not exist; a group key
     named `text`, `parts` or a plural form;
   - a call that leaves out a value, names a wrong one, passes a string as a number, or passes
-    `undefined`, `null`, `false` or an array; and a text with placeholders rendered unfilled.
+    `undefined`, `null`, `false` or an array; and a text with placeholders rendered unfilled;
+  - a vowel mark in an Arabic text, and a plain space before `: ; ! ? »` or after `«` in a French
+    one, the two text rules of §3.5.2.
 
   **If one slips through**, which only `vite dev` allows since it skips the type check, French and
   Arabic are laid over English, following English's shape per form and per part: a missing or empty
@@ -4252,16 +4258,16 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
     when 5–9 exist; the first complete deterministic run confirms or corrects the §14.5 targets and
     names the demo Student.
 13. **Browser pass** (week 5) after features exist.
-14. **French, Arabic and right-to-left** (ADR-0020), whose build tickets [Write the build tickets for
-    French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148)
-    opens. **No slice waits for the foundation**: until it creates `web/src/i18n/`, a slice keeps its
-    English in one object per area, and whichever of the two merges second moves it (§3.5.5). The
-    foundation (the dictionary, the locale table, the switcher, the first visit, `<html lang dir>`
-    and the two text checks, §3.5.5) moves every such object on `main` when it merges, `authCopy`
-    included. The changes to the merged design system and SPA shell (§3.5.2, §3.5.3), the scanner in
-    the build, the font, and the chart on Learning Analytics (#60, §13.4) follow their own tickets.
-    **The legal translations** come after the foundation and before Pre-defense readiness (#73),
-    with Ahmad's sign-off (§3.5.4).
+14. **French, Arabic and right-to-left** (ADR-0020), whose build tickets [Write the build tickets
+    for French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148)
+    opens. **No slice waits for the foundation**: until it creates `web/src/i18n/`, a slice keeps
+    its English in one object per area, and whichever of the two merges second moves it (§3.5.5).
+    The foundation (the dictionary, the locale table, the switcher, the first visit and
+    `<html lang dir>`, §3.5.5, and the two text checks, §3.5.2) moves every such object on `main`
+    when it merges, `authCopy` included. The changes to the merged design system and SPA shell
+    (§3.5.2, §3.5.3), the scanner in the build, the font, and the chart on Learning Analytics (#60,
+    §13.4) follow their own tickets. **The legal translations** come after the foundation and before
+    Pre-defense readiness (#73), with Ahmad's sign-off (§3.5.4).
 
 > **Sequenced on review of the ticket plan, 2026-09-24** (`docs/ticket-plan.md`; issues #29–#73; *uncommitted*). No
 > rule moves. Four orderings this list left open are fixed:
@@ -4353,10 +4359,13 @@ Rules every ticket inherits; a PR breaking one is not done.
     only through `supabase/team-project.md` and Kamel's four changes by hand (§17.2).
 30. The team `.env` is never committed and never handed to an evaluator (§15.4).
 31. Every text the SPA shows, or gives to a screen reader, comes from the dictionary in English,
-    French and Arabic, or from the legal Markdown files; nothing is joined or typed in code, and
-    every form sets `noValidate` (§3.5.2, §3.5.5).
-32. No left or right class in the SPA: the build fails on one, and `rtl:`/`ltr:` appear only where
-    no flow-relative class exists (§3.5.2).
+    French and Arabic, or from the legal Markdown files; until the foundation creates
+    `web/src/i18n/`, from one English object per area shaped like the dictionary
+    (`CONTRIBUTING.md` → *Before the foundation*). Nothing is joined or typed in code, and every
+    form sets `noValidate` (§3.5.2, §3.5.5).
+32. The SPA writes flow-relative classes, with `rtl:`/`ltr:` only where none exists (§3.5.2). The
+    15 physical uses on `main` change with their build tickets, and once the scanner runs in the
+    build, the build fails on a left or right class.
 
 ---
 
