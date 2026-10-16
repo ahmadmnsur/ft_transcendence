@@ -159,7 +159,7 @@ The Mentee's structured record of what they learned and what they can now do tha
 could not before the Match. Read by that Review's originating Match pair and by current
 Admins, never by the community: only the Public Takeaway drawn from it is public.
 _Avoid_: Result, lesson, achievement
-_French_: Acquis d'apprentissage · _Arabic_: حصيلة التعلّم
+_French_: Acquis d'apprentissage · _Arabic_: حصيلة التعلم
 
 **Evidence**:
 One optional file the Mentee attaches to a Review's Learning Outcome, showing what that
@@ -193,7 +193,7 @@ durable publication order established when Prompts are published; publication ti
 and does not choose the winner — and publishing the next closes it. A closed Prompt stays readable
 forever and can never be answered again.
 _Avoid_: Question, poll, survey, prompt cycle
-_French_: Sujet de réflexion · _Arabic_: موضوع تأمّل
+_French_: Sujet de réflexion · _Arabic_: موضوع تأمل
 
 **Post**:
 An item on the community feed. Arises only from a Public Takeaway or an answer to a
@@ -223,7 +223,7 @@ One Skill a Student has singled out from those they want to learn as the one tha
 them right now, together with the sentence saying why. Optional, and never a Skill they have not
 listed: it names a priority among their Skills rather than something narrower than all of them.
 _Avoid_: Objective, target, aim
-_French_: Objectif d'apprentissage · _Arabic_: هدف التعلّم
+_French_: Objectif d'apprentissage · _Arabic_: هدف التعلم
 
 **XP**:
 The single pool of points fed by both the Match loop and the Reflection Prompt loop.
@@ -274,7 +274,7 @@ so it says where Matches stand now and how past ones ended, never how long they 
 or which way they came. Always about the community, never about a named Student — that is what
 separates it from a Student's own record, and it is read by Admins alone.
 _Avoid_: Insights, reporting, statistics, metrics
-_French_: Analytique des apprentissages · _Arabic_: تحليلات التعلّم
+_French_: Analytique des apprentissages · _Arabic_: تحليلات التعلم
 
 **Leaderboard**:
 A ranking of Students by one named measure. The measure is XP, and it is the only one:

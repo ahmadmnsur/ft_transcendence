@@ -8,9 +8,10 @@ export type Value = string | number | ReactElement;
 
 // What components see: plain texts are strings and render as they are. A text
 // with placeholders, a plural or a text with plural parts is an opaque value
-// that only format() or formatText() can turn into something to show.
+// that only format() or formatText() can turn into something to show. V is
+// both taken and given, so a template never passes for one with other values.
 declare const filled: unique symbol;
-export type Template<V> = { readonly [filled]: V };
+export type Template<V> = { readonly [filled]: (values: V) => V };
 
 type ValuesOf<E> =
   IsParts<E> extends true
@@ -116,11 +117,13 @@ export function formatText<V>(lang: Language, message: Template<V>, values: Plai
 }
 
 // A list fills one placeholder: Intl.ListFormat joins it in the current
-// language, and each item is isolated like any other value.
+// language, and each item is isolated like any other value. An `undefined`
+// item or a hole is left out, like an absent value.
 function listPieces(lang: Language, items: readonly unknown[]): Piece[] {
+  const kept = items.filter((item) => item !== undefined);
   return lists(lang)
-    .formatToParts(items.map((_, i) => String(i)))
-    .map((p) => (p.type === 'element' ? { value: value(lang, items[Number(p.value)]) } : p.value));
+    .formatToParts(kept.map((_, i) => String(i)))
+    .map((p) => (p.type === 'element' ? { value: value(lang, kept[Number(p.value)]) } : p.value));
 }
 export const list = (lang: Language, items: readonly Value[]): ReactElement => markup(listPieces(lang, items));
 export const listText = (lang: Language, items: readonly (string | number)[]): string => plain(listPieces(lang, items));
