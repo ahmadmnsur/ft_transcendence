@@ -33,7 +33,7 @@ function failureCode(error: unknown): unknown {
 // §3.5.1: the signed-out sign-up page. Client validation uses the shared
 // limits, so in normal use the submit never sends an invalid request.
 export function SignUpPage(): React.JSX.Element {
-  const { t, format, formatText, errorText } = useI18n();
+  const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -55,7 +55,7 @@ export function SignUpPage(): React.JSX.Element {
   const termsRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  const passwordInvalid = formatText(t.auth.password.invalid, {
+  const passwordInvalid = format(t.auth.password.invalid, {
     minChars: LIMITS.password.minChars,
     maxBytes: LIMITS.password.maxBytes,
   });
@@ -140,7 +140,7 @@ export function SignUpPage(): React.JSX.Element {
               <TextField
                 ref={displayNameRef}
                 label={t.auth.signUp.displayNameLabel}
-                hint={formatText(t.auth.signUp.displayNameHint, {
+                hint={format(t.auth.signUp.displayNameHint, {
                   count: LIMITS.displayName.maxChars,
                   minChars: LIMITS.displayName.minChars,
                 })}
@@ -150,7 +150,7 @@ export function SignUpPage(): React.JSX.Element {
                 onChange={(event) => setDisplayName(event.target.value)}
                 error={
                   displayNameError
-                    ? formatText(t.auth.signUp.displayNameInvalid, {
+                    ? format(t.auth.signUp.displayNameInvalid, {
                         count: LIMITS.displayName.maxChars,
                         minChars: LIMITS.displayName.minChars,
                       })
@@ -160,7 +160,7 @@ export function SignUpPage(): React.JSX.Element {
               <PasswordField
                 ref={passwordRef}
                 label={t.auth.signUp.passwordLabel}
-                hint={formatText(t.auth.password.hint, {
+                hint={format(t.auth.password.hint, {
                   minChars: LIMITS.password.minChars,
                   maxBytes: LIMITS.password.maxBytes,
                 })}

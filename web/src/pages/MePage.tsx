@@ -16,7 +16,7 @@ import { PageTitle } from '../layout';
 // returns with the neutral notice, still signed in stays on the form with
 // the failure's sentence (§5.1).
 export function MePage(): React.JSX.Element {
-  const { t, formatText, errorText } = useI18n();
+  const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // The hidden username field below carries the signed-in Student's email.
@@ -35,7 +35,7 @@ export function MePage(): React.JSX.Element {
   const confirmRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  const passwordInvalid = formatText(t.auth.password.invalid, {
+  const passwordInvalid = format(t.auth.password.invalid, {
     minChars: LIMITS.password.minChars,
     maxBytes: LIMITS.password.maxBytes,
   });
@@ -149,7 +149,7 @@ export function MePage(): React.JSX.Element {
             <TextField
               ref={newRef}
               label={t.auth.passwordChange.newLabel}
-              hint={formatText(t.auth.password.hint, {
+              hint={format(t.auth.password.hint, {
                 minChars: LIMITS.password.minChars,
                 maxBytes: LIMITS.password.maxBytes,
               })}

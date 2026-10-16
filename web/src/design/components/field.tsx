@@ -1,9 +1,13 @@
-import { useId, type AriaAttributes, type ReactNode } from 'react';
+import { useId, type AriaAttributes, type ReactElement, type ReactNode } from 'react';
+
+// A hint or an error: a plain text, or a message format() filled, so its
+// values sit in <bdi> like any other markup.
+export type FieldMessage = string | ReactElement;
 
 interface FieldOptions {
   id?: string;
-  hint?: string;
-  error?: string;
+  hint?: FieldMessage;
+  error?: FieldMessage;
   'aria-describedby'?: string;
   'aria-invalid'?: AriaAttributes['aria-invalid'];
 }
@@ -40,8 +44,8 @@ export function useField(prefix: string, options: FieldOptions): Field {
 }
 
 interface FieldMessagesProps {
-  hint?: string;
-  error?: string;
+  hint?: FieldMessage;
+  error?: FieldMessage;
   hintId: string;
   errorId: string;
   // Only errors that answer something the user just did are announced. A
@@ -78,8 +82,8 @@ export function FieldMessages({ hint, error, hintId, errorId, announce = false, 
 interface FieldShellProps {
   label: string;
   controlId: string;
-  hint?: string;
-  error?: string;
+  hint?: FieldMessage;
+  error?: FieldMessage;
   hintId: string;
   errorId: string;
   className?: string;

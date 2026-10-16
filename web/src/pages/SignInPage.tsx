@@ -25,7 +25,7 @@ const signInSearch = getRouteApi('/sign-in');
 // query and goes to `/`. Each refusal shows its own sentence, picked by code;
 // the server's message is never displayed.
 export function SignInPage(): React.JSX.Element {
-  const { t, format, formatText, errorText } = useI18n();
+  const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { notice, oauth } = signInSearch.useSearch();
@@ -47,7 +47,7 @@ export function SignInPage(): React.JSX.Element {
   const mountedRef = useRef(false);
   const handOffTimerRef = useRef<number | undefined>(undefined);
 
-  const passwordInvalid = formatText(t.auth.password.invalid, {
+  const passwordInvalid = format(t.auth.password.invalid, {
     minChars: LIMITS.password.minChars,
     maxBytes: LIMITS.password.maxBytes,
   });

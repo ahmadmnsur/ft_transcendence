@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react';
-import { FieldShell, controlClass, useField } from './field';
+import { FieldShell, controlClass, useField, type FieldMessage } from './field';
 
 export interface TextFieldProps extends ComponentProps<'input'> {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: FieldMessage;
+  error?: FieldMessage;
 }
 
 export function TextField({ label, hint, error, id, 'aria-describedby': describedBy, 'aria-invalid': invalid, className, ...rest }: TextFieldProps): React.JSX.Element {

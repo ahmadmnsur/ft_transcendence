@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react';
-import { FieldShell, controlClass, useField } from './field';
+import { FieldShell, controlClass, useField, type FieldMessage } from './field';
 
 export interface TextAreaProps extends ComponentProps<'textarea'> {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: FieldMessage;
+  error?: FieldMessage;
 }
 
 export function TextArea({ label, hint, error, id, rows = 4, 'aria-describedby': describedBy, 'aria-invalid': invalid, className, ...rest }: TextAreaProps): React.JSX.Element {

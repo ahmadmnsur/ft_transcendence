@@ -13,7 +13,7 @@ export default {
         },
         maxBytes: {
           one: 'au plus {count} octet',
-          many: 'au plus {count} octets',
+          many: "au plus {count} d'octets",
           other: 'au plus {count} octets',
         },
       },
@@ -28,7 +28,7 @@ export default {
         },
         maxBytes: {
           one: 'au plus {count} octet',
-          many: 'au plus {count} octets',
+          many: "au plus {count} d'octets",
           other: 'au plus {count} octets',
         },
       },
@@ -53,7 +53,7 @@ export default {
     title: "S'inscrire",
     heading: 'Créer votre compte',
     emailLabel: 'E-mail',
-    emailHint: 'Utilisé uniquement pour vous connecter. Jamais montré aux autres Étudiants.',
+    emailHint: 'Utilisé uniquement pour vous connecter. Jamais visible par les autres Étudiants.',
     emailInvalid: 'Saisissez une adresse e-mail valide.',
     displayNameLabel: "Nom d'affichage",
     displayNameHint: {

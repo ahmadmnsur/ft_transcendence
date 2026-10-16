@@ -4,7 +4,7 @@ import type { Catalogue } from '../types';
 export default {
   unknown: 'حدث خطأ ما. حاول مرة أخرى.',
   codes: {
-    validation_failed: 'تحقق من الحقول المحددة وحاول مرة أخرى.',
+    validation_failed: 'تحقق من الحقول المميزة وحاول مرة أخرى.',
     unauthenticated: 'تم تسجيل خروجك. سجل الدخول مرة أخرى.',
     forbidden: 'غير مسموح لك بفعل هذا.',
     csrf_rejected: 'تم رفض رفع الملف. أعد تحميل الصفحة وحاول مرة أخرى.',

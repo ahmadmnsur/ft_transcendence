@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react';
-import { FieldShell, controlClass, useField } from './field';
+import { FieldShell, controlClass, useField, type FieldMessage } from './field';
 
 export interface SelectProps extends ComponentProps<'select'> {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: FieldMessage;
+  error?: FieldMessage;
   hideLabel?: boolean;
 }
 
