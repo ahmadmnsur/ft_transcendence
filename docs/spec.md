@@ -4269,6 +4269,21 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
     §13.4) follow their own tickets. **The legal translations** come after the foundation and before
     Pre-defense readiness (#73), with Ahmad's sign-off (§3.5.4).
 
+    > **Opened 2026-10-16** by [Write the build tickets for French, Arabic and
+    > right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148): the foundation,
+    > [Languages foundation: the dictionary, the switcher and the locale
+    > table](https://github.com/ahmadmnsur/ft_transcendence/issues/171); the merged code's changes,
+    > [Languages: the SPA shell in French and Arabic, right to
+    > left](https://github.com/ahmadmnsur/ft_transcendence/issues/172) and [Languages: the design
+    > system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173),
+    > each after the foundation, whichever merges second turning the scanner on in the build, and the
+    > font with the design system's; and [Languages: the Privacy Policy and the Terms in French and
+    > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174), after the foundation, the
+    > SPA shell's changes, which make the legal renderer's classes flow-relative, and the English
+    > sign-off (#69). The chart is #60's. The browser pass (#72) waits on the two merged-code tickets,
+    > since its Arabic pass checks them, and the README (#71) on the design system's changes and the
+    > legal translations, since its *Modules* claims both Minors.
+
 > **Sequenced on review of the ticket plan, 2026-09-24** (`docs/ticket-plan.md`; issues #29–#73; *uncommitted*). No
 > rule moves. Four orderings this list left open are fixed:
 >
@@ -4608,3 +4623,7 @@ Only items owned elsewhere. Nothing that `/to-spec #1` was responsible for choos
 7. **How the evaluation shows both language Minors** (ADR-0020 *Not settled*): which accounts, which
    screens, and when the language is switched. It is [map #139](https://github.com/ahmadmnsur/ft_transcendence/issues/139)'s
    *Not yet specified* item, and Pre-defense readiness (#73) is its likely home.
+
+   > **Moved 2026-10-16** to Pre-defense readiness (#73), its criterion 10, by [Write the build
+   > tickets for French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148):
+   > it is settled and rehearsed there.
