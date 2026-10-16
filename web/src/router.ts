@@ -9,6 +9,7 @@ import { MePage } from './pages/MePage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
+import { StudentPage } from './pages/StudentPage';
 import { TermsPage } from './pages/TermsPage';
 import { queryClient } from './queryClient';
 
@@ -62,6 +63,15 @@ const meRoute = createRoute({
   component: MePage,
 });
 
+// §3.5.1: any signed-in Student reads another's profile; a Removed Student
+// renders as the tombstone there (§4.6).
+const studentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/students/$studentId',
+  beforeLoad: requireSession,
+  component: StudentPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -79,6 +89,7 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   signUpRoute,
   meRoute,
+  studentRoute,
   privacyRoute,
   termsRoute,
 ]);
