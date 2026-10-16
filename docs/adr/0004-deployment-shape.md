@@ -1056,6 +1056,7 @@ so the single authorization path ADR-0003 defends survives intact.
 > unconfirmed. The flow sends it as defence in depth, and the first real sign-in shows whether 42
 > accepts it.
 >
-> Note, 2026-10-16: the first real round trip answered the token exchange with HTTP 200 while
-> sending the `code_verifier`, so 42 accepts PKCE. Whether 42 checks the verifier is still
-> unconfirmed: no exchange with a wrong one has been tried.
+> **Answered in part 2026-10-16 by [Sign in with 42: transport and state](https://github.com/ahmadmnsur/ft_transcendence/issues/39).**
+> The first real round trip sent the `code_verifier` with the token exchange, and 42 answered
+> HTTP 200: 42 accepts PKCE. Whether 42 checks the verifier is still unconfirmed, since no exchange
+> with a wrong one has been tried.

@@ -106,10 +106,14 @@ export function SignInPage(): React.JSX.Element {
 
   // The page can come back with the slot still taken: restored from the
   // back/forward cache (Back from 42's page), or never left at all when the
-  // navigation was cancelled (Esc, Stop), which fires no event.
+  // navigation was cancelled (Esc, Stop), which fires no event. A restored
+  // page also resumes the hand-off timer, so it is cleared here: left
+  // running, it would free the slot under the next action.
   useEffect(() => {
     function onPageShow(event: PageTransitionEvent): void {
-      if (event.persisted) setPending(null);
+      if (!event.persisted) return;
+      window.clearTimeout(handOffTimerRef.current);
+      setPending(null);
     }
     window.addEventListener('pageshow', onPageShow);
     return () => {
