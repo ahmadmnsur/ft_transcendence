@@ -67,8 +67,9 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > the *Three languages* criterion, and so did [Sign in with 42: recovery through Confirm with
 > 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157) and [Add password visibility and
 > sign-up confirmation](https://github.com/ahmadmnsur/ft_transcendence/issues/169). T32 also gained the chart in
-> Arabic; T43 the 20-point Modules, and #173 and #174 as blockers; T44 and T45 the Arabic pass; and
-> T45 the last proofreading pass and how the evaluation shows both Minors.
+> Arabic; T43 the 20-point Modules, and #173 and #174 as blockers; T44 the Arabic pass, and #172
+> and #173 as blockers; and T45 the Arabic pass, the last proofreading pass, how the evaluation
+> shows both Minors, and #174 as a blocker.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
