@@ -17,18 +17,18 @@ export function PasswordField({ label, hint, error, id, showPasswordLabel, hideP
     <FieldShell label={label} controlId={controlProps.id} hint={hint} error={error} hintId={hintId} errorId={errorId} className={className}>
       <div className="relative">
         <input
-          dir="auto"
           autoCapitalize="none"
           spellCheck={false}
           {...rest}
           {...controlProps}
           disabled={disabled}
           type={visible ? 'text' : 'password'}
-          className={`${controlClass(Boolean(error))} min-h-11 pe-12`}
+          className={`${controlClass(Boolean(error))} pe-10`}
         />
         {/* IconButton is itself `relative`, so it cannot also be `absolute`: the wrapper does the positioning. */}
-        <span className="absolute inset-y-0 end-0.5 flex items-center">
+        <span className="absolute inset-y-0 end-1 flex items-center">
           <IconButton
+            size="sm"
             label={visible ? hidePasswordLabel : showPasswordLabel}
             aria-controls={controlProps.id}
             disabled={disabled}
