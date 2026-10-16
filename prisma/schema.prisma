@@ -16,21 +16,33 @@ enum Role {
   ADMIN
 }
 
+// §4.2: a StudentSkill row is a teach row or a learn row.
+enum SkillKind {
+  TEACH
+  LEARN
+}
+
 // §4.3.1: the account; every person is one. `id` has no default: sign-up
 // makes it with `v7()` before the Supabase Auth user that shares it (§4.1).
 model Student {
-  id                String    @id @db.Uuid
-  email             String    @unique
-  passwordVersion   Int       @default(0) @map("password_version")
-  displayName       String    @map("display_name")
-  displayNameSearch String    @map("display_name_search")
-  role              Role      @default(STUDENT)
-  xp                Int       @default(0)
-  streak            Int       @default(0)
-  suspendedAt       DateTime? @map("suspended_at") @db.Timestamptz(3)
-  removedAt         DateTime? @map("removed_at") @db.Timestamptz(3)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  sessions          Session[]
+  id                         String         @id @db.Uuid
+  email                      String         @unique
+  passwordVersion            Int            @default(0) @map("password_version")
+  displayName                String         @map("display_name")
+  displayNameSearch          String         @map("display_name_search")
+  role                       Role           @default(STUDENT)
+  xp                         Int            @default(0)
+  streak                     Int            @default(0)
+  learningGoalStudentSkillId String?        @map("learning_goal_student_skill_id") @db.Uuid
+  learningGoalText           String?        @map("learning_goal_text")
+  suspendedAt                DateTime?      @map("suspended_at") @db.Timestamptz(3)
+  removedAt                  DateTime?      @map("removed_at") @db.Timestamptz(3)
+  createdAt                  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  sessions                   Session[]
+  studentSkills              StudentSkill[] @relation("StudentSkills")
+  // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
+  // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
+  learningGoal               StudentSkill?  @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
 }
 
 // §4.3.2: ADR-0003's session row. `id` is the lowercase hex SHA-256 of the
@@ -48,6 +60,28 @@ model Session {
 // §4.3.4: the shared catalogue. Rows are inserted by the seed's catalogue
 // step and by migrations only, and are never updated or deleted (ADR-0014 d3).
 model Skill {
-  id   String @id @default(uuid(7)) @db.Uuid
-  name String @unique
+  id            String         @id @default(uuid(7)) @db.Uuid
+  name          String         @unique
+  studentSkills StudentSkill[]
+}
+
+// §4.3.5: teach and learn lists. A row is hard-deleted only through the
+// list-replacement operation (§6.2), which diffs so a Skill kept on a list
+// keeps its row, and therefore its Goal.
+model StudentSkill {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  studentId String    @map("student_id") @db.Uuid
+  skillId   String    @map("skill_id") @db.Uuid
+  kind      SkillKind
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  student   Student   @relation("StudentSkills", fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  skill     Skill     @relation(fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  // The back-relation of Student's composite Goal FK (M5): the Students whose
+  // Goal is this row. A list, so Prisma does not demand an extra unique on
+  // the defining Student side.
+  goalOf    Student[] @relation("LearningGoal")
+
+  @@unique([studentId, skillId, kind])
+  @@unique([studentId, id])
+  @@index([skillId, kind])
 }
