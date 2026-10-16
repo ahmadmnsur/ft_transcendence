@@ -261,9 +261,10 @@ Unaffected:
   > **The build tickets followed, 2026-10-16.** [Write the build tickets for French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) opened the foundation,
   > [Languages foundation: the dictionary, the switcher and the locale table](https://github.com/ahmadmnsur/ft_transcendence/issues/171); the two for the merged
   > code, [Languages: the SPA shell in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/172) and [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173);
-  > and the legal translations, [Languages: the Privacy Policy and the Terms in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174). The twenty-four
-  > open build tickets that show text carry the criterion (decision 10), and so do the three new
-  > ones that add text.
+  > and the legal translations, [Languages: the Privacy Policy and the Terms in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174). The twenty-five
+  > open tickets that show text carry the criterion (decision 10), and so do the three new ones
+  > that change the SPA's text; the legal translations follow their own rule (`CONTRIBUTING.md` →
+  > *Text ships in three languages*).
 
 ## Not settled by this decision
 
@@ -286,7 +287,7 @@ Unaffected:
   > **Handed on 2026-10-16** to [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173), its criterion 3.
 - **Which open build tickets show text**: [Write the build tickets for French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148)'s call.
 
-  > **Settled 2026-10-16** by that ticket: twenty-four, listed in its resolution. The seed tickets,
-  > the `Post` schema, the live client reactions, the README, the browser pass, Pre-defense
-  > readiness and the two boot and reset tickets show none of the SPA's text, and the legal sign-off
-  > stays English only, its pages translated on their own ticket.
+  > **Settled 2026-10-16** by that ticket: twenty-five, listed in its resolution and that list's
+  > correction of the same day. The seed tickets, the `Post` schema, the live client reactions, the
+  > README, the browser pass, Pre-defense readiness and the resets ticket show none of the SPA's
+  > text, and the legal sign-off stays English only, its pages translated on their own ticket.
