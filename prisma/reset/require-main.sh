@@ -15,4 +15,4 @@ branch=$(git symbolic-ref --quiet --short HEAD) || refuse "the checkout is on no
 # Untracked files count too: the image is built from this working tree.
 [ -z "$(git status --porcelain)" ] || refuse "the checkout has uncommitted changes; commit, stash or remove them (git status lists them)"
 git fetch --quiet origin main || refuse "git fetch origin main failed"
-[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || refuse "main differs from origin/main after a fetch; run git pull"
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || refuse "main differs from origin/main after a fetch; run git pull, or move main's own commits to a branch"

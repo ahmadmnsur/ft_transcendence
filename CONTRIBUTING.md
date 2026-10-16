@@ -668,9 +668,9 @@ Postgres, Auth, Storage and gateway services load `.env.example` alone. `make lo
 `make dev` and `make test` give `api` and `proxy` that file alone as well, including Compose
 interpolation. Among Makefile targets that start a stack, only `make up` reads an optional `.env`
 for `api` and `proxy`, after `.env.example`; it copies the example into place if absent.
-`make reset-team` reads it the same way, to find the team project it empties. Bare Compose uses the
-same base file and works without `.env` because its interpolated ports have defaults. To run the
-team project, a team member's `.env` holds only its values (`DATABASE_URL`, `SUPABASE_URL`, the two
+`make reset-team` also reads it after `.env.example`, without copying anything, to find the team
+project it empties. Bare Compose uses the same base file and works without `.env` because its
+interpolated ports have defaults. To run the team project, a team member's `.env` holds only its values (`DATABASE_URL`, `SUPABASE_URL`, the two
 keys, the three passwords and the `FT_OAUTH_*` pair), never a copy of `.env.example`, and only
 `make up`, bare `docker compose up --build` and `make reset-team` read it (`README.md` → *The
 `.env` model*, *Running the team project* and *The two resets*;
