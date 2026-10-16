@@ -1055,3 +1055,7 @@ so the single authorization path ADR-0003 defends survives intact.
 > public`, `expires_in: 7200` and `secret_valid_until`. Whether 42 checks PKCE is still
 > unconfirmed. The flow sends it as defence in depth, and the first real sign-in shows whether 42
 > accepts it.
+>
+> Note, 2026-10-16: the first real round trip answered the token exchange with HTTP 200 while
+> sending the `code_verifier`, so 42 accepts PKCE. Whether 42 checks the verifier is still
+> unconfirmed: no exchange with a wrong one has been tried.

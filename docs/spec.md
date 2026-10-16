@@ -1893,6 +1893,8 @@ transport, (B) what a 42 account maps to, (C) recovery through 42.
     sign-up form. The query string never reaches a log (§3.9).
 - **PKCE is defence in depth only**; `state` stays mandatory (ADR-0003 d10). Whether 42 checks PKCE
   is unconfirmed; the first real sign-in shows whether 42 accepts it (ADR-0004 amendment's note).
+  *Note, 2026-10-16:* the first real round trip answered the token exchange 200 with the
+  `code_verifier` sent, so 42 accepts PKCE; whether it checks the verifier is still unconfirmed.
 
 **(B) The 42 identity mapping** (ADR-0003's top note and d10's note of 2026-10-08, ADR-0004
 amendment's note, ADR-0018 d7's note).

@@ -42,6 +42,7 @@ export function SignInPage(): React.JSX.Element {
   const passwordRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(false);
+  const handOffTimerRef = useRef<number | undefined>(undefined);
 
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors below.
@@ -103,6 +104,20 @@ export function SignInPage(): React.JSX.Element {
     }
   }
 
+  // The page can come back with the slot still taken: restored from the
+  // back/forward cache (Back from 42's page), or never left at all when the
+  // navigation was cancelled (Esc, Stop), which fires no event.
+  useEffect(() => {
+    function onPageShow(event: PageTransitionEvent): void {
+      if (event.persisted) setPending(null);
+    }
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow);
+      window.clearTimeout(handOffTimerRef.current);
+    };
+  }, []);
+
   // §5.6 A: start the 42 flow and hand the browser to 42. Sharing the one
   // pending slot with the form means no start can run beside a sign-in; the
   // button stays pending while the page unloads, and a failed start shows
@@ -115,6 +130,10 @@ export function SignInPage(): React.JSX.Element {
       const { authorizeUrl } = await start42('sign_in');
       if (!mountedRef.current) return;
       window.location.assign(authorizeUrl);
+      window.clearTimeout(handOffTimerRef.current);
+      handOffTimerRef.current = window.setTimeout(() => {
+        if (mountedRef.current) setPending(null);
+      }, 5000);
     } catch (error) {
       if (!mountedRef.current) return;
       setStatus(failureMessage(error));
