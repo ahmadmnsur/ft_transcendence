@@ -557,7 +557,10 @@ mechanism behind them, the dictionary, its checks and right to left, is
   plural forms ([#144](https://github.com/ahmadmnsur/ft_transcendence/issues/144)). English is the
   source, and the fallback when a text is missing.
 * **The SPA build is the check.** `npm --prefix web run build` runs `tsc -b`, which fails on a
-  missing text, plural form or placeholder and names each by its key. CI runs it but is advisory
+  missing text, plural form or placeholder and names each by its key. It also rejects the two
+  text rules of [`docs/spec.md`](docs/spec.md) §3.5.2: a vowel mark (U+064B–U+0652) in an Arabic
+  text, and a plain space before `: ; ! ? »` or after `«` in a French one, where French writes
+  U+202F before `; ! ?` and U+00A0 before `:` and inside `« »`. CI runs it but is advisory
   (ADR-0016 d8), so the template's *Three languages* box asks for it too: a PR merged with it red
   stops `make up` for everyone who pulls `main`.
 * **Use the domain's words.** Each term in `CONTEXT.md` has one French and one Arabic word beside
@@ -578,6 +581,13 @@ mechanism behind them, the dictionary, its checks and right to left, is
   it both words (*Use the domain's words*), and *Nothing is joined or typed in code*, with the
   object in the dictionary's place. Whichever of the slice and the foundation build ticket merges
   second moves the object into `web/src/i18n/` and adds its French and Arabic.
+
+  > **No longer applies, 2026-10-16** ([#171](https://github.com/ahmadmnsur/ft_transcendence/issues/171);
+  > [`docs/spec.md`](docs/spec.md) §3.5.5). `web/src/i18n/` exists, so a slice no longer writes its
+  > text in English only: *The author writes all three languages, in the same PR* holds, and the
+  > foundation moved `authCopy` and its code map into `web/src/i18n/` with the French and the
+  > Arabic for every text.
+
 * **Hussein proofreads, after merge.** At least once a week while slices merge text, he reads what
   changed in `fr/` and `ar/` since his last pass and fixes it in one `fix:` PR, whose description
   names the last commit it read; the next pass starts after it. A last pass merges before

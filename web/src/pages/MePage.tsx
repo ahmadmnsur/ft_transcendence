@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { isValidPassword } from '@shared/limits';
+import { LIMITS, isValidPassword } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { changePassword } from '../api/auth';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from '../api/session';
 import { Banner, Button, Card, TextField } from '../design';
+import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
-import { authCopy, authErrorMessage } from '../auth/messages';
-
-const copy = authCopy.passwordChange;
 
 // `/me`: for now it holds only the password-change form under a clear
 // heading (§6.1). On success the Student is signed out everywhere, so the
@@ -18,6 +16,7 @@ const copy = authCopy.passwordChange;
 // returns with the neutral notice, still signed in stays on the form with
 // the failure's sentence (§5.1).
 export function MePage(): React.JSX.Element {
+  const { t, formatText, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // The hidden username field below carries the signed-in Student's email.
@@ -26,15 +25,20 @@ export function MePage(): React.JSX.Element {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [currentError, setCurrentError] = useState<string | undefined>(undefined);
-  const [newError, setNewError] = useState<string | undefined>(undefined);
-  const [confirmError, setConfirmError] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<string | undefined>(undefined);
+  const [currentError, setCurrentError] = useState<'empty' | 'invalid' | undefined>(undefined);
+  const [newError, setNewError] = useState(false);
+  const [confirmError, setConfirmError] = useState(false);
+  const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const currentRef = useRef<HTMLInputElement>(null);
   const newRef = useRef<HTMLInputElement>(null);
   const confirmRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+
+  const passwordInvalid = formatText(t.auth.password.invalid, {
+    minChars: LIMITS.password.minChars,
+    maxBytes: LIMITS.password.maxBytes,
+  });
 
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors above.
@@ -53,13 +57,10 @@ export function MePage(): React.JSX.Element {
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending) return;
-    const nextCurrentError =
-      currentPassword === '' ? copy.currentEmpty : isValidPassword(currentPassword) ? undefined : copy.currentInvalid;
-    const nextNewError = isValidPassword(newPassword) ? undefined : copy.newInvalid;
-    const nextConfirmError =
-      nextNewError === undefined && confirmPassword.trim() === newPassword.trim()
-        ? undefined
-        : copy.confirmInvalid;
+    const nextCurrentError: 'empty' | 'invalid' | undefined =
+      currentPassword === '' ? 'empty' : isValidPassword(currentPassword) ? undefined : 'invalid';
+    const nextNewError = !isValidPassword(newPassword);
+    const nextConfirmError = nextNewError || confirmPassword.trim() !== newPassword.trim();
     setCurrentError(nextCurrentError);
     setNewError(nextNewError);
     setConfirmError(nextConfirmError);
@@ -68,11 +69,11 @@ export function MePage(): React.JSX.Element {
       currentRef.current?.focus();
       return;
     }
-    if (nextNewError !== undefined) {
+    if (nextNewError) {
       newRef.current?.focus();
       return;
     }
-    if (nextConfirmError !== undefined) {
+    if (nextConfirmError) {
       confirmRef.current?.focus();
       return;
     }
@@ -84,7 +85,7 @@ export function MePage(): React.JSX.Element {
       if (error instanceof ApiRefusalError) {
         // A 200 refusal: nothing changed and the Student is still signed in,
         // so the form stays with the refusal's sentence and no probe runs.
-        setStatus(authErrorMessage(error.code));
+        setStatus({ code: error.code });
         return;
       }
       // Anything else — a protocol failure, or a dropped connection after a
@@ -103,7 +104,7 @@ export function MePage(): React.JSX.Element {
         await signOutAndGo('password-change-unknown');
         return;
       }
-      setStatus(error instanceof ApiProtocolError ? authErrorMessage(error.code) : authErrorMessage(undefined));
+      setStatus({ code: error instanceof ApiProtocolError ? error.code : undefined });
     } finally {
       setPending(false);
     }
@@ -111,14 +112,14 @@ export function MePage(): React.JSX.Element {
 
   return (
     <>
-      <PageTitle name={copy.title} />
+      <PageTitle name={t.auth.passwordChange.title} />
       <div className="mx-auto w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-ink">{copy.heading}</h1>
-        <Card title={copy.cardTitle} subtitle={copy.cardSubtitle} className="mt-4">
+        <h1 className="text-2xl font-semibold text-ink">{t.auth.passwordChange.heading}</h1>
+        <Card title={t.auth.passwordChange.cardTitle} subtitle={t.auth.passwordChange.cardSubtitle} className="mt-4">
           <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
             {status !== undefined ? (
               <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
-                <Banner tone="danger" title={status} />
+                <Banner tone="danger" title={errorText(status.code)} />
               </div>
             ) : null}
             <input
@@ -132,34 +133,43 @@ export function MePage(): React.JSX.Element {
             />
             <TextField
               ref={currentRef}
-              label={copy.currentLabel}
+              label={t.auth.passwordChange.currentLabel}
               type="password"
               autoComplete="current-password"
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
-              error={currentError}
+              error={
+                currentError === undefined
+                  ? undefined
+                  : currentError === 'empty'
+                    ? t.auth.passwordChange.currentEmpty
+                    : passwordInvalid
+              }
             />
             <TextField
               ref={newRef}
-              label={copy.newLabel}
-              hint={copy.newHint}
+              label={t.auth.passwordChange.newLabel}
+              hint={formatText(t.auth.password.hint, {
+                minChars: LIMITS.password.minChars,
+                maxBytes: LIMITS.password.maxBytes,
+              })}
               type="password"
               autoComplete="new-password"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              error={newError}
+              error={newError ? passwordInvalid : undefined}
             />
             <TextField
               ref={confirmRef}
-              label={copy.confirmLabel}
+              label={t.auth.passwordChange.confirmLabel}
               type="password"
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              error={confirmError}
+              error={confirmError ? t.auth.passwordChange.confirmInvalid : undefined}
             />
             <Button type="submit" loading={pending} className="w-full">
-              {pending ? copy.submitting : copy.submit}
+              {pending ? t.auth.passwordChange.submitting : t.auth.passwordChange.submit}
             </Button>
           </form>
         </Card>

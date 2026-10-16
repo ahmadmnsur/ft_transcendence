@@ -12,6 +12,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["vite/client"],
+    "noErrorTruncation": true,
     "paths": { "@shared/*": ["../src/shared/*"] }
   },
   "include": ["src"]
