@@ -16,8 +16,8 @@ export class StudentsController {
 
   // `GET /api/skills` (§6.2): the whole catalogue, by name.
   @Get('skills')
-  listSkills(): Promise<{ items: SkillView[] }> {
-    return this.students.listSkills();
+  listSkills(@Req() request: Request): Promise<{ items: SkillView[] }> {
+    return this.students.listSkills(requestActor(request));
   }
 
   // `GET /api/me` (§6.2): own profile; the only route that returns the email.
@@ -29,8 +29,8 @@ export class StudentsController {
   // `GET /api/students/:id` (§6.2). A malformed id is 400 (`UuidParam`); an
   // unknown id is 404. Never an email, for any viewer (§4.6).
   @Get('students/:id')
-  getProfile(@UuidParam('id') id: string): Promise<PublicProfile> {
-    return this.students.getProfile(id);
+  getProfile(@UuidParam('id') id: string, @Req() request: Request): Promise<PublicProfile> {
+    return this.students.getProfile(requestActor(request), id);
   }
 
   // `PATCH /api/me` (§6.2): display name and/or email.

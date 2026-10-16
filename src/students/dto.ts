@@ -1,50 +1,36 @@
 import { Transform } from 'class-transformer';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsString, IsUUID, ValidateIf } from 'class-validator';
 import {
-  ArrayMaxSize,
-  ArrayUnique,
-  IsArray,
-  IsOptional,
-  IsString,
-  IsUUID,
-  ValidateBy,
-  type ValidatorConstraintInterface,
-} from 'class-validator';
-import { IsValidDisplayNameDto, IsValidEmailDto } from '../auth/dto';
+  IsValidDisplayNameDto,
+  IsValidEmailDto,
+  sharedValidator,
+  Trimmed,
+} from '../auth/dto';
 import { LIMITS, isValidLearningGoalText, normalizeEmail } from '../shared/limits';
 
 // §6.2's DTOs validate §6.0.3 through the shared validators, so the client
 // pre-check and the server enforce the same limits. The display-name and email
-// validators are the auth DTOs', reused rather than copied.
+// validators, the trim transform and the validator factory are the auth DTOs',
+// reused rather than copied.
 
-// The global pipe transforms before it validates (`transform: true`), so
-// validation sees the trimmed value and the service receives it.
-function Trimmed(): PropertyDecorator {
-  return Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  );
-}
-
-// The Learning Goal sentence has no auth validator to reuse: a small shared
-// validator over `isValidLearningGoalText` (§6.0.3).
-const learningGoalTextConstraint: ValidatorConstraintInterface = {
-  validate(value: unknown): boolean {
-    return typeof value === 'string' && isValidLearningGoalText(value);
-  },
-};
-
-export function IsValidLearningGoalTextDto(): PropertyDecorator {
-  return ValidateBy({ name: 'isValidLearningGoalText', validator: learningGoalTextConstraint });
-}
+// The Learning Goal sentence has no auth validator of its own: build one from
+// `isValidLearningGoalText` exactly as the auth module builds its own.
+export const IsValidLearningGoalTextDto = sharedValidator(
+  'isValidLearningGoalText',
+  isValidLearningGoalText,
+);
 
 export class UpdateProfileDto {
-  // Both optional: a body with neither returns the unchanged profile.
-  @IsOptional()
+  // Both optional: a body with neither returns the unchanged profile. An
+  // absent field is skipped, while a present `null` fails `@IsString` and is a
+  // 400 `validation_failed`, never a 500 (§6.15).
+  @ValidateIf((_dto, value) => value !== undefined)
   @IsString()
   @Trimmed()
   @IsValidDisplayNameDto()
   displayName?: string;
 
-  @IsOptional()
+  @ValidateIf((_dto, value) => value !== undefined)
   @IsString()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? normalizeEmail(value) : value,

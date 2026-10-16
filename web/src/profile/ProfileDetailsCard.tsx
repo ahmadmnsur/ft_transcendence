@@ -1,23 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidDisplayName, isValidEmail, normalizeEmail, LIMITS } from '@shared/limits';
-import { ApiProtocolError, ApiRefusalError } from '../api/client';
+import { ApiRefusalError } from '../api/client';
 import { SESSION_QUERY_KEY } from '../api/session';
 import { ME_QUERY_KEY, meQueryOptions, updateProfile, type OwnProfile } from '../api/profile';
 import { Banner, Button, Card, TextField, type BannerTone } from '../design';
-import { formatText, profileCopy, profileErrorMessage } from './messages';
+import { formatCount, profileCopy, profileErrorMessage, profileFailureMessage } from './messages';
 
 const copy = profileCopy.details;
 
 interface Status {
   tone: BannerTone;
   title: string;
-}
-
-function failureMessage(error: unknown): string {
-  if (error instanceof ApiRefusalError) return profileErrorMessage(error.code);
-  if (error instanceof ApiProtocolError) return profileErrorMessage(error.code);
-  return profileErrorMessage(undefined);
 }
 
 // §6.2: display name and email, prefilled from `GET /api/me`, with only the
@@ -60,7 +54,7 @@ export function ProfileDetailsCard(): React.JSX.Element | null {
     if (pending) return;
     const nextNameError = isValidDisplayName(displayName)
       ? undefined
-      : formatText(copy.displayNameInvalid, LIMITS.displayName);
+      : formatCount(copy.displayNameInvalid, LIMITS.displayName.maxChars, LIMITS.displayName);
     const nextEmailError = isValidEmail(email) ? undefined : copy.emailInvalid;
     setNameError(nextNameError);
     setEmailError(nextEmailError);
@@ -96,7 +90,7 @@ export function ProfileDetailsCard(): React.JSX.Element | null {
         emailRef.current?.focus();
         return;
       }
-      setStatus({ tone: 'danger', title: failureMessage(error) });
+      setStatus({ tone: 'danger', title: profileFailureMessage(error) });
     } finally {
       setPending(false);
     }
@@ -113,7 +107,7 @@ export function ProfileDetailsCard(): React.JSX.Element | null {
         <TextField
           ref={nameRef}
           label={copy.displayNameLabel}
-          hint={formatText(copy.displayNameHint, LIMITS.displayName)}
+          hint={formatCount(copy.displayNameHint, LIMITS.displayName.maxChars, LIMITS.displayName)}
           type="text"
           autoComplete="nickname"
           value={displayName}

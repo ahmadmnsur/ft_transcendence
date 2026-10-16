@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidLearningGoalText, LIMITS } from '@shared/limits';
-import { ApiProtocolError, ApiRefusalError } from '../api/client';
+import { ApiRefusalError } from '../api/client';
 import {
   ME_QUERY_KEY,
   clearLearningGoal,
@@ -10,19 +10,13 @@ import {
   type OwnProfile,
 } from '../api/profile';
 import { Banner, Button, Card, Select, TextField, type BannerTone } from '../design';
-import { isolateName, formatText, profileCopy, profileErrorMessage } from './messages';
+import { formatCount, isolateName, profileCopy, profileErrorMessage, profileFailureMessage } from './messages';
 
 const copy = profileCopy.goal;
 
 interface Status {
   tone: BannerTone;
   title: string;
-}
-
-function failureMessage(error: unknown): string {
-  if (error instanceof ApiRefusalError) return profileErrorMessage(error.code);
-  if (error instanceof ApiProtocolError) return profileErrorMessage(error.code);
-  return profileErrorMessage(undefined);
 }
 
 // §6.2: the Learning Goal, one Skill on the saved learn list plus a 1–200
@@ -73,7 +67,7 @@ export function LearningGoalCard(): React.JSX.Element | null {
     const nextSkillError = skillId === '' ? copy.chooseSkillError : undefined;
     const nextTextError = isValidLearningGoalText(text)
       ? undefined
-      : formatText(copy.textInvalid, LIMITS.learningGoalText);
+      : formatCount(copy.textInvalid, LIMITS.learningGoalText.maxChars, LIMITS.learningGoalText);
     setSkillError(nextSkillError);
     setTextError(nextTextError);
     setStatus(undefined);
@@ -103,7 +97,7 @@ export function LearningGoalCard(): React.JSX.Element | null {
         skillRef.current?.focus();
         return;
       }
-      setStatus({ tone: 'danger', title: failureMessage(error) });
+      setStatus({ tone: 'danger', title: profileFailureMessage(error) });
     } finally {
       setPending(false);
     }
@@ -121,7 +115,7 @@ export function LearningGoalCard(): React.JSX.Element | null {
       setDraft(null);
       setStatus({ tone: 'success', title: copy.cleared });
     } catch (error) {
-      setStatus({ tone: 'danger', title: failureMessage(error) });
+      setStatus({ tone: 'danger', title: profileFailureMessage(error) });
     } finally {
       setClearing(false);
     }
@@ -169,7 +163,7 @@ export function LearningGoalCard(): React.JSX.Element | null {
           <TextField
             ref={textRef}
             label={copy.textLabel}
-            hint={formatText(copy.textHint, LIMITS.learningGoalText)}
+            hint={formatCount(copy.textHint, LIMITS.learningGoalText.maxChars, LIMITS.learningGoalText)}
             type="text"
             value={text}
             onChange={(event) => {

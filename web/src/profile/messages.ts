@@ -1,3 +1,5 @@
+import { ApiProtocolError, ApiRefusalError } from '../api/client';
+
 // §3.5.2 and CONTRIBUTING.md → "Text ships in three languages", *Before the
 // foundation*: until `web/src/i18n/` exists, every text these screens show
 // lives in `profileCopy` below, one English object shaped like the
@@ -16,6 +18,16 @@ const MESSAGES: Record<string, string> = {
 export function profileErrorMessage(code: unknown): string {
   if (typeof code === 'string' && MESSAGES[code] !== undefined) return MESSAGES[code];
   return GENERIC;
+}
+
+// The one sentence for a failed write: a refusal or a protocol error names its
+// own text by `code`; anything else (a network failure, an unexpected throw)
+// shows the generic text.
+export function profileFailureMessage(error: unknown): string {
+  if (error instanceof ApiRefusalError || error instanceof ApiProtocolError) {
+    return profileErrorMessage(error.code);
+  }
+  return profileErrorMessage(undefined);
 }
 
 // §3.5.2: numbers are written by `Intl`, never by hand. One formatter for
@@ -43,9 +55,30 @@ export function formatText(template: string, values: Record<string, string | num
   });
 }
 
+// §3.5.2, §3.5.5: a count's text is one entry per plural form. English needs
+// `one` and `other`, chosen by `Intl.PluralRules`; only those exist until the
+// dictionary does. `{count}`, like every other number, is written by
+// `formatNumber` inside `formatText`.
+export type CountForms = { one: string; other: string };
+
+const pluralRules = new Intl.PluralRules('en-GB');
+
+export function formatCount(
+  forms: CountForms,
+  count: number,
+  values: Record<string, string | number> = {},
+): string {
+  return formatText(pluralRules.select(count) === 'one' ? forms.one : forms.other, {
+    ...values,
+    count,
+  });
+}
+
 // §3.5.2: where markup cannot go (`<option>`, `title`, `aria-label`), a
 // Skill or display name sits between U+2068 and U+2069, so `C++` never
-// reorders on an Arabic page. Names are never translated.
+// reorders on an Arabic page. Names are never translated. This gives way to
+// `PersonName`'s plain-text helper and `SkillName`'s when the language
+// tickets add them.
 export function isolateName(name: string): string {
   return `\u2068${name}\u2069`;
 }
@@ -62,8 +95,14 @@ export const profileCopy = {
     title: 'Profile details',
     subtitle: 'Shown to every signed-in Student wherever you appear.',
     displayNameLabel: 'Display name',
-    displayNameHint: '{minChars}–{maxChars} characters. Shown to every signed-in Student.',
-    displayNameInvalid: 'Enter a display name of {minChars}–{maxChars} characters.',
+    displayNameHint: {
+      one: '{minChars}–{count} character. Shown to every signed-in Student.',
+      other: '{minChars}–{count} characters. Shown to every signed-in Student.',
+    },
+    displayNameInvalid: {
+      one: 'Enter a display name of {minChars}–{count} character.',
+      other: 'Enter a display name of {minChars}–{count} characters.',
+    },
     emailLabel: 'Email',
     // §4.6: the email is the owner's and the Admins' alone, never on a
     // profile.
@@ -83,7 +122,10 @@ export const profileCopy = {
     selectPlaceholder: 'Choose a Skill',
     add: 'Add',
     empty: 'No Skills here yet.',
-    limitHint: 'A list holds up to {maxItems} Skills.',
+    limitHint: {
+      one: 'A list holds up to {count} Skill.',
+      other: 'A list holds up to {count} Skills.',
+    },
     nothingToAdd: 'You have listed every catalogue Skill here.',
     chooseFirst: 'Choose a Skill to add.',
     save: 'Save',
@@ -101,8 +143,14 @@ export const profileCopy = {
     // §6.2: the Goal names a Skill on the learn list, never one outside it.
     noLearn: 'Add a Skill to your learn list first: your Learning Goal names one of them.',
     textLabel: 'Why this Skill matters',
-    textHint: '{minChars}–{maxChars} characters.',
-    textInvalid: 'Write a sentence of {minChars}–{maxChars} characters.',
+    textHint: {
+      one: '{minChars}–{count} character.',
+      other: '{minChars}–{count} characters.',
+    },
+    textInvalid: {
+      one: 'Write a sentence of {minChars}–{count} character.',
+      other: 'Write a sentence of {minChars}–{count} characters.',
+    },
     save: 'Save',
     saving: 'Saving…',
     saved: 'Your Learning Goal was saved.',

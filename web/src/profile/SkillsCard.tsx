@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LIMITS } from '@shared/limits';
-import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import {
   ME_QUERY_KEY,
   meQueryOptions,
@@ -10,7 +9,7 @@ import {
   type SkillView,
 } from '../api/profile';
 import { Banner, Button, Card, Select, SkillChip, type BannerTone } from '../design';
-import { isolateName, formatText, profileCopy, profileErrorMessage } from './messages';
+import { formatCount, isolateName, profileCopy, profileFailureMessage } from './messages';
 
 const copy = profileCopy.skills;
 
@@ -19,12 +18,6 @@ type Kind = 'teach' | 'learn';
 interface Status {
   tone: BannerTone;
   title: string;
-}
-
-function failureMessage(error: unknown): string {
-  if (error instanceof ApiRefusalError) return profileErrorMessage(error.code);
-  if (error instanceof ApiProtocolError) return profileErrorMessage(error.code);
-  return profileErrorMessage(undefined);
 }
 
 // §6.2: the two Skill lists, each 0–15 catalogue Skills, a Skill possibly on
@@ -52,6 +45,20 @@ export function SkillsCard(): React.JSX.Element | null {
   const teachSelectRef = useRef<HTMLSelectElement>(null);
   const learnSelectRef = useRef<HTMLSelectElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+  // One lookup per kind, so the repeated `kind === 'teach' ? … : …` choices
+  // read as data rather than seven branches.
+  const boxRefs: Record<Kind, React.RefObject<HTMLDivElement | null>> = {
+    teach: teachBoxRef,
+    learn: learnBoxRef,
+  };
+  const selectRefs: Record<Kind, React.RefObject<HTMLSelectElement | null>> = {
+    teach: teachSelectRef,
+    learn: learnSelectRef,
+  };
+  const copyKeys: Record<Kind, { heading: string; selectLabel: string }> = {
+    teach: { heading: copy.teachHeading, selectLabel: copy.teachSelectLabel },
+    learn: { heading: copy.learnHeading, selectLabel: copy.learnSelectLabel },
+  };
 
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors below.
@@ -64,9 +71,9 @@ export function SkillsCard(): React.JSX.Element | null {
   // (SkillChip's own comment asks the caller for this).
   useEffect(() => {
     if (focusRequest === null) return;
-    const buttons = boxRef(focusRequest.kind).current?.querySelectorAll('button');
+    const buttons = boxRefs[focusRequest.kind].current?.querySelectorAll('button');
     const chip = focusRequest.chipIndex === null ? undefined : buttons?.[focusRequest.chipIndex];
-    (chip ?? selectRef(focusRequest.kind).current)?.focus();
+    (chip ?? selectRefs[focusRequest.kind].current)?.focus();
     setFocusRequest(null);
   }, [focusRequest]);
 
@@ -75,14 +82,6 @@ export function SkillsCard(): React.JSX.Element | null {
 
   const teach = draft?.teach ?? me.skills.teach;
   const learn = draft?.learn ?? me.skills.learn;
-
-  function boxRef(kind: Kind): React.RefObject<HTMLDivElement | null> {
-    return kind === 'teach' ? teachBoxRef : learnBoxRef;
-  }
-
-  function selectRef(kind: Kind): React.RefObject<HTMLSelectElement | null> {
-    return kind === 'teach' ? teachSelectRef : learnSelectRef;
-  }
 
   function listFor(kind: Kind): SkillView[] {
     return kind === 'teach' ? teach : learn;
@@ -112,7 +111,7 @@ export function SkillsCard(): React.JSX.Element | null {
     const chosen = choice[kind];
     if (chosen === '') {
       setChoiceError({ ...choiceError, [kind]: copy.chooseFirst });
-      selectRef(kind).current?.focus();
+      selectRefs[kind].current?.focus();
       return;
     }
     const skill = availableFor(kind).find((item) => item.id === chosen);
@@ -136,7 +135,7 @@ export function SkillsCard(): React.JSX.Element | null {
       if (result.goalCleared) saved.push({ tone: 'info', title: copy.goalCleared });
       setStatus(saved);
     } catch (error) {
-      setStatus([{ tone: 'danger', title: failureMessage(error) }]);
+      setStatus([{ tone: 'danger', title: profileFailureMessage(error) }]);
     } finally {
       setPending(false);
     }
@@ -149,16 +148,14 @@ export function SkillsCard(): React.JSX.Element | null {
     const available = availableFor(kind);
     const atLimit = list.length >= LIMITS.skillList.maxItems;
     const hint = atLimit
-      ? formatText(copy.limitHint, LIMITS.skillList)
+      ? formatCount(copy.limitHint, LIMITS.skillList.maxItems)
       : available.length === 0
         ? copy.nothingToAdd
         : undefined;
     return (
       <section className="min-w-0">
-        <h4 className="text-sm font-semibold text-ink">
-          {kind === 'teach' ? copy.teachHeading : copy.learnHeading}
-        </h4>
-        <div ref={boxRef(kind)} className="mt-2 flex min-w-0 flex-wrap gap-2">
+        <h4 className="text-sm font-semibold text-ink">{copyKeys[kind].heading}</h4>
+        <div ref={boxRefs[kind]} className="mt-2 flex min-w-0 flex-wrap gap-2">
           {list.length === 0 ? (
             <p className="text-sm text-ink-muted">{copy.empty}</p>
           ) : (
@@ -173,9 +170,9 @@ export function SkillsCard(): React.JSX.Element | null {
           )}
         </div>
         <Select
-          ref={selectRef(kind)}
+          ref={selectRefs[kind]}
           className="mt-3"
-          label={kind === 'teach' ? copy.teachSelectLabel : copy.learnSelectLabel}
+          label={copyKeys[kind].selectLabel}
           hint={hint}
           error={choiceError[kind]}
           value={choice[kind]}

@@ -15,7 +15,7 @@ import type { LearningGoalView } from './views';
 // §3.4, §4.3.1: a write re-reads the actor's own sanction flags inside its SSI
 // transaction. A gone row, a Suspended or a Removed Student writes nothing and
 // is refused `unauthenticated`, exactly as the password change's step 4 (§5.1).
-export async function requireActiveActor(
+export async function readActiveActor(
   tx: PrismaTx,
   actorId: string,
 ): Promise<{ email: string; learningGoalStudentSkillId: string | null }> {
@@ -72,14 +72,20 @@ export async function applySkills(
   goalStudentSkillId: string | null,
   checkpoint: () => Promise<void>,
 ): Promise<{ goalCleared: boolean }> {
+  // `IsUUID` accepts upper case, so the same Skill may arrive in either case.
+  // Lower-casing both lists once keeps a row that stays a row: the diff
+  // compares ids, and a case-only difference would delete the kept row and
+  // insert a new one, clearing a Goal that named it (§4.3.5, §6.2).
+  const teachIds = teach.map((id) => id.toLowerCase());
+  const learnIds = learn.map((id) => id.toLowerCase());
   // The size and duplicate rules are re-checked here: the seed calls this
   // directly, past the DTO (§6.2).
-  for (const list of [teach, learn]) {
+  for (const list of [teachIds, learnIds]) {
     if (list.length > LIMITS.skillList.maxItems) throw new ApiError('validation_failed');
     if (new Set(list).size !== list.length) throw new ApiError('validation_failed');
   }
   // Every id must exist in the catalogue, else validation_failed (§6.2).
-  const ids = [...new Set([...teach, ...learn])];
+  const ids = [...new Set([...teachIds, ...learnIds])];
   const found = await tx.skill.findMany({ where: { id: { in: ids } }, select: { id: true } });
   if (found.length !== ids.length) throw new ApiError('validation_failed');
 
@@ -89,8 +95,8 @@ export async function applySkills(
   });
   const key = (skillId: string, kind: SkillKind): string => `${skillId}:${kind}`;
   const desired = new Map<string, { skillId: string; kind: SkillKind }>();
-  for (const skillId of teach) desired.set(key(skillId, 'TEACH'), { skillId, kind: 'TEACH' });
-  for (const skillId of learn) desired.set(key(skillId, 'LEARN'), { skillId, kind: 'LEARN' });
+  for (const skillId of teachIds) desired.set(key(skillId, 'TEACH'), { skillId, kind: 'TEACH' });
+  for (const skillId of learnIds) desired.set(key(skillId, 'LEARN'), { skillId, kind: 'LEARN' });
   const currentKeys = new Set(current.map((row) => key(row.skillId, row.kind)));
   const toDelete = current.filter((row) => !desired.has(key(row.skillId, row.kind)));
   const toInsert = [...desired.values()].filter((row) => !currentKeys.has(key(row.skillId, row.kind)));
@@ -108,12 +114,11 @@ export async function applySkills(
     await tx.studentSkill.deleteMany({ where: { id: { in: toDelete.map((row) => row.id) } } });
   }
   if (toInsert.length > 0) {
-    // Two simultaneous replacements both read "no rows" and both insert the
-    // same one; `skipDuplicates` makes it `ON CONFLICT DO NOTHING`, which
-    // Postgres raises as 40001 (not a bare 23505) when the row came from a
-    // concurrent transaction, and the Unit of Work already retries 40001
-    // (§3.6.2). The retry re-reads and re-diffs, so a normal run never has a
-    // duplicate to skip: the diff only inserts rows it just read as absent.
+    // The diff comes from rows read in this transaction's snapshot, so a
+    // duplicate it could see cannot exist and nothing is skipped. The one
+    // conflict is a row a concurrent transaction inserted: under SERIALIZABLE
+    // `ON CONFLICT DO NOTHING` raises 40001 and the Unit of Work retries it
+    // (§3.6.2), while a plain insert would raise 23505 and answer 500.
     await tx.studentSkill.createMany({
       data: toInsert.map((row) => ({ studentId: targetStudentId, ...row })),
       skipDuplicates: true,

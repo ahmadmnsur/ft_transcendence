@@ -4,15 +4,14 @@ import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
 import { PrismaService } from '../core/prisma.service';
 import { UnitOfWork } from '../core/uow';
-import type { Prisma, SkillKind } from '../generated/prisma/client';
+import type { Prisma } from '../generated/prisma/client';
 import { levelFor } from '../gamification/level';
 import { normalizeEmail } from '../shared/limits';
-import type { Role } from '../shared/roles';
 import {
   applyLearningGoal,
   applySkills,
   clearLearningGoal as clearGoalWrite,
-  requireActiveActor,
+  readActiveActor,
   updateProfileFields,
 } from './profile-writes';
 import { toStudentRef, STUDENT_REF_SELECT } from './student-ref';
@@ -46,22 +45,11 @@ const PROFILE_SELECT = {
 
 const OWN_PROFILE_SELECT = { ...PROFILE_SELECT, email: true } as const satisfies Prisma.StudentSelect;
 
-type SkillRow = { id: string; kind: SkillKind; skill: SkillView };
-
-type ProfileRow = {
-  id: string;
-  displayName: string;
-  role: Role;
-  xp: number;
-  streak: number;
-  suspendedAt: Date | null;
-  removedAt: Date | null;
-  learningGoalStudentSkillId: string | null;
-  learningGoalText: string | null;
-  studentSkills: SkillRow[];
-};
-
-type OwnProfileRow = ProfileRow & { email: string };
+// The row shapes come from the selects, so they cannot drift from what the
+// query reads.
+type ProfileRow = Prisma.StudentGetPayload<{ select: typeof PROFILE_SELECT }>;
+type OwnProfileRow = Prisma.StudentGetPayload<{ select: typeof OWN_PROFILE_SELECT }>;
+type SkillRow = ProfileRow['studentSkills'][number];
 
 // §4.3.1: status is derived — removedAt → REMOVED, else suspendedAt →
 // SUSPENDED, else ACTIVE.
@@ -130,8 +118,9 @@ export class StudentsService {
     private readonly uow: UnitOfWork,
   ) {}
 
-  // §6.2: the catalogue, by name.
-  async listSkills(): Promise<{ items: SkillView[] }> {
+  // §6.2: the catalogue, by name. `actor` is the signed-in viewer the read is
+  // for (§3.4); the catalogue does not vary by viewer yet.
+  async listSkills(actor: Actor): Promise<{ items: SkillView[] }> {
     const items = await this.prisma.skill.findMany({
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
@@ -161,8 +150,9 @@ export class StudentsService {
 
   // §6.2: a public profile; never an email, for any viewer, the owner
   // included; never the role beyond `isAdmin` (§4.6). A Suspended Student is
-  // shown normally.
-  async getProfile(id: string): Promise<PublicProfile> {
+  // shown normally. `actor` is the signed-in viewer the read is for (§3.4);
+  // the profile does not vary by viewer yet.
+  async getProfile(actor: Actor, id: string): Promise<PublicProfile> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.student.findUnique({ where: { id }, select: PROFILE_SELECT });
       if (row === null) throw new ApiError('not_found');
@@ -180,7 +170,7 @@ export class StudentsService {
     await this.uow.run(
       { name: 'profile-update', uniqueRefusals: { Student_email_key: EMAIL_TAKEN } },
       async (tx, ctx) => {
-        const actorRow = await requireActiveActor(tx, actor.studentId);
+        const actorRow = await readActiveActor(tx, actor.studentId);
         await updateProfileFields(
           tx,
           actor.studentId,
@@ -195,7 +185,7 @@ export class StudentsService {
   // §6.2's `PUT /api/me/skills`.
   async setSkills(actor: Actor, teach: string[], learn: string[]): Promise<{ goalCleared: boolean }> {
     return this.uow.run('skills-update', async (tx, ctx) => {
-      const actorRow = await requireActiveActor(tx, actor.studentId);
+      const actorRow = await readActiveActor(tx, actor.studentId);
       return applySkills(
         tx,
         actor.studentId,
@@ -210,7 +200,7 @@ export class StudentsService {
   // §6.2's `PUT /api/me/learning-goal`.
   async setLearningGoal(actor: Actor, skillId: string, text: string): Promise<LearningGoalView> {
     return this.uow.run('learning-goal-set', async (tx, ctx) => {
-      await requireActiveActor(tx, actor.studentId);
+      await readActiveActor(tx, actor.studentId);
       return applyLearningGoal(tx, actor.studentId, skillId, text, () =>
         ctx.checkpoint('learning-goal-set'),
       );
@@ -220,7 +210,7 @@ export class StudentsService {
   // §6.2's `DELETE /api/me/learning-goal`: clears both columns, idempotent.
   async clearLearningGoal(actor: Actor): Promise<Record<string, never>> {
     await this.uow.run('learning-goal-clear', async (tx, ctx) => {
-      await requireActiveActor(tx, actor.studentId);
+      await readActiveActor(tx, actor.studentId);
       await clearGoalWrite(tx, actor.studentId, () => ctx.checkpoint('learning-goal-clear'));
     });
     return {};

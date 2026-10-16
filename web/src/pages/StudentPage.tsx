@@ -4,7 +4,7 @@ import { ApiProtocolError } from '../api/client';
 import { studentQueryOptions, type SkillView } from '../api/profile';
 import { AlertIcon, Avatar, Button, EmptyState, PersonName, RoleLabel, SkillChip } from '../design';
 import { NotFoundPage, PageTitle } from '../layout';
-import { formatNumber, profileCopy, profileErrorMessage } from '../profile/messages';
+import { formatNumber, isolateName, profileCopy, profileErrorMessage } from '../profile/messages';
 
 const copy = profileCopy.student;
 const stats = profileCopy.stats;
@@ -92,7 +92,7 @@ export function StudentPage(): React.JSX.Element {
 
   return (
     <>
-      <PageTitle name={name} />
+      <PageTitle name={isolateName(name)} />
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <Avatar src={removed ? null : student.avatarUrl} alt="" size="xl" />
