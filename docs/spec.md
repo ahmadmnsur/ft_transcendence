@@ -4281,7 +4281,8 @@ Internal ordering `/to-tickets` should encode as blocking edges; product decisio
     > Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174), after the foundation, the
     > SPA shell's changes, which make the legal renderer's classes flow-relative, and the English
     > sign-off (#69). The chart is #60's. The browser pass (#72) waits on the two merged-code tickets,
-    > since its Arabic pass checks them.
+    > since its Arabic pass checks them, and the README (#71) on the design system's changes and the
+    > legal translations, since its *Modules* claims both Minors.
 
 > **Sequenced on review of the ticket plan, 2026-09-24** (`docs/ticket-plan.md`; issues #29–#73; *uncommitted*). No
 > rule moves. Four orderings this list left open are fixed:

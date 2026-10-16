@@ -62,13 +62,13 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > and [Languages: the design system in French and Arabic, right to
 > left](https://github.com/ahmadmnsur/ft_transcendence/issues/173), for the merged code of T05,
 > T10 and T04; and [Languages: the Privacy Policy and the Terms in French and
-> Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174), before T45. The 23 open tickets
-> of this plan that show text, T11, T12, T14–T21, T24, T26–T32, T35–T38 and T42, gained the
-> *Three languages* criterion, and so did [Sign in with 42: recovery through Confirm with
+> Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174), after T41 and before T45. The 23
+> open tickets of this plan that show text, T11, T12, T14–T21, T24, T26–T32, T35–T38 and T42, gained
+> the *Three languages* criterion, and so did [Sign in with 42: recovery through Confirm with
 > 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157) and [Add password visibility and
 > sign-up confirmation](https://github.com/ahmadmnsur/ft_transcendence/issues/169). T32 also gained the chart in
-> Arabic, T43 the 20-point Modules, T44 and T45 the Arabic pass, and T45 the last proofreading pass
-> and how the evaluation shows both Minors.
+> Arabic; T43 the 20-point Modules, and #173 and #174 as blockers; T44 and T45 the Arabic pass; and
+> T45 the last proofreading pass and how the evaluation shows both Minors.
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
@@ -2390,6 +2390,15 @@ against the milestone they affect.
 > **20 points since 2026-10-15** (spec §1.3; ADR-0020 d1): the multi-language and right-to-left
 > Minors joined the claim. Their tickets are not in this plan; [Write the build tickets for French,
 > Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) opens them.
+>
+> **Opened 2026-10-16:** [Languages foundation: the dictionary, the switcher and the locale
+> table](https://github.com/ahmadmnsur/ft_transcendence/issues/171), [Languages: the SPA shell in
+> French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/172),
+> [Languages: the design system in French and Arabic, right to
+> left](https://github.com/ahmadmnsur/ft_transcendence/issues/173) and [Languages: the Privacy
+> Policy and the Terms in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174)
+> build both Minors, outside this plan. In it, T32 has the chart in Arabic, T44 and T45 the Arabic
+> pass, and T43 claims both Minors under *Modules*, after #173 and #174.
 
 **The mandatory part (§1.3):**
 - containerised single command: T01, T45;
