@@ -114,6 +114,9 @@ export function LearningGoalCard(): React.JSX.Element {
     setPending(true);
     try {
       const saved = await setLearningGoal({ skillId, text: text.trim() });
+      // A `GET /api/me` still in flight read the profile before this write;
+      // cancelling it keeps its older answer from landing over this one.
+      await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
       // The answer is the stored Goal (§6.2), so the cached read takes it
       // without a refetch. The own public profile is dropped, not just
       // invalidated: an inactive query would render the old Goal until its
@@ -146,6 +149,9 @@ export function LearningGoalCard(): React.JSX.Element {
     setClearing(true);
     try {
       await clearLearningGoal();
+      // A `GET /api/me` still in flight read the profile before this write;
+      // cancelling it keeps its older answer from landing over this one.
+      await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
       queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (previous) =>
         previous === undefined ? previous : { ...previous, learningGoal: null },
       );

@@ -82,8 +82,16 @@ export function StudentPage(): React.JSX.Element {
         </>
       );
     }
-    // The name is not known yet; the brand title holds until it is.
-    return <PageTitle />;
+    // The name is not known yet; the brand title holds until it is, and the
+    // page says it is loading instead of staying blank on a slow link.
+    return (
+      <>
+        <PageTitle />
+        <p aria-busy="true" className="mx-auto w-full max-w-2xl text-sm text-ink-muted">
+          {copy.loading}
+        </p>
+      </>
+    );
   }
 
   const { student, profile } = data;

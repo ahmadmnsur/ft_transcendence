@@ -100,9 +100,10 @@ export async function clearLearningGoal(): Promise<Record<string, never>> {
 }
 
 // One query key per screen state (§3.5.2: all server state through Query).
-// The own-profile query is briefly cached like the session and invalidated
-// by every write to it; the catalogue is a fixed seed, so it caches the
-// longest; a Student's profile is always re-read on the next visit.
+// The own-profile query is briefly cached like the session, and every write
+// to it updates the cached copy at once; the catalogue is a fixed seed, so
+// it caches the longest; a Student's profile is always re-read on the next
+// visit.
 export function meQueryOptions() {
   return queryOptions({
     queryKey: ME_QUERY_KEY,

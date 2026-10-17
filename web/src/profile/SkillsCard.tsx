@@ -7,6 +7,7 @@ import {
   setSkills,
   skillsQueryOptions,
   studentQueryKey,
+  type OwnProfile,
   type SkillView,
 } from '../api/profile';
 import { Banner, Button, Card, Select, SkillChip, type BannerTone } from '../design';
@@ -30,10 +31,20 @@ function sameIds(a: SkillView[], b: SkillView[]): boolean {
   return a.every((skill) => ids.has(skill.id));
 }
 
+// The server answers each list sorted by Skill name (§6.2), the order the
+// catalogue read already has, so a saved list put in that order is the one
+// the next `GET /api/me` returns. Without the catalogue a list keeps its own
+// order until that read lands.
+function inCatalogueOrder(list: SkillView[], catalogue: SkillView[] | undefined): SkillView[] {
+  if (catalogue === undefined) return list;
+  const rank = new Map(catalogue.map((skill, index) => [skill.id, index]));
+  return [...list].sort((a, b) => (rank.get(a.id) ?? rank.size) - (rank.get(b.id) ?? rank.size));
+}
+
 // §6.2: the two Skill lists, each 0–15 catalogue Skills, a Skill possibly on
 // both. Only what is on screen is kept in the draft; a save replaces both
-// lists in one call and refreshes `GET /api/me`, whose answer also tells
-// whether the Learning Goal lost its Skill and was cleared.
+// lists in one call, whose answer tells whether the Learning Goal lost its
+// Skill and was cleared, and the cached `GET /api/me` takes the saved lists.
 export function SkillsCard(): React.JSX.Element {
   const queryClient = useQueryClient();
   const { data: me, isError: meError } = useQuery(meQueryOptions());
@@ -166,8 +177,29 @@ export function SkillsCard(): React.JSX.Element {
     setPending(true);
     try {
       const result = await setSkills({ teach: teach.map((skill) => skill.id), learn: learn.map((skill) => skill.id) });
+      // A `GET /api/me` still in flight read the profile before this write;
+      // cancelling it keeps its older answer from landing over this one.
+      await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
+      // A 200 means the server now holds exactly these lists, and no Goal
+      // when the answer says it was cleared. The cache takes them before the
+      // draft is dropped, so the render without the draft already shows them:
+      // the card never falls back to the lists from before the save, however
+      // slow the re-read below is, or if it fails. That re-read runs in the
+      // background, unawaited, and only confirms what the cache holds.
+      queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (previous) =>
+        previous === undefined
+          ? previous
+          : {
+              ...previous,
+              skills: {
+                teach: inCatalogueOrder(teach, catalogue?.items),
+                learn: inCatalogueOrder(learn, catalogue?.items),
+              },
+              learningGoal: result.goalCleared ? null : previous.learningGoal,
+            },
+      );
       setDraft(null);
-      await queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
       // The own public profile shows the lists too. It is dropped, not just
       // invalidated: an inactive query would render the old lists until its
       // background refetch returns, so the next visit must load afresh.

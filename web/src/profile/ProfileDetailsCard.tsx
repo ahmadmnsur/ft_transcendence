@@ -92,6 +92,9 @@ export function ProfileDetailsCard(): React.JSX.Element {
     setPending(true);
     try {
       const updated = await updateProfile(patch);
+      // A `GET /api/me` still in flight read the profile before this write;
+      // cancelling it keeps its older answer from landing over this one.
+      await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
       // The answer is the full `GET /api/me` shape (§6.2), so the cached
       // read takes it as is. The session query is invalidated on top: the
       // header shows the display name. The own public profile is dropped, not

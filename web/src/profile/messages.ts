@@ -181,6 +181,8 @@ export const profileCopy = {
     goalHeading: 'Learning Goal',
     goalNone: 'No Learning Goal.',
     removedNote: 'This account was removed.',
+    // While `GET /api/students/:id` is pending, the page shows this sentence.
+    loading: 'Loading the profile…',
     retry: 'Try again',
   },
 } as const;
