@@ -27,6 +27,8 @@ export { Modal } from './components/Modal';
 export type { ModalProps } from './components/Modal';
 export { Pagination } from './components/Pagination';
 export type { PaginationProps } from './components/Pagination';
+export { PasswordField } from './components/PasswordField';
+export type { PasswordFieldProps } from './components/PasswordField';
 export { PersonName } from './components/PersonName';
 export type { PersonNameProps } from './components/PersonName';
 export { ProgressBar } from './components/ProgressBar';
