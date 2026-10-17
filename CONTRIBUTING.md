@@ -672,13 +672,12 @@ for `api` and `proxy`, after `.env.example`; it copies the example into place if
 project it empties. Bare Compose uses the same base file and works without `.env` because its
 interpolated ports have defaults. To run the team project, a team member's `.env` holds only its
 values (`DATABASE_URL`, `SUPABASE_URL`, the two keys, the three passwords and the `FT_OAUTH_*`
-pair), never a copy of `.env.example`, and only
-`make up`, bare `docker compose up --build` and `make reset-team` read it (`README.md` → *The
-`.env` model*, *Running the team project* and *The two resets*;
-[ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the database runs on the
-fallback, and migrations reach the team project only through `make up` on `main` (*Schema changes*
-→ *Supabase*, above). Develop through nginx at
-`http://localhost:8081`, published as `127.0.0.1:8081`; LAN access is outside the contract.
+pair), never a copy of `.env.example`, and only `make up`, bare `docker compose up --build` and
+`make reset-team` read it (`README.md` → *The `.env` model*, *Running the team project* and
+*The two resets*; [ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the
+database runs on the fallback, and migrations reach the team project only through `make up` on
+`main` (*Schema changes* → *Supabase*, above). Develop through nginx at `http://localhost:8081`,
+published as `127.0.0.1:8081`; LAN access is outside the contract.
 
 > **Toolchain floor, 2026-09-24** ([ADR-0004](docs/adr/0004-deployment-shape.md) d8;
 > [`docs/spec.md`](docs/spec.md) §3.3): Docker Compose **≥ 2.24.4**. The optional `env_file` needs

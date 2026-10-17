@@ -53,7 +53,7 @@ const target = parseTarget(process.argv[2]);
 let wrote = false;
 
 function stop(message: string): never {
-  const outcome = wrote ? 'Run it again to finish the reset.' : 'Nothing was deleted.';
+  const outcome = wrote ? 'Fix what it names, then run it again to finish the reset.' : 'Nothing was deleted.';
   console.error(`${target.command} ${message}. ${outcome}`);
   process.exit(1);
 }
@@ -116,6 +116,24 @@ async function confirmRef(ref: string): Promise<void> {
   if (typed.trim() !== ref) stop(`refused: the typed ref is not ${ref}`);
 }
 
+// Supabase Auth's admin list, read once before the first write. The
+// emptying's TRUNCATE comes before its first Auth call, so a wrong
+// SUPABASE_SECRET_KEY would otherwise be found only once the rows are gone.
+// Neither reset runs the boot check's step 3, which tests the keys (§15.5).
+async function checkAuthAdmin(auth: SupabaseAuthClient): Promise<void> {
+  try {
+    await auth.adminListUserIds();
+  } catch (err) {
+    const host = new URL(process.env['SUPABASE_URL'] as string).hostname;
+    // An ApiError here is busy_retry_later: no answer, a timeout or a 5xx.
+    stop(
+      err instanceof ApiError
+        ? `refused: Supabase Auth at SUPABASE_URL host ${host} did not answer; run the reset once it does`
+        : `refused: Supabase Auth at SUPABASE_URL host ${host} did not accept the admin list request; SUPABASE_SECRET_KEY must be ${target.name}'s secret key`,
+    );
+  }
+}
+
 async function reset(): Promise<void> {
   const found = checkValues(process.env);
   const auth = new SupabaseAuthClient(new AppConfig());
@@ -131,6 +149,7 @@ async function reset(): Promise<void> {
   if (!(await orStop("taking the seed's lock", () => tryTakeSeedLock(lock.client)))) {
     stop(`refused: a seed, or another reset, is running on ${where} and holds the seed's lock; run the reset once it has finished`);
   }
+  await checkAuthAdmin(auth);
   console.log(`${target.command}: emptying ${where}`);
 
   // The first write, on the lock's connection: a reset that stops partway
