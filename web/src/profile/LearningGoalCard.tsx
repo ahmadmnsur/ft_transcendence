@@ -7,10 +7,13 @@ import {
   clearLearningGoal,
   meQueryOptions,
   setLearningGoal,
+  studentQueryKey,
+  type LearningGoalView,
   type OwnProfile,
 } from '../api/profile';
-import { Banner, Button, Card, Select, TextField, type BannerTone } from '../design';
+import { Banner, Button, Card, Select, TextArea, type BannerTone } from '../design';
 import { formatCount, isolateName, profileCopy, profileErrorMessage, profileFailureMessage } from './messages';
+import { PendingCardBody } from './PendingCardBody';
 
 const copy = profileCopy.goal;
 
@@ -20,12 +23,13 @@ interface Status {
 }
 
 // §6.2: the Learning Goal, one Skill on the saved learn list plus a 1–200
-// character sentence, or cleared. The form only appears while the learn
-// list has a Skill to name; saving writes both fields at once, clearing
-// removes both.
-export function LearningGoalCard(): React.JSX.Element | null {
+// character sentence, or cleared. A saved Goal shows as plain content with an
+// Edit button; the form appears for an edit, or whenever no Goal is saved, and
+// only while the learn list has a Skill to name. Saving writes both fields at
+// once, clearing removes both.
+export function LearningGoalCard(): React.JSX.Element {
   const queryClient = useQueryClient();
-  const { data: me } = useQuery(meQueryOptions());
+  const { data: me, isError } = useQuery(meQueryOptions());
   // Null while nothing is edited: the fields follow the server then, so a
   // refetch never overwrites what the Student is typing.
   const [draft, setDraft] = useState<{ skillId: string; text: string } | null>(null);
@@ -34,8 +38,15 @@ export function LearningGoalCard(): React.JSX.Element | null {
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const [clearing, setClearing] = useState(false);
+  // False views the saved Goal; the empty form shows whenever there is no
+  // saved Goal to view.
+  const [editing, setEditing] = useState(false);
+  // Where focus lands once a mode change has rendered: the Select when the
+  // form appears, the Edit button when the view returns.
+  const [focusTarget, setFocusTarget] = useState<'skill' | 'edit' | null>(null);
   const skillRef = useRef<HTMLSelectElement>(null);
-  const textRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const editRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
   const learn = me?.skills.learn ?? [];
@@ -55,11 +66,32 @@ export function LearningGoalCard(): React.JSX.Element | null {
     setDraft({ skillId: goal?.skill.id ?? '', text: draft.text });
   }, [draft, learn, goal]);
 
-  // The profile is not loaded yet; the card appears with its values filled.
-  if (me === undefined) return null;
+  // A mode change renders first, then focus lands where the change implies.
+  useEffect(() => {
+    if (focusTarget === null) return;
+    const target = focusTarget === 'skill' ? skillRef.current : editRef.current;
+    target?.focus();
+    setFocusTarget(null);
+  }, [focusTarget]);
+
+  // §6.2: the card shell shows at once. While the profile read is pending the
+  // body says so and reserves the loaded height; a failed read leaves the body
+  // empty, since `/me` shows the failure once above the cards.
+  if (me === undefined) {
+    return (
+      <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
+        <PendingCardBody failed={isError} reserveClassName="min-h-48" />
+      </Card>
+    );
+  }
 
   const skillId = draft?.skillId ?? goal?.skill.id ?? '';
   const text = draft?.text ?? goal?.text ?? '';
+  // A saved Goal shows as plain content unless the Student is editing it.
+  const viewed = goal !== null && !editing ? goal : null;
+  // Read outside the handlers: the narrowing of `me` does not reach a function
+  // declaration.
+  const meId = me.id;
 
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
@@ -83,12 +115,17 @@ export function LearningGoalCard(): React.JSX.Element | null {
     try {
       const saved = await setLearningGoal({ skillId, text: text.trim() });
       // The answer is the stored Goal (§6.2), so the cached read takes it
-      // without a refetch.
+      // without a refetch. The own public profile is dropped, not just
+      // invalidated: an inactive query would render the old Goal until its
+      // background refetch returns, so the next visit must load afresh.
       queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (previous) =>
         previous === undefined ? previous : { ...previous, learningGoal: saved },
       );
+      queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
       setDraft(null);
+      setEditing(false);
       setStatus({ tone: 'success', title: copy.saved });
+      setFocusTarget('edit');
     } catch (error) {
       // A refusal names the Skill field it is about; anything else sums up
       // in the status Banner.
@@ -112,8 +149,13 @@ export function LearningGoalCard(): React.JSX.Element | null {
       queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (previous) =>
         previous === undefined ? previous : { ...previous, learningGoal: null },
       );
+      // The own public profile shows the Goal too; drop it so the next visit
+      // loads afresh instead of rendering the old Goal while it refetches.
+      queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
       setDraft(null);
+      setEditing(false);
       setStatus({ tone: 'success', title: copy.cleared });
+      setFocusTarget('skill');
     } catch (error) {
       setStatus({ tone: 'danger', title: profileFailureMessage(error) });
     } finally {
@@ -121,68 +163,109 @@ export function LearningGoalCard(): React.JSX.Element | null {
     }
   }
 
+  // Cancel drops the draft and returns to the saved Goal's view.
+  function onCancel(): void {
+    setDraft(null);
+    setSkillError(undefined);
+    setTextError(undefined);
+    setStatus(undefined);
+    setEditing(false);
+    setFocusTarget('edit');
+  }
+
+  function onEdit(): void {
+    setEditing(true);
+    setFocusTarget('skill');
+  }
+
+  // The saved Goal as plain content of the card: no nested bordered box.
+  function renderView(saved: LearningGoalView): React.JSX.Element {
+    return (
+      <div className="flex min-w-0 flex-col gap-3">
+        <h3 className="text-sm font-semibold text-ink">{copy.currentHeading}</h3>
+        <p className="text-sm font-semibold text-ink">
+          <bdi>{saved.skill.name}</bdi>
+        </p>
+        <p dir="auto" className="text-sm text-ink wrap-anywhere">
+          {saved.text}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button ref={editRef} variant="secondary" onClick={onEdit}>
+            {copy.edit}
+          </Button>
+          <Button variant="secondary" loading={clearing} onClick={() => void onClear()}>
+            {clearing ? copy.clearing : copy.clear}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderForm(): React.JSX.Element {
+    return (
+      <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
+        <Select
+          ref={skillRef}
+          label={copy.skillLabel}
+          value={skillId}
+          onChange={(event) => {
+            setDraft({ skillId: event.target.value, text });
+            setSkillError(undefined);
+          }}
+          error={skillError}
+        >
+          <option value="">{copy.skillPlaceholder}</option>
+          {learn.map((skill) => (
+            <option key={skill.id} value={skill.id}>
+              {isolateName(skill.name)}
+            </option>
+          ))}
+        </Select>
+        <TextArea
+          ref={textRef}
+          label={copy.textLabel}
+          hint={formatCount(copy.textHint, LIMITS.learningGoalText.maxChars, LIMITS.learningGoalText)}
+          rows={3}
+          value={text}
+          onKeyDown={(event) => {
+            // The sentence is one line: Enter never inserts a newline.
+            if (event.key === 'Enter') event.preventDefault();
+          }}
+          onChange={(event) => {
+            // A pasted newline becomes a space, so the value never holds `\n`
+            // or `\r` (§6.2).
+            setDraft({ skillId, text: event.target.value.replace(/[\r\n]+/g, ' ') });
+            setTextError(undefined);
+          }}
+          error={textError}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" loading={pending}>
+            {pending ? copy.saving : copy.save}
+          </Button>
+          {goal !== null ? (
+            <Button variant="secondary" onClick={onCancel}>
+              {copy.cancel}
+            </Button>
+          ) : null}
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <Card title={copy.title} subtitle={copy.subtitle}>
+    <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
       {learn.length === 0 ? (
         <p className="text-sm text-ink-muted">{copy.noLearn}</p>
       ) : (
-        <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           {status !== undefined ? (
             <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
               <Banner tone={status.tone} title={status.title} />
             </div>
           ) : null}
-          {goal !== null ? (
-            <section className="min-w-0 rounded-lg border border-line bg-surface-muted p-3">
-              <h4 className="text-sm font-semibold text-ink">{copy.currentHeading}</h4>
-              <p className="mt-1 text-sm font-semibold text-ink">
-                <bdi>{goal.skill.name}</bdi>
-              </p>
-              <p dir="auto" className="text-sm text-ink wrap-anywhere">
-                {goal.text}
-              </p>
-            </section>
-          ) : null}
-          <Select
-            ref={skillRef}
-            label={copy.skillLabel}
-            value={skillId}
-            onChange={(event) => {
-              setDraft({ skillId: event.target.value, text });
-              setSkillError(undefined);
-            }}
-            error={skillError}
-          >
-            <option value="">{copy.skillPlaceholder}</option>
-            {learn.map((skill) => (
-              <option key={skill.id} value={skill.id}>
-                {isolateName(skill.name)}
-              </option>
-            ))}
-          </Select>
-          <TextField
-            ref={textRef}
-            label={copy.textLabel}
-            hint={formatCount(copy.textHint, LIMITS.learningGoalText.maxChars, LIMITS.learningGoalText)}
-            type="text"
-            value={text}
-            onChange={(event) => {
-              setDraft({ skillId, text: event.target.value });
-              setTextError(undefined);
-            }}
-            error={textError}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" loading={pending}>
-              {pending ? copy.saving : copy.save}
-            </Button>
-            {goal !== null ? (
-              <Button variant="secondary" loading={clearing} onClick={() => void onClear()}>
-                {clearing ? copy.clearing : copy.clear}
-              </Button>
-            ) : null}
-          </div>
-        </form>
+          {viewed !== null ? renderView(viewed) : renderForm()}
+        </div>
       )}
     </Card>
   );

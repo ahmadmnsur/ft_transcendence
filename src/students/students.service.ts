@@ -128,7 +128,7 @@ export class StudentsService {
     return { items };
   }
 
-  // §6.2: own profile; the only route that returns the email.
+  // §6.2: own profile; the only profile route that returns the email.
   async getOwnProfile(actor: Actor): Promise<OwnProfile> {
     return this.readOwnProfile(actor.studentId);
   }

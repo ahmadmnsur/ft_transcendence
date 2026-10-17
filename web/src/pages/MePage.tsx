@@ -11,7 +11,8 @@ import { PageTitle } from '../layout';
 import { LearningGoalCard } from '../profile/LearningGoalCard';
 import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
 import { SkillsCard } from '../profile/SkillsCard';
-import { profileCopy } from '../profile/messages';
+import { profileCopy, profileErrorMessage } from '../profile/messages';
+import { meQueryOptions } from '../api/profile';
 
 // `/me` (§3.5.1, §6.2): the profile, Skills and Learning Goal cards above the
 // password-change form under a clear heading. On success the Student is signed
@@ -25,6 +26,9 @@ export function MePage(): React.JSX.Element {
   const navigate = useNavigate();
   // The hidden username field below carries the signed-in Student's email.
   const { data: session } = useQuery(sessionQueryOptions());
+  // §6.2: the three profile cards share the own-profile read; its failure is
+  // shown once here, above them, not three times inside them.
+  const { data: me, isError: meError, refetch: refetchMe } = useQuery(meQueryOptions());
   const username = session?.authenticated === true ? session.student.email : '';
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -131,11 +135,21 @@ export function MePage(): React.JSX.Element {
           </p>
         ) : null}
         <div className="mt-4 flex flex-col gap-4">
+          {me === undefined && meError ? (
+            // §6.15: one generic sentence and one retry for the failed read,
+            // above the cards, which then keep their titles and empty bodies.
+            <div className="flex min-w-0 flex-col gap-2">
+              <Banner tone="danger" title={profileErrorMessage(undefined)} />
+              <Button variant="secondary" className="self-start" onClick={() => void refetchMe()}>
+                {profileCopy.me.retry}
+              </Button>
+            </div>
+          ) : null}
           <ProfileDetailsCard />
           <SkillsCard />
           <LearningGoalCard />
         </div>
-        <Card title={t.auth.passwordChange.cardTitle} subtitle={t.auth.passwordChange.cardSubtitle} className="mt-4">
+        <Card title={t.auth.passwordChange.cardTitle} subtitle={t.auth.passwordChange.cardSubtitle} headingLevel={2} className="mt-4">
           <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
             {status !== undefined ? (
               <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">

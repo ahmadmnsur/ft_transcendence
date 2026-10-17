@@ -96,7 +96,7 @@ export function StudentPage(): React.JSX.Element {
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <Avatar src={removed ? null : student.avatarUrl} alt="" size="xl" />
-          <h1 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold text-ink">
+          <h1 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold text-ink wrap-anywhere">
             <PersonName name={name} />
             {/* §12.8: the Admin label, and never any other role. */}
             {student.isAdmin && !removed ? <RoleLabel /> : null}

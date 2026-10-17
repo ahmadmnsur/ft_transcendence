@@ -90,10 +90,14 @@ export const profileCopy = {
   tombstone: 'Former student',
   me: {
     publicProfileLink: 'View your public profile',
+    // §6.2: `/me` reads the profile once; while that read is pending the cards
+    // keep their shells and this sentence, and a failed read has one retry.
+    loading: 'Loading your profile…',
+    retry: 'Try again',
   },
   details: {
     title: 'Profile details',
-    subtitle: 'Shown to every signed-in Student wherever you appear.',
+    subtitle: 'Your display name and the email you sign in with.',
     displayNameLabel: 'Display name',
     displayNameHint: {
       one: '{minChars}–{count} character. Shown to every signed-in Student.',
@@ -111,10 +115,11 @@ export const profileCopy = {
     save: 'Save',
     saving: 'Saving…',
     saved: 'Your profile was updated.',
+    nothingToSave: 'Nothing to save.',
   },
   skills: {
     title: 'Skills',
-    subtitle: 'Both lists show on your profile.',
+    subtitle: 'Both lists show on your profile, and the next Round matches you on them.',
     teachHeading: 'Skills I can teach',
     learnHeading: 'Skills I want to learn',
     teachSelectLabel: 'Choose a Skill to teach',
@@ -127,7 +132,10 @@ export const profileCopy = {
       other: 'A list holds up to {count} Skills.',
     },
     nothingToAdd: 'You have listed every catalogue Skill here.',
+    catalogueLoading: 'Loading the Skill catalogue…',
     chooseFirst: 'Choose a Skill to add.',
+    unsaved: 'You have unsaved changes.',
+    goalWillClear: 'Saving will clear your Learning Goal, because its Skill is no longer on your learn list.',
     save: 'Save',
     saving: 'Saving…',
     saved: 'Your Skills were saved.',
@@ -154,6 +162,8 @@ export const profileCopy = {
     save: 'Save',
     saving: 'Saving…',
     saved: 'Your Learning Goal was saved.',
+    edit: 'Edit',
+    cancel: 'Cancel',
     clear: 'Clear',
     clearing: 'Clearing…',
     cleared: 'Your Learning Goal was cleared.',

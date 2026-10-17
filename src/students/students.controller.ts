@@ -20,7 +20,8 @@ export class StudentsController {
     return this.students.listSkills(requestActor(request));
   }
 
-  // `GET /api/me` (§6.2): own profile; the only route that returns the email.
+  // `GET /api/me` (§6.2): own profile; the only profile route that returns
+  // the email.
   @Get('me')
   getOwnProfile(@Req() request: Request): Promise<OwnProfile> {
     return this.students.getOwnProfile(requestActor(request));
