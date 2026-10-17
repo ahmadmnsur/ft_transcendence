@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { direction } from '../i18n/language';
+import type { Language } from '../i18n/types';
 import {
   inlineText,
   parseMarkdown,
@@ -199,7 +201,15 @@ function LegalBlock({
   }
 }
 
-export function LegalDocument({ source, fileName }: { source: string; fileName: string }): React.JSX.Element {
+export function LegalDocument({
+  source,
+  fileName,
+  language,
+}: {
+  source: string;
+  fileName: string;
+  language: Language;
+}): React.JSX.Element {
   const blocks = useMemo(() => parseMarkdown(source, fileName), [source, fileName]);
   // Each table names the nearest preceding heading, so the scroll region
   // has a label even though tables carry no caption of their own.
@@ -210,7 +220,11 @@ export function LegalDocument({ source, fileName }: { source: string; fileName: 
     return { block, label: heading === '' ? 'Table' : heading, tightTop: index > 0 && isLabelParagraph(blocks[index - 1]) };
   });
   return (
-    <article className="mx-auto max-w-[68ch] text-base leading-relaxed text-ink selection:bg-primary-100 selection:text-primary-900 [&>h1+p]:border-b [&>h1+p]:border-line [&>h1+p]:pb-6 [&>h1+p]:text-sm [&>h1+p]:text-ink-muted [&>h1+p+*]:mt-6">
+    <article
+      lang={language}
+      dir={direction[language]}
+      className="mx-auto max-w-[68ch] text-base leading-relaxed text-ink selection:bg-primary-100 selection:text-primary-900 [&>h1+p]:border-b [&>h1+p]:border-line [&>h1+p]:pb-6 [&>h1+p]:text-sm [&>h1+p]:text-ink-muted [&>h1+p+*]:mt-6"
+    >
       {labelled.map(({ block, label, tightTop }, index) => (
         <LegalBlock key={index} block={block} label={label} tightTop={tightTop} />
       ))}

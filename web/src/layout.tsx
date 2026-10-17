@@ -5,8 +5,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiProtocolError } from './api/client';
 import { logout } from './api/auth';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from './api/session';
-import { authCopy } from './auth/messages';
-import { AlertIcon, Button, EmptyState, PersonName, SearchIcon, buttonClasses } from './design';
+import { useI18n } from './i18n/context';
+import { languageNames, languages } from './i18n/language';
+import { AlertIcon, Button, EmptyState, PersonName, SearchIcon, Select, buttonClasses } from './design';
+
+// The product name is never translated.
+const BRAND = '42 PeerConnect';
 
 // One string child: `${name} · 42 PeerConnect`, or the brand alone when
 // `name` is absent. React hoists it into <head> and removes it on unmount,
@@ -18,12 +22,12 @@ export function PageTitle({ name }: { name?: string }): React.JSX.Element {
 }
 
 function SiteHeader(): React.JSX.Element {
-  const copy = authCopy.header;
+  const { t, language, setLanguage } = useI18n();
   const { data: session } = useQuery(sessionQueryOptions());
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
-  const [signOutError, setSignOutError] = useState<string | undefined>(undefined);
+  const [signOutFailed, setSignOutFailed] = useState(false);
 
   function signOutLocally(): void {
     queryClient.clear();
@@ -38,7 +42,7 @@ function SiteHeader(): React.JSX.Element {
   async function onSignOut(): Promise<void> {
     if (signingOut) return;
     setSigningOut(true);
-    setSignOutError(undefined);
+    setSignOutFailed(false);
     try {
       await logout();
     } catch (error) {
@@ -54,7 +58,7 @@ function SiteHeader(): React.JSX.Element {
           signedOut = false;
         }
         if (!signedOut) {
-          setSignOutError(copy.signOutFailed);
+          setSignOutFailed(true);
           setSigningOut(false);
           return;
         }
@@ -64,30 +68,35 @@ function SiteHeader(): React.JSX.Element {
     await goToSignIn();
   }
 
+  function onLanguageChange(event: React.ChangeEvent<HTMLSelectElement>): void {
+    const next = languages.find((l) => l === event.target.value);
+    if (next !== undefined) setLanguage(next);
+  }
+
   return (
     <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
         <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
-          {copy.brand}
+          <bdi>{BRAND}</bdi>
         </Link>
-        <nav aria-label={copy.navLabel} className="ms-auto flex min-w-0 items-center gap-2">
+        <nav aria-label={t.shell.header.navLabel} className="ms-auto flex min-w-0 items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
           {session?.authenticated === true ? (
             <>
               <span className="hidden max-w-40 truncate text-sm text-ink-muted sm:inline">
-                <PersonName name={session.student.displayName} />
+                <PersonName name={session.student.displayName} removed={false} />
               </span>
               <Link
                 to="/me"
                 className={buttonClasses({ variant: 'secondary', size: 'sm' })}
               >
-                {copy.profileLink}
+                {t.shell.header.profileLink}
               </Link>
               <Button variant="secondary" size="sm" loading={signingOut} onClick={() => void onSignOut()}>
-                {signingOut ? copy.signingOut : copy.signOut}
+                {signingOut ? t.shell.header.signingOut : t.shell.header.signOut}
               </Button>
-              {signOutError !== undefined ? (
+              {signOutFailed ? (
                 <span role="alert" className="max-w-48 text-xs text-ink-danger">
-                  {signOutError}
+                  {t.shell.header.signOutFailed}
                 </span>
               ) : null}
             </>
@@ -97,28 +106,45 @@ function SiteHeader(): React.JSX.Element {
                 to="/sign-in"
                 className={buttonClasses({ variant: 'secondary', size: 'sm' })}
               >
-                {copy.signInLink}
+                {t.shell.header.signInLink}
               </Link>
               <Link to="/sign-up" className={buttonClasses({ variant: 'primary', size: 'sm' })}>
-                {copy.signUpLink}
+                {t.shell.header.signUpLink}
               </Link>
             </>
           )}
         </nav>
+        {/* Below `sm` the switcher ends the brand's line and the nav takes a second line, so the
+        header keeps to two lines from 360 px. The DOM keeps the desktop order: brand, nav,
+        switcher. */}
+        <Select
+          hideLabel
+          label={t.shell.language.label}
+          value={language}
+          onChange={onLanguageChange}
+          className="w-32 shrink-0 max-sm:order-1 max-sm:ms-auto"
+        >
+          {languages.map((l) => (
+            <option key={l} value={l} lang={l}>
+              {languageNames[l]}
+            </option>
+          ))}
+        </Select>
       </div>
     </header>
   );
 }
 
 function SiteFooter(): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <footer className="border-t border-line bg-surface">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-4 text-sm">
         <Link to="/privacy" className="rounded text-link underline underline-offset-2 focus-ring">
-          Privacy Policy
+          {t.shell.footer.privacy}
         </Link>
         <Link to="/terms" className="rounded text-link underline underline-offset-2 focus-ring">
-          Terms of Service
+          {t.shell.footer.terms}
         </Link>
       </div>
     </footer>

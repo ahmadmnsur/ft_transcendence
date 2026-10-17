@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react';
-import { FieldMessages, useField } from './field';
+import { FieldMessages, useField, type FieldMessage } from './field';
 
 export interface CheckboxProps extends Omit<ComponentProps<'input'>, 'type'> {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: FieldMessage;
+  error?: FieldMessage;
 }
 
 export function Checkbox({ label, hint, error, id, 'aria-describedby': describedBy, 'aria-invalid': invalid, className = '', ...rest }: CheckboxProps): React.JSX.Element {

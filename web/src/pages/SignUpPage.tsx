@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  LIMITS,
   isValidDisplayName,
   isValidEmail,
   isValidPassword,
@@ -11,25 +12,27 @@ import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { signup } from '../api/auth';
 import { SESSION_QUERY_KEY } from '../api/session';
 import { Banner, Button, Card, Checkbox, PasswordField, TextField } from '../design';
+import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
-import { authCopy, authErrorMessage } from '../auth/messages';
 
-const copy = authCopy.signUp;
-
-function confirmationError(password: string, confirmation: string): string | undefined {
-  if (confirmation.trim() === '') return copy.confirmPasswordEmpty;
-  return confirmation.trim() === password.trim() ? undefined : copy.confirmPasswordMismatch;
+// Which message the confirmation shows, or undefined when it matches.
+function confirmationError(password: string, confirmation: string): 'empty' | 'mismatch' | undefined {
+  if (confirmation.trim() === '') return 'empty';
+  return confirmation.trim() === password.trim() ? undefined : 'mismatch';
 }
 
-function failureMessage(error: unknown): string {
-  if (error instanceof ApiRefusalError) return authErrorMessage(error.code);
-  if (error instanceof ApiProtocolError) return authErrorMessage(error.code);
-  return authErrorMessage(undefined);
+// The code a failed sign-up carries, or undefined when the response is not
+// the envelope; the text is read while rendering, so a switch re-renders it.
+function failureCode(error: unknown): unknown {
+  if (error instanceof ApiRefusalError) return error.code;
+  if (error instanceof ApiProtocolError) return error.code;
+  return undefined;
 }
 
 // §3.5.1: the signed-out sign-up page. Client validation uses the shared
 // limits, so in normal use the submit never sends an invalid request.
 export function SignUpPage(): React.JSX.Element {
+  const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -37,12 +40,12 @@ export function SignUpPage(): React.JSX.Element {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [emailError, setEmailError] = useState<string | undefined>(undefined);
-  const [displayNameError, setDisplayNameError] = useState<string | undefined>(undefined);
-  const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string | undefined>(undefined);
-  const [termsError, setTermsError] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<string | undefined>(undefined);
+  const [emailError, setEmailError] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<'empty' | 'mismatch' | undefined>(undefined);
+  const [termsError, setTermsError] = useState(false);
+  const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const displayNameRef = useRef<HTMLInputElement>(null);
@@ -50,6 +53,11 @@ export function SignUpPage(): React.JSX.Element {
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
   const termsRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+
+  const passwordInvalid = format(t.auth.password.invalid, {
+    minChars: LIMITS.password.minChars,
+    maxBytes: LIMITS.password.maxBytes,
+  });
 
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors below.
@@ -60,32 +68,31 @@ export function SignUpPage(): React.JSX.Element {
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending) return;
-    const nextEmailError = isValidEmail(email) ? undefined : copy.emailInvalid;
-    const nextDisplayNameError = isValidDisplayName(displayName) ? undefined : copy.displayNameInvalid;
-    const nextPasswordError = isValidPassword(password) ? undefined : copy.passwordInvalid;
+    const nextEmailError = !isValidEmail(email);
+    const nextDisplayNameError = !isValidDisplayName(displayName);
+    const nextPasswordError = !isValidPassword(password);
     const nextConfirmPasswordError = confirmationError(password, confirmPassword);
-    const nextTermsError = acceptTerms ? undefined : copy.acceptTermsInvalid;
+    const nextTermsError = !acceptTerms;
     setEmailError(nextEmailError);
     setDisplayNameError(nextDisplayNameError);
     setPasswordError(nextPasswordError);
     setConfirmPasswordError(nextConfirmPasswordError);
     setTermsError(nextTermsError);
     setStatus(undefined);
-    const firstInvalid =
-      nextEmailError !== undefined
-        ? emailRef
-        : nextDisplayNameError !== undefined
-          ? displayNameRef
-          : nextPasswordError !== undefined
-            ? passwordRef
-            : nextConfirmPasswordError !== undefined
-              ? confirmPasswordRef
-              : null;
+    const firstInvalid = nextEmailError
+      ? emailRef
+      : nextDisplayNameError
+        ? displayNameRef
+        : nextPasswordError
+          ? passwordRef
+          : nextConfirmPasswordError !== undefined
+            ? confirmPasswordRef
+            : null;
     if (firstInvalid !== null) {
       firstInvalid.current?.focus();
       return;
     }
-    if (nextTermsError !== undefined) {
+    if (nextTermsError) {
       termsRef.current?.focus();
       return;
     }
@@ -100,7 +107,7 @@ export function SignUpPage(): React.JSX.Element {
       queryClient.setQueryData(SESSION_QUERY_KEY, { authenticated: true, student });
       await navigate({ to: '/' });
     } catch (error) {
-      setStatus(failureMessage(error));
+      setStatus({ code: failureCode(error) });
     } finally {
       setPending(false);
     }
@@ -108,42 +115,55 @@ export function SignUpPage(): React.JSX.Element {
 
   return (
     <>
-      <PageTitle name={copy.title} />
+      <PageTitle name={t.auth.signUp.title} />
       <div className="mx-auto w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-ink">{copy.heading}</h1>
+        <h1 className="text-2xl font-semibold text-ink">{t.auth.signUp.heading}</h1>
         <div className="mt-4 flex min-w-0 flex-col gap-4">
           <Card>
             <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
               {status !== undefined ? (
                 <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
-                  <Banner tone="danger" title={status} />
+                  <Banner tone="danger" title={errorText(status.code)} />
                 </div>
               ) : null}
               <TextField
                 ref={emailRef}
-                label={copy.emailLabel}
-                hint={copy.emailHint}
+                label={t.auth.signUp.emailLabel}
+                hint={t.auth.signUp.emailHint}
                 type="email"
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                error={emailError}
+                error={emailError ? t.auth.signUp.emailInvalid : undefined}
               />
               <TextField
                 ref={displayNameRef}
-                label={copy.displayNameLabel}
-                hint={copy.displayNameHint}
+                label={t.auth.signUp.displayNameLabel}
+                hint={format(t.auth.signUp.displayNameHint, {
+                  count: LIMITS.displayName.maxChars,
+                  minChars: LIMITS.displayName.minChars,
+                })}
                 type="text"
                 autoComplete="nickname"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                error={displayNameError}
+                error={
+                  displayNameError
+                    ? format(t.auth.signUp.displayNameInvalid, {
+                        count: LIMITS.displayName.maxChars,
+                        minChars: LIMITS.displayName.minChars,
+                      })
+                    : undefined
+                }
               />
               <PasswordField
                 ref={passwordRef}
-                label={copy.passwordLabel}
-                hint={copy.passwordHint}
-                {...authCopy.passwordVisibility}
+                label={t.auth.signUp.passwordLabel}
+                hint={format(t.auth.password.hint, {
+                  minChars: LIMITS.password.minChars,
+                  maxBytes: LIMITS.password.maxBytes,
+                })}
+                {...t.auth.passwordVisibility}
                 autoComplete="new-password"
                 value={password}
                 onChange={(event) => {
@@ -152,12 +172,12 @@ export function SignUpPage(): React.JSX.Element {
                     setConfirmPasswordError(confirmationError(event.target.value, confirmPassword));
                   }
                 }}
-                error={passwordError}
+                error={passwordError ? passwordInvalid : undefined}
               />
               <PasswordField
                 ref={confirmPasswordRef}
-                label={copy.confirmPasswordLabel}
-                {...copy.confirmPasswordVisibility}
+                label={t.auth.signUp.confirmPasswordLabel}
+                {...t.auth.signUp.confirmPasswordVisibility}
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(event) => {
@@ -166,37 +186,50 @@ export function SignUpPage(): React.JSX.Element {
                     setConfirmPasswordError(confirmationError(password, event.target.value));
                   }
                 }}
-                error={confirmPasswordError}
+                error={
+                  confirmPasswordError === undefined
+                    ? undefined
+                    : confirmPasswordError === 'empty'
+                      ? t.auth.signUp.confirmPasswordEmpty
+                      : t.auth.signUp.confirmPasswordMismatch
+                }
               />
               <div className="min-w-0">
                 <Checkbox
                   ref={termsRef}
-                  label={copy.acceptTermsLabel}
+                  label={t.auth.signUp.acceptTermsLabel}
                   checked={acceptTerms}
                   onChange={(event) => setAcceptTerms(event.target.checked)}
-                  error={termsError}
+                  error={termsError ? t.auth.signUp.acceptTermsInvalid : undefined}
                 />
                 <p className="mt-1 ps-6 text-xs text-ink-muted">
-                  {copy.acceptTermsLinksPrefix}{' '}
-                  <Link to="/terms" className="rounded text-link underline underline-offset-2 focus-ring">
-                    {copy.termsLink}
-                  </Link>{' '}
-                  ·{' '}
-                  <Link to="/privacy" className="rounded text-link underline underline-offset-2 focus-ring">
-                    {copy.privacyLink}
-                  </Link>
+                  {format(t.auth.signUp.readFullText, {
+                    termsLink: (
+                      <Link to="/terms" className="rounded text-link underline underline-offset-2 focus-ring">
+                        {t.auth.signUp.termsLink}
+                      </Link>
+                    ),
+                    privacyLink: (
+                      <Link to="/privacy" className="rounded text-link underline underline-offset-2 focus-ring">
+                        {t.auth.signUp.privacyLink}
+                      </Link>
+                    ),
+                  })}
                 </p>
               </div>
               <Button type="submit" loading={pending} className="w-full">
-                {pending ? copy.submitting : copy.submit}
+                {pending ? t.auth.signUp.submitting : t.auth.signUp.submit}
               </Button>
             </form>
           </Card>
           <p className="text-center text-sm text-ink-muted">
-            {copy.haveAccountCta}{' '}
-            <Link to="/sign-in" className="rounded text-link underline underline-offset-2 focus-ring">
-              {copy.signInLink}
-            </Link>
+            {format(t.auth.signUp.haveAccount, {
+              link: (
+                <Link to="/sign-in" className="rounded text-link underline underline-offset-2 focus-ring">
+                  {t.auth.signUp.signInLink}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       </div>

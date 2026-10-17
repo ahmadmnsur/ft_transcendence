@@ -1,21 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { isValidEmail, isValidPassword, normalizeEmail } from '@shared/limits';
+import { LIMITS, isValidEmail, isValidPassword, normalizeEmail } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { login, start42 } from '../api/auth';
 import { configQueryOptions } from '../api/config';
 import { SESSION_QUERY_KEY } from '../api/session';
 import { Banner, Button, Card, PasswordField, TextField } from '../design';
+import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
-import { authCopy, authErrorMessage } from '../auth/messages';
 
-const copy = authCopy.signIn;
-
-function failureMessage(error: unknown): string {
-  if (error instanceof ApiRefusalError) return authErrorMessage(error.code);
-  if (error instanceof ApiProtocolError) return authErrorMessage(error.code);
-  return authErrorMessage(undefined);
+// The code a failed sign-in carries, or undefined when the response is not
+// the envelope; the text is read while rendering, so a switch re-renders it.
+function failureCode(error: unknown): unknown {
+  if (error instanceof ApiRefusalError) return error.code;
+  if (error instanceof ApiProtocolError) return error.code;
+  return undefined;
 }
 
 const signInSearch = getRouteApi('/sign-in');
@@ -24,6 +24,7 @@ const signInSearch = getRouteApi('/sign-in');
 // query and goes to `/`. Each refusal shows its own sentence, picked by code;
 // the server's message is never displayed.
 export function SignInPage(): React.JSX.Element {
+  const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { notice, oauth } = signInSearch.useSearch();
@@ -32,9 +33,10 @@ export function SignInPage(): React.JSX.Element {
   const config = useQuery(configQueryOptions());
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState<string | undefined>(undefined);
-  const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<string | undefined>(undefined);
+  const [emailError, setEmailError] = useState(false);
+  const [passwordError, setPasswordError] = useState<'empty' | 'invalid' | undefined>(undefined);
+  // A refusal's code, or 42's failure notice, which has no code.
+  const [status, setStatus] = useState<{ code: unknown } | 'oauth-failed' | undefined>(undefined);
   // One authentication action at a time: the password form and the 42 button
   // share this slot, so neither can start while the other runs.
   const [pending, setPending] = useState<'password' | 'oauth' | null>(null);
@@ -43,6 +45,11 @@ export function SignInPage(): React.JSX.Element {
   const statusRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(false);
   const handOffTimerRef = useRef<number | undefined>(undefined);
+
+  const passwordInvalid = format(t.auth.password.invalid, {
+    minChars: LIMITS.password.minChars,
+    maxBytes: LIMITS.password.maxBytes,
+  });
 
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors below.
@@ -68,7 +75,7 @@ export function SignInPage(): React.JSX.Element {
   // route sets it again.
   useEffect(() => {
     if (oauth !== 'failed') return;
-    setStatus(copy.oauthFailed);
+    setStatus('oauth-failed');
     void navigate({ to: '/sign-in', search: { notice }, hash: true, replace: true }).catch(() => {
       // The URL stays as it is if the replacement fails; the message shows.
     });
@@ -77,13 +84,13 @@ export function SignInPage(): React.JSX.Element {
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending !== null) return;
-    const nextEmailError = isValidEmail(email) ? undefined : copy.emailInvalid;
-    const nextPasswordError =
-      password === '' ? copy.passwordEmpty : isValidPassword(password) ? undefined : copy.passwordInvalid;
+    const nextEmailError = !isValidEmail(email);
+    const nextPasswordError: 'empty' | 'invalid' | undefined =
+      password === '' ? 'empty' : isValidPassword(password) ? undefined : 'invalid';
     setEmailError(nextEmailError);
     setPasswordError(nextPasswordError);
     setStatus(undefined);
-    if (nextEmailError !== undefined) {
+    if (nextEmailError) {
       emailRef.current?.focus();
       return;
     }
@@ -98,7 +105,7 @@ export function SignInPage(): React.JSX.Element {
       queryClient.setQueryData(SESSION_QUERY_KEY, { authenticated: true, student });
       await navigate({ to: '/' });
     } catch (error) {
-      if (mountedRef.current) setStatus(failureMessage(error));
+      if (mountedRef.current) setStatus({ code: failureCode(error) });
     } finally {
       setPending(null);
     }
@@ -140,47 +147,50 @@ export function SignInPage(): React.JSX.Element {
       }, 5000);
     } catch (error) {
       if (!mountedRef.current) return;
-      setStatus(failureMessage(error));
+      setStatus({ code: failureCode(error) });
       setPending(null);
     }
   }
 
   return (
     <>
-      <PageTitle name={copy.title} />
+      <PageTitle name={t.auth.signIn.title} />
       <div className="mx-auto w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-ink">{copy.heading}</h1>
+        <h1 className="text-2xl font-semibold text-ink">{t.auth.signIn.heading}</h1>
         <div className="mt-4 flex min-w-0 flex-col gap-4">
           {notice === 'password-changed' ? (
-            <Banner tone="success" title={copy.noticePasswordChanged} />
+            <Banner tone="success" title={t.auth.signIn.noticePasswordChanged} />
           ) : null}
           {notice === 'password-change-unknown' ? (
-            <Banner tone="warning" title={copy.noticeSignedOutUnknown} />
+            <Banner tone="warning" title={t.auth.signIn.noticeSignedOutUnknown} />
           ) : null}
           <Card>
             <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
               {status !== undefined ? (
                 <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
-                  <Banner tone="danger" title={status} />
+                  <Banner
+                    tone="danger"
+                    title={status === 'oauth-failed' ? t.auth.signIn.oauthFailed : errorText(status.code)}
+                  />
                 </div>
               ) : null}
               <TextField
                 ref={emailRef}
-                label={copy.emailLabel}
+                label={t.auth.signIn.emailLabel}
                 type="email"
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                error={emailError}
+                error={emailError ? t.auth.signIn.emailInvalid : undefined}
               />
               <PasswordField
                 ref={passwordRef}
-                label={copy.passwordLabel}
-                {...authCopy.passwordVisibility}
+                label={t.auth.signIn.passwordLabel}
+                {...t.auth.passwordVisibility}
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                error={passwordError}
+                error={passwordError === undefined ? undefined : passwordError === 'empty' ? t.auth.signIn.passwordEmpty : passwordInvalid}
               />
               <Button
                 type="submit"
@@ -188,7 +198,7 @@ export function SignInPage(): React.JSX.Element {
                 aria-disabled={pending === 'oauth' || undefined}
                 className="w-full"
               >
-                {pending === 'password' ? copy.submitting : copy.submit}
+                {pending === 'password' ? t.auth.signIn.submitting : t.auth.signIn.submit}
               </Button>
             </form>
           </Card>
@@ -200,14 +210,17 @@ export function SignInPage(): React.JSX.Element {
               aria-disabled={pending === 'password' || undefined}
               onClick={() => void onOauthStart()}
             >
-              {copy.oauthButton}
+              {t.auth.signIn.oauthButton}
             </Button>
           ) : null}
           <p className="text-center text-sm text-ink-muted">
-            {copy.noAccountCta}{' '}
-            <Link to="/sign-up" className="rounded text-link underline underline-offset-2 focus-ring">
-              {copy.signUpLink}
-            </Link>
+            {format(t.auth.signIn.noAccount, {
+              link: (
+                <Link to="/sign-up" className="rounded text-link underline underline-offset-2 focus-ring">
+                  {t.auth.signIn.signUpLink}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       </div>
