@@ -36,12 +36,15 @@ export function Tabs({ items, value, defaultValue, onValueChange, label, classNa
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number): void {
+    // The arrow keys move the way they point: in a right-to-left tab list the
+    // next tab is on the left.
+    const forward = getComputedStyle(event.currentTarget).direction === 'rtl' ? -1 : 1;
     if (event.key === 'ArrowRight') {
       event.preventDefault();
-      select(index + 1);
+      select(index + forward);
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
-      select(index - 1);
+      select(index - forward);
     } else if (event.key === 'Home') {
       event.preventDefault();
       select(0);

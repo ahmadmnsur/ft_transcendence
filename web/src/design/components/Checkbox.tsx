@@ -22,7 +22,7 @@ export function Checkbox({ label, hint, error, id, 'aria-describedby': described
           {label}
         </label>
       </div>
-      <FieldMessages hint={hint} error={error} hintId={hintId} errorId={errorId} className="pl-6" />
+      <FieldMessages hint={hint} error={error} hintId={hintId} errorId={errorId} className="ps-6" />
     </div>
   );
 }

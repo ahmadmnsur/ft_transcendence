@@ -38,7 +38,7 @@ export function ProgressBar({ value, max, label, valueText, showValue = true, cl
         className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-sunken"
       >
         <div
-          className="h-full w-full origin-left rounded-full bg-primary-600 motion-safe:transition-transform motion-safe:duration-200"
+          className="h-full w-full ltr:origin-left rtl:origin-right rounded-full bg-primary-600 motion-safe:transition-transform motion-safe:duration-200"
           style={{ transform: `scaleX(${clamped / safeMax})` }}
         />
       </div>

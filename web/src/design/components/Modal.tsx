@@ -15,7 +15,7 @@ export interface ModalProps {
   onClose: () => void;
   // Left out for a confirm whose description says it all.
   children?: ReactNode;
-  // The actions, right-aligned; a destructive one can take className="mr-auto"
+  // The actions, end-aligned; a destructive one can take className="me-auto"
   // to sit apart at the start.
   footer?: ReactNode;
   // Where focus starts: the first field of a form, or the safe button of a

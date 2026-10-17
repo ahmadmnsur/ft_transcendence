@@ -1,4 +1,4 @@
-import { useId, type AriaAttributes, type ReactElement, type ReactNode } from 'react';
+import { useId, useState, type AriaAttributes, type ReactElement, type ReactNode } from 'react';
 
 // A hint or an error: a plain text, or a message format() filled, so its
 // values sit in <bdi> like any other markup.
@@ -114,3 +114,14 @@ export const controlClass = (invalid: boolean): string =>
     'disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-muted disabled:text-ink-muted disabled:hover:border-line',
     invalid ? 'border-danger-600 hover:border-danger-700' : 'border-line-strong hover:border-neutral-600',
   ].join(' ');
+
+// dir="auto" takes a field's direction from the first letter of its text, and
+// makes an empty field left to right, even on an Arabic page. So a text field
+// has dir="auto" only while it holds text: empty, it follows the page, and its
+// placeholder and caret start on the page's side. The text is read from
+// `value` when the caller controls the field, and from each input otherwise.
+export function useTextDirection(value: unknown, defaultValue: unknown): { dir: 'auto' | undefined; track: (text: string) => void } {
+  const [typed, setTyped] = useState(() => defaultValue != null && String(defaultValue) !== '');
+  const hasText = value != null ? String(value) !== '' : typed;
+  return { dir: hasText ? 'auto' : undefined, track: (text) => setTyped(text !== '') };
+}

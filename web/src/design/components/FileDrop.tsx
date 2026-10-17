@@ -71,7 +71,6 @@ function typeOfFile(file: File): FileType | undefined {
   return file.type in fileTypes ? (file.type as FileType) : undefined;
 }
 
-// A file size in the current language: bytes, then kilobytes rounded to a
 type FormatNumber = (value: number, options?: Intl.NumberFormatOptions) => string;
 
 // A file size in the current language: bytes, then kilobytes rounded to a

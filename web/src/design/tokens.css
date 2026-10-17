@@ -1,3 +1,18 @@
+/* Noto Sans Arabic 2.012 (google/fonts at 6692879), under the SIL Open Font
+   License 1.1, which ships beside it as fonts/OFL.txt. It was cut with
+   fontTools to weights 400 to 600 at width 100 and to the Arabic blocks in
+   unicode-range, so it is a Modified Version: it keeps its copyright notice
+   and the licence's name and address. It is served from PeerConnect's own
+   origin, which the CSP's font-src 'self' allows. */
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('./fonts/noto-sans-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-089F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+10EC0-10EFF;
+}
+
 @theme static {
   /* Only the project palette exists: the default palette is switched off.
      Static so every step is emitted: the palette overview reads them back. */
@@ -70,8 +85,11 @@
   --color-danger-800: #8e2622;
   --color-danger-900: #772522;
 
-  /* Type runs on the system stack; nothing is downloaded. */
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Type runs on the system stack, behind one bundled font that draws Arabic
+     characters only (the @font-face above): English and French keep the
+     system stack, and a page fetches the font only when it shows an Arabic
+     character. */
+  --font-sans: 'Noto Sans Arabic', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
   /* Fixed type scale. The small sizes sit on whole pixels (12, 14, 16, 18);
@@ -148,6 +166,11 @@
   }
 }
 
+/* Arabic text, by its language. Letter spacing pulls Arabic letters apart
+   where a browser applies it between them (WebKit does), so every tracking-*
+   class sits beside arabic:tracking-normal. */
+@custom-variant arabic (&:lang(ar));
+
 @layer base {
   /* A long unbroken word, such as a name or a file name, wraps instead of
      running out of its box at narrow widths. */
@@ -169,6 +192,14 @@
   ::selection {
     background-color: var(--color-primary-200);
     color: var(--color-primary-900);
+  }
+
+  /* Arabic has no italic face: a browser slants the upright letters instead.
+     Emphasis in Arabic is upright and semibold, the heaviest weight the SPA
+     uses. */
+  :is(em, i):lang(ar) {
+    font-style: normal;
+    font-weight: 600;
   }
 
   /* Holds the page still while any modal dialog is open, however many. */

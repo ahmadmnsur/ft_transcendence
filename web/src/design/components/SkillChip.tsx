@@ -23,7 +23,7 @@ export function SkillChip({ name, variant, onRemove, className = '', ...rest }: 
   const { t, format, formatText } = useI18n();
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 pl-3 pr-1 text-sm font-medium ${tones[variant]} ${className}`.trim()}
+      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 ps-3 pe-1 text-sm font-medium ${tones[variant]} ${className}`.trim()}
       {...rest}
     >
       <span className="min-w-0 wrap-anywhere">
