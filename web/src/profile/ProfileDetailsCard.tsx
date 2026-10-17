@@ -4,16 +4,15 @@ import { isValidDisplayName, isValidEmail, normalizeEmail, LIMITS } from '@share
 import { ApiRefusalError } from '../api/client';
 import { SESSION_QUERY_KEY } from '../api/session';
 import { ME_QUERY_KEY, meQueryOptions, studentQueryKey, updateProfile, type OwnProfile } from '../api/profile';
-import { Banner, Button, Card, TextField, type BannerTone } from '../design';
-import { formatCount, profileCopy, profileErrorMessage, profileFailureMessage } from './messages';
+import { Banner, Button, Card, TextField } from '../design';
+import { useI18n } from '../i18n/context';
+import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
 
-const copy = profileCopy.details;
-
-interface Status {
-  tone: BannerTone;
-  title: string;
-}
+// What the status Banner says, kept as what happened rather than as a text,
+// so it follows a language switch. A new object each time, so the focus
+// effect below runs again for a repeated message.
+type Status = { kind: 'saved' } | { kind: 'nothingToSave' } | { kind: 'failed'; code: unknown };
 
 // §6.2: display name and email, prefilled from `GET /api/me`, with only the
 // fields that changed sent. The client pre-checks the same shared limits
@@ -21,13 +20,15 @@ interface Status {
 // email field itself. A save updates the own-profile query and invalidates
 // the session query, because the header shows the display name.
 export function ProfileDetailsCard(): React.JSX.Element {
+  const { t, format, errorText } = useI18n();
+  const copy = t.profile.details;
   const queryClient = useQueryClient();
   const { data: me, isError } = useQuery(meQueryOptions());
   // Null while the Student has not edited anything: the fields follow the
   // server then, so a refetch never overwrites what they are typing.
   const [draft, setDraft] = useState<{ displayName: string; email: string } | null>(null);
-  const [nameError, setNameError] = useState<string | undefined>(undefined);
-  const [emailError, setEmailError] = useState<string | undefined>(undefined);
+  const [nameError, setNameError] = useState(false);
+  const [emailError, setEmailError] = useState<'invalid' | 'email_unavailable' | undefined>(undefined);
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -63,14 +64,12 @@ export function ProfileDetailsCard(): React.JSX.Element {
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending) return;
-    const nextNameError = isValidDisplayName(displayName)
-      ? undefined
-      : formatCount(copy.displayNameInvalid, LIMITS.displayName.maxChars, LIMITS.displayName);
-    const nextEmailError = isValidEmail(email) ? undefined : copy.emailInvalid;
+    const nextNameError = !isValidDisplayName(displayName);
+    const nextEmailError = isValidEmail(email) ? undefined : 'invalid';
     setNameError(nextNameError);
     setEmailError(nextEmailError);
     setStatus(undefined);
-    if (nextNameError !== undefined) {
+    if (nextNameError) {
       nameRef.current?.focus();
       return;
     }
@@ -86,7 +85,7 @@ export function ProfileDetailsCard(): React.JSX.Element {
     // Nothing differs from the stored values: no request, and the status
     // Banner says so instead of claiming an update.
     if (patch.displayName === undefined && patch.email === undefined) {
-      setStatus({ tone: 'info', title: copy.nothingToSave });
+      setStatus({ kind: 'nothingToSave' });
       return;
     }
     setPending(true);
@@ -104,16 +103,16 @@ export function ProfileDetailsCard(): React.JSX.Element {
       void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
       queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
       setDraft(null);
-      setStatus({ tone: 'success', title: copy.saved });
+      setStatus({ kind: 'saved' });
     } catch (error) {
       // A refusal lands on the email field it is about; anything else sums
       // up in the status Banner.
       if (error instanceof ApiRefusalError && error.code === 'email_unavailable') {
-        setEmailError(profileErrorMessage(error.code));
+        setEmailError('email_unavailable');
         emailRef.current?.focus();
         return;
       }
-      setStatus({ tone: 'danger', title: profileFailureMessage(error) });
+      setStatus({ kind: 'failed', code: failureCode(error) });
     } finally {
       setPending(false);
     }
@@ -124,18 +123,34 @@ export function ProfileDetailsCard(): React.JSX.Element {
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
         {status !== undefined ? (
           <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
-            <Banner tone={status.tone} title={status.title} />
+            {status.kind === 'saved' ? (
+              <Banner tone="success" title={copy.saved} />
+            ) : status.kind === 'nothingToSave' ? (
+              <Banner tone="info" title={copy.nothingToSave} />
+            ) : (
+              <Banner tone="danger" title={errorText(status.code)} />
+            )}
           </div>
         ) : null}
         <TextField
           ref={nameRef}
           label={copy.displayNameLabel}
-          hint={formatCount(copy.displayNameHint, LIMITS.displayName.maxChars, LIMITS.displayName)}
+          hint={format(copy.displayNameHint, {
+            count: LIMITS.displayName.maxChars,
+            minChars: LIMITS.displayName.minChars,
+          })}
           type="text"
           autoComplete="nickname"
           value={displayName}
           onChange={(event) => setDraft({ displayName: event.target.value, email })}
-          error={nameError}
+          error={
+            nameError
+              ? format(copy.displayNameInvalid, {
+                  count: LIMITS.displayName.maxChars,
+                  minChars: LIMITS.displayName.minChars,
+                })
+              : undefined
+          }
         />
         <TextField
           ref={emailRef}
@@ -145,7 +160,9 @@ export function ProfileDetailsCard(): React.JSX.Element {
           autoComplete="email"
           value={email}
           onChange={(event) => setDraft({ displayName, email: event.target.value })}
-          error={emailError}
+          error={
+            emailError === undefined ? undefined : emailError === 'invalid' ? copy.emailInvalid : errorText(emailError)
+          }
         />
         <Button type="submit" loading={pending} className="self-start">
           {pending ? copy.saving : copy.save}

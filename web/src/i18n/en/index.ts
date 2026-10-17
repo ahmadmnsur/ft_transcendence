@@ -3,9 +3,10 @@ import auth from './auth';
 import errors from './errors';
 import legal from './legal';
 import people from './people';
+import profile from './profile';
 import shell from './shell';
 
-const en = { shell, legal, auth, errors, people } satisfies EnGroup;
+const en = { shell, legal, auth, errors, people, profile } satisfies EnGroup;
 
 // English checked against itself: no empty text, camelCase placeholders,
 // every form of a plural holding the same ones, no reserved key.

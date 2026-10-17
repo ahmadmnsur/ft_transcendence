@@ -3,11 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiProtocolError } from '../api/client';
 import { studentQueryOptions, type SkillView } from '../api/profile';
 import { AlertIcon, Avatar, Button, EmptyState, PersonName, RoleLabel, SkillChip } from '../design';
+import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
-import { formatNumber, isolateName, profileCopy, profileErrorMessage } from '../profile/messages';
-
-const copy = profileCopy.student;
-const stats = profileCopy.stats;
 
 // The shape the API's ParseUUIDPipe accepts (§6.0.1). A malformed id is
 // known here, so no request is sent for it and the console stays clean
@@ -52,6 +49,9 @@ function SkillSection({
 // not-found state; any other failure shows the generic sentence (§3.8.2,
 // §6.15). Never an email.
 export function StudentPage(): React.JSX.Element {
+  const { t, personNameText, formatNumber } = useI18n();
+  const copy = t.profile.student;
+  const stats = t.profile.stats;
   const { studentId } = useParams({ from: '/students/$studentId' });
   const wellFormedId = UUID_PATTERN.test(studentId);
   // The query is disabled for a malformed id: the not-found state below
@@ -69,10 +69,10 @@ export function StudentPage(): React.JSX.Element {
       return (
         <>
           <PageTitle />
-          <h1 className="sr-only">{profileErrorMessage(undefined)}</h1>
+          <h1 className="sr-only">{t.errors.unknown}</h1>
           <EmptyState
             icon={<AlertIcon size={24} />}
-            title={profileErrorMessage(undefined)}
+            title={t.errors.unknown}
             action={
               <Button variant="secondary" onClick={() => void refetch()}>
                 {copy.retry}
@@ -96,16 +96,15 @@ export function StudentPage(): React.JSX.Element {
 
   const { student, profile } = data;
   const removed = student.removed;
-  const name = removed ? profileCopy.tombstone : student.displayName;
 
   return (
     <>
-      <PageTitle name={isolateName(name)} />
+      <PageTitle name={personNameText(student.displayName, removed)} />
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <Avatar src={removed ? null : student.avatarUrl} alt="" size="xl" />
           <h1 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold text-ink wrap-anywhere">
-            <PersonName name={name} />
+            <PersonName name={student.displayName} removed={removed} />
             {/* §12.8: the Admin label, and never any other role. */}
             {student.isAdmin && !removed ? <RoleLabel /> : null}
           </h1>

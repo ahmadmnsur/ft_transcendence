@@ -11,7 +11,6 @@ import { PageTitle } from '../layout';
 import { LearningGoalCard } from '../profile/LearningGoalCard';
 import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
 import { SkillsCard } from '../profile/SkillsCard';
-import { profileCopy, profileErrorMessage } from '../profile/messages';
 import { meQueryOptions } from '../api/profile';
 
 // `/me` (§3.5.1, §6.2): the profile, Skills and Learning Goal cards above the
@@ -130,7 +129,7 @@ export function MePage(): React.JSX.Element {
               params={{ studentId: session.student.id }}
               className="rounded text-link underline underline-offset-2 focus-ring"
             >
-              {profileCopy.me.publicProfileLink}
+              {t.profile.me.publicProfileLink}
             </Link>
           </p>
         ) : null}
@@ -139,9 +138,9 @@ export function MePage(): React.JSX.Element {
             // §6.15: one generic sentence and one retry for the failed read,
             // above the cards, which then keep their titles and empty bodies.
             <div className="flex min-w-0 flex-col gap-2">
-              <Banner tone="danger" title={profileErrorMessage(undefined)} />
+              <Banner tone="danger" title={t.errors.unknown} />
               <Button variant="secondary" className="self-start" onClick={() => void refetchMe()}>
-                {profileCopy.me.retry}
+                {t.profile.me.retry}
               </Button>
             </div>
           ) : null}

@@ -10,18 +10,18 @@ import {
   type OwnProfile,
   type SkillView,
 } from '../api/profile';
-import { Banner, Button, Card, Select, SkillChip, type BannerTone } from '../design';
-import { formatCount, isolateName, profileCopy, profileErrorMessage, profileFailureMessage } from './messages';
+import { Banner, Button, Card, Select, SkillChip } from '../design';
+import { useI18n } from '../i18n/context';
+import { isolate } from '../i18n/text';
+import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
-
-const copy = profileCopy.skills;
 
 type Kind = 'teach' | 'learn';
 
-interface Status {
-  tone: BannerTone;
-  title: string;
-}
+// What the status Banners say, kept as what happened rather than as texts, so
+// they follow a language switch: a save, and whether it cleared the Learning
+// Goal, or a failure's code.
+type Status = { kind: 'saved'; goalCleared: boolean } | { kind: 'failed'; code: unknown };
 
 // The two lists hold the same ids in whatever order the Student arranged them,
 // so an unsaved-changes check compares the id sets, never the order.
@@ -46,6 +46,8 @@ function inCatalogueOrder(list: SkillView[], catalogue: SkillView[] | undefined)
 // lists in one call, whose answer tells whether the Learning Goal lost its
 // Skill and was cleared, and the cached `GET /api/me` takes the saved lists.
 export function SkillsCard(): React.JSX.Element {
+  const { t, format, errorText } = useI18n();
+  const copy = t.profile.skills;
   const queryClient = useQueryClient();
   const { data: me, isError: meError } = useQuery(meQueryOptions());
   const {
@@ -58,11 +60,8 @@ export function SkillsCard(): React.JSX.Element {
   // refetch never drops what the Student just added or removed.
   const [draft, setDraft] = useState<{ teach: SkillView[]; learn: SkillView[] } | null>(null);
   const [choice, setChoice] = useState<Record<Kind, string>>({ teach: '', learn: '' });
-  const [choiceError, setChoiceError] = useState<Record<Kind, string | undefined>>({
-    teach: undefined,
-    learn: undefined,
-  });
-  const [status, setStatus] = useState<Status[] | undefined>(undefined);
+  const [choiceError, setChoiceError] = useState<Record<Kind, boolean>>({ teach: false, learn: false });
+  const [status, setStatus] = useState<Status | undefined>(undefined);
   const [pending, setPending] = useState(false);
   // The chip a removal should move focus to, once the list has re-rendered.
   const [focusRequest, setFocusRequest] = useState<{ kind: Kind; chipIndex: number | null } | null>(null);
@@ -156,7 +155,7 @@ export function SkillsCard(): React.JSX.Element {
     if (listFor(kind).length >= LIMITS.skillList.maxItems) return;
     const chosen = choice[kind];
     if (chosen === '') {
-      setChoiceError({ ...choiceError, [kind]: copy.chooseFirst });
+      setChoiceError({ ...choiceError, [kind]: true });
       selectRefs[kind].current?.focus();
       return;
     }
@@ -165,7 +164,7 @@ export function SkillsCard(): React.JSX.Element {
     const next = [...listFor(kind), skill];
     setDraft({ teach: kind === 'teach' ? next : teach, learn: kind === 'learn' ? next : learn });
     setChoice({ ...choice, [kind]: '' });
-    setChoiceError({ ...choiceError, [kind]: undefined });
+    setChoiceError({ ...choiceError, [kind]: false });
     // A previous save's banners no longer describe what is on screen.
     setStatus(undefined);
   }
@@ -204,11 +203,9 @@ export function SkillsCard(): React.JSX.Element {
       // invalidated: an inactive query would render the old lists until its
       // background refetch returns, so the next visit must load afresh.
       queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
-      const saved: Status[] = [{ tone: 'success', title: copy.saved }];
-      if (result.goalCleared) saved.push({ tone: 'info', title: copy.goalCleared });
-      setStatus(saved);
+      setStatus({ kind: 'saved', goalCleared: result.goalCleared });
     } catch (error) {
-      setStatus([{ tone: 'danger', title: profileFailureMessage(error) }]);
+      setStatus({ kind: 'failed', code: failureCode(error) });
     } finally {
       setPending(false);
     }
@@ -221,7 +218,7 @@ export function SkillsCard(): React.JSX.Element {
     const available = availableFor(kind);
     const atLimit = list.length >= LIMITS.skillList.maxItems;
     const hint = atLimit
-      ? formatCount(copy.limitHint, LIMITS.skillList.maxItems)
+      ? format(copy.limitHint, { count: LIMITS.skillList.maxItems })
       : cataloguePending
         ? copy.catalogueLoading
         : available.length === 0
@@ -249,17 +246,17 @@ export function SkillsCard(): React.JSX.Element {
           className="mt-3"
           label={copyKeys[kind].selectLabel}
           hint={hint}
-          error={choiceError[kind]}
+          error={choiceError[kind] ? copy.chooseFirst : undefined}
           value={choice[kind]}
           onChange={(event) => {
             setChoice({ ...choice, [kind]: event.target.value });
-            setChoiceError({ ...choiceError, [kind]: undefined });
+            setChoiceError({ ...choiceError, [kind]: false });
           }}
         >
           <option value="">{copy.selectPlaceholder}</option>
           {available.map((skill) => (
             <option key={skill.id} value={skill.id}>
-              {isolateName(skill.name)}
+              {isolate(skill.name)}
             </option>
           ))}
         </Select>
@@ -281,18 +278,23 @@ export function SkillsCard(): React.JSX.Element {
         // §6.15: without the catalogue neither picker can offer a Skill, so the
         // card shows the generic sentence and one retry for the catalogue read.
         <div className="flex min-w-0 flex-col gap-3">
-          <Banner tone="danger" title={profileErrorMessage(undefined)} />
+          <Banner tone="danger" title={t.errors.unknown} />
           <Button variant="secondary" className="self-start" onClick={() => void refetchCatalogue()}>
-            {profileCopy.me.retry}
+            {t.profile.me.retry}
           </Button>
         </div>
       ) : (
         <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-5">
           {status !== undefined ? (
             <div ref={statusRef} tabIndex={-1} className="flex flex-col gap-2 rounded-lg focus-ring">
-              {status.map((message, index) => (
-                <Banner key={index} tone={message.tone} title={message.title} />
-              ))}
+              {status.kind === 'failed' ? (
+                <Banner tone="danger" title={errorText(status.code)} />
+              ) : (
+                <>
+                  <Banner tone="success" title={copy.saved} />
+                  {status.goalCleared ? <Banner tone="info" title={copy.goalCleared} /> : null}
+                </>
+              )}
             </div>
           ) : null}
           {renderPicker('teach')}

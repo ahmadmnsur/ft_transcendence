@@ -11,16 +11,15 @@ import {
   type LearningGoalView,
   type OwnProfile,
 } from '../api/profile';
-import { Banner, Button, Card, Select, TextArea, type BannerTone } from '../design';
-import { formatCount, isolateName, profileCopy, profileErrorMessage, profileFailureMessage } from './messages';
+import { Banner, Button, Card, Select, TextArea } from '../design';
+import { useI18n } from '../i18n/context';
+import { isolate } from '../i18n/text';
+import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
 
-const copy = profileCopy.goal;
-
-interface Status {
-  tone: BannerTone;
-  title: string;
-}
+// What the status Banner says, kept as what happened rather than as a text,
+// so it follows a language switch: a save, a clear, or a failure's code.
+type Status = { kind: 'saved' } | { kind: 'cleared' } | { kind: 'failed'; code: unknown };
 
 // §6.2: the Learning Goal, one Skill on the saved learn list plus a 1–200
 // character sentence, or cleared. A saved Goal shows as plain content with an
@@ -28,13 +27,16 @@ interface Status {
 // only while the learn list has a Skill to name. Saving writes both fields at
 // once, clearing removes both.
 export function LearningGoalCard(): React.JSX.Element {
+  const { t, format, errorText } = useI18n();
+  const copy = t.profile.goal;
   const queryClient = useQueryClient();
   const { data: me, isError } = useQuery(meQueryOptions());
   // Null while nothing is edited: the fields follow the server then, so a
   // refetch never overwrites what the Student is typing.
   const [draft, setDraft] = useState<{ skillId: string; text: string } | null>(null);
-  const [skillError, setSkillError] = useState<string | undefined>(undefined);
-  const [textError, setTextError] = useState<string | undefined>(undefined);
+  // No Skill chosen, or the server's refusal of one off the learn list.
+  const [skillError, setSkillError] = useState<'empty' | 'goal_skill_not_listed' | undefined>(undefined);
+  const [textError, setTextError] = useState(false);
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -96,10 +98,8 @@ export function LearningGoalCard(): React.JSX.Element {
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending || clearing) return;
-    const nextSkillError = skillId === '' ? copy.chooseSkillError : undefined;
-    const nextTextError = isValidLearningGoalText(text)
-      ? undefined
-      : formatCount(copy.textInvalid, LIMITS.learningGoalText.maxChars, LIMITS.learningGoalText);
+    const nextSkillError = skillId === '' ? 'empty' : undefined;
+    const nextTextError = !isValidLearningGoalText(text);
     setSkillError(nextSkillError);
     setTextError(nextTextError);
     setStatus(undefined);
@@ -107,7 +107,7 @@ export function LearningGoalCard(): React.JSX.Element {
       skillRef.current?.focus();
       return;
     }
-    if (nextTextError !== undefined) {
+    if (nextTextError) {
       textRef.current?.focus();
       return;
     }
@@ -127,17 +127,17 @@ export function LearningGoalCard(): React.JSX.Element {
       queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
       setDraft(null);
       setEditing(false);
-      setStatus({ tone: 'success', title: copy.saved });
+      setStatus({ kind: 'saved' });
       setFocusTarget('edit');
     } catch (error) {
       // A refusal names the Skill field it is about; anything else sums up
       // in the status Banner.
       if (error instanceof ApiRefusalError && error.code === 'goal_skill_not_listed') {
-        setSkillError(profileErrorMessage(error.code));
+        setSkillError('goal_skill_not_listed');
         skillRef.current?.focus();
         return;
       }
-      setStatus({ tone: 'danger', title: profileFailureMessage(error) });
+      setStatus({ kind: 'failed', code: failureCode(error) });
     } finally {
       setPending(false);
     }
@@ -160,10 +160,10 @@ export function LearningGoalCard(): React.JSX.Element {
       queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
       setDraft(null);
       setEditing(false);
-      setStatus({ tone: 'success', title: copy.cleared });
+      setStatus({ kind: 'cleared' });
       setFocusTarget('skill');
     } catch (error) {
-      setStatus({ tone: 'danger', title: profileFailureMessage(error) });
+      setStatus({ kind: 'failed', code: failureCode(error) });
     } finally {
       setClearing(false);
     }
@@ -173,7 +173,7 @@ export function LearningGoalCard(): React.JSX.Element {
   function onCancel(): void {
     setDraft(null);
     setSkillError(undefined);
-    setTextError(undefined);
+    setTextError(false);
     setStatus(undefined);
     setEditing(false);
     setFocusTarget('edit');
@@ -218,19 +218,28 @@ export function LearningGoalCard(): React.JSX.Element {
             setDraft({ skillId: event.target.value, text });
             setSkillError(undefined);
           }}
-          error={skillError}
+          error={
+            skillError === undefined
+              ? undefined
+              : skillError === 'empty'
+                ? copy.chooseSkillError
+                : errorText(skillError)
+          }
         >
           <option value="">{copy.skillPlaceholder}</option>
           {learn.map((skill) => (
             <option key={skill.id} value={skill.id}>
-              {isolateName(skill.name)}
+              {isolate(skill.name)}
             </option>
           ))}
         </Select>
         <TextArea
           ref={textRef}
           label={copy.textLabel}
-          hint={formatCount(copy.textHint, LIMITS.learningGoalText.maxChars, LIMITS.learningGoalText)}
+          hint={format(copy.textHint, {
+            count: LIMITS.learningGoalText.maxChars,
+            minChars: LIMITS.learningGoalText.minChars,
+          })}
           rows={3}
           value={text}
           onKeyDown={(event) => {
@@ -241,9 +250,16 @@ export function LearningGoalCard(): React.JSX.Element {
             // A pasted newline becomes a space, so the value never holds `\n`
             // or `\r` (§6.2).
             setDraft({ skillId, text: event.target.value.replace(/[\r\n]+/g, ' ') });
-            setTextError(undefined);
+            setTextError(false);
           }}
-          error={textError}
+          error={
+            textError
+              ? format(copy.textInvalid, {
+                  count: LIMITS.learningGoalText.maxChars,
+                  minChars: LIMITS.learningGoalText.minChars,
+                })
+              : undefined
+          }
         />
         <div className="flex flex-wrap gap-2">
           <Button type="submit" loading={pending}>
@@ -267,7 +283,11 @@ export function LearningGoalCard(): React.JSX.Element {
         <div className="flex min-w-0 flex-col gap-4">
           {status !== undefined ? (
             <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
-              <Banner tone={status.tone} title={status.title} />
+              {status.kind === 'failed' ? (
+                <Banner tone="danger" title={errorText(status.code)} />
+              ) : (
+                <Banner tone="success" title={status.kind === 'saved' ? copy.saved : copy.cleared} />
+              )}
             </div>
           ) : null}
           {viewed !== null ? renderView(viewed) : renderForm()}
