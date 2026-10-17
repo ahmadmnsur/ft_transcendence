@@ -1,0 +1,105 @@
+import type profile from '../en/profile';
+import type { Catalogue } from '../types';
+
+export default {
+  me: {
+    publicProfileLink: 'Voir votre profil public',
+    loading: 'Chargement de votre profil…',
+    retry: 'Réessayer',
+  },
+  details: {
+    title: 'Informations du profil',
+    subtitle: "Votre nom d'affichage et l'e-mail avec lequel vous vous connectez.",
+    displayNameLabel: "Nom d'affichage",
+    displayNameHint: {
+      one: '{minChars}–{count} caractère. Visible par tous les Étudiants connectés.',
+      many: '{minChars}–{count} de caractères. Visible par tous les Étudiants connectés.',
+      other: '{minChars}–{count} caractères. Visible par tous les Étudiants connectés.',
+    },
+    displayNameInvalid: {
+      one: "Saisissez un nom d'affichage de {minChars}–{count} caractère.",
+      many: "Saisissez un nom d'affichage de {minChars}–{count} de caractères.",
+      other: "Saisissez un nom d'affichage de {minChars}–{count} caractères.",
+    },
+    emailLabel: 'E-mail',
+    emailHint: 'Utilisé uniquement pour vous connecter. Jamais visible par les autres Étudiants.',
+    emailInvalid: 'Saisissez une adresse e-mail valide.',
+    save: 'Enregistrer',
+    saving: 'Enregistrement…',
+    saved: 'Votre profil a été mis à jour.',
+    nothingToSave: 'Rien à enregistrer.',
+  },
+  skills: {
+    title: 'Compétences',
+    subtitle: "Les deux listes apparaissent sur votre profil, et le prochain Tour s'appuie sur elles pour vous associer.",
+    teachHeading: 'Compétences que je peux enseigner',
+    learnHeading: 'Compétences que je veux apprendre',
+    teachSelectLabel: 'Choisissez une Compétence à enseigner',
+    learnSelectLabel: 'Choisissez une Compétence à apprendre',
+    selectPlaceholder: 'Choisissez une Compétence',
+    add: 'Ajouter',
+    empty: 'Aucune Compétence pour le moment.',
+    limitHint: {
+      one: 'Une liste contient au plus {count} Compétence.',
+      many: 'Une liste contient au plus {count} de Compétences.',
+      other: 'Une liste contient au plus {count} Compétences.',
+    },
+    nothingToAdd: 'Vous avez déjà ajouté ici toutes les Compétences du catalogue.',
+    catalogueLoading: 'Chargement du catalogue des Compétences…',
+    chooseFirst: 'Choisissez une Compétence à ajouter.',
+    unsaved: 'Vous avez des modifications non enregistrées.',
+    goalWillClear:
+      "L'enregistrement effacera votre Objectif d'apprentissage, car sa Compétence n'est plus dans votre liste d'apprentissage.",
+    save: 'Enregistrer',
+    saving: 'Enregistrement…',
+    saved: 'Vos Compétences ont été enregistrées.',
+    goalCleared:
+      "Votre Objectif d'apprentissage a été effacé, car sa Compétence a quitté votre liste d'apprentissage.",
+  },
+  goal: {
+    title: "Objectif d'apprentissage",
+    subtitle:
+      "Une Compétence de votre liste d'apprentissage, la plus importante pour vous en ce moment, avec une phrase qui explique pourquoi.",
+    currentHeading: "Objectif d'apprentissage actuel",
+    skillLabel: 'Compétence',
+    skillPlaceholder: 'Choisissez une Compétence',
+    chooseSkillError: "Choisissez une Compétence de votre liste d'apprentissage.",
+    noLearn:
+      "Ajoutez d'abord une Compétence à votre liste d'apprentissage\u00a0: votre Objectif d'apprentissage en désigne une.",
+    textLabel: 'Pourquoi cette Compétence est importante',
+    textHint: {
+      one: '{minChars}–{count} caractère.',
+      many: '{minChars}–{count} de caractères.',
+      other: '{minChars}–{count} caractères.',
+    },
+    textInvalid: {
+      one: 'Écrivez une phrase de {minChars}–{count} caractère.',
+      many: 'Écrivez une phrase de {minChars}–{count} de caractères.',
+      other: 'Écrivez une phrase de {minChars}–{count} caractères.',
+    },
+    save: 'Enregistrer',
+    saving: 'Enregistrement…',
+    saved: "Votre Objectif d'apprentissage a été enregistré.",
+    edit: 'Modifier',
+    cancel: 'Annuler',
+    clear: 'Effacer',
+    clearing: 'Effacement…',
+    cleared: "Votre Objectif d'apprentissage a été effacé.",
+  },
+  stats: {
+    xp: 'XP',
+    level: 'Niveau',
+    streak: 'Série',
+  },
+  student: {
+    teachHeading: 'Compétences à enseigner',
+    learnHeading: 'Compétences à apprendre',
+    teachEmpty: 'Aucune Compétence à enseigner.',
+    learnEmpty: 'Aucune Compétence à apprendre.',
+    goalHeading: "Objectif d'apprentissage",
+    goalNone: "Aucun Objectif d'apprentissage.",
+    removedNote: 'Ce compte a été exclu.',
+    loading: 'Chargement du profil…',
+    retry: 'Réessayer',
+  },
+} as const satisfies Catalogue<'fr', typeof profile>;

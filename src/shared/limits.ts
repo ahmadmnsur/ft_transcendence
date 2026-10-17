@@ -115,3 +115,9 @@ export function isValidDisplayName(name: string): boolean {
 export function isValidSearchQuery(q: string): boolean {
   return isValidText(q, LIMITS.searchQuery, false);
 }
+
+// The Learning Goal sentence: 1–200 characters after trimming, single line,
+// so control characters including a newline are rejected (§6.0.3, §6.2).
+export function isValidLearningGoalText(text: string): boolean {
+  return isValidText(text, LIMITS.learningGoalText, false);
+}

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 13 October 2026
+**42 PeerConnect** · Last updated: 17 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -238,6 +238,8 @@ Some things end sooner:
   account is removed.
 - **A Skill** leaves your profile when you remove it. Past Matches keep the Skills they were made on,
   because a Match's explanation never changes.
+- **Your Learning Goal** and its sentence are deleted when you clear them, or when its Skill leaves
+  your learn list.
 - **A Like** is deleted when you take it back, **a Friendship** when either of you ends it, and **a
   Block** when you lift it.
 - **Online status** is never stored, and **attempt counts** (sign-in, sign-up and wrong passwords)

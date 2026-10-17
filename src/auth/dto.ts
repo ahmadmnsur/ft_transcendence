@@ -28,7 +28,7 @@ function trimmedString(): PropertyDecorator {
   );
 }
 
-function sharedValidator(
+export function sharedValidator(
   name: string,
   check: (value: string) => boolean,
 ): (options?: ValidationOptions) => PropertyDecorator {
@@ -47,7 +47,7 @@ export const IsValidDisplayNameDto = sharedValidator('isValidDisplayName', isVal
 
 // The global pipe transforms before it validates (`transform: true`), so
 // validation sees the trimmed value and the service receives it.
-function Trimmed(): PropertyDecorator {
+export function Trimmed(): PropertyDecorator {
   return trimmedString();
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LIMITS, isValidPassword } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
@@ -8,19 +8,26 @@ import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from '../api/ses
 import { Banner, Button, Card, TextField } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
+import { LearningGoalCard } from '../profile/LearningGoalCard';
+import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
+import { SkillsCard } from '../profile/SkillsCard';
+import { meQueryOptions } from '../api/profile';
 
-// `/me`: for now it holds only the password-change form under a clear
-// heading (§6.1). On success the Student is signed out everywhere, so the
-// page clears the session query and returns to `/sign-in` with a notice. Any
-// failure other than a refusal re-probes the session first: signed out
-// returns with the neutral notice, still signed in stays on the form with
-// the failure's sentence (§5.1).
+// `/me` (§3.5.1, §6.2): the profile, Skills and Learning Goal cards above the
+// password-change form under a clear heading. On success the Student is signed
+// out everywhere, so the page clears the session query and returns to
+// `/sign-in` with a notice. Any failure other than a refusal re-probes the
+// session first: signed out returns with the neutral notice, still signed in
+// stays on the form with the failure's sentence (§5.1).
 export function MePage(): React.JSX.Element {
   const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // The hidden username field below carries the signed-in Student's email.
   const { data: session } = useQuery(sessionQueryOptions());
+  // §6.2: the three profile cards share the own-profile read; its failure is
+  // shown once here, above them, not three times inside them.
+  const { data: me, isError: meError, refetch: refetchMe } = useQuery(meQueryOptions());
   const username = session?.authenticated === true ? session.student.email : '';
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -113,9 +120,35 @@ export function MePage(): React.JSX.Element {
   return (
     <>
       <PageTitle name={t.auth.passwordChange.title} />
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-2xl">
         <h1 className="text-2xl font-semibold text-ink">{t.auth.passwordChange.heading}</h1>
-        <Card title={t.auth.passwordChange.cardTitle} subtitle={t.auth.passwordChange.cardSubtitle} className="mt-4">
+        {session?.authenticated === true ? (
+          <p className="mt-2 text-sm">
+            <Link
+              to="/students/$studentId"
+              params={{ studentId: session.student.id }}
+              className="rounded text-link underline underline-offset-2 focus-ring"
+            >
+              {t.profile.me.publicProfileLink}
+            </Link>
+          </p>
+        ) : null}
+        <div className="mt-4 flex flex-col gap-4">
+          {me === undefined && meError ? (
+            // §6.15: one generic sentence and one retry for the failed read,
+            // above the cards, which then keep their titles and empty bodies.
+            <div className="flex min-w-0 flex-col gap-2">
+              <Banner tone="danger" title={t.errors.unknown} />
+              <Button variant="secondary" className="self-start" onClick={() => void refetchMe()}>
+                {t.profile.me.retry}
+              </Button>
+            </div>
+          ) : null}
+          <ProfileDetailsCard />
+          <SkillsCard />
+          <LearningGoalCard />
+        </div>
+        <Card title={t.auth.passwordChange.cardTitle} subtitle={t.auth.passwordChange.cardSubtitle} headingLevel={2} className="mt-4">
           <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
             {status !== undefined ? (
               <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
