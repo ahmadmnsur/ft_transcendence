@@ -10,7 +10,9 @@ export const PUBLIC_KEY = 'pc:public';
 
 // Opt-out of the default-deny session guard for exactly the public routes:
 // `GET /api/health`, `GET /api/config`, `GET /api/session`,
-// `POST /api/auth/signup`, `POST /api/auth/login` (§5.3).
+// `POST /api/auth/signup`, `POST /api/auth/login` (§5.3), and §5.6's
+// `POST /api/auth/42/start` and `GET /api/auth/42/callback` (the enabled
+// guard on that controller answers 404 first while 42 is off).
 export const Public = (): MethodDecorator & ClassDecorator => SetMetadata(PUBLIC_KEY, true);
 
 // What the guard attaches to the request on success: the Actor (§3.4) plus

@@ -66,6 +66,20 @@ export function clearSessionCookie(): string {
   return serialize(SESSION_COOKIE_NAME, '', attributes(0));
 }
 
+// §5.6 A step 5: a live attempt's cookie, `a.<token>` with the session
+// cookie's attributes, `Max-Age` 600.
+export function serializeAttemptCookie(token: string, maxAgeSeconds: number): string {
+  return serialize(SESSION_COOKIE_NAME, `a.${token}`, attributes(maxAgeSeconds));
+}
+
+// §5.6 A's failure path: clearing is by name and attributes only, so this is
+// the same header as a session's clear; the name says which cookie the
+// caller means to end. Only a request that carried an `a.` cookie ever gets
+// it — an `s.` cookie is left alone.
+export function clearAttemptCookie(): string {
+  return serialize(SESSION_COOKIE_NAME, '', attributes(0));
+}
+
 // `Max-Age` derived from `expires_at` (§5.2, ADR-0003 d4).
 export function maxAgeUntil(expiresAt: Date, now: Date): number {
   return Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidEmail, isValidPassword, normalizeEmail } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
-import { login } from '../api/auth';
+import { login, start42 } from '../api/auth';
+import { configQueryOptions } from '../api/config';
 import { SESSION_QUERY_KEY } from '../api/session';
 import { Banner, Button, Card, TextField } from '../design';
 import { PageTitle } from '../layout';
@@ -25,16 +26,23 @@ const signInSearch = getRouteApi('/sign-in');
 export function SignInPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { notice } = signInSearch.useSearch();
+  const { notice, oauth } = signInSearch.useSearch();
+  // §5.6 A: the 42 button appears only when the config says 42 is enabled;
+  // while the probe runs, or when it failed, no button renders.
+  const config = useQuery(configQueryOptions());
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState<string | undefined>(undefined);
   const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
   const [status, setStatus] = useState<string | undefined>(undefined);
-  const [pending, setPending] = useState(false);
+  // One authentication action at a time: the password form and the 42 button
+  // share this slot, so neither can start while the other runs.
+  const [pending, setPending] = useState<'password' | 'oauth' | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(false);
+  const handOffTimerRef = useRef<number | undefined>(undefined);
 
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors below.
@@ -42,9 +50,33 @@ export function SignInPage(): React.JSX.Element {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
+  // Late responses never act on a page that is gone: a 42 start that
+  // resolves after the user left cannot yank the browser away, and a
+  // password sign-in cannot navigate from a dead page.
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // §5.6 A's failure path arrives as `?oauth=failed`: show its one message
+  // for this visit, then take only `oauth` out of the URL by replacing the
+  // history entry — the validated `notice` and the hash stay — so a refresh
+  // of the cleaned URL never repeats it. The message lives in the status
+  // slot, which a retry clears; a later `oauth=failed` delivered to this
+  // route sets it again.
+  useEffect(() => {
+    if (oauth !== 'failed') return;
+    setStatus(copy.oauthFailed);
+    void navigate({ to: '/sign-in', search: { notice }, hash: true, replace: true }).catch(() => {
+      // The URL stays as it is if the replacement fails; the message shows.
+    });
+  }, [oauth, notice, navigate]);
+
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
-    if (pending) return;
+    if (pending !== null) return;
     const nextEmailError = isValidEmail(email) ? undefined : copy.emailInvalid;
     const nextPasswordError =
       password === '' ? copy.passwordEmpty : isValidPassword(password) ? undefined : copy.passwordInvalid;
@@ -59,15 +91,57 @@ export function SignInPage(): React.JSX.Element {
       passwordRef.current?.focus();
       return;
     }
-    setPending(true);
+    setPending('password');
     try {
       const student = await login({ email: normalizeEmail(email), password: password.trim() });
+      if (!mountedRef.current) return;
       queryClient.setQueryData(SESSION_QUERY_KEY, { authenticated: true, student });
       await navigate({ to: '/' });
     } catch (error) {
-      setStatus(failureMessage(error));
+      if (mountedRef.current) setStatus(failureMessage(error));
     } finally {
-      setPending(false);
+      setPending(null);
+    }
+  }
+
+  // The page can come back with the slot still taken: restored from the
+  // back/forward cache (Back from 42's page), or never left at all when the
+  // navigation was cancelled (Esc, Stop), which fires no event. A restored
+  // page also resumes the hand-off timer, so it is cleared here: left
+  // running, it would free the slot under the next action.
+  useEffect(() => {
+    function onPageShow(event: PageTransitionEvent): void {
+      if (!event.persisted) return;
+      window.clearTimeout(handOffTimerRef.current);
+      setPending(null);
+    }
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow);
+      window.clearTimeout(handOffTimerRef.current);
+    };
+  }, []);
+
+  // §5.6 A: start the 42 flow and hand the browser to 42. Sharing the one
+  // pending slot with the form means no start can run beside a sign-in; the
+  // button stays pending while the page unloads, and a failed start shows
+  // the same status slot a failed sign-in uses.
+  async function onOauthStart(): Promise<void> {
+    if (pending !== null) return;
+    setPending('oauth');
+    setStatus(undefined);
+    try {
+      const { authorizeUrl } = await start42('sign_in');
+      if (!mountedRef.current) return;
+      window.location.assign(authorizeUrl);
+      window.clearTimeout(handOffTimerRef.current);
+      handOffTimerRef.current = window.setTimeout(() => {
+        if (mountedRef.current) setPending(null);
+      }, 5000);
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setStatus(failureMessage(error));
+      setPending(null);
     }
   }
 
@@ -108,11 +182,27 @@ export function SignInPage(): React.JSX.Element {
                 onChange={(event) => setPassword(event.target.value)}
                 error={passwordError}
               />
-              <Button type="submit" loading={pending} className="w-full">
-                {pending ? copy.submitting : copy.submit}
+              <Button
+                type="submit"
+                loading={pending === 'password'}
+                aria-disabled={pending === 'oauth' || undefined}
+                className="w-full"
+              >
+                {pending === 'password' ? copy.submitting : copy.submit}
               </Button>
             </form>
           </Card>
+          {config.data?.oauth42Enabled === true ? (
+            <Button
+              variant="secondary"
+              className="w-full"
+              loading={pending === 'oauth'}
+              aria-disabled={pending === 'password' || undefined}
+              onClick={() => void onOauthStart()}
+            >
+              {copy.oauthButton}
+            </Button>
+          ) : null}
           <p className="text-center text-sm text-ink-muted">
             {copy.noAccountCta}{' '}
             <Link to="/sign-up" className="rounded text-link underline underline-offset-2 focus-ring">

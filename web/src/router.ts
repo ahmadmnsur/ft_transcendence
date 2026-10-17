@@ -35,13 +35,15 @@ const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-in',
   beforeLoad: requireSignedOut,
-  // The password change returns here with a notice; anything else is no
-  // notice, so a hand-written query never shows a banner.
-  validateSearch: (search: Record<string, unknown>): { notice?: SignInNotice } => ({
+  // The password change returns here with a notice, and 42's failure path
+  // with `oauth=failed`; anything else is no notice, so a hand-written query
+  // never shows a banner.
+  validateSearch: (search: Record<string, unknown>): { notice?: SignInNotice; oauth?: 'failed' } => ({
     notice:
       search.notice === 'password-changed' || search.notice === 'password-change-unknown'
         ? search.notice
         : undefined,
+    oauth: search.oauth === 'failed' ? 'failed' : undefined,
   }),
   component: SignInPage,
 });
