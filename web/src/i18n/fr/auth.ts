@@ -34,6 +34,10 @@ export default {
       },
     },
   },
+  passwordVisibility: {
+    showPasswordLabel: 'Afficher le mot de passe',
+    hidePasswordLabel: 'Masquer le mot de passe',
+  },
   signIn: {
     title: 'Se connecter',
     heading: 'Se connecter',
@@ -48,6 +52,8 @@ export default {
     noticePasswordChanged: 'Votre mot de passe a été modifié. Connectez-vous avec votre nouveau mot de passe.',
     noticeSignedOutUnknown:
       "Vous avez été déconnecté, et la modification du mot de passe n'est peut-être pas terminée. Essayez d'abord votre nouveau mot de passe, puis l'ancien.",
+    oauthButton: 'Se connecter avec 42',
+    oauthFailed: 'La connexion avec 42 a échoué. Réessayez.',
   },
   signUp: {
     title: "S'inscrire",
@@ -67,6 +73,13 @@ export default {
       other: "Saisissez un nom d'affichage de {minChars}–{count} caractères.",
     },
     passwordLabel: 'Mot de passe',
+    confirmPasswordLabel: 'Confirmez le mot de passe',
+    confirmPasswordEmpty: 'Saisissez à nouveau votre mot de passe.',
+    confirmPasswordMismatch: 'Les mots de passe ne correspondent pas. Saisissez le même mot de passe dans les deux champs.',
+    confirmPasswordVisibility: {
+      showPasswordLabel: 'Afficher la confirmation du mot de passe',
+      hidePasswordLabel: 'Masquer la confirmation du mot de passe',
+    },
     acceptTermsLabel: "J'accepte les Conditions d'utilisation et j'ai lu la Politique de confidentialité",
     readFullText: 'Lire le texte complet\u00a0: {termsLink} · {privacyLink}',
     termsLink: "Conditions d'utilisation",

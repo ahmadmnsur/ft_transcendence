@@ -46,6 +46,10 @@ export default {
       },
     },
   },
+  passwordVisibility: {
+    showPasswordLabel: 'إظهار كلمة المرور',
+    hidePasswordLabel: 'إخفاء كلمة المرور',
+  },
   signIn: {
     title: 'تسجيل الدخول',
     heading: 'تسجيل الدخول',
@@ -59,6 +63,8 @@ export default {
     signUpLink: 'إنشاء حساب',
     noticePasswordChanged: 'تم تغيير كلمة المرور. سجل الدخول بكلمة المرور الجديدة.',
     noticeSignedOutUnknown: 'تم تسجيل خروجك، وربما لم يكتمل تغيير كلمة المرور. جرب كلمة المرور الجديدة أولا، ثم القديمة.',
+    oauthButton: 'تسجيل الدخول باستخدام 42',
+    oauthFailed: 'فشل تسجيل الدخول باستخدام 42. حاول مرة أخرى.',
   },
   signUp: {
     title: 'إنشاء حساب',
@@ -84,6 +90,13 @@ export default {
       other: 'أدخل اسم عرض من {minChars} إلى {count} حرف.',
     },
     passwordLabel: 'كلمة المرور',
+    confirmPasswordLabel: 'أكد كلمة المرور',
+    confirmPasswordEmpty: 'أدخل كلمة المرور مرة أخرى.',
+    confirmPasswordMismatch: 'كلمتا المرور غير متطابقتين. أدخل كلمة المرور نفسها في الحقلين.',
+    confirmPasswordVisibility: {
+      showPasswordLabel: 'إظهار تأكيد كلمة المرور',
+      hidePasswordLabel: 'إخفاء تأكيد كلمة المرور',
+    },
     acceptTermsLabel: 'أوافق على شروط الاستخدام وقد قرأت سياسة الخصوصية',
     readFullText: 'اقرأ النص الكامل: {termsLink} · {privacyLink}',
     termsLink: 'شروط الاستخدام',

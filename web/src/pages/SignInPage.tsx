@@ -6,7 +6,6 @@ import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { login, start42 } from '../api/auth';
 import { configQueryOptions } from '../api/config';
 import { SESSION_QUERY_KEY } from '../api/session';
-import { authCopy } from '../auth/messages';
 import { Banner, Button, Card, PasswordField, TextField } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
@@ -171,7 +170,7 @@ export function SignInPage(): React.JSX.Element {
                 <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
                   <Banner
                     tone="danger"
-                    title={status === 'oauth-failed' ? authCopy.signIn.oauthFailed : errorText(status.code)}
+                    title={status === 'oauth-failed' ? t.auth.signIn.oauthFailed : errorText(status.code)}
                   />
                 </div>
               ) : null}
@@ -187,7 +186,7 @@ export function SignInPage(): React.JSX.Element {
               <PasswordField
                 ref={passwordRef}
                 label={t.auth.signIn.passwordLabel}
-                {...authCopy.passwordVisibility}
+                {...t.auth.passwordVisibility}
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -211,7 +210,7 @@ export function SignInPage(): React.JSX.Element {
               aria-disabled={pending === 'password' || undefined}
               onClick={() => void onOauthStart()}
             >
-              {authCopy.signIn.oauthButton}
+              {t.auth.signIn.oauthButton}
             </Button>
           ) : null}
           <p className="text-center text-sm text-ink-muted">

@@ -17,6 +17,10 @@ export default {
       },
     },
   },
+  passwordVisibility: {
+    showPasswordLabel: 'Show password',
+    hidePasswordLabel: 'Hide password',
+  },
   signIn: {
     title: 'Sign in',
     heading: 'Sign in',
@@ -31,6 +35,8 @@ export default {
     noticePasswordChanged: 'Your password was changed. Sign in with your new password.',
     noticeSignedOutUnknown:
       'You were signed out, and the password change may not have finished. Try your new password first, then your old one.',
+    oauthButton: 'Sign in with 42',
+    oauthFailed: 'Sign in with 42 failed. Try again.',
   },
   signUp: {
     title: 'Sign up',
@@ -48,6 +54,13 @@ export default {
       other: 'Enter a display name of {minChars}–{count} characters.',
     },
     passwordLabel: 'Password',
+    confirmPasswordLabel: 'Confirm password',
+    confirmPasswordEmpty: 'Enter your password again.',
+    confirmPasswordMismatch: 'Passwords do not match. Enter the same password in both fields.',
+    confirmPasswordVisibility: {
+      showPasswordLabel: 'Show confirmation password',
+      hidePasswordLabel: 'Hide confirmation password',
+    },
     acceptTermsLabel: 'I agree to the Terms of Service and have read the Privacy Policy',
     readFullText: 'Read the full text: {termsLink} · {privacyLink}',
     termsLink: 'Terms of Service',

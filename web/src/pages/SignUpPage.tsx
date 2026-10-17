@@ -11,7 +11,6 @@ import {
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { signup } from '../api/auth';
 import { SESSION_QUERY_KEY } from '../api/session';
-import { authCopy } from '../auth/messages';
 import { Banner, Button, Card, Checkbox, PasswordField, TextField } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
@@ -164,7 +163,7 @@ export function SignUpPage(): React.JSX.Element {
                   minChars: LIMITS.password.minChars,
                   maxBytes: LIMITS.password.maxBytes,
                 })}
-                {...authCopy.passwordVisibility}
+                {...t.auth.passwordVisibility}
                 autoComplete="new-password"
                 value={password}
                 onChange={(event) => {
@@ -177,8 +176,8 @@ export function SignUpPage(): React.JSX.Element {
               />
               <PasswordField
                 ref={confirmPasswordRef}
-                label={authCopy.signUp.confirmPasswordLabel}
-                {...authCopy.signUp.confirmPasswordVisibility}
+                label={t.auth.signUp.confirmPasswordLabel}
+                {...t.auth.signUp.confirmPasswordVisibility}
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(event) => {
@@ -191,8 +190,8 @@ export function SignUpPage(): React.JSX.Element {
                   confirmPasswordError === undefined
                     ? undefined
                     : confirmPasswordError === 'empty'
-                      ? authCopy.signUp.confirmPasswordEmpty
-                      : authCopy.signUp.confirmPasswordMismatch
+                      ? t.auth.signUp.confirmPasswordEmpty
+                      : t.auth.signUp.confirmPasswordMismatch
                 }
               />
               <div className="min-w-0">
