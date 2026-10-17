@@ -12,6 +12,7 @@ import { SearchIcon } from '../icons/SearchIcon';
 import { SortAscIcon } from '../icons/SortAscIcon';
 import { SortDescIcon } from '../icons/SortDescIcon';
 import { SortIcon } from '../icons/SortIcon';
+import { useI18n } from '../../i18n/context';
 import { Button } from './Button';
 import { EmptyState } from './EmptyState';
 import { countPages } from './pages';
@@ -72,7 +73,7 @@ export function DataTable<TData>({
   onSortingChange,
   onPageChange,
   caption,
-  emptyTitle = 'No rows found',
+  emptyTitle,
   emptyDescription,
   emptyIcon = <SearchIcon size={24} />,
   emptyAction,
@@ -81,6 +82,7 @@ export function DataTable<TData>({
   onRetry,
   className = '',
 }: DataTableProps<TData>): React.JSX.Element {
+  const { t, formatText } = useI18n();
   const pageCount = countPages({ total, pageSize });
   const frameRef = useRef<HTMLDivElement>(null);
   const [scrollable, setScrollable] = useState(false);
@@ -225,13 +227,13 @@ export function DataTable<TData>({
             <div className="flex justify-center px-4 pb-10 pt-3">
               {onRetry ? (
                 <Button variant="secondary" size="sm" onClick={onRetry}>
-                  Try again
+                  {t.design.dataTable.retry}
                 </Button>
               ) : null}
             </div>
           ) : null}
           <div role="status">
-            {empty ? <EmptyState icon={emptyIcon} title={emptyTitle} description={emptyDescription} action={emptyAction} /> : null}
+            {empty ? <EmptyState icon={emptyIcon} title={emptyTitle ?? t.design.dataTable.emptyTitle} description={emptyDescription} action={emptyAction} /> : null}
           </div>
         </div>
         {moreToRight ? (
@@ -240,7 +242,7 @@ export function DataTable<TData>({
       </div>
       {/* Kept through a failed load, so the user can try another page. */}
       {pageCount > 1 ? (
-        <Pagination page={nearestPage} pageCount={pageCount} onPageChange={onPageChange} label={`${caption} pages`} className="mt-3" />
+        <Pagination page={nearestPage} pageCount={pageCount} onPageChange={onPageChange} label={formatText(t.design.dataTable.pagesLabel, { caption })} className="mt-3" />
       ) : null}
     </div>
   );

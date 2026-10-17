@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useI18n } from '../../i18n/context';
 
 export interface ProgressBarProps {
   value: number;
@@ -12,6 +13,7 @@ export interface ProgressBarProps {
 }
 
 export function ProgressBar({ value, max, label, valueText, showValue = true, className = '' }: ProgressBarProps): React.JSX.Element {
+  const { formatNumber } = useI18n();
   const labelId = useId();
   // A value worked out from an unknown total, such as an upload whose size the
   // browser cannot report, is NaN; it shows as no progress rather than NaN%.
@@ -24,7 +26,7 @@ export function ProgressBar({ value, max, label, valueText, showValue = true, cl
         <p id={labelId} className="truncate text-sm font-medium text-ink">
           {label}
         </p>
-        {showValue ? <p className="shrink-0 text-xs tabular-nums text-ink-muted">{valueText ?? `${percent}%`}</p> : null}
+        {showValue ? <p className="shrink-0 text-xs tabular-nums text-ink-muted">{valueText ?? formatNumber(percent / 100, { style: 'percent' })}</p> : null}
       </div>
       <div
         role="progressbar"

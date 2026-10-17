@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode, type RefObject, type SyntheticEvent } from 'react';
 import { CloseIcon } from '../icons/CloseIcon';
+import { useI18n } from '../../i18n/context';
 import { IconButton } from './IconButton';
 
 export interface ModalProps {
@@ -34,6 +35,7 @@ const widths: Record<NonNullable<ModalProps['size']>, string> = {
 // focus inside, sends Escape to the topmost dialog only, and returns focus
 // when it closes. The open prop stays the source of truth.
 export function Modal({ open, title, description, onClose, children, footer, initialFocusRef, size = 'md' }: ModalProps): React.JSX.Element {
+  const { t } = useI18n();
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -130,7 +132,7 @@ export function Modal({ open, title, description, onClose, children, footer, ini
                 </div>
               ) : null}
             </div>
-            <IconButton label="Close dialog" size="sm" onClick={onClose}>
+            <IconButton label={t.design.modal.close} size="sm" onClick={onClose}>
               <CloseIcon size={18} />
             </IconButton>
           </div>

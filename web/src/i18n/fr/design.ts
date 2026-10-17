@@ -1,0 +1,52 @@
+import type design from '../en/design';
+import type { Catalogue } from '../types';
+
+export default {
+  dataTable: {
+    emptyTitle: 'Aucune ligne trouvée',
+    retry: 'Réessayer',
+    pagesLabel: 'Pages du tableau {caption}',
+  },
+  pagination: {
+    label: 'Pagination',
+    previous: 'Précédent',
+    previousLabel: 'Aller à la page précédente',
+    next: 'Suivant',
+    nextLabel: 'Aller à la page suivante',
+    pageOf: 'Page {page} sur {pageCount}',
+    pageLabel: 'Aller à la page {page}',
+  },
+  modal: { close: 'Fermer la fenêtre' },
+  banner: { dismiss: 'Masquer « {title} »' },
+  roleLabel: 'Admin',
+  skillChip: {
+    teach: 'Peut enseigner : {skill}',
+    learn: 'Veut apprendre : {skill}',
+    remove: 'Retirer {skill}',
+  },
+  fileDrop: {
+    label: 'Joindre un fichier',
+    drop: 'Glissez un fichier ici, ou {browse}',
+    browse: 'parcourez',
+    choose: 'Choisir un fichier',
+    hint: "{types}, jusqu'à {maxSize}",
+    empty: 'Ce fichier est vide.',
+    typeRefused: "Ce type de fichier n'est pas accepté. Utilisez {types}.",
+    extensionRefused: 'Les fichiers {extension} ne sont pas acceptés. Utilisez {types}.',
+    typeMismatch: "Ce fichier porte l'extension .{extension}, mais ce n'est pas un fichier {type}.",
+    overLimit: 'Ce fichier fait {size}, au-delà de la limite de {limit}.',
+    justOverLimit: 'Ce fichier dépasse de peu la limite de {limit}.',
+    preview: 'Aperçu de {fileName}',
+    uploadProgress: "Progression de l'envoi de {fileName}",
+    uploading: 'Envoi de {fileName} : {progress}',
+    replace: 'Remplacer',
+    replaceLabel: 'Remplacer {fileName}',
+    removeLabel: 'Retirer {fileName}',
+    delete: 'Supprimer',
+    deleteLabel: 'Supprimer {fileName}',
+    download: 'Télécharger {fileName}',
+    confirmTitle: 'Supprimer ce fichier ?',
+    confirmDescription: '{fileName} sera supprimé. Cette action est irréversible.',
+    keep: 'Garder le fichier',
+  },
+} as const satisfies Catalogue<'fr', typeof design>;

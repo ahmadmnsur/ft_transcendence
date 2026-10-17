@@ -292,6 +292,11 @@ Unaffected:
   2's note of 2026-10-15).
 
   > **Handed on 2026-10-16** to [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173), its criterion 3.
+
+  > **Settled 2026-10-18** by that ticket: `short`. `FileDrop` writes a size with `style: 'unit'`
+  > and `unitDisplay: 'short'`, in steps of 1,024 as before: *5 MB*, *5 Mo* and *٥ م.ب*. It
+  > keeps the sizes as short as the English it replaces. A file under 1 kB reads *800 byte* in
+  > English, as CLDR's `en-GB` writes it.
 - **Which open build tickets show text**: [Write the build tickets for French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148)'s call.
 
   > **Settled 2026-10-16** by that ticket: twenty-five, listed in its resolution and that list's

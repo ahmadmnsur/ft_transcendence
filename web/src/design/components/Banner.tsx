@@ -3,6 +3,7 @@ import { AlertIcon } from '../icons/AlertIcon';
 import { CheckIcon } from '../icons/CheckIcon';
 import { CloseIcon } from '../icons/CloseIcon';
 import { InfoIcon } from '../icons/InfoIcon';
+import { useI18n } from '../../i18n/context';
 import { IconButton } from './IconButton';
 
 export type BannerTone = 'info' | 'success' | 'warning' | 'danger';
@@ -29,6 +30,7 @@ const tones: Record<BannerTone, { wrap: string; icon: ReactNode }> = {
 };
 
 export function Banner({ tone, title, body, onDismiss, className = '' }: BannerProps): React.JSX.Element {
+  const { t, formatText } = useI18n();
   const { wrap, icon } = tones[tone];
   const alert = tone === 'warning' || tone === 'danger';
   return (
@@ -41,7 +43,7 @@ export function Banner({ tone, title, body, onDismiss, className = '' }: BannerP
         {body != null ? <div className="mt-0.5">{body}</div> : null}
       </div>
       {onDismiss ? (
-        <IconButton label={`Dismiss ${title}`} size="xs" tone="inherit" onClick={onDismiss}>
+        <IconButton label={formatText(t.design.banner.dismiss, { title })} size="xs" tone="inherit" onClick={onDismiss}>
           <CloseIcon size={16} />
         </IconButton>
       ) : null}

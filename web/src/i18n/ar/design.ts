@@ -1,0 +1,52 @@
+import type design from '../en/design';
+import type { Catalogue } from '../types';
+
+export default {
+  dataTable: {
+    emptyTitle: 'لا توجد صفوف',
+    retry: 'حاول مرة أخرى',
+    pagesLabel: 'صفحات {caption}',
+  },
+  pagination: {
+    label: 'ترقيم الصفحات',
+    previous: 'السابق',
+    previousLabel: 'الانتقال إلى الصفحة السابقة',
+    next: 'التالي',
+    nextLabel: 'الانتقال إلى الصفحة التالية',
+    pageOf: 'الصفحة {page} من {pageCount}',
+    pageLabel: 'الانتقال إلى الصفحة {page}',
+  },
+  modal: { close: 'إغلاق النافذة' },
+  banner: { dismiss: 'إخفاء التنبيه: {title}' },
+  roleLabel: 'مسؤول',
+  skillChip: {
+    teach: 'يستطيع تعليم: {skill}',
+    learn: 'يريد تعلم: {skill}',
+    remove: 'إزالة {skill}',
+  },
+  fileDrop: {
+    label: 'إرفاق ملف',
+    drop: 'اسحب ملفا إلى هنا، أو {browse}',
+    browse: 'تصفح',
+    choose: 'اختر ملفا',
+    hint: '{types}، حتى {maxSize}',
+    empty: 'هذا الملف فارغ.',
+    typeRefused: 'نوع الملف هذا غير مقبول. استخدم {types}.',
+    extensionRefused: 'ملفات {extension} غير مقبولة. استخدم {types}.',
+    typeMismatch: 'امتداد هذا الملف .{extension}، لكنه ليس ملف {type}.',
+    overLimit: 'حجم هذا الملف {size}، وهو يتجاوز الحد البالغ {limit}.',
+    justOverLimit: 'هذا الملف يتجاوز الحد البالغ {limit} بقليل.',
+    preview: 'معاينة {fileName}',
+    uploadProgress: 'تقدم رفع {fileName}',
+    uploading: 'جار رفع {fileName}: {progress}',
+    replace: 'استبدال',
+    replaceLabel: 'استبدال {fileName}',
+    removeLabel: 'إزالة {fileName}',
+    delete: 'حذف',
+    deleteLabel: 'حذف {fileName}',
+    download: 'تنزيل {fileName}',
+    confirmTitle: 'حذف هذا الملف؟',
+    confirmDescription: 'سيحذف {fileName}. لا يمكن التراجع عن ذلك.',
+    keep: 'الإبقاء على الملف',
+  },
+} as const satisfies Catalogue<'ar', typeof design>;

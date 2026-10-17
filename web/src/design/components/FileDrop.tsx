@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { CloseIcon } from '../icons/CloseIcon';
 import { FileIcon } from '../icons/FileIcon';
 import { UploadIcon } from '../icons/UploadIcon';
+import { useI18n } from '../../i18n/context';
 import { Button } from './Button';
 import { buttonClasses } from './buttonClasses';
 import { FieldMessages } from './field';
@@ -20,6 +21,14 @@ export interface StoredFile {
   // Where the file can be read, for the image or PDF preview.
   previewUrl?: string;
 }
+
+// A problem the checks found, kept as data so its text is written in the
+// language shown when it renders.
+type Problem =
+  | { kind: 'empty' }
+  | { kind: 'type'; extension: string }
+  | { kind: 'mismatch'; extension: string; type: FileType }
+  | { kind: 'size'; size: number };
 
 export interface FileDropProps {
   accept: Array<FileType>;
@@ -62,15 +71,17 @@ function typeOfFile(file: File): FileType | undefined {
   return file.type in fileTypes ? (file.type as FileType) : undefined;
 }
 
-function joinNames(names: Array<string>): string {
-  if (names.length <= 2) return names.join(' or ');
-  return `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
-}
+// A file size in the current language: bytes, then kilobytes rounded to a
+type FormatNumber = (value: number, options?: Intl.NumberFormatOptions) => string;
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${parseFloat((bytes / (1024 * 1024)).toFixed(1))} MB`;
+// A file size in the current language: bytes, then kilobytes rounded to a
+// whole number, then megabytes to one decimal, as Intl writes each unit.
+function formatBytes(formatNumber: FormatNumber, bytes: number): string {
+  const size = (unit: string, value: number, digits: number): string =>
+    formatNumber(value, { style: 'unit', unit, unitDisplay: 'short', maximumFractionDigits: digits });
+  if (bytes < 1024) return size('byte', bytes, 0);
+  if (bytes < 1024 * 1024) return size('kilobyte', Math.round(bytes / 1024), 0);
+  return size('megabyte', bytes / (1024 * 1024), 1);
 }
 
 // Stored files compare by content: a screen may build the record afresh on
@@ -92,10 +103,11 @@ export function FileDrop({
   onChange,
   error,
   progress,
-  label = 'Attach a file',
+  label,
   hint,
   className = '',
 }: FileDropProps): React.JSX.Element {
+  const { t, format, formatText, list, formatNumber } = useI18n();
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLButtonElement>(null);
@@ -108,14 +120,15 @@ export function FileDrop({
   const actionId = `${baseId}-action`;
   const hintId = `${baseId}-hint`;
   const errorId = `${baseId}-error`;
-  const [checkError, setCheckError] = useState<string | null>(null);
+  const [checkError, setCheckError] = useState<Problem | null>(null);
   // Removing a stored file deletes it on the server, so it is confirmed first;
   // a picked file that is not saved yet is removed at once.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [objectUrl, setObjectUrl] = useState<{ file: File; url: string } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [lastProps, setLastProps] = useState({ value, error });
-  const acceptedNames = joinNames(accept.map((type) => fileTypes[type].name));
+  const typeNames = accept.map((type) => fileTypes[type].name);
+  const acceptedTypes = list(typeNames, { type: 'disjunction' });
   const valueType = value ? typeOfValue(value) : undefined;
   const isImage = valueType === 'image/png' || valueType === 'image/jpeg';
   const isPdf = valueType === 'application/pdf';
@@ -129,7 +142,7 @@ export function FileDrop({
     setLastProps({ value, error });
     setCheckError(null);
   }
-  const shownError = checkError ?? error;
+  const shownError = checkError ? problemText(checkError) : error;
 
   // The only place object URLs are created or revoked. Only a picked image
   // gets one: the page's security policy frames same-origin URLs only, so a PDF
@@ -159,25 +172,37 @@ export function FileDrop({
   // accepted type, a declared type that agrees with the extension, and the size
   // cap. Only the server reads the bytes, so it still has the last word, and a
   // file that claims no type at all (no extension, nothing declared) is left to it.
-  function check(candidate: File): string | null {
-    if (candidate.size === 0) return 'This file is empty.';
+  function check(candidate: File): Problem | null {
+    if (candidate.size === 0) return { kind: 'empty' };
     const extension = extensionOf(candidate.name);
     const type = typeOfFile(candidate);
     const declared = candidate.type === 'application/octet-stream' ? '' : candidate.type;
     if (extension !== '' || declared !== '') {
       if (!type || !accept.includes(type)) {
-        const rejected = extension ? `${extension.toUpperCase()} files are` : 'This file type is';
-        return `${rejected} not accepted. Use ${acceptedNames}.`;
+        return { kind: 'type', extension };
       }
-      if (declared !== '' && declared !== type) return `This file is named .${extension} but is not a ${fileTypes[type].name} file.`;
+      if (declared !== '' && declared !== type) return { kind: 'mismatch', extension, type };
     }
     if (candidate.size > maxBytes) {
-      const size = formatBytes(candidate.size);
-      const limit = formatBytes(maxBytes);
-      // Rounding can print both as the same number, so a file just over the cap says so.
-      return size === limit ? `This file is just over the ${limit} limit.` : `This file is ${size}, over the ${limit} limit.`;
+      return { kind: 'size', size: candidate.size };
     }
     return null;
+  }
+
+  function problemText(problem: Problem): React.JSX.Element {
+    if (problem.kind === 'empty') return <>{t.design.fileDrop.empty}</>;
+    if (problem.kind === 'type') {
+      return problem.extension
+        ? format(t.design.fileDrop.extensionRefused, { extension: problem.extension.toUpperCase(), types: acceptedTypes })
+        : format(t.design.fileDrop.typeRefused, { types: acceptedTypes });
+    }
+    if (problem.kind === 'mismatch') {
+      return format(t.design.fileDrop.typeMismatch, { extension: problem.extension, type: fileTypes[problem.type].name });
+    }
+    const size = formatBytes(formatNumber, problem.size);
+    const limit = formatBytes(formatNumber, maxBytes);
+    // Rounding can print both as the same number, so a file just over the cap says so.
+    return size === limit ? format(t.design.fileDrop.justOverLimit, { limit }) : format(t.design.fileDrop.overLimit, { size, limit });
   }
 
   function take(candidate: File): void {
@@ -215,7 +240,8 @@ export function FileDrop({
   // A progress bar's value is not read out as it changes, so the upload is
   // announced in quarter steps through a status region that stays mounted.
   const step = progress !== undefined && Number.isFinite(progress) ? Math.min(Math.max(Math.floor(progress / 25) * 25, 0), 100) : undefined;
-  const uploadStatus = value && step !== undefined ? `Uploading ${value.name}: ${step}%` : '';
+  const uploadStatus =
+    value && step !== undefined ? format(t.design.fileDrop.uploading, { fileName: value.name, progress: formatNumber(step / 100, { style: 'percent' }) }) : null;
 
   return (
     <div
@@ -237,7 +263,7 @@ export function FileDrop({
       onDrop={onDrop}
     >
       <p id={labelId} className="mb-1 block text-sm font-medium text-ink">
-        {label}
+        {label ?? t.design.fileDrop.label}
       </p>
       {!value ? (
         <button
@@ -261,12 +287,12 @@ export function FileDrop({
           <span id={actionId} className="text-sm text-ink">
             {/* A phone cannot drag a file, so a touch screen is only offered the picker. */}
             <span className="pointer-coarse:hidden">
-              Drag a file here, or <span className="font-semibold text-link underline underline-offset-2">browse</span>
+              {format(t.design.fileDrop.drop, { browse: <span className="font-semibold text-link underline underline-offset-2">{t.design.fileDrop.browse}</span> })}
             </span>
-            <span className="hidden font-semibold text-link underline underline-offset-2 pointer-coarse:inline">Choose a file</span>
+            <span className="hidden font-semibold text-link underline underline-offset-2 pointer-coarse:inline">{t.design.fileDrop.choose}</span>
           </span>
           <span id={hintId} className="max-w-full text-xs text-ink-muted">
-            {hint ?? `${acceptedNames}, up to ${formatBytes(maxBytes)}`}
+            {hint ?? format(t.design.fileDrop.hint, { types: acceptedTypes, maxSize: formatBytes(formatNumber, maxBytes) })}
           </span>
         </button>
       ) : (
@@ -278,7 +304,7 @@ export function FileDrop({
         >
           <div className="flex min-w-0 flex-wrap items-center gap-3">
             {isImage && url ? (
-              <img src={url} alt={`Preview of ${value.name}`} className="h-12 w-12 shrink-0 rounded-lg bg-surface-muted object-cover" />
+              <img src={url} alt={formatText(t.design.fileDrop.preview, { fileName: value.name })} className="h-12 w-12 shrink-0 rounded-lg bg-surface-muted object-cover" />
             ) : (
               <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted">
                 <FileIcon size={24} />
@@ -286,35 +312,35 @@ export function FileDrop({
             )}
             <div className="min-w-0 flex-1 basis-40">
               <p className="text-sm font-medium text-ink wrap-anywhere">{value.name}</p>
-              {value.size !== undefined ? <p className="text-xs tabular-nums text-ink-muted">{formatBytes(value.size)}</p> : null}
+              {value.size !== undefined ? <p className="text-xs tabular-nums text-ink-muted">{formatBytes(formatNumber, value.size)}</p> : null}
               {progress !== undefined ? (
-                <ProgressBar value={progress} max={100} label={`Upload progress for ${value.name}`} className="mt-1" />
+                <ProgressBar value={progress} max={100} label={formatText(t.design.fileDrop.uploadProgress, { fileName: value.name })} className="mt-1" />
               ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <button ref={replaceRef} type="button" onClick={browse} aria-label={`Replace ${value.name}`} className={buttonClasses({ variant: 'ghost', size: 'sm' })}>
-                Replace
+              <button ref={replaceRef} type="button" onClick={browse} aria-label={formatText(t.design.fileDrop.replaceLabel, { fileName: value.name })} className={buttonClasses({ variant: 'ghost', size: 'sm' })}>
+                {t.design.fileDrop.replace}
               </button>
               {value instanceof File ? (
-                <IconButton label={`Remove ${value.name}`} size="sm" onClick={remove}>
+                <IconButton label={formatText(t.design.fileDrop.removeLabel, { fileName: value.name })} size="sm" onClick={remove}>
                   <CloseIcon size={16} />
                 </IconButton>
               ) : (
-                <Button variant="danger-ghost" size="sm" aria-label={`Delete ${value.name}`} onClick={() => setConfirmingDelete(true)}>
-                  Delete
+                <Button variant="danger-ghost" size="sm" aria-label={formatText(t.design.fileDrop.deleteLabel, { fileName: value.name })} onClick={() => setConfirmingDelete(true)}>
+                  {t.design.fileDrop.delete}
                 </Button>
               )}
             </div>
           </div>
           {isPdf && url && !(value instanceof File) ? (
             <div className="mt-3 min-w-0">
-              <iframe src={url} title={`Preview of ${value.name}`} className="h-72 w-full rounded-lg border border-line bg-surface-muted" />
+              <iframe src={url} title={formatText(t.design.fileDrop.preview, { fileName: value.name })} className="h-72 w-full rounded-lg border border-line bg-surface-muted" />
               <a
                 href={url}
                 download={value.name}
                 className="mt-2 inline-block text-sm font-semibold text-link underline underline-offset-2 focus-ring wrap-anywhere"
               >
-                Download {value.name}
+                {format(t.design.fileDrop.download, { fileName: value.name })}
               </a>
             </div>
           ) : null}
@@ -338,14 +364,14 @@ export function FileDrop({
         <Modal
           open={confirmingDelete}
           size="sm"
-          title="Delete this file?"
-          description={`${value.name} will be deleted. This cannot be undone.`}
+          title={t.design.fileDrop.confirmTitle}
+          description={format(t.design.fileDrop.confirmDescription, { fileName: value.name })}
           onClose={() => setConfirmingDelete(false)}
           initialFocusRef={keepRef}
           footer={
             <>
               <Button ref={keepRef} variant="secondary" onClick={() => setConfirmingDelete(false)}>
-                Keep file
+                {t.design.fileDrop.keep}
               </Button>
               <Button
                 variant="danger"
@@ -354,7 +380,7 @@ export function FileDrop({
                   remove();
                 }}
               >
-                Delete
+                {t.design.fileDrop.delete}
               </Button>
             </>
           }
