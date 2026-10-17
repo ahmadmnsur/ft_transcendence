@@ -3,9 +3,10 @@ import type { Checked } from '../types';
 import auth from './auth';
 import errors from './errors';
 import legal from './legal';
+import people from './people';
 import shell from './shell';
 
-const ar = { shell, legal, auth, errors };
+const ar = { shell, legal, auth, errors, people };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, no empty text and no vowel mark in its own Arabic.

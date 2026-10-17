@@ -282,13 +282,12 @@ Unaffected:
 
   > **Handed on 2026-10-16** to [Languages foundation: the dictionary, the switcher and the locale table](https://github.com/ahmadmnsur/ft_transcendence/issues/171), its criterion 11.
 
-  > **Settled 2026-10-16 by [Languages foundation: the dictionary, the switcher and the locale table](https://github.com/ahmadmnsur/ft_transcendence/issues/171):**
-  > such a `<select>` loses type-ahead for that option, since dropping the U+2068 mark would bring
-  > back `++C` in a right-to-left select. The blank check covers every character
-  > `String.prototype.trim()` removes, and the overlay on English treats a text that `trim()`
-  > empties as missing. The same approval's note on a value that is `undefined` at run time, which
-  > only an untyped call can pass, is settled with them: it counts as absent, so its placeholder
-  > shows as written and an `undefined` list item is left out.
+  > **Settled 2026-10-16** by that ticket: such a `<select>` loses type-ahead for that option,
+  > since dropping the U+2068 mark would bring back `++C` in a right-to-left select. The blank check
+  > covers every character `String.prototype.trim()` removes, and the overlay on English treats a
+  > text that `trim()` empties as missing. The same approval's note on a value that is `undefined`
+  > at run time is settled with them: it counts as absent, so its placeholder shows as written and
+  > an `undefined` list item is left out.
 - **The file sizes' `unitDisplay`**, which the design-system build ticket picks ([Settle how Arabic looks: mirroring, font, digits and dates](https://github.com/ahmadmnsur/ft_transcendence/issues/146), point
   2's note of 2026-10-15).
 

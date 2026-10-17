@@ -10,9 +10,11 @@ import {
   formatNumber,
   formatText,
   formatTime,
+  isolate,
   list,
   listText,
   over,
+  type ListOptions,
   type Messages,
   type Plain,
   type Template,
@@ -34,8 +36,9 @@ export interface I18n {
   t: Messages<typeof en>;
   format: <V>(message: Template<V>, values: V) => ReactElement;
   formatText: <V>(message: Template<V>, values: Plain<V>) => string;
-  list: (items: readonly Value[]) => ReactElement;
-  listText: (items: readonly (string | number)[]) => string;
+  list: (items: readonly Value[], options?: ListOptions) => ReactElement;
+  listText: (items: readonly (string | number)[], options?: ListOptions) => string;
+  personNameText: (name: string, removed: boolean) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
   formatDate: (date: Date | number) => string;
   formatTime: (date: Date | number) => string;
@@ -65,8 +68,9 @@ export function LanguageProvider({ initial, children }: { initial: Language; chi
       t,
       format: (message, values) => format(language, message, values),
       formatText: (message, values) => formatText(language, message, values),
-      list: (items) => list(language, items),
-      listText: (items) => listText(language, items),
+      list: (items, options) => list(language, items, options),
+      listText: (items, options) => listText(language, items, options),
+      personNameText: (name, removed) => isolate(removed ? t.people.tombstone : name),
       formatNumber: (value, options) => formatNumber(language, value, options),
       formatDate: (date) => formatDate(language, date),
       formatTime: (date) => formatTime(language, date),

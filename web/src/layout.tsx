@@ -83,7 +83,7 @@ function SiteHeader(): React.JSX.Element {
           {session?.authenticated === true ? (
             <>
               <span className="hidden max-w-40 truncate text-sm text-ink-muted sm:inline">
-                <PersonName name={session.student.displayName} />
+                <PersonName name={session.student.displayName} removed={false} />
               </span>
               <Link
                 to="/me"

@@ -47,7 +47,13 @@ function memo<T>(make: (tag: string) => T): (lang: Language) => T {
 }
 const plurals = memo((tag) => new Intl.PluralRules(tag));
 const numbers = memo((tag) => new Intl.NumberFormat(tag));
-const lists = memo((tag) => new Intl.ListFormat(tag, { type: 'conjunction' }));
+// A list joins with "and" ("Docker, Git and C++") unless it asks for "or"
+// (`type: 'disjunction'`, "PNG, JPEG or PDF").
+export type ListOptions = { type?: 'conjunction' | 'disjunction' };
+const lists = {
+  conjunction: memo((tag) => new Intl.ListFormat(tag, { type: 'conjunction' })),
+  disjunction: memo((tag) => new Intl.ListFormat(tag, { type: 'disjunction' })),
+};
 const dates = memo((tag) => new Intl.DateTimeFormat(tag, { dateStyle: 'long' }));
 const times = memo((tag) => new Intl.DateTimeFormat(tag, { timeStyle: 'short' }));
 const moments = memo((tag) => new Intl.DateTimeFormat(tag, { dateStyle: 'long', timeStyle: 'short' }));
@@ -68,8 +74,9 @@ function pieces(lang: Language, raw: Raw, values: Record<string, unknown>): Piec
     text.split(placeholder).flatMap((piece, i): Piece[] => {
       if (i % 2 === 0) return piece === '' ? [] : [piece];
       const v = vals[piece];
-      // Only an untyped call can get here without a value: the name shows as
-      // written, and a part without its number shows its own name.
+      // A value typed as present can still be missing, such as `names[0]` on an
+      // empty array: the name shows as written, and a part without its number
+      // shows its own name.
       if (v === undefined) return [`{${piece}}`];
       const part = parts?.[piece];
       if (part) return expand(choose(own, part, v as number), { ...vals, count: v });
@@ -119,14 +126,16 @@ export function formatText<V>(lang: Language, message: Template<V>, values: Plai
 // A list fills one placeholder: Intl.ListFormat joins it in the current
 // language, and each item is isolated like any other value. An `undefined`
 // item or a hole is left out, like an absent value.
-function listPieces(lang: Language, items: readonly unknown[]): Piece[] {
+function listPieces(lang: Language, items: readonly unknown[], type: 'conjunction' | 'disjunction' = 'conjunction'): Piece[] {
   const kept = items.filter((item) => item !== undefined);
-  return lists(lang)
+  return lists[type](lang)
     .formatToParts(kept.map((_, i) => String(i)))
     .map((p) => (p.type === 'element' ? { value: value(lang, kept[Number(p.value)]) } : p.value));
 }
-export const list = (lang: Language, items: readonly Value[]): ReactElement => markup(listPieces(lang, items));
-export const listText = (lang: Language, items: readonly (string | number)[]): string => plain(listPieces(lang, items));
+export const list = (lang: Language, items: readonly Value[], options?: ListOptions): ReactElement =>
+  markup(listPieces(lang, items, options?.type));
+export const listText = (lang: Language, items: readonly (string | number)[], options?: ListOptions): string =>
+  plain(listPieces(lang, items, options?.type));
 
 // Numbers, dates and times go through the locale table, never a hand-written
 // format; each language keeps its own clock, and times show in the browser's time zone.

@@ -119,9 +119,11 @@ type PlainFrenchSpace<S> = S extends `${string} ${BeforeMark}${string}`
 type Join<P extends string, K> = P extends '' ? `${K & string}` : `${P}.${K & string}`;
 
 // `string`, or a text built with an expression (`Se connecter${string}`), has
-// no fixed characters to check: only a fixed text gives {} no key it lacks.
+// no fixed characters to check: only a fixed text names a key this object
+// lacks. Object's own members are listed as absent, so a text such as
+// 'constructor' still counts as fixed.
 type TextProblems<L extends Language, T, Need extends string, Allowed extends string, Path extends string> = T extends string
-  ? {} extends Record<T, unknown>
+  ? { [K in keyof Object]?: never } extends Record<T, unknown>
     ? `${Path}: not a literal type (write as const)`
     :
         | (Blank<T> extends true ? `${Path}: empty` : never)
