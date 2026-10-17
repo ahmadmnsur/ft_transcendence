@@ -64,7 +64,7 @@ function BulletListItem({ item }: { item: BulletItem }): React.JSX.Element {
     <li>
       <Inlines nodes={item.children} />
       {item.nested.length > 0 && (
-        <ul className="mt-2 list-[circle] space-y-2 pl-6 marker:text-ink-subtle">
+        <ul className="mt-2 list-[circle] space-y-2 ps-6 marker:text-ink-subtle">
           {item.nested.map((child, index) => (
             <li key={index}>
               <Inlines nodes={child.children} />
@@ -84,6 +84,8 @@ function NumberedListItem({ item }: { item: NumberedItem }): React.JSX.Element {
   );
 }
 
+// Every cell's text sits at its start. A <th> is centred when its row's
+// text-align is the initial `start`, so each header cell sets its own.
 function LegalTable({
   block,
   label,
@@ -102,11 +104,11 @@ function LegalTable({
         tightTop ? 'mb-6 mt-2' : 'my-6'
       }`}
     >
-      <table className="w-full border-collapse text-left text-sm leading-relaxed">
+      <table className="w-full border-collapse text-start text-sm leading-relaxed">
         <thead>
           <tr className="bg-surface-muted">
             {block.header.map((cell, index) => (
-              <th key={index} scope="col" className="px-4 py-2.5 align-bottom font-semibold text-ink">
+              <th key={index} scope="col" className="px-4 py-2.5 text-start align-bottom font-semibold text-ink">
                 <Inlines nodes={cell} />
               </th>
             ))}
@@ -182,7 +184,7 @@ function LegalBlock({
       );
     case 'bulletList':
       return (
-        <ul className={`list-disc space-y-2 pl-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
+        <ul className={`list-disc space-y-2 ps-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
           {block.items.map((item, index) => (
             <BulletListItem key={index} item={item} />
           ))}
@@ -190,7 +192,7 @@ function LegalBlock({
       );
     case 'numberedList':
       return (
-        <ol className={`list-decimal space-y-2 pl-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
+        <ol className={`list-decimal space-y-2 ps-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
           {block.items.map((item, index) => (
             <NumberedListItem key={index} item={item} />
           ))}

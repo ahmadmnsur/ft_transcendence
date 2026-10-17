@@ -10,15 +10,16 @@ import { languageNames, languages } from './i18n/language';
 import { AlertIcon, Button, EmptyState, PersonName, SearchIcon, Select, buttonClasses } from './design';
 
 // The product name is never translated.
-const BRAND = '42 PeerConnect';
+export const BRAND = '42 PeerConnect';
 
-// One string child: `${name} · 42 PeerConnect`, or the brand alone when
-// `name` is absent. React hoists it into <head> and removes it on unmount,
-// so each page owns its title and every transition ends with the right one.
-// `web/index.html` keeps its static title as the fallback before the app
-// mounts.
+// One message with placeholders: the page's name, then the brand, or the
+// brand alone when `name` is absent, so an Arabic name keeps `42 PeerConnect`
+// in its own order. React hoists the string into <head> and removes it on
+// unmount, so each page owns its title and every transition ends with the
+// right one. `web/index.html` keeps its static title before the app mounts.
 export function PageTitle({ name }: { name?: string }): React.JSX.Element {
-  return <title>{name === undefined ? '42 PeerConnect' : `${name} · 42 PeerConnect`}</title>;
+  const { t, formatText } = useI18n();
+  return <title>{name === undefined ? BRAND : formatText(t.shell.pageTitle, { page: name, brand: BRAND })}</title>;
 }
 
 function SiteHeader(): React.JSX.Element {
@@ -152,12 +153,13 @@ function SiteFooter(): React.JSX.Element {
 }
 
 function SkipLink(): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <a
       href="#main-content"
-      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-link focus-ring"
+      className="sr-only focus:not-sr-only focus:absolute focus:inset-s-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-link focus-ring"
     >
-      Skip to main content
+      {t.shell.skipLink}
     </a>
   );
 }
@@ -203,17 +205,18 @@ export function RootLayout(): React.JSX.Element {
 }
 
 export function NotFoundPage(): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <>
-      <PageTitle name="Page not found" />
-      <h1 className="sr-only">Page not found</h1>
+      <PageTitle name={t.shell.notFound.name} />
+      <h1 className="sr-only">{t.shell.notFound.name}</h1>
       <EmptyState
         icon={<SearchIcon size={24} />}
-        title="This page does not exist."
-        description="Check that the address is right, or go back home."
+        title={t.shell.notFound.title}
+        description={t.shell.notFound.description}
         action={
           <Link to="/" className={buttonClasses({ variant: 'secondary' })}>
-            Back to home
+            {t.shell.notFound.homeLink}
           </Link>
         }
       />
@@ -224,15 +227,16 @@ export function NotFoundPage(): React.JSX.Element {
 // A short human message only: never a stack or the raw server text.
 export function ErrorContent({ reset }: ErrorComponentProps): React.JSX.Element {
   const router = useRouter();
+  const { t } = useI18n();
 
   return (
     <>
-      <PageTitle name="Something went wrong" />
-      <h1 className="sr-only">Something went wrong</h1>
+      <PageTitle name={t.shell.error.name} />
+      <h1 className="sr-only">{t.shell.error.name}</h1>
       <EmptyState
         icon={<AlertIcon size={24} />}
-        title="This page could not be shown."
-        description="Try again in a moment."
+        title={t.shell.error.title}
+        description={t.shell.error.description}
         action={
           <Button
             variant="secondary"
@@ -241,7 +245,7 @@ export function ErrorContent({ reset }: ErrorComponentProps): React.JSX.Element 
               void router.invalidate();
             }}
           >
-            Try again
+            {t.shell.error.retry}
           </Button>
         }
       />
