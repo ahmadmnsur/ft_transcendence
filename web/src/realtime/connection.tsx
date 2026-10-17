@@ -36,7 +36,13 @@ export function RealtimeConnection(): React.JSX.Element | null {
   // A terminal outcome (sign-in route, origin banner) stops the retry loop
   // until the next sign-in.
   const stoppedRef = useRef(false);
-  const probingRef = useRef(false);
+  // The generation allowed to probe, or null. A hung probe from an older
+  // session must not block the probe of the Student signed in now (§7.5).
+  const probingGenerationRef = useRef<number | null>(null);
+  // Incremented every time the signed-in Student changes. A probe captures
+  // it at its start and drops every awaited result once it no longer
+  // matches, so a late result never acts on the Student signed in now.
+  const sessionGenerationRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backoffRef = useRef(BACKOFF_START_MS);
 
@@ -80,22 +86,32 @@ export function RealtimeConnection(): React.JSX.Element | null {
       await navigateRef.current({ to: '/sign-in', replace: true });
     }
 
+    // §7.5: a probe acts only for the Student it started for; every awaited
+    // result is checked against the generation captured at its start, and a
+    // stale result is dropped without doing anything.
+    function generationChanged(generation: number): boolean {
+      return generation !== sessionGenerationRef.current;
+    }
+
     // §7.5: an Origin refusal is indistinguishable from an outage in the
     // browser, so both probes decide. The two HTTP calls are not origin-gated;
     // unlike the socket, they reach the server and their answers separate the
     // three outcomes.
     async function probeTransportFailure(): Promise<void> {
-      if (probingRef.current) return;
-      probingRef.current = true;
+      const generation = sessionGenerationRef.current;
+      if (probingGenerationRef.current === generation) return;
+      probingGenerationRef.current = generation;
       try {
         let config;
         try {
           config = await fetchConfig();
         } catch {
+          if (generationChanged(generation)) return;
           // Nothing answers: a network or server outage. Try again later.
           scheduleReconnect();
           return;
         }
+        if (generationChanged(generation)) return;
         // The server's own gate predicate (§7.2 step 1): while it holds, every
         // retry would be refused, so the banner is terminal and there is no
         // retry to schedule.
@@ -108,16 +124,18 @@ export function RealtimeConnection(): React.JSX.Element | null {
         try {
           probed = await fetchSession();
         } catch {
+          if (generationChanged(generation)) return;
           scheduleReconnect();
           return;
         }
+        if (generationChanged(generation)) return;
         if (!probed.authenticated) {
           await goToSignIn();
           return;
         }
         scheduleReconnect();
       } finally {
-        probingRef.current = false;
+        if (probingGenerationRef.current === generation) probingGenerationRef.current = null;
       }
     }
 
@@ -125,16 +143,19 @@ export function RealtimeConnection(): React.JSX.Element | null {
     // which revocation it was; a session that survived (force applied to
     // another session) may reconnect.
     async function probeForcedDisconnect(): Promise<void> {
-      if (probingRef.current) return;
-      probingRef.current = true;
+      const generation = sessionGenerationRef.current;
+      if (probingGenerationRef.current === generation) return;
+      probingGenerationRef.current = generation;
       try {
         let probed;
         try {
           probed = await fetchSession();
         } catch {
+          if (generationChanged(generation)) return;
           scheduleReconnect();
           return;
         }
+        if (generationChanged(generation)) return;
         if (!probed.authenticated) {
           await goToSignIn();
           return;
@@ -142,7 +163,7 @@ export function RealtimeConnection(): React.JSX.Element | null {
         if (stoppedRef.current) return;
         socket.connect();
       } finally {
-        probingRef.current = false;
+        if (probingGenerationRef.current === generation) probingGenerationRef.current = null;
       }
     }
 
@@ -192,17 +213,20 @@ export function RealtimeConnection(): React.JSX.Element | null {
   }, [queryClient]);
 
   // §7.1: connected only after GET /api/session reports a session, and gone
-  // the moment it stops. The disconnect before the connect forces a fresh
-  // handshake, so the new connection carries the cookie of the account
-  // signed in now, never a stale one.
+  // the moment it stops. Every change of the signed-in Student is a new
+  // generation: probes and reconnect timers of the old one stop at their
+  // next check, and its timer is dropped here (§7.5). The disconnect before
+  // the connect forces a fresh handshake, so the new connection carries the
+  // cookie of the account signed in now, never a stale one.
   useEffect(() => {
+    const generation = ++sessionGenerationRef.current;
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     if (studentId === null) {
       firstConnectRef.current = false;
       stoppedRef.current = false;
-      if (timerRef.current !== null) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
       socket.disconnect();
       return;
     }
@@ -210,12 +234,49 @@ export function RealtimeConnection(): React.JSX.Element | null {
     stoppedRef.current = false;
     backoffRef.current = BACKOFF_START_MS;
     setOriginRefused(false);
-    socket.disconnect();
-    socket.connect();
+
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // §7.1: the sign-in and sign-up pages seed the query from their POST
+    // response, so the cached value alone is not proof of a session: a fresh
+    // GET must report this same Student before the socket connects.
+    // `staleTime: 0` forces it and shares the route guard's in-flight request
+    // (`guards.ts`). An outage retries this check on the probe path's own
+    // backoff (§7.5), so a sign-in during one still connects once the server
+    // answers; a generation change stops the check.
+    async function confirmSessionAndConnect(): Promise<void> {
+      for (;;) {
+        try {
+          const probed = await queryClient.fetchQuery({ ...sessionQueryOptions(), staleTime: 0 });
+          if (cancelled || generation !== sessionGenerationRef.current) return;
+          // The answer is now the query's data, so a signed-out one re-runs
+          // this effect's signed-out branch and another Student's id re-runs
+          // it for that Student; either way this generation does not connect.
+          if (!probed.authenticated || probed.student.id !== studentId) return;
+          socket.disconnect();
+          socket.connect();
+          return;
+        } catch {
+          if (cancelled || generation !== sessionGenerationRef.current) return;
+          const delay = backoffRef.current;
+          backoffRef.current = Math.min(delay * 2, BACKOFF_CAP_MS);
+          await new Promise<void>((resolve) => {
+            retryTimer = setTimeout(resolve, delay);
+          });
+          retryTimer = null;
+          if (cancelled || generation !== sessionGenerationRef.current) return;
+        }
+      }
+    }
+    void confirmSessionAndConnect();
+
     return () => {
+      cancelled = true;
+      if (retryTimer !== null) clearTimeout(retryTimer);
       socket.disconnect();
     };
-  }, [studentId]);
+  }, [studentId, queryClient]);
 
   if (!originRefused) return null;
   return (

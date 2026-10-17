@@ -20,6 +20,14 @@ export function studentRoom(studentId: string): string {
 
 type SocketSession = { studentId: string; sessionHash: string };
 
+type HeldEvent = { event: string; payload: object };
+
+// §7.2 step 3 while its re-read is in flight: the rooms the socket will join
+// and the events §7.4's publishers emit to them meanwhile. The flush after
+// the join delivers them; every path that drops the socket drops the entry
+// with it (§7.5).
+type WaitingSocket = { rooms: string[]; held: HeldEvent[] };
+
 function socketSession(socket: Socket): SocketSession | null {
   const data = socket.data as Partial<SocketSession>;
   const { studentId, sessionHash } = data;
@@ -38,6 +46,7 @@ export class RealtimeGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private server: Server | null = null;
+  private readonly waiting = new Map<string, WaitingSocket>();
 
   constructor(
     private readonly sessions: SessionResolver,
@@ -98,12 +107,16 @@ export class RealtimeGateway
   // §7.2 step 3, in this order: register, re-read the session row once (a
   // handshake that registers after a revoking commit swept the registry is
   // caught here, because that commit deleted the row first), then join the
-  // rooms and apply §7.6's transition. A socket that disconnected while the
-  // re-read was in flight was already unregistered by handleDisconnect, and
-  // `activate` skips it. Nest subscribes to this method and drops the promise
-  // it returns, so it must never reject: a failed re-read or join logs (§3.9)
-  // and disconnects the socket instead, which unregisters it through
-  // handleDisconnect.
+  // rooms and apply §7.6's transition. The socket is marked waiting before
+  // the first await, so events §7.4's publishers emit while the re-read is
+  // in flight are held and flushed right after the join — the client was
+  // already told "connected", and §7.5 requires the events missed across it
+  // to be recovered. A socket that disconnected while the re-read was in
+  // flight was already unregistered by handleDisconnect, and the flush and
+  // `activate` both skip it. Nest subscribes to this method and drops the
+  // promise it returns, so it must never reject: a failed re-read or join
+  // logs (§3.9) and disconnects the socket instead, which unregisters it
+  // through handleDisconnect.
   async handleConnection(socket: Socket): Promise<void> {
     const session = socketSession(socket);
     if (session === null) {
@@ -111,28 +124,52 @@ export class RealtimeGateway
       return;
     }
     this.registry.register(socket.id, session.studentId, session.sessionHash);
+    // Still synchronous with the connection itself, so no publisher can run
+    // between the registration and this entry (§7.2 step 3).
+    this.waiting.set(socket.id, {
+      rooms: [FEED_ROOM, ROUNDS_ROOM, studentRoom(session.studentId)],
+      held: [],
+    });
     try {
       const row = await this.prisma.session.findUnique({
         where: { id: session.sessionHash },
         select: { id: true },
       });
       if (row === null) {
+        // The row is gone: nothing to join and nothing to deliver.
+        this.waiting.delete(socket.id);
         socket.disconnect(true);
         return;
       }
-      await socket.join(FEED_ROOM);
-      await socket.join(ROUNDS_ROOM);
-      await socket.join(studentRoom(session.studentId));
+      const waiting = this.waiting.get(socket.id);
+      // handleDisconnect removed it while the re-read was in flight: the
+      // socket is gone and must join nothing and receive nothing.
+      if (waiting === undefined) return;
+      // §7.2 step 3: join only now, after the row is confirmed. The
+      // in-memory adapter joins synchronously, so no publisher runs between
+      // this call and the flush below: an event is either held with the
+      // entry (socket not yet in the rooms) or delivered through a room
+      // (entry gone, socket in it) — never both, never neither (§7.5).
+      const joined = socket.join(waiting.rooms);
+      this.waiting.delete(socket.id);
+      for (const held of waiting.held) {
+        socket.emit(held.event, held.payload);
+      }
+      await joined;
       this.registry.activate(socket.id);
     } catch (err) {
       // §3.9: an operation name with the error's class, code and frames —
       // never a cookie, a token, a hash or a payload.
+      this.waiting.delete(socket.id);
       this.logger.entry('error', { operation: 'socket-connect', ...errorFields(err) });
       socket.disconnect(true);
     }
   }
 
   handleDisconnect(socket: Socket): void {
+    // §7.2 step 3 + §7.5: dropping the entry stops a gone socket from
+    // joining after its re-read and discards its held events undelivered.
+    this.waiting.delete(socket.id);
     this.registry.disconnect(socket.id);
   }
 
@@ -155,47 +192,52 @@ export class RealtimeGateway
     this.presenceUpdate(recipients, transition.studentId, transition.online);
   }
 
-  override postCreated(item: object): void {
+  // §7.4's single exit: one emit to the rooms, plus — while §7.2 step 3's
+  // re-read is in flight — one held copy for every waiting socket that will
+  // join any of them. Each copy is flushed right after that socket's join,
+  // so no event is lost across it and none arrives twice (§7.5). A server
+  // that is not yet listening has nothing connected to it and returns.
+  private publish(rooms: readonly string[], event: string, payload: object): void {
     const server = this.server;
     if (server === null) return;
-    server.to(FEED_ROOM).emit('post:created', item);
-  }
-
-  override roundOpened(): void {
-    const server = this.server;
-    if (server === null) return;
-    server.to(ROUNDS_ROOM).emit('round:opened', {});
-  }
-
-  override roundClosed(): void {
-    const server = this.server;
-    if (server === null) return;
-    server.to(ROUNDS_ROOM).emit('round:closed', {});
-  }
-
-  override matchReady(studentIds: readonly string[]): void {
-    const server = this.server;
-    // An empty list would reach every socket: socket.io broadcasts `to([])`.
-    if (server === null || studentIds.length === 0) return;
-    for (const studentId of new Set(studentIds)) {
-      server.to(studentRoom(studentId)).emit('match:ready', {});
+    server.to([...rooms]).emit(event, payload);
+    for (const waiting of this.waiting.values()) {
+      if (waiting.rooms.some((room) => rooms.includes(room))) {
+        waiting.held.push({ event, payload });
+      }
     }
   }
 
+  override postCreated(item: object): void {
+    this.publish([FEED_ROOM], 'post:created', item);
+  }
+
+  override roundOpened(): void {
+    this.publish([ROUNDS_ROOM], 'round:opened', {});
+  }
+
+  override roundClosed(): void {
+    this.publish([ROUNDS_ROOM], 'round:closed', {});
+  }
+
+  override matchReady(studentIds: readonly string[]): void {
+    // An empty list would reach every socket: socket.io broadcasts `to([])`.
+    if (studentIds.length === 0) return;
+    this.publish([...new Set(studentIds)].map(studentRoom), 'match:ready', {});
+  }
+
   override dmMessage(senderId: string, recipientId: string, message: object): void {
-    const server = this.server;
-    if (server === null) return;
     // One emit to both rooms, so a socket in both receives it once (§7.4).
-    server.to([studentRoom(recipientId), studentRoom(senderId)]).emit('dm:message', message);
+    this.publish([studentRoom(recipientId), studentRoom(senderId)], 'dm:message', message);
   }
 
   override presenceUpdate(friendIds: readonly string[], studentId: string, online: boolean): void {
-    const server = this.server;
     // An empty list would reach every socket: socket.io broadcasts `to([])`.
-    if (server === null || friendIds.length === 0) return;
-    server
-      .to([...new Set(friendIds)].map(studentRoom))
-      .emit('presence:update', { studentId, online });
+    if (friendIds.length === 0) return;
+    this.publish([...new Set(friendIds)].map(studentRoom), 'presence:update', {
+      studentId,
+      online,
+    });
   }
 
   override revokeSessions(target: RevokeTarget): void {
