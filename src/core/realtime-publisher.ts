@@ -29,7 +29,9 @@ export abstract class RealtimePublisher {
   abstract revokeSessions(target: RevokeTarget): void;
 }
 
-// Bound until the socket gateway exists, and by the seed.
+// Bound by the seed's plain `CoreModule` import, so the seed publishes
+// nothing. The app binds the socket gateway instead, through
+// `CoreModule.forApp` (§3.7, §7.4).
 @Injectable()
 export class NoopRealtimePublisher extends RealtimePublisher {
   postCreated(): void {}

@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack/react-router';
 import { setUnauthorizedHandler } from './api/client';
-import { SESSION_QUERY_KEY, fetchSession } from './api/session';
+import { fetchSession, setSignedOut } from './api/session';
 import { ErrorContent, NotFoundPage, RootErrorPage, RootLayout } from './layout';
 import { requireSession, requireSignedOut } from './guards';
 import { HomePage } from './pages/HomePage';
@@ -125,8 +125,7 @@ function handleUnauthorized(): Promise<void> {
       return;
     }
     if (!session.authenticated) {
-      queryClient.clear();
-      queryClient.setQueryData(SESSION_QUERY_KEY, session);
+      setSignedOut(queryClient);
       await router.navigate({ to: '/sign-in', replace: true });
     }
   })().finally(() => {

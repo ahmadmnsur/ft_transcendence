@@ -1,4 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import type { Role } from '@shared/roles';
 import { ROLES } from '@shared/roles';
 import { ApiProtocolError, apiFetch } from './client';
@@ -51,4 +52,12 @@ export function sessionQueryOptions() {
     queryFn: fetchSession,
     staleTime: 30_000,
   });
+}
+
+// Drops the signed-in Student's cached server state and takes the session
+// query to its signed-out value (§3.8.2). The router's 401 handler and the
+// socket's terminal outcomes both use it, so the two cannot drift apart.
+export function setSignedOut(client: QueryClient): void {
+  client.clear();
+  client.setQueryData(SESSION_QUERY_KEY, { authenticated: false });
 }

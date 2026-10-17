@@ -1,5 +1,8 @@
 import { Global, Module, ValidationPipe } from '@nestjs/common';
+import type { DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { RealtimeModule } from '../realtime/realtime.module';
 import { AppConfig } from './app-config';
 import { Clock, SystemClock } from './clock';
 import { ConfigController } from './config.controller';
@@ -56,4 +59,17 @@ import { CheckpointHook, UnitOfWork } from './uow';
     ThrottleStore,
   ],
 })
-export class CoreModule {}
+export class CoreModule {
+  // What the app imports: the socket gateway implements RealtimePublisher.
+  // The dynamic provider is inserted after the decorator's, so it replaces
+  // the no-op for every module that injects the port — AuthModule included —
+  // while a plain `imports: [CoreModule]` (the seed) keeps the no-op (§3.7,
+  // §7.4).
+  static forApp(): DynamicModule {
+    return {
+      module: CoreModule,
+      imports: [RealtimeModule],
+      providers: [{ provide: RealtimePublisher, useExisting: RealtimeGateway }],
+    };
+  }
+}
