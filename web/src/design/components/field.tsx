@@ -120,9 +120,12 @@ export const controlClass = (invalid: boolean): string =>
 // has dir="auto" only while it holds text: empty, it follows the page, and its
 // placeholder and caret start on the page's side. The text is read from the
 // element itself: after each render, which brings a controlled value or a new
-// defaultValue on a field nobody has typed in; on each input; and after its
-// form's reset, which empties the fields with no input event. A `dir` the
-// caller passes wins, and the caller's ref still gets the element.
+// defaultValue on a field nobody has typed in; on each input; and after a reset
+// of the form it belongs to at that moment, which empties the fields with no
+// input event. A script that sets the value itself (`element.value = ''`)
+// fires none of these, so the field keeps its direction until the next one. A
+// `dir` the caller passes wins, and the caller's ref still gets the element,
+// with its own cleanup when it returns one.
 interface TextDirectionOptions<E> {
   dir: string | undefined;
   onInput: ((event: InputEvent<E>) => void) | undefined;
@@ -142,25 +145,43 @@ export function useTextDirection<E extends HTMLInputElement | HTMLTextAreaElemen
   // Every render, before the page paints.
   useLayoutEffect(read);
   // The reset event comes before the fields are emptied, so the text is read
-  // once it is done.
+  // once it is done. The document hears every form's reset, in the capture
+  // phase so that no handler can stop it, and the field's form is the one it
+  // belongs to then: a `form` attribute that changes, or a form that mounts
+  // after the field, still counts.
   useEffect(() => {
-    const form = element.current?.form;
-    if (!form) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const onReset = (): void => {
-      timer = setTimeout(read, 0);
+    const onReset = (event: Event): void => {
+      const form = element.current?.form;
+      if (form && event.target === form) timer = setTimeout(read, 0);
     };
-    form.addEventListener('reset', onReset);
+    document.addEventListener('reset', onReset, true);
     return () => {
-      form.removeEventListener('reset', onReset);
+      document.removeEventListener('reset', onReset, true);
       clearTimeout(timer);
     };
   }, [read]);
+  // React runs the cleanup this returns when the field detaches, in place of
+  // calling it with null. A caller's ref that returns its own cleanup gets it
+  // run then; one that returns none is called with null, as React would.
   const setRef = useCallback(
-    (node: E | null) => {
+    (node: E | null): (() => void) => {
       element.current = node;
-      if (typeof ref === 'function') ref(node);
-      else if (ref) ref.current = node;
+      if (typeof ref === 'function') {
+        const callback = ref;
+        const cleanup = callback(node);
+        return () => {
+          element.current = null;
+          if (typeof cleanup === 'function') cleanup();
+          else callback(null);
+        };
+      }
+      const object = ref;
+      if (object) object.current = node;
+      return () => {
+        element.current = null;
+        if (object) object.current = null;
+      };
     },
     [ref],
   );
