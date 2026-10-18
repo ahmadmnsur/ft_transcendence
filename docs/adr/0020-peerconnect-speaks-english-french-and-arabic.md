@@ -177,6 +177,11 @@ Unaffected:
    inside `« »`. `tsc` checks the vowel marks and the French spaces in the dictionary, and the legal
    check does in the legal files, where it also fails italic in an Arabic file.
 
+   > **Refined 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173),
+   > its criterion 11: "bold" is weight 600 (`font-semibold`). The bundled font is cut to 400 to
+   > 600, and 600 is the weight the SPA's bold text already uses, the legal pages' `**bold**`
+   > included. Arabic emphasis is upright at 600.
+
 9. **The legal pages stay in English until near the end, are then translated once, and the English
    stays canonical** ([Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143); [Settle how Arabic looks: mirroring, font, digits and dates](https://github.com/ahmadmnsur/ft_transcendence/issues/146), points 7 to 9). Until the
    translations merge, `/privacy` and `/terms` show the English text in every language, in an

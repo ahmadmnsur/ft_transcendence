@@ -769,6 +769,10 @@ included (ADR-0020 d6, §3.5.5).
   before `:` and inside `« »`), and `tsc` rejects a French text with a plain space there. The
   foundation build ticket adds the two `tsc` checks and names them in `CONTRIBUTING.md` → *Text ships
   in three languages*.
+
+  > **Refined 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173),
+  > its criterion 11: Arabic emphasis is upright at weight 600 (`font-semibold`), the heaviest
+  > weight the bundled font is cut to (§3.5.3) and the one the SPA's bold text already uses.
 - Responsive from 360 px width upward; all layouts are Tailwind utilities.
 
 #### 3.5.3 Design system (Minor `:526`)
