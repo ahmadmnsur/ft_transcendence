@@ -6,6 +6,7 @@ export default {
   header: {
     navLabel: 'Main menu',
     studentsLink: 'Students',
+    friendsLink: 'Friends',
     profileLink: 'My profile',
     signOut: 'Sign out',
     signingOut: 'Signing out…',

@@ -7,6 +7,7 @@ export default {
   header: {
     navLabel: 'القائمة الرئيسية',
     studentsLink: 'الطلاب',
+    friendsLink: 'الأصدقاء',
     profileLink: 'ملفي الشخصي',
     signOut: 'تسجيل الخروج',
     signingOut: 'جار تسجيل الخروج…',

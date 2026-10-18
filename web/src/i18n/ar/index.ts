@@ -7,8 +7,9 @@ import legal from './legal';
 import people from './people';
 import profile from './profile';
 import shell from './shell';
+import social from './social';
 
-const ar = { shell, legal, auth, errors, people, profile, design };
+const ar = { shell, legal, auth, errors, people, profile, design, social };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, no empty text and no vowel mark in its own Arabic.

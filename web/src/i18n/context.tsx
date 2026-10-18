@@ -39,6 +39,9 @@ export interface I18n {
   list: (items: readonly Value[], options?: ListOptions) => ReactElement;
   listText: (items: readonly (string | number)[], options?: ListOptions) => string;
   personNameText: (name: string, removed: boolean) => string;
+  // A name as a value for `format` or `formatText`, which isolate every value
+  // themselves: the display name, or the tombstone for a Removed Student.
+  personNameValue: (name: string, removed: boolean) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
   formatDate: (date: Date | number) => string;
   formatTime: (date: Date | number) => string;
@@ -71,6 +74,7 @@ export function LanguageProvider({ initial, children }: { initial: Language; chi
       list: (items, options) => list(language, items, options),
       listText: (items, options) => listText(language, items, options),
       personNameText: (name, removed) => isolate(removed ? t.people.tombstone : name),
+      personNameValue: (name, removed) => (removed ? t.people.tombstone : name),
       formatNumber: (value, options) => formatNumber(language, value, options),
       formatDate: (date) => formatDate(language, date),
       formatTime: (date) => formatTime(language, date),
