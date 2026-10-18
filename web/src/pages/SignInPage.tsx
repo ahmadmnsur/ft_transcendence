@@ -67,15 +67,20 @@ export function SignInPage(): React.JSX.Element {
     };
   }, []);
 
-  // §5.6 A's failure path arrives as `?oauth=failed`: show its one message
-  // for this visit, then take only `oauth` out of the URL by replacing the
-  // history entry — the validated `notice` and the hash stay — so a refresh
-  // of the cleaned URL never repeats it. The message lives in the status
-  // slot, which a retry clears; a later `oauth=failed` delivered to this
-  // route sets it again.
+  // §5.6 A's failure path arrives as `?oauth=failed`, and a Removed or
+  // Suspended Student by the 42 id as `oauth=removed`/`oauth=suspended`
+  // (§5.6 B): show its one message for this visit, then take only `oauth`
+  // out of the URL by replacing the history entry — the validated `notice`
+  // and the hash stay — so a refresh of the cleaned URL never repeats it.
+  // The message lives in the status slot, which a retry clears; a later
+  // `oauth` delivered to this route sets it again.
   useEffect(() => {
-    if (oauth !== 'failed') return;
-    setStatus('oauth-failed');
+    if (oauth === undefined) return;
+    setStatus(
+      oauth === 'failed'
+        ? 'oauth-failed'
+        : { code: oauth === 'removed' ? 'account_removed' : 'account_suspended' },
+    );
     void navigate({ to: '/sign-in', search: { notice }, hash: true, replace: true }).catch(() => {
       // The URL stays as it is if the replacement fails; the message shows.
     });

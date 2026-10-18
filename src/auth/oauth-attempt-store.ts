@@ -2,30 +2,54 @@ import { Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { Clock } from '../core/clock';
 
-// §5.6 A: one transport serves three intents. `link` (Connect 42) and
-// `confirm` (Confirm with 42) arrive with their own tickets; the intent is
-// still part of the attempt from the start.
+// §5.6 A: one transport serves three intents — `sign_in` for Sign in with
+// 42, `link` for Connect 42, `confirm` for Confirm with 42 (§5.6 C, another
+// ticket's flow). The intent is part of the attempt from the start.
 export const FORTY_TWO_INTENTS = ['sign_in', 'link', 'confirm'] as const;
 
 export type FortyTwoIntent = (typeof FORTY_TWO_INTENTS)[number];
 
 // §5.6 A step 4: an attempt lives ten minutes; the `a.` cookie's `Max-Age`
-// carries the same number.
+// carries the same number. A sign-up draft keeps the attempt's `expiresAt`
+// (§5.6 B), so it ends with the same ten minutes.
 export const ATTEMPT_TTL_SECONDS = 10 * 60;
 
 // §5.6 A step 4: at most 1,000 entries, expired evicted first, then the
-// oldest.
+// oldest. Drafts live under the bound with the attempts.
 const MAX_ATTEMPTS = 1000;
 
 export type OAuthAttempt = {
+  kind: 'attempt';
   // sha256(token), lower-case hex: the attempt token's for `sign_in`, the
   // session token's for `link` and `confirm`.
   bindingKey: string;
   state: string;
   codeVerifier: string;
   intent: FortyTwoIntent;
+  // Connect 42's Student: the one who started the flow. Null for `sign_in`,
+  // which names no Student until the callback finds one by the identity.
+  studentId: string | null;
   expiresAt: Date;
 };
+
+// §5.6 B: what a first 42 login keeps when no Student holds the id. It is
+// not an attempt — verification has already succeeded. `take` removes
+// whatever is under the key, so a callback carrying the same `a.` cookie
+// does take the draft out, then takes the failure path because it is not
+// an attempt. The draft replaces the attempt under the same key once
+// verification succeeded, is read by `GET /api/auth/42/draft` and taken by
+// `POST /api/auth/42/signup`. Same secret rules: never logged, never
+// persisted.
+export type SignUpDraft = {
+  kind: 'draft';
+  bindingKey: string;
+  fortyTwoId: number;
+  login: string;
+  email: string;
+  expiresAt: Date;
+};
+
+export type OAuthStoreEntry = OAuthAttempt | SignUpDraft;
 
 // §3.4: the `auth` module's in-memory OAuth attempt store. Never persisted,
 // never logged, lost on restart (§5.6 A step 4). Callers never hash tokens
@@ -34,7 +58,7 @@ export type OAuthAttempt = {
 export class OAuthAttemptStore {
   // Insertion order is recency order: `put` re-inserts a key, so the map's
   // first key is always the oldest.
-  private readonly attempts = new Map<string, OAuthAttempt>();
+  private readonly attempts = new Map<string, OAuthStoreEntry>();
 
   constructor(private readonly clock: Clock) {}
 
@@ -51,16 +75,17 @@ export class OAuthAttemptStore {
   }
 
   // §5.6 A step 4: a `sign_in` start first deletes the entry a carried
-  // `pc_session=a.<old>` names, so one browser never has two live attempts.
+  // `pc_session=a.<old>` names, so one browser never has two live entries.
   delete(bindingKey: string): void {
     this.attempts.delete(bindingKey);
   }
 
-  // Stores an attempt under its key, replacing any entry there. At the
-  // bound, expired entries are evicted first, then the oldest, so the store
-  // never exceeds 1,000 entries.
-  put(attempt: OAuthAttempt): void {
-    this.attempts.delete(attempt.bindingKey);
+  // Stores an entry under its key, replacing whatever is there — a
+  // superseded attempt or draft leaves no trace. At the bound, expired
+  // entries are evicted first, then the oldest, so the store never exceeds
+  // 1,000 entries.
+  put(entry: OAuthStoreEntry): void {
+    this.attempts.delete(entry.bindingKey);
     if (this.attempts.size >= MAX_ATTEMPTS) {
       const now = this.clock.now().getTime();
       for (const [key, stored] of this.attempts) {
@@ -72,16 +97,36 @@ export class OAuthAttemptStore {
         this.attempts.delete(oldest.value);
       }
     }
-    this.attempts.set(attempt.bindingKey, attempt);
+    this.attempts.set(entry.bindingKey, entry);
   }
 
-  // §5.6 A's callback step 2: the attempt is **taken** — removed now,
-  // whatever follows, so `state` and the verifier are used once. An expired
-  // entry comes out like any other; the caller checks its expiry as step 3.
-  take(bindingKey: string): OAuthAttempt | null {
-    const attempt = this.attempts.get(bindingKey);
-    if (attempt === undefined) return null;
+  // §5.6 A's callback step 2: the entry is **taken** — removed now, whatever
+  // follows, so `state` and the verifier are used once. A draft comes out
+  // the same way and is never an attempt; the caller checks the kind, then
+  // the expiry as step 3. An expired entry comes out like any other.
+  take(bindingKey: string): OAuthStoreEntry | null {
+    const entry = this.attempts.get(bindingKey);
+    if (entry === undefined) return null;
     this.attempts.delete(bindingKey);
-    return attempt;
+    return entry;
+  }
+
+  // §5.6 B: the draft the 42 sign-up form reads. It is never removed by this
+  // read — `POST /api/auth/42/signup` takes it — but an expired draft is no
+  // draft, so expiry answers here too.
+  readDraft(bindingKey: string): SignUpDraft | null {
+    const entry = this.attempts.get(bindingKey);
+    if (entry === undefined || entry.kind !== 'draft') return null;
+    if (entry.expiresAt.getTime() <= this.clock.now().getTime()) return null;
+    return entry;
+  }
+
+  // §5.6 B: the draft the 42 sign-up form's request takes. Removed whatever
+  // it is — used once; only a live draft is handed over.
+  takeDraft(bindingKey: string): SignUpDraft | null {
+    const entry = this.take(bindingKey);
+    if (entry === null || entry.kind !== 'draft') return null;
+    if (entry.expiresAt.getTime() <= this.clock.now().getTime()) return null;
+    return entry;
   }
 }

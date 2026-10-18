@@ -22,6 +22,13 @@ export type TokenAnswer = {
   secretValidUntil: Date | null;
 };
 
+// §5.6 A step 7: 42's identity — the `id`, a number it never changes, and
+// the `login` and `email` read with it only when the caller needs them for
+// a first `sign_in` login's draft (§5.6 B), dropped unless that draft is
+// stored. Nothing else is ever read or kept: no photo, campus, level or
+// location.
+export type FortyTwoIdentity = { id: number; login: string; email: string };
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -115,9 +122,18 @@ export class FortyTwoClient {
   }
 
   // §5.6 A step 7: `GET /v2/me` with the access token, same 10 s deadline.
-  // 42's `id` — a number it never changes — and nothing else; null for every
-  // failure. The token and the rest of the answer are dropped at once.
-  async identityId(accessToken: string): Promise<number | null> {
+  // The `id` is read always; `login` and `email` are read with it — the one
+  // moment the answer exists, since the rest of the response is discarded
+  // at once and so cannot be kept until the caller's holder lookup — and
+  // only when the caller says it needs them (`withProfile`): a `sign_in`
+  // whose `id` no Student holds needs them for the sign-up draft (§5.6 B);
+  // Connect 42 never does, so they are not read there. Null for every
+  // failure. The token and the rest of the answer are dropped at once; this
+  // module logs nothing of them (§3.9).
+  async identity(
+    accessToken: string,
+    options: { withProfile: boolean },
+  ): Promise<FortyTwoIdentity | null> {
     let response: Response;
     try {
       response = await fetch(IDENTITY_ENDPOINT, {
@@ -137,6 +153,16 @@ export class FortyTwoClient {
     }
     if (!isRecord(payload)) return null;
     const id = payload.id;
-    return typeof id === 'number' && Number.isInteger(id) ? id : null;
+    // §4.3.1: the column is INTEGER, so an `id` that is not a positive
+    // integer in 1…2147483647 can never be stored — it takes the failure
+    // path here instead of reaching the database as a 500.
+    if (typeof id !== 'number' || !Number.isInteger(id) || id < 1 || id > 2147483647) return null;
+    // Read only when the caller asked for them; the fields come out empty
+    // otherwise, and a caller that did not ask must not use them. What 42
+    // did not answer stays empty too: callers treat that as their own data
+    // to pre-fill, never as a failure — the `id` is verified.
+    const login = options.withProfile && typeof payload.login === 'string' ? payload.login : '';
+    const email = options.withProfile && typeof payload.email === 'string' ? payload.email : '';
+    return { id, login, email };
   }
 }

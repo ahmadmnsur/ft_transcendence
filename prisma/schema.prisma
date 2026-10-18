@@ -28,6 +28,11 @@ model Student {
   id                         String         @id @db.Uuid
   email                      String         @unique
   passwordVersion            Int            @default(0) @map("password_version")
+  // §4.3.1, §5.6: 42's account `id`, the only key a 42 login maps a Student
+  // by. Nullable; the unique admits nulls and is the backstop that keeps one
+  // 42 account on one Student. Set by a 42 sign-up or Connect 42, cleared by
+  // Disconnect 42; a Removed row keeps it and no Admin path touches it.
+  fortyTwoId                 Int?           @unique @map("forty_two_id")
   displayName                String         @map("display_name")
   displayNameSearch          String         @map("display_name_search")
   role                       Role           @default(STUDENT)
