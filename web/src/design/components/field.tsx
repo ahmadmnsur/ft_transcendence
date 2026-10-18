@@ -1,4 +1,4 @@
-import { useId, useState, type AriaAttributes, type ReactElement, type ReactNode } from 'react';
+import { useId, useState, type AriaAttributes, type InputEvent, type ReactElement, type ReactNode } from 'react';
 
 // A hint or an error: a plain text, or a message format() filled, so its
 // values sit in <bdi> like any other markup.
@@ -119,9 +119,29 @@ export const controlClass = (invalid: boolean): string =>
 // makes an empty field left to right, even on an Arabic page. So a text field
 // has dir="auto" only while it holds text: empty, it follows the page, and its
 // placeholder and caret start on the page's side. The text is read from
-// `value` when the caller controls the field, and from each input otherwise.
-export function useTextDirection(value: unknown, defaultValue: unknown): { dir: 'auto' | undefined; track: (text: string) => void } {
+// `value` when the caller controls the field, and from each input otherwise,
+// so an uncontrolled field that a form reset or a script empties keeps
+// dir="auto" until its next input. A `dir` the caller passes wins.
+interface TextDirectionOptions<E> {
+  value: unknown;
+  defaultValue: unknown;
+  dir: string | undefined;
+  onInput: ((event: InputEvent<E>) => void) | undefined;
+}
+
+export function useTextDirection<E extends HTMLInputElement | HTMLTextAreaElement>({
+  value,
+  defaultValue,
+  dir,
+  onInput,
+}: TextDirectionOptions<E>): { dir: string | undefined; onInput: (event: InputEvent<E>) => void } {
   const [typed, setTyped] = useState(() => defaultValue != null && String(defaultValue) !== '');
   const hasText = value != null ? String(value) !== '' : typed;
-  return { dir: hasText ? 'auto' : undefined, track: (text) => setTyped(text !== '') };
+  return {
+    dir: dir ?? (hasText ? 'auto' : undefined),
+    onInput: (event) => {
+      setTyped(event.currentTarget.value !== '');
+      onInput?.(event);
+    },
+  };
 }

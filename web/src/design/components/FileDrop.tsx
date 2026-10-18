@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { CloseIcon } from '../icons/CloseIcon';
 import { FileIcon } from '../icons/FileIcon';
 import { UploadIcon } from '../icons/UploadIcon';
-import { useI18n } from '../../i18n/context';
+import { useI18n, type I18n } from '../../i18n/context';
 import { Button } from './Button';
 import { buttonClasses } from './buttonClasses';
 import { FieldMessages } from './field';
@@ -71,11 +71,9 @@ function typeOfFile(file: File): FileType | undefined {
   return file.type in fileTypes ? (file.type as FileType) : undefined;
 }
 
-type FormatNumber = (value: number, options?: Intl.NumberFormatOptions) => string;
-
 // A file size in the current language: bytes, then kilobytes rounded to a
 // whole number, then megabytes to one decimal, as Intl writes each unit.
-function formatBytes(formatNumber: FormatNumber, bytes: number): string {
+function formatBytes(formatNumber: I18n['formatNumber'], bytes: number): string {
   const size = (unit: string, value: number, digits: number): string =>
     formatNumber(value, { style: 'unit', unit, unitDisplay: 'short', maximumFractionDigits: digits });
   if (bytes < 1024) return size('byte', bytes, 0);

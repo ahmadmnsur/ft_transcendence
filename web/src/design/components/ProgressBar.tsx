@@ -20,13 +20,14 @@ export function ProgressBar({ value, max, label, valueText, showValue = true, cl
   const safeMax = Number.isFinite(max) && max > 0 ? max : 1;
   const clamped = Number.isFinite(value) ? Math.min(Math.max(value, 0), safeMax) : 0;
   const percent = Math.round((clamped / safeMax) * 100);
+  const shown = valueText ?? formatNumber(percent / 100, { style: 'percent' });
   return (
     <div className={`min-w-0 ${className}`.trim()}>
       <div className="flex items-baseline justify-between gap-2">
         <p id={labelId} className="truncate text-sm font-medium text-ink">
           {label}
         </p>
-        {showValue ? <p className="shrink-0 text-xs tabular-nums text-ink-muted">{valueText ?? formatNumber(percent / 100, { style: 'percent' })}</p> : null}
+        {showValue ? <p className="shrink-0 text-xs tabular-nums text-ink-muted">{shown}</p> : null}
       </div>
       <div
         role="progressbar"
@@ -34,7 +35,7 @@ export function ProgressBar({ value, max, label, valueText, showValue = true, cl
         aria-valuenow={clamped}
         aria-valuemin={0}
         aria-valuemax={safeMax}
-        aria-valuetext={valueText}
+        aria-valuetext={shown}
         className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-sunken"
       >
         <div

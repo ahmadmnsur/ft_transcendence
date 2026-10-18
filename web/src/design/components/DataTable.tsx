@@ -171,7 +171,7 @@ export function DataTable<TData>({
                         key={header.id}
                         scope="col"
                         aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
-                        className={`whitespace-nowrap text-xs font-semibold uppercase tracking-wide arabic:tracking-normal text-ink-muted ${sortable ? '' : 'px-3 py-2'} ${end ? 'text-end' : ''}`.trim()}
+                        className={`whitespace-nowrap text-xs font-semibold uppercase tracking-wide arabic:tracking-normal text-ink-muted ${sortable ? '' : 'px-3 py-2'} ${end ? 'text-end' : 'text-start'}`.trim()}
                       >
                         {header.isPlaceholder ? null : sortable ? (
                           // The button fills the header cell, so the whole cell is the target.
