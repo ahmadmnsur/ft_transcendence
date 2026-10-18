@@ -13,8 +13,11 @@ refuse() {
 # Each git answer is read into a variable first, so a git command that fails
 # refuses: inside a test, a failed command prints nothing and set -e does not
 # stop the script, so an empty answer would pass as a clean one.
-branch=$(git symbolic-ref --quiet --short HEAD) || refuse "the checkout is on no branch; run git switch main && git pull"
-[ "$branch" = main ] || refuse "the checkout is on $branch, not main; run git switch main && git pull"
+# Refs are named in full: a short name like main or origin/main resolves
+# through tags and local branches first, so a stray ref of that name would
+# stand in for the real one.
+branch=$(git symbolic-ref --quiet HEAD) || refuse "the checkout is on no branch; run git switch main && git pull"
+[ "$branch" = refs/heads/main ] || refuse "the checkout is on ${branch#refs/heads/}, not main; run git switch main && git pull"
 # Untracked files count too, whatever status.showUntrackedFiles says: the image
 # is built from this working tree.
 changes=$(git status --porcelain --untracked-files=all) || refuse "git status failed"
@@ -23,5 +26,5 @@ changes=$(git status --porcelain --untracked-files=all) || refuse "git status fa
 # fetch setting does not map main.
 git fetch --quiet origin +refs/heads/main:refs/remotes/origin/main || refuse "git fetch origin main failed"
 here=$(git rev-parse --verify --quiet HEAD) || refuse "git rev-parse HEAD failed"
-there=$(git rev-parse --verify --quiet origin/main) || refuse "git rev-parse origin/main failed"
+there=$(git rev-parse --verify --quiet refs/remotes/origin/main) || refuse "git rev-parse origin/main failed"
 [ "$here" = "$there" ] || refuse "main differs from origin/main after a fetch; run git pull, or move main's own commits to a branch"
