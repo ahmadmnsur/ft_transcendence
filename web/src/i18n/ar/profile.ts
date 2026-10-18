@@ -5,7 +5,7 @@ export default {
   me: {
     publicProfileLink: 'عرض ملفك الشخصي العام',
     loading: 'جار تحميل ملفك الشخصي…',
-    retry: 'حاول مرة أخرى',
+    retry: 'إعادة المحاولة',
   },
   details: {
     title: 'تفاصيل الملف الشخصي',
@@ -111,6 +111,6 @@ export default {
     goalNone: 'لا يوجد هدف تعلم.',
     removedNote: 'تم استبعاد هذا الحساب.',
     loading: 'جار تحميل الملف الشخصي…',
-    retry: 'حاول مرة أخرى',
+    retry: 'إعادة المحاولة',
   },
 } as const satisfies Catalogue<'ar', typeof profile>;
