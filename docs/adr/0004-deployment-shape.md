@@ -436,6 +436,17 @@ and why there is no `SESSION_SECRET`.
    > `SUPABASE_URL` that is not the fallback's, with the check `make reset-local` runs, since
    > `npx vitest run` can be typed outside `make test` and `prisma.config.ts` loads `.env` itself.
 
+   > **Tightened 2026-10-18 by [Boot check: refuse a DATABASE_URL query that moves the connection](https://github.com/ahmadmnsur/ft_transcendence/issues/180).**
+   > The check's step 1 above now covers `DATABASE_URL`'s query: on both targets it may carry no
+   > parameter except its TLS settings, the names that start with `ssl` and `uselibpqcompat`.
+   > node-postgres takes the user, password, host and port from a query parameter before the URL's
+   > own, so a parameter would move the connection after steps 1 and 2 had checked the URL, and
+   > `make up` or a reset would reach one project's database and another's Auth and Storage. The
+   > rule lists what may stay, not what is known to move the connection, since node-postgres reads
+   > every parameter. The failure names the parameter, never its value. The boot chain, `main.js`,
+   > the seed entry and both resets refuse the same way, and the harness's own `host` and
+   > `hostaddr` list gives way to the same rule (`docs/spec.md` §15.4 and §16.2).
+
 9. **`.env.example` holds** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
    `DATABASE_URL`, `NODE_ENV`, `PUBLIC_ORIGIN`, `HTTPS_PORT`, `HTTP_PORT`, `ADMIN_EMAIL`,
    `ADMIN_PASSWORD` — with a header comment saying these are development defaults and the

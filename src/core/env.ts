@@ -51,6 +51,24 @@ function parseUrl(value: string | undefined): URL | undefined {
   }
 }
 
+// A DATABASE_URL's TLS settings: each `ssl…` key, and `uselibpqcompat`, which
+// changes what `sslmode` means.
+export function isTlsSetting(name: string): boolean {
+  return name.startsWith('ssl') || name === 'uselibpqcompat';
+}
+
+// node-postgres takes the user, password, host and port from a query parameter
+// before the URL's own, so a parameter would move the connection after both
+// steps had checked the URL (§15.4). It reads every parameter, so this names
+// what may stay rather than what is known to move it. Returns the first other
+// parameter's name, as a message prints it.
+export function firstNonTlsParameter(url: URL): string | undefined {
+  for (const name of url.searchParams.keys()) {
+    if (!isTlsSetting(name)) return name === '' ? 'a parameter with no name' : name;
+  }
+  return undefined;
+}
+
 // The pooler user carries the project ref; its host and the API host must both
 // belong to Supabase before the two values can name the team project.
 export function resolveSupabaseTarget(env: EnvRecord): SupabaseTarget {
@@ -136,6 +154,15 @@ export function validateEnv(env: EnvRecord): EnvResult {
     databaseUrl.pathname === '/'
   ) {
     return fail('DATABASE_URL', 'must be a PostgreSQL URL with a host, user, password and database');
+  }
+  // It holds on both targets, and names the parameter only, since a value may
+  // be a password.
+  const parameter = firstNonTlsParameter(databaseUrl);
+  if (parameter !== undefined) {
+    return fail(
+      'DATABASE_URL',
+      `must carry no query parameter except its TLS settings, and it sets ${parameter}`,
+    );
   }
 
   const supabaseUrl = parseUrl(env['SUPABASE_URL']);

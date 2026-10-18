@@ -3666,7 +3666,7 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
 | `POSTGRES_USER` | `postgres` | api (consistency check) | the `api`'s role on the fallback; `db`'s own superuser is set in `compose.yaml` |
 | `POSTGRES_PASSWORD` | `peerconnect-dev-password` | db (first boot), api (check) | repeated as plain values in `compose.yaml` (§15.1) |
 | `POSTGRES_DB` | `postgres` | api (check) | |
-| `DATABASE_URL` | `postgresql://postgres:peerconnect-dev-password@db:5432/postgres` | api, Prisma CLI, seed | the only database connection the application uses. Team `.env`: the dashboard's plain Session pooler string, `postgresql://postgres.<ref>:<password>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres`, with no TLS settings: the code adds them, and replaces or removes any the URL carries, so none can weaken the check (§15.5) |
+| `DATABASE_URL` | `postgresql://postgres:peerconnect-dev-password@db:5432/postgres` | api, Prisma CLI, seed | the only database connection the application uses. Team `.env`: the dashboard's plain Session pooler string, `postgresql://postgres.<ref>:<password>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres`, with no TLS settings: the code adds them, and replaces or removes any the URL carries, so none can weaken the check (§15.5). On either target it carries no other query parameter: node-postgres takes the user, password, host and port from one before the URL's own, so the boot check refuses every parameter but the TLS settings (*Boot validation*, below) |
 | `NODE_ENV` | `production` | api | overlay sets `development` |
 | `PUBLIC_ORIGIN` | `https://localhost:8443` | api, proxy template | overlay sets `http://localhost:8081` |
 | `HTTPS_PORT` | `8443` | Compose interpolation (default `8443`), api (check) | |
@@ -3702,10 +3702,17 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
   plain value in `compose.yaml`, so bare Compose works with no `.env` (ADR-0004 d8).
 - **Boot validation**: the boot check's steps 1 and 2 (§15.5), shared by the boot chain, the seed
   entry, both resets and the test harness. A failure prints one message naming the variable and,
-  for a URL, its host, never a secret value, and exits 1. Step 1 checks that the `api`'s entries
-  are non-empty (all but the OAuth pair and the fallback's nine signing secrets and keys, which the
-  `api` never reads), that `PUBLIC_ORIGIN` is a bare origin and that the staff and seed passwords
-  meet the password rule (§5.1).
+  for a URL, its host or the query parameter it sets, never a secret value, and exits 1. Step 1
+  checks that the `api`'s entries are non-empty (all but the OAuth pair and the fallback's nine
+  signing secrets and keys, which the `api` never reads), that `PUBLIC_ORIGIN` is a bare origin,
+  that the staff and seed passwords meet the password rule (§5.1), and that `DATABASE_URL` carries
+  no query parameter except its TLS settings, the names that start with `ssl` and
+  `uselibpqcompat`, on both targets (ADR-0004 d8's note of 2026-10-18). node-postgres reads every
+  parameter and takes the user, password, host and port from one before the URL's own, so any
+  other parameter would move the connection after steps 1 and 2 had checked the URL; the rule
+  lists what may stay, not what is known to move it. For example: `Invalid environment:
+  DATABASE_URL: must carry no query parameter except its TLS settings, and it sets user`. The test
+  harness applies the same rule (§16.2).
 - **Duplicated sources, resolved by checks rather than new entries**:
   - `DATABASE_URL` and `SUPABASE_URL` must name one target (the boot check's step 2). Compose layers
     `.env` over `.env.example` one variable at a time, so a `.env` that missed one would otherwise
@@ -3917,8 +3924,10 @@ names, run locally as `make test`.
   - **its first step, before any connection, refuses any target but the fallback**, with the check
     `make reset-local` runs (the target function of `src/core/env.ts`): `DATABASE_URL` and
     `SUPABASE_URL` must both name the fallback, or the run stops and names the variable and the host
-    it points at, never the password. `make test` reads `.env.example` alone, but `npx vitest run`
-    can be typed anywhere, and `prisma.config.ts` loads `.env` by itself;
+    it points at, never the password. It also refuses a `DATABASE_URL` query parameter other than
+    the TLS settings, with step 1's rule (§15.4), and names the parameter. `make test` reads
+    `.env.example` alone, but `npx vitest run` can be typed anywhere, and `prisma.config.ts` loads
+    `.env` by itself;
   - global setup derives the test database name `<database of DATABASE_URL>_test`, drops and recreates
     it (`DROP DATABASE … WITH (FORCE)`), runs `npx prisma generate --config prisma.config.ts` first —
     the client is gitignored (§3.2), a fresh clone has none, so nothing may import it before it exists,
