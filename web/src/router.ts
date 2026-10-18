@@ -10,6 +10,7 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { StudentPage } from './pages/StudentPage';
+import { StudentsPage, parseStudentsSearch } from './pages/StudentsPage';
 import { TermsPage } from './pages/TermsPage';
 import { queryClient } from './queryClient';
 
@@ -63,6 +64,16 @@ const meRoute = createRoute({
   component: MePage,
 });
 
+// §3.5.1, §6.2: the Advanced search, for any signed-in Student. Its filters,
+// sort and page are search params, checked before any request is sent.
+const studentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/students',
+  beforeLoad: requireSession,
+  validateSearch: parseStudentsSearch,
+  component: StudentsPage,
+});
+
 // §3.5.1: any signed-in Student reads another's profile; a Removed Student
 // renders as the tombstone there (§4.6).
 const studentRoute = createRoute({
@@ -89,6 +100,7 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   signUpRoute,
   meRoute,
+  studentsRoute,
   studentRoute,
   privacyRoute,
   termsRoute,

@@ -2154,6 +2154,14 @@ two changes cannot both go through; a sign-in racing it is deleted or refused (�
 | `GET /api/students/:id/posts?cursor` | session | their non-removed Posts |
 | `GET /api/students?q&teaches&wants&hasGoal&sort&order&page&pageSize` | session | **Advanced search**: excludes Removed, includes Suspended and Admins; `q` matches the folded display name only, `displayNameSearch` `contains` `foldName(q)` (§4.3.1), so `helene` finds Hélène and `احمد` finds أحمد, never email; `%` and `_` in `q` are escaped: whoever builds it confirms whether Prisma's `contains` escapes them, and escapes them in that query if not (#95's refinement); `teaches`/`wants` are Skill ids; `hasGoal` boolean; `sort ∈ name, xp, joined` (default `name`), `order ∈ asc, desc`; ties `id ASC`; returns `StudentRef` + Skills + Level + XP and `total` |
 
+> **Updated 2026-10-18** (#42; #95's refinement of 2026-10-02): in the *Advanced search* row, the
+> question left to whoever builds it is answered: Prisma's `contains` does not escape `%` or `_`.
+> Checked on Prisma 7.10 against the test database, `contains: '%'` and `contains: '_'` each
+> matched every name, while `contains: '\%'` matched only a name holding `%`. So
+> `nameSearchWhere` (`src/students/name-search.ts`) escapes `\`, `%` and `_` itself, after the
+> fold, since NFKD turns `％` into `%`: `q=%` finds only a name holding `%`, and `q=_` only one
+> holding `_`. §6.12's Users table (#65) reuses `nameSearchWhere` for its name match.
+
 **`PATCH /api/me`** — session · `{ displayName?, email? }` · Rule: actor Active; a new email is
 unused (Removed rows included) → else `email_unavailable` · Persist `Student`: a new display name
 writes `display_name` and `display_name_search` together through `nameFields` (§4.3.1); a new email

@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import type { Role } from '@shared/roles';
 import { apiFetch } from './client';
 
@@ -61,6 +61,34 @@ export interface PublicProfile {
   };
 }
 
+// One row of `GET /api/students` (§6.2): never an email (§4.6).
+export interface StudentSearchItem {
+  student: StudentRef;
+  skills: SkillsView;
+  xp: number;
+  level: number;
+}
+
+export interface StudentSearchPage {
+  items: StudentSearchItem[];
+  total: number;
+}
+
+export type SearchSort = 'name' | 'xp' | 'joined';
+export type SearchOrder = 'asc' | 'desc';
+
+// What the search sends; an absent filter is no filter (§6.2).
+export interface StudentSearchParams {
+  q?: string;
+  teaches?: string;
+  wants?: string;
+  hasGoal?: boolean;
+  sort: SearchSort;
+  order: SearchOrder;
+  page: number;
+  pageSize: number;
+}
+
 export const ME_QUERY_KEY = ['me'] as const;
 export const SKILLS_QUERY_KEY = ['skills'] as const;
 
@@ -79,6 +107,20 @@ export async function fetchSkills(): Promise<{ items: SkillView[] }> {
 
 export async function fetchStudent(id: string): Promise<PublicProfile> {
   return apiFetch<PublicProfile>(`/students/${encodeURIComponent(id)}`);
+}
+
+// The search term goes in the query string, never in the path (§19 item 19).
+export async function searchStudents(params: StudentSearchParams): Promise<StudentSearchPage> {
+  const query = new URLSearchParams();
+  if (params.q !== undefined) query.set('q', params.q);
+  if (params.teaches !== undefined) query.set('teaches', params.teaches);
+  if (params.wants !== undefined) query.set('wants', params.wants);
+  if (params.hasGoal !== undefined) query.set('hasGoal', String(params.hasGoal));
+  query.set('sort', params.sort);
+  query.set('order', params.order);
+  query.set('page', String(params.page));
+  query.set('pageSize', String(params.pageSize));
+  return apiFetch<StudentSearchPage>(`/students?${query.toString()}`);
 }
 
 // Writes (§6.2). `PATCH` takes only the fields that changed; the server
@@ -124,5 +166,16 @@ export function studentQueryOptions(id: string) {
   return queryOptions({
     queryKey: studentQueryKey(id),
     queryFn: () => fetchStudent(id),
+  });
+}
+
+// One query per search. While the next page loads, the previous page's data
+// stays, so the table's loading skeleton keeps as many rows as it showed and
+// its total never drops to zero in between.
+export function studentSearchQueryOptions(params: StudentSearchParams) {
+  return queryOptions({
+    queryKey: ['students', 'search', params] as const,
+    queryFn: () => searchStudents(params),
+    placeholderData: keepPreviousData,
   });
 }

@@ -1,4 +1,57 @@
 import type people from '../en/people';
 import type { Catalogue } from '../types';
 
-export default { tombstone: 'طالب سابق' } as const satisfies Catalogue<'ar', typeof people>;
+export default {
+  tombstone: 'طالب سابق',
+  search: {
+    title: 'الطلاب',
+    filtersLabel: 'البحث عن الطلاب',
+    nameLabel: 'الاسم',
+    nameInvalid: {
+      zero: 'أدخل {count} حرف على الأكثر.',
+      one: 'أدخل حرفا واحدا على الأكثر.',
+      two: 'أدخل حرفين على الأكثر.',
+      few: 'أدخل {count} أحرف على الأكثر.',
+      many: 'أدخل {count} حرفا على الأكثر.',
+      other: 'أدخل {count} حرف على الأكثر.',
+    },
+    teachesLabel: 'يستطيع تعليم',
+    wantsLabel: 'يريد تعلم',
+    anySkill: 'أي مهارة',
+    goalLabel: 'هدف التعلم',
+    goalAny: 'الكل',
+    goalYes: 'لديه هدف تعلم',
+    goalNo: 'ليس لديه هدف تعلم',
+    submit: 'بحث',
+    clear: 'مسح عوامل التصفية',
+    retry: 'إعادة المحاولة',
+    sortLabel: 'الترتيب حسب',
+    sort: {
+      nameAsc: 'الاسم، تصاعدي',
+      nameDesc: 'الاسم، تنازلي',
+      xpDesc: 'XP، الأعلى أولا',
+      xpAsc: 'XP، الأدنى أولا',
+      joinedDesc: 'الطلاب الأحدث أولا',
+      joinedAsc: 'الطلاب الأقدم أولا',
+    },
+    count: {
+      zero: 'لم يتم العثور على أي طالب',
+      one: 'تم العثور على طالب واحد',
+      two: 'تم العثور على طالبين',
+      few: 'تم العثور على {count} طلاب',
+      many: 'تم العثور على {count} طالبا',
+      other: 'تم العثور على {count} طالب',
+    },
+    caption: 'نتائج البحث عن الطلاب',
+    columns: {
+      name: 'الاسم',
+      teaches: 'يستطيع تعليم',
+      wants: 'يريد تعلم',
+      level: 'المستوى',
+      xp: 'XP',
+    },
+    noSkills: 'لا شيء',
+    emptyTitle: 'لا يوجد طلاب يطابقون هذا البحث.',
+    emptyDescription: 'جرب اسما آخر، أو أزل بعض عوامل التصفية.',
+  },
+} as const satisfies Catalogue<'ar', typeof people>;

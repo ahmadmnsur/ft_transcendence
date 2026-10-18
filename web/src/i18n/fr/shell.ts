@@ -5,7 +5,8 @@ export default {
   skipLink: 'Aller au contenu principal',
   pageTitle: '{page} · {brand}',
   header: {
-    navLabel: 'Compte',
+    navLabel: 'Menu principal',
+    studentsLink: 'Étudiants',
     profileLink: 'Mon profil',
     signOut: 'Se déconnecter',
     signingOut: 'Déconnexion…',
