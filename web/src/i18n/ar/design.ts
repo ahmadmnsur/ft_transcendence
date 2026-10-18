@@ -4,7 +4,7 @@ import type { Catalogue } from '../types';
 export default {
   dataTable: {
     emptyTitle: 'لا توجد صفوف',
-    retry: 'حاول مرة أخرى',
+    retry: 'إعادة المحاولة',
     pagesLabel: 'صفحات {caption}',
   },
   pagination: {
@@ -28,7 +28,7 @@ export default {
     label: 'إرفاق ملف',
     drop: 'اسحب ملفا إلى هنا، أو {browse}',
     browse: 'تصفح',
-    choose: 'اختر ملفا',
+    choose: 'اختيار ملف',
     hint: '{types}، حتى {maxSize}',
     empty: 'هذا الملف فارغ.',
     typeRefused: 'نوع الملف هذا غير مقبول. استخدم {types}.',
