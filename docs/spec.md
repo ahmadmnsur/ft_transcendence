@@ -2330,6 +2330,11 @@ nothing — no insert, no delete.
 | `POST /api/admin/students/:id/role` | `{ role }` |
 | `POST /api/admin/students/:id/suspend` · `/reinstate` · `/remove` | `{}` |
 
+> **Updated 2026-10-18** (#65): in the Users table row, `q`'s email match is a `contains` like the
+> name match, and escapes `\`, `%` and `_` the same way, with the escape `nameSearchWhere` uses in
+> `src/students/name-search.ts`. Unescaped, `_` matches any one character and `%` any run, so
+> `q=john_doe` would also find `john.doe@…`, and `q=%` or `q=_` would return every row.
+
 No endpoint sets a password, XP, Level, Streak, Badge or `forty_two_id`, or edits any Review,
 Private Feedback, Post, Report or Direct Message (ADR-0008 d8 and its notes, ADR-0018 d8). Supabase's
 admin update, which a password change uses, is never offered as an Admin action. No endpoint
