@@ -175,21 +175,27 @@ export function validateEnv(env: EnvRecord): EnvResult {
   return { ok: true };
 }
 
-// The boot check's steps 1 and 2 (§15.5): one exit path shared by the boot
-// check, the API entry point and the seed entry point. Both targets pass; the
-// boot check's own entry then adds steps 3 and 4.
-export function assertEnvOrExit(env: EnvRecord): void {
+// The boot check's steps 1 and 2 (§15.5): the one message a failure prints,
+// or undefined when both pass. Both targets pass. Shared by the exit path
+// below and by both resets (§15.4), which then refuse every target but their
+// own.
+export function envFailure(env: EnvRecord): string | undefined {
   const result = validateEnv(env);
-  if (!result.ok) {
-    console.error(`Invalid environment: ${result.failure.variable}: ${result.failure.reason}`);
-    process.exit(1);
-  }
+  if (!result.ok) return `Invalid environment: ${result.failure.variable}: ${result.failure.reason}`;
 
   const target = resolveSupabaseTarget(env);
   if (target.kind === 'none') {
-    console.error(
-      `Supabase check failed: DATABASE_URL host ${target.databaseHost} and SUPABASE_URL host ${target.supabaseHost} do not name one target`,
-    );
+    return `Supabase check failed: DATABASE_URL host ${target.databaseHost} and SUPABASE_URL host ${target.supabaseHost} do not name one target`;
+  }
+  return undefined;
+}
+
+// Steps 1 and 2 as one exit path shared by the boot check, the API entry point
+// and the seed entry point. The boot check's own entry then adds steps 3 and 4.
+export function assertEnvOrExit(env: EnvRecord): void {
+  const failure = envFailure(env);
+  if (failure !== undefined) {
+    console.error(failure);
     process.exit(1);
   }
 }

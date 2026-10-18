@@ -48,16 +48,22 @@ export async function openLockConnection(env: EnvRecord, onLost: () => void): Pr
   };
 }
 
+// Takes the lock on that connection if no seed or reset holds it, without
+// waiting: a reset refuses rather than wait for a seed (§15.6).
+export async function tryTakeSeedLock(client: Client): Promise<boolean> {
+  const tried = await client.query<{ locked: boolean }>(
+    'SELECT pg_try_advisory_lock($1::bigint) AS locked',
+    [SEED_LOCK_KEY],
+  );
+  return tried.rows[0].locked;
+}
+
 // Takes the lock on that connection, waiting while another seed or a reset
 // holds it. `onWait` runs once before the wait. The wait runs with no
 // statement timeout, which `SET LOCAL` keeps to this one transaction; the
 // lock itself is the session's and outlives the commit.
 export async function takeSeedLock(client: Client, onWait: () => void): Promise<void> {
-  const tried = await client.query<{ locked: boolean }>(
-    'SELECT pg_try_advisory_lock($1::bigint) AS locked',
-    [SEED_LOCK_KEY],
-  );
-  if (tried.rows[0].locked) return;
+  if (await tryTakeSeedLock(client)) return;
   onWait();
   await client.query('BEGIN');
   await client.query('SET LOCAL statement_timeout = 0');

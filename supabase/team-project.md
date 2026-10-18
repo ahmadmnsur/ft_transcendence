@@ -24,6 +24,12 @@ dashboard ([ADR-0005](../docs/adr/0005-prisma-and-the-schema-gate.md) d5).
 > longer stops the boot: `make up` on `main` runs the check's four steps, naming a paused project's
 > `540`, then migrates and seeds the team project. Its first run there is Kamel's, from `main` after
 > the merge, reported on that issue. The bucket step and the two resets still wait.
+>
+> **Added 2026-10-16:** the two resets land with [The two resets: make reset-local and make
+> reset-team](https://github.com/ahmadmnsur/ft_transcendence/issues/156). `make reset-team` runs as
+> exception 2 below says, and `README.md` → *The two resets* has both commands. Until the bucket
+> step lands there is no file to delete, so they delete the rows of our tables and every Supabase
+> Auth user. The bucket step still waits.
 
 ## Members
 

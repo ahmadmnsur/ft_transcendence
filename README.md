@@ -25,7 +25,7 @@ or clone the repository again.
 
 ### The `.env` model
 
-`.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for its two interpolated ports.
+`.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets that start a stack, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. `make reset-team` reads it the same way, to find the team project it empties. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for its two interpolated ports.
 
 The fallback credentials are fixed. A team member who runs the team project keeps its values in the gitignored `.env`, and only those: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ADMIN_PASSWORD`, `MODERATOR_PASSWORD`, `SEED_STUDENT_PASSWORD`, and the `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair. Every other value comes from `.env.example`, so the team `.env` is never a copy of it. Set the three passwords to values other than the defaults before the first boot on the team project. Paste `DATABASE_URL` as the dashboard's Session pooler string with no TLS settings: on the team project the `api` and `prisma migrate` replace any TLS setting it carries and verify the connection themselves against Supabase's certificate, `supabase/prod-ca-2021.crt`. The team values pass between members privately and are never committed. *Running the team project*, below, says how it boots. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory. If this checkout has a `.env` that the old `make up` copied, delete it: it still has `POSTGRES_USER=peerconnect`, and `make up` writes a fresh copy of `.env.example` when `.env` is absent.
 
@@ -83,6 +83,15 @@ A paused project answers `540`, and only Kamel, its Owner, can resume it ([`supa
 Branch work runs under `make dev` or `make local`. A branch that changes the database (a migration, which any boot applies, or written data) never runs `make up` on the team project: migrations reach it only through `make up` on `main`, after review ([`CONTRIBUTING.md`](CONTRIBUTING.md) → *Schema changes* → *Supabase*). A branch that only reads data may run `make up` to see the team project's data, without hot reload.
 
 A boot that writes the seed's fixture on the team project can take minutes, so the `api` has up to 15 minutes to turn healthy.
+
+### The two resets
+
+`make reset-local` empties the local fallback and `make reset-team` empties the team project, so the next boot seeds afresh. Each deletes the rows of our tables and every Supabase Auth user, not only what the seed made, through the seed's own emptying; the files in `avatars` and `evidence` join them once uploads are built. Each keeps the tables and migrations, the project or the stack, its settings, the buckets and the keys. There is no single command for both, and neither runs inside `make up`. `make wipe` is different again: it drops the fallback's volumes.
+
+Each checks the values it reads as the boot check's first two steps do, and refuses unless they name its own target. Each takes the seed's lock and refuses, deleting nothing, while a seed is running on that target. Then it reads Supabase Auth's user list once, so a wrong `SUPABASE_SECRET_KEY` or an Auth that does not answer refuses before anything is deleted. Its first write clears the seed's completion record, so a reset that stops partway is finished by running it again.
+
+- **`make reset-local`** reads `.env.example` alone, as `make local` does, so a `.env` never reaches it. Stop the stack first with `make down`, which keeps the volumes: a running `api` would go on serving the emptied database. Then boot again with `make local` or `make dev`.
+- **`make reset-team`** is Kamel's to run ([`supabase/team-project.md`](supabase/team-project.md) → *Changes by hand*). It runs only from `main` with no uncommitted change, untracked files included, equal to `origin/main` after a fetch. It reads `.env`, refuses unless `DATABASE_URL` and `SUPABASE_URL` name the team project with one ref, then prints that ref and asks for it to be typed. Every stack connected to the team project is stopped first. Then run `make up` from the same checkout, and keep every other stack stopped until that boot has written the fixture.
 
 ### Certificate interstitial
 
@@ -177,6 +186,13 @@ make wipe
 
 make seed
 # docker compose exec api npx prisma db seed --config prisma.config.ts
+
+make reset-team
+# sh prisma/reset/require-main.sh
+# docker compose run --rm --build --no-deps api node dist/prisma/reset/main.js team
+
+make reset-local
+# docker compose --env-file .env.example -f compose.yaml -f compose.local.yaml run --rm --build api node dist/prisma/reset/main.js local
 
 make test
 # docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml down --volumes --remove-orphans
