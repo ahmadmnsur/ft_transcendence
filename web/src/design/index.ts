@@ -39,6 +39,8 @@ export { Select } from './components/Select';
 export type { SelectProps } from './components/Select';
 export { SkillChip } from './components/SkillChip';
 export type { SkillChipProps } from './components/SkillChip';
+export { SkillName, skillNameText } from './components/SkillName';
+export type { SkillNameProps } from './components/SkillName';
 export { Tabs } from './components/Tabs';
 export type { TabItem, TabsProps } from './components/Tabs';
 export { TextArea } from './components/TextArea';

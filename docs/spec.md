@@ -686,6 +686,13 @@ included (ADR-0020 d6, §3.5.5).
   default to `dir="auto"`, so Arabic aligns right while it is typed. An empty field follows the
   page's direction, so its placeholder starts on the page's side; once typed, the text follows its
   own first letter.
+
+  > **Refined 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173),
+  > its criterion 6: `TextField` and `TextArea` have `dir="auto"` only while they hold text, read
+  > from the element after each render, on each input and after a form reset. An empty one has no
+  > `dir`, so it takes the page's direction. In Chrome 155 and Firefox 157 the CSS-only ways
+  > failed: one left an empty field's caret on the left, the other made Firefox hide a focused
+  > empty field's placeholder.
 - **Skill names keep their direction** (ADR-0020 d4). Inside a message, the dictionary isolates every
   value (§3.5.5). Outside one, `SkillName`, a `<bdi>` like `PersonName`, shows every Skill name where
   markup can go: inside `SkillChip`, in a table cell, in a heading. Where it cannot (`<option>`,
@@ -743,6 +750,11 @@ included (ADR-0020 d6, §3.5.5).
     `rtl:bg-linear-to-r`; `origin-left` gains `rtl:origin-right`, so `ProgressBar` fills from the
     right in Arabic; the skip link's `focus:left-4` becomes `focus:inset-s-4`). `Tabs`' arrow keys
     follow the screen: ArrowLeft moves to the tab on the left, which is the next tab in Arabic.
+
+    > **Refined 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173),
+    > its criterion 4: the two with no flow-relative form are written
+    > `ltr:bg-linear-to-l rtl:bg-linear-to-r` and `ltr:origin-left rtl:origin-right`, since
+    > *The check* above passes a class only behind `rtl:` or `ltr:`.
   - **Tables** run right to left in Arabic; every cell's text sits at its start, and an
     `align: 'end'` column puts its header and its numbers on the same side. The "more columns" fade
     sits on the end side and shows while more columns lie that way: its scroll math measures from
@@ -757,6 +769,10 @@ included (ADR-0020 d6, §3.5.5).
   before `:` and inside `« »`), and `tsc` rejects a French text with a plain space there. The
   foundation build ticket adds the two `tsc` checks and names them in `CONTRIBUTING.md` → *Text ships
   in three languages*.
+
+  > **Refined 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173),
+  > its criterion 11: Arabic emphasis is upright at weight 600 (`font-semibold`), the heaviest
+  > weight the bundled font is cut to (§3.5.3) and the one the SPA's bold text already uses.
 - Responsive from 360 px width upward; all layouts are Tailwind utilities.
 
 #### 3.5.3 Design system (Minor `:526`)
@@ -774,6 +790,13 @@ icon set of hand-authored inline SVG React components (no icon package, no CDN).
   Font License 1.1, with no Reserved Font Name; the cut file is a Modified Version, so it keeps its
   copyright notice, and `OFL.txt` ships beside it. Its Arabic-Indic digits share one width, so
   `tabular-nums` lines numbers up in tables.
+
+  > **Measured 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173):
+  > the cut file is 82,876 bytes. Firefox 157 fetches it on English and French pages too, since
+  > every page shows the switcher (§3.5.5): Tailwind's base styles give its `<select>` the page's
+  > font, and Firefox sizes the select from all its options, `العربية` included. Chrome 155
+  > fetches it only for a page that shows Arabic. It stays so, because the bundled file also draws
+  > the switcher's `العربية` on a computer with no Arabic font.
 - **Arrows flip in Arabic, and nothing else does** (ADR-0020 d7). An icon that points somewhere, such
   as the `Pagination` chevrons, is marked where it is drawn as one that flips, for example by a prop
   on `IconBase` that adds `rtl:-scale-x-100`. The check mark, the search glass, the info, alert and

@@ -10,9 +10,8 @@ import {
   type OwnProfile,
   type SkillView,
 } from '../api/profile';
-import { Banner, Button, Card, Select, SkillChip } from '../design';
+import { Banner, Button, Card, Select, SkillChip, skillNameText } from '../design';
 import { useI18n } from '../i18n/context';
-import { isolate } from '../i18n/text';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
 
@@ -256,7 +255,7 @@ export function SkillsCard(): React.JSX.Element {
           <option value="">{copy.selectPlaceholder}</option>
           {available.map((skill) => (
             <option key={skill.id} value={skill.id}>
-              {isolate(skill.name)}
+              {skillNameText(skill.name)}
             </option>
           ))}
         </Select>

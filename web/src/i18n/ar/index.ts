@@ -1,13 +1,14 @@
 import type en from '../en';
 import type { Checked } from '../types';
 import auth from './auth';
+import design from './design';
 import errors from './errors';
 import legal from './legal';
 import people from './people';
 import profile from './profile';
 import shell from './shell';
 
-const ar = { shell, legal, auth, errors, people, profile };
+const ar = { shell, legal, auth, errors, people, profile, design };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, no empty text and no vowel mark in its own Arabic.

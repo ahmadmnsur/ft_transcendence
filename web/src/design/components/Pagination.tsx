@@ -1,5 +1,6 @@
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ChevronRightIcon } from '../icons/ChevronRightIcon';
+import { useI18n } from '../../i18n/context';
 import { countPages, type PageCountProps } from './pages';
 
 export type PaginationProps = PageCountProps & {
@@ -34,7 +35,8 @@ const numberClass = (active: boolean): string =>
   ].join(' ');
 
 export function Pagination(props: PaginationProps): React.JSX.Element {
-  const { page, onPageChange, label = 'Pagination', className = '' } = props;
+  const { t, format, formatText, formatNumber } = useI18n();
+  const { page, onPageChange, label = t.design.pagination.label, className = '' } = props;
   const count = countPages(props);
   // A page that does not exist is shown as the nearest real one, but the
   // caller is not told: before its total arrives every page looks out of
@@ -53,12 +55,12 @@ export function Pagination(props: PaginationProps): React.JSX.Element {
 
   return (
     <nav aria-label={label} className={`flex min-w-0 flex-wrap items-center justify-center gap-1 ${className}`.trim()}>
-      <button type="button" onClick={() => go(safePage - 1)} disabled={safePage <= 1} aria-label="Go to previous page" className={stepClass}>
+      <button type="button" onClick={() => go(safePage - 1)} disabled={safePage <= 1} aria-label={t.design.pagination.previousLabel} className={stepClass}>
         <ChevronLeftIcon size={16} />
-        <span className="hidden sm:inline">Previous</span>
+        <span className="hidden sm:inline">{t.design.pagination.previous}</span>
       </button>
       <p className="px-1 text-sm tabular-nums text-ink-muted sm:hidden">
-        Page {safePage} of {count}
+        {format(t.design.pagination.pageOf, { page: safePage, pageCount: count })}
       </p>
       <div className="hidden items-center gap-1 sm:flex">
         {items.map((item, index) =>
@@ -71,17 +73,17 @@ export function Pagination(props: PaginationProps): React.JSX.Element {
               key={item}
               type="button"
               onClick={() => go(item)}
-              aria-label={`Go to page ${item}`}
+              aria-label={formatText(t.design.pagination.pageLabel, { page: item })}
               aria-current={item === safePage ? 'page' : undefined}
               className={numberClass(item === safePage)}
             >
-              {item}
+              {formatNumber(item)}
             </button>
           ),
         )}
       </div>
-      <button type="button" onClick={() => go(safePage + 1)} disabled={safePage >= count} aria-label="Go to next page" className={stepClass}>
-        <span className="hidden sm:inline">Next</span>
+      <button type="button" onClick={() => go(safePage + 1)} disabled={safePage >= count} aria-label={t.design.pagination.nextLabel} className={stepClass}>
+        <span className="hidden sm:inline">{t.design.pagination.next}</span>
         <ChevronRightIcon size={16} />
       </button>
     </nav>

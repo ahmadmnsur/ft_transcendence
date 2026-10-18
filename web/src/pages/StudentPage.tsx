@@ -2,7 +2,7 @@ import { useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ApiProtocolError } from '../api/client';
 import { studentQueryOptions, type SkillView } from '../api/profile';
-import { AlertIcon, Avatar, Button, EmptyState, PersonName, RoleLabel, SkillChip } from '../design';
+import { AlertIcon, Avatar, Button, EmptyState, PersonName, RoleLabel, SkillChip, SkillName } from '../design';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 
@@ -132,7 +132,7 @@ export function StudentPage(): React.JSX.Element {
               ) : (
                 <>
                   <p className="mt-2 text-sm font-semibold text-ink">
-                    <bdi>{profile.learningGoal.skill.name}</bdi>
+                    <SkillName name={profile.learningGoal.skill.name} />
                   </p>
                   <p dir="auto" className="text-sm text-ink wrap-anywhere">
                     {profile.learningGoal.text}

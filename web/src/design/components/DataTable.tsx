@@ -12,6 +12,7 @@ import { SearchIcon } from '../icons/SearchIcon';
 import { SortAscIcon } from '../icons/SortAscIcon';
 import { SortDescIcon } from '../icons/SortDescIcon';
 import { SortIcon } from '../icons/SortIcon';
+import { useI18n } from '../../i18n/context';
 import { Button } from './Button';
 import { EmptyState } from './EmptyState';
 import { countPages } from './pages';
@@ -20,7 +21,7 @@ import { Pagination } from './Pagination';
 declare module '@tanstack/react-table' {
   // Per-column options DataTable reads from a column's `meta`.
   interface ColumnMeta<TData extends RowData, TValue> {
-    // 'end' right-aligns a column, for numbers, so their digits line up.
+    // 'end' aligns a column to its end, for numbers, so their digits line up.
     align?: 'end';
   }
 }
@@ -72,7 +73,7 @@ export function DataTable<TData>({
   onSortingChange,
   onPageChange,
   caption,
-  emptyTitle = 'No rows found',
+  emptyTitle,
   emptyDescription,
   emptyIcon = <SearchIcon size={24} />,
   emptyAction,
@@ -81,10 +82,11 @@ export function DataTable<TData>({
   onRetry,
   className = '',
 }: DataTableProps<TData>): React.JSX.Element {
+  const { t, formatText, language } = useI18n();
   const pageCount = countPages({ total, pageSize });
   const frameRef = useRef<HTMLDivElement>(null);
   const [scrollable, setScrollable] = useState(false);
-  const [moreToRight, setMoreToRight] = useState(false);
+  const [moreToEnd, setMoreToEnd] = useState(false);
   const table = useReactTable({
     data,
     columns,
@@ -119,13 +121,15 @@ export function DataTable<TData>({
   }, [loading, failed, validPage, nearestPage]);
 
   // A table wider than its frame scrolls sideways; the frame then takes focus
-  // so the keyboard can scroll it too, and a fade on the right edge shows that
-  // more columns wait there.
+  // so the keyboard can scroll it too, and a fade on the end edge shows that
+  // more columns wait there. scrollLeft is 0 at the start and grows toward the
+  // end, below zero right to left, so the distance scrolled is its absolute value.
   function measure(): void {
     const frame = frameRef.current;
     if (!frame) return;
-    setScrollable(frame.scrollWidth > frame.clientWidth + 1);
-    setMoreToRight(frame.scrollLeft + frame.clientWidth < frame.scrollWidth - 1);
+    const overflow = frame.scrollWidth - frame.clientWidth;
+    setScrollable(overflow > 1);
+    setMoreToEnd(Math.abs(frame.scrollLeft) < overflow - 1);
   }
   useEffect(() => {
     const frame = frameRef.current;
@@ -135,6 +139,12 @@ export function DataTable<TData>({
     if (frame.firstElementChild) observer.observe(frame.firstElementChild);
     return () => observer.disconnect();
   }, []);
+
+  // A language switch can turn the page's direction, which sends the frame
+  // back to its start, and Firefox fires no scroll event then.
+  useEffect(() => {
+    measure();
+  }, [language]);
 
   return (
     <div className={`min-w-0 ${className}`.trim()}>
@@ -147,7 +157,7 @@ export function DataTable<TData>({
           onScroll={measure}
           className="overflow-x-auto rounded-lg border border-line bg-surface focus-ring"
         >
-          <table aria-busy={loading || undefined} className="w-full min-w-max border-collapse text-left text-sm">
+          <table aria-busy={loading || undefined} className="w-full min-w-max border-collapse text-start text-sm">
             <caption className="sr-only">{caption}</caption>
             <thead>
               {table.getHeaderGroups().map((group) => (
@@ -161,7 +171,7 @@ export function DataTable<TData>({
                         key={header.id}
                         scope="col"
                         aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
-                        className={`whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-ink-muted ${sortable ? '' : 'px-3 py-2'} ${end ? 'text-right' : ''}`.trim()}
+                        className={`whitespace-nowrap text-xs font-semibold uppercase tracking-wide arabic:tracking-normal text-ink-muted ${sortable ? '' : 'px-3 py-2'} ${end ? 'text-end' : 'text-start'}`.trim()}
                       >
                         {header.isPlaceholder ? null : sortable ? (
                           // The button fills the header cell, so the whole cell is the target.
@@ -202,7 +212,7 @@ export function DataTable<TData>({
                 ? table.getRowModel().rows.map((row) => (
                     <tr key={row.id} className="border-b border-line transition-colors duration-150 last:border-0 hover:bg-surface-muted">
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className={`px-3 py-2.5 text-ink tabular-nums ${cell.column.columnDef.meta?.align === 'end' ? 'text-right' : ''}`.trim()}>
+                        <td key={cell.id} className={`px-3 py-2.5 text-ink tabular-nums ${cell.column.columnDef.meta?.align === 'end' ? 'text-end' : ''}`.trim()}>
                           {/* Long text, such as an email address, wraps at a set width instead of widening the table. */}
                           <div className="max-w-xs wrap-anywhere">{flexRender(cell.column.columnDef.cell, cell.getContext())}</div>
                         </td>
@@ -225,22 +235,22 @@ export function DataTable<TData>({
             <div className="flex justify-center px-4 pb-10 pt-3">
               {onRetry ? (
                 <Button variant="secondary" size="sm" onClick={onRetry}>
-                  Try again
+                  {t.design.dataTable.retry}
                 </Button>
               ) : null}
             </div>
           ) : null}
           <div role="status">
-            {empty ? <EmptyState icon={emptyIcon} title={emptyTitle} description={emptyDescription} action={emptyAction} /> : null}
+            {empty ? <EmptyState icon={emptyIcon} title={emptyTitle ?? t.design.dataTable.emptyTitle} description={emptyDescription} action={emptyAction} /> : null}
           </div>
         </div>
-        {moreToRight ? (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-y-px right-px w-10 rounded-r-lg bg-linear-to-l from-surface" />
+        {moreToEnd ? (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-px inset-e-px w-10 rounded-e-lg ltr:bg-linear-to-l rtl:bg-linear-to-r from-surface" />
         ) : null}
       </div>
       {/* Kept through a failed load, so the user can try another page. */}
       {pageCount > 1 ? (
-        <Pagination page={nearestPage} pageCount={pageCount} onPageChange={onPageChange} label={`${caption} pages`} className="mt-3" />
+        <Pagination page={nearestPage} pageCount={pageCount} onPageChange={onPageChange} label={formatText(t.design.dataTable.pagesLabel, { caption })} className="mt-3" />
       ) : null}
     </div>
   );

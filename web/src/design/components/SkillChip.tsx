@@ -1,6 +1,8 @@
 import type { ComponentProps } from 'react';
 import { CloseIcon } from '../icons/CloseIcon';
+import { useI18n } from '../../i18n/context';
 import { IconButton } from './IconButton';
+import { SkillName } from './SkillName';
 
 export interface SkillChipProps extends Omit<ComponentProps<'span'>, 'children'> {
   name: string;
@@ -17,24 +19,20 @@ const tones: Record<SkillChipProps['variant'], string> = {
   learn: 'border-line-strong bg-surface text-ink',
 };
 
-const spoken: Record<SkillChipProps['variant'], string> = {
-  teach: 'Can teach: ',
-  learn: 'Wants to learn: ',
-};
-
 export function SkillChip({ name, variant, onRemove, className = '', ...rest }: SkillChipProps): React.JSX.Element {
+  const { t, format, formatText } = useI18n();
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 pl-3 pr-1 text-sm font-medium ${tones[variant]} ${className}`.trim()}
+      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 ps-3 pe-1 text-sm font-medium ${tones[variant]} ${className}`.trim()}
       {...rest}
     >
       <span className="min-w-0 wrap-anywhere">
-        <span className="sr-only">{spoken[variant]}</span>
-        {name}
+        <span className="sr-only">{format(t.design.skillChip[variant], { skill: <SkillName name={name} /> })}</span>
+        <SkillName name={name} aria-hidden="true" />
       </span>
       {onRemove ? (
         // The negative margin keeps a chip with a remove button as tall as one without.
-        <IconButton label={`Remove ${name}`} size="xs" tone="inherit" onClick={onRemove} className="-my-0.5">
+        <IconButton label={formatText(t.design.skillChip.remove, { skill: name })} size="xs" tone="inherit" onClick={onRemove} className="-my-0.5">
           <CloseIcon size={14} />
         </IconButton>
       ) : (

@@ -1,4 +1,4 @@
-import { useId, type AriaAttributes, type ReactElement, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
 
 // A hint or an error: a plain text, or a message format() filled, so its
 // values sit in <bdi> like any other markup.
@@ -114,3 +114,83 @@ export const controlClass = (invalid: boolean): string =>
     'disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-muted disabled:text-ink-muted disabled:hover:border-line',
     invalid ? 'border-danger-600 hover:border-danger-700' : 'border-line-strong hover:border-neutral-600',
   ].join(' ');
+
+// dir="auto" takes a field's direction from the first letter of its text, and
+// makes an empty field left to right, even on an Arabic page. So a text field
+// has dir="auto" only while it holds text: empty, it follows the page, and its
+// placeholder and caret start on the page's side. The text is read from the
+// element itself: after each render, which brings a controlled value or a new
+// defaultValue on a field nobody has typed in; on each input; and after a reset
+// of the form it belongs to at that moment, which empties the fields with no
+// input event. A script that sets the value itself (`element.value = ''`)
+// fires none of these, so the field keeps its direction until the next one. A
+// `dir` the caller passes wins, and the caller's ref still gets the element,
+// with its own cleanup when it returns one.
+interface TextDirectionOptions<E> {
+  dir: string | undefined;
+  onInput: ((event: InputEvent<E>) => void) | undefined;
+  ref: Ref<E> | undefined;
+}
+
+export function useTextDirection<E extends HTMLInputElement | HTMLTextAreaElement>({
+  dir,
+  onInput,
+  ref,
+}: TextDirectionOptions<E>): { dir: string | undefined; onInput: (event: InputEvent<E>) => void; ref: RefCallback<E> } {
+  const element = useRef<E | null>(null);
+  const [hasText, setHasText] = useState(false);
+  const read = useCallback(() => {
+    if (element.current) setHasText(element.current.value !== '');
+  }, []);
+  // Every render, before the page paints.
+  useLayoutEffect(read);
+  // The reset event comes before the fields are emptied, so the text is read
+  // once it is done. The document hears every form's reset, in the capture
+  // phase so that no handler can stop it, and the field's form is the one it
+  // belongs to then: a `form` attribute that changes, or a form that mounts
+  // after the field, still counts.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onReset = (event: Event): void => {
+      const form = element.current?.form;
+      if (form && event.target === form) timer = setTimeout(read, 0);
+    };
+    document.addEventListener('reset', onReset, true);
+    return () => {
+      document.removeEventListener('reset', onReset, true);
+      clearTimeout(timer);
+    };
+  }, [read]);
+  // React runs the cleanup this returns when the field detaches, in place of
+  // calling it with null. A caller's ref that returns its own cleanup gets it
+  // run then; one that returns none is called with null, as React would.
+  const setRef = useCallback(
+    (node: E | null): (() => void) => {
+      element.current = node;
+      if (typeof ref === 'function') {
+        const callback = ref;
+        const cleanup = callback(node);
+        return () => {
+          element.current = null;
+          if (typeof cleanup === 'function') cleanup();
+          else callback(null);
+        };
+      }
+      const object = ref;
+      if (object) object.current = node;
+      return () => {
+        element.current = null;
+        if (object) object.current = null;
+      };
+    },
+    [ref],
+  );
+  return {
+    dir: dir ?? (hasText ? 'auto' : undefined),
+    onInput: (event) => {
+      setHasText(event.currentTarget.value !== '');
+      onInput?.(event);
+    },
+    ref: setRef,
+  };
+}

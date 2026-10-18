@@ -11,9 +11,8 @@ import {
   type LearningGoalView,
   type OwnProfile,
 } from '../api/profile';
-import { Banner, Button, Card, Select, TextArea } from '../design';
+import { Banner, Button, Card, Select, SkillName, TextArea, skillNameText } from '../design';
 import { useI18n } from '../i18n/context';
-import { isolate } from '../i18n/text';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
 
@@ -190,7 +189,7 @@ export function LearningGoalCard(): React.JSX.Element {
       <div className="flex min-w-0 flex-col gap-3">
         <h3 className="text-sm font-semibold text-ink">{copy.currentHeading}</h3>
         <p className="text-sm font-semibold text-ink">
-          <bdi>{saved.skill.name}</bdi>
+          <SkillName name={saved.skill.name} />
         </p>
         <p dir="auto" className="text-sm text-ink wrap-anywhere">
           {saved.text}
@@ -229,7 +228,7 @@ export function LearningGoalCard(): React.JSX.Element {
           <option value="">{copy.skillPlaceholder}</option>
           {learn.map((skill) => (
             <option key={skill.id} value={skill.id}>
-              {isolate(skill.name)}
+              {skillNameText(skill.name)}
             </option>
           ))}
         </Select>
