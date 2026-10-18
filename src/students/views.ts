@@ -39,3 +39,15 @@ export type PublicProfile = {
     streak: number;
   };
 };
+
+// One row of §6.2's Advanced search: the person, their Skills, XP and Level.
+// Never an email (§4.6).
+export type StudentSearchItem = {
+  student: StudentRef;
+  skills: SkillsView;
+  xp: number;
+  level: number;
+};
+
+// §6.0.1's table page: one page of rows and the count of every match.
+export type StudentSearchPage = { items: StudentSearchItem[]; total: number };

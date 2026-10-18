@@ -25,6 +25,9 @@ export const LIMITS = {
   },
 } as const;
 
+// §6.0.1: every table pages with `page` ≥ 1 and `pageSize` 1–50, default 20.
+export const PAGING = { defaultPageSize: 20, maxPageSize: 50 } as const;
+
 // Characters are Unicode code points, not UTF-16 units (§6.0.3).
 export function charLength(value: string): number {
   return [...value].length;

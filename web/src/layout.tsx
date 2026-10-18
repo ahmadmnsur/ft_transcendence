@@ -80,19 +80,25 @@ function SiteHeader(): React.JSX.Element {
         <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
           <bdi>{BRAND}</bdi>
         </Link>
-        <nav aria-label={t.shell.header.navLabel} className="ms-auto flex min-w-0 items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
+        <nav aria-label={t.shell.header.navLabel} className="ms-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
           {session?.authenticated === true ? (
             <>
               <span className="hidden max-w-40 truncate text-sm text-ink-muted sm:inline">
                 <PersonName name={session.student.displayName} removed={false} />
               </span>
               <Link
+                to="/students"
+                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
+              >
+                {t.shell.header.studentsLink}
+              </Link>
+              <Link
                 to="/me"
-                className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
               >
                 {t.shell.header.profileLink}
               </Link>
-              <Button variant="secondary" size="sm" loading={signingOut} onClick={() => void onSignOut()}>
+              <Button variant="secondary" size="sm" loading={signingOut} onClick={() => void onSignOut()} className="shrink-0">
                 {signingOut ? t.shell.header.signingOut : t.shell.header.signOut}
               </Button>
               {signOutFailed ? (
@@ -105,19 +111,19 @@ function SiteHeader(): React.JSX.Element {
             <>
               <Link
                 to="/sign-in"
-                className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
               >
                 {t.shell.header.signInLink}
               </Link>
-              <Link to="/sign-up" className={buttonClasses({ variant: 'primary', size: 'sm' })}>
+              <Link to="/sign-up" className={`shrink-0 ${buttonClasses({ variant: 'primary', size: 'sm' })}`}>
                 {t.shell.header.signUpLink}
               </Link>
             </>
           )}
         </nav>
-        {/* Below `sm` the switcher ends the brand's line and the nav takes a second line, so the
-        header keeps to two lines from 360 px. The DOM keeps the desktop order: brand, nav,
-        switcher. */}
+        {/* Below `sm` the switcher ends the brand's line and the nav takes the next line. A button
+        never shrinks its label onto two lines: one that does not fit moves to a further line, as
+        French does at 360 px. The DOM keeps the desktop order: brand, nav, switcher. */}
         <Select
           hideLabel
           label={t.shell.language.label}

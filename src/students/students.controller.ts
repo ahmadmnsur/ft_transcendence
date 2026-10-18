@@ -1,10 +1,16 @@
-import { Body, Controller, Delete, Get, Patch, Put, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Put, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { requestActor } from '../core/session.guard';
 import { UuidParam } from '../core/uuid-param';
-import { LearningGoalDto, SkillsDto, UpdateProfileDto } from './dto';
+import { LearningGoalDto, SearchStudentsQueryDto, SkillsDto, UpdateProfileDto } from './dto';
 import { StudentsService } from './students.service';
-import type { LearningGoalView, OwnProfile, PublicProfile, SkillView } from './views';
+import type {
+  LearningGoalView,
+  OwnProfile,
+  PublicProfile,
+  SkillView,
+  StudentSearchPage,
+} from './views';
 
 // §3.4: controllers are thin — parse, validate the DTO, take the actor with
 // `requestActor`, call ONE service method, and return its value. The global
@@ -25,6 +31,14 @@ export class StudentsController {
   @Get('me')
   getOwnProfile(@Req() request: Request): Promise<OwnProfile> {
     return this.students.getOwnProfile(requestActor(request));
+  }
+
+  // `GET /api/students` (§6.2): Advanced search. The DTO validates the query
+  // string and fills its defaults. The search term stays in the query string,
+  // which no log records (§3.9).
+  @Get('students')
+  search(@Query() query: SearchStudentsQueryDto, @Req() request: Request): Promise<StudentSearchPage> {
+    return this.students.search(requestActor(request), query);
   }
 
   // `GET /api/students/:id` (§6.2). A malformed id is 400 (`UuidParam`); an

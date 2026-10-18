@@ -7,6 +7,8 @@ import { UnitOfWork } from '../core/uow';
 import type { Prisma } from '../generated/prisma/client';
 import { levelFor } from '../gamification/level';
 import { normalizeEmail } from '../shared/limits';
+import type { SearchOrder, SearchSort } from './dto';
+import { nameSearchWhere } from './name-search';
 import {
   applyLearningGoal,
   applySkills,
@@ -21,6 +23,8 @@ import type {
   PublicProfile,
   SkillView,
   SkillsView,
+  StudentSearchItem,
+  StudentSearchPage,
   StudentStatus,
 } from './views';
 
@@ -45,11 +49,32 @@ const PROFILE_SELECT = {
 
 const OWN_PROFILE_SELECT = { ...PROFILE_SELECT, email: true } as const satisfies Prisma.StudentSelect;
 
+// A search row reads the StudentRef fields, XP and the Skill rows: no Goal,
+// no Streak, never the email (§6.2, §4.6).
+const SEARCH_SELECT = {
+  ...STUDENT_REF_SELECT,
+  xp: true,
+  studentSkills: PROFILE_SELECT.studentSkills,
+} as const satisfies Prisma.StudentSelect;
+
 // The row shapes come from the selects, so they cannot drift from what the
 // query reads.
 type ProfileRow = Prisma.StudentGetPayload<{ select: typeof PROFILE_SELECT }>;
 type OwnProfileRow = Prisma.StudentGetPayload<{ select: typeof OWN_PROFILE_SELECT }>;
+type SearchRow = Prisma.StudentGetPayload<{ select: typeof SEARCH_SELECT }>;
 type SkillRow = ProfileRow['studentSkills'][number];
+
+// What `search` filters, sorts and pages by; the DTO fills the defaults.
+export type StudentSearchQuery = {
+  q?: string;
+  teaches?: string;
+  wants?: string;
+  hasGoal?: boolean;
+  sort: SearchSort;
+  order: SearchOrder;
+  page: number;
+  pageSize: number;
+};
 
 // §4.3.1: status is derived — removedAt → REMOVED, else suspendedAt →
 // SUSPENDED, else ACTIVE.
@@ -111,6 +136,41 @@ function toPublicProfile(row: ProfileRow): PublicProfile {
   };
 }
 
+// §6.2: Removed Students never match; Suspended Students and Admins do. Each
+// Skill filter needs a row of its own kind for that Skill.
+function searchWhere(query: StudentSearchQuery): Prisma.StudentWhereInput {
+  const and: Prisma.StudentWhereInput[] = [{ removedAt: null }];
+  const name = nameSearchWhere(query.q);
+  if (name !== undefined) and.push(name);
+  if (query.teaches !== undefined) {
+    and.push({ studentSkills: { some: { skillId: query.teaches, kind: 'TEACH' } } });
+  }
+  if (query.wants !== undefined) {
+    and.push({ studentSkills: { some: { skillId: query.wants, kind: 'LEARN' } } });
+  }
+  if (query.hasGoal !== undefined) {
+    and.push({ learningGoalStudentSkillId: query.hasGoal ? { not: null } : null });
+  }
+  return { AND: and };
+}
+
+// `sort=name` is a plain order on `displayName`: the column's `und-x-icu`
+// collation makes every stack sort names alike (§4.3.1).
+const SEARCH_ORDER_BY: Record<SearchSort, (order: SearchOrder) => Prisma.StudentOrderByWithRelationInput> = {
+  name: (order) => ({ displayName: order }),
+  xp: (order) => ({ xp: order }),
+  joined: (order) => ({ createdAt: order }),
+};
+
+function toSearchItem(row: SearchRow): StudentSearchItem {
+  return {
+    student: toStudentRef(row),
+    skills: skillsOf(row.studentSkills),
+    xp: row.xp,
+    level: levelFor(row.xp),
+  };
+}
+
 @Injectable()
 export class StudentsService {
   constructor(
@@ -157,6 +217,28 @@ export class StudentsService {
       const row = await tx.student.findUnique({ where: { id }, select: PROFILE_SELECT });
       if (row === null) throw new ApiError('not_found');
       return toPublicProfile(row);
+    });
+  }
+
+  // §6.2's Advanced search. The count and the page are two reads, so
+  // `readOnly` keeps them one snapshot; ties break `id ASC`, so a row never
+  // moves between pages. A page past the last match reads no rows. `actor` is
+  // the signed-in viewer the read is for (§3.4); the results do not vary by
+  // viewer yet.
+  async search(actor: Actor, query: StudentSearchQuery): Promise<StudentSearchPage> {
+    const where = searchWhere(query);
+    return this.uow.readOnly(async (tx) => {
+      const total = await tx.student.count({ where });
+      const skip = (query.page - 1) * query.pageSize;
+      if (skip >= total) return { items: [], total };
+      const rows = await tx.student.findMany({
+        where,
+        orderBy: [SEARCH_ORDER_BY[query.sort](query.order), { id: 'asc' }],
+        skip,
+        take: query.pageSize,
+        select: SEARCH_SELECT,
+      });
+      return { items: rows.map(toSearchItem), total };
     });
   }
 

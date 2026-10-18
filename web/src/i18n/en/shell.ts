@@ -5,6 +5,7 @@ export default {
   pageTitle: '{page} · {brand}',
   header: {
     navLabel: 'Account',
+    studentsLink: 'Students',
     profileLink: 'My profile',
     signOut: 'Sign out',
     signingOut: 'Signing out…',

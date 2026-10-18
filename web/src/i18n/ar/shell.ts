@@ -6,6 +6,7 @@ export default {
   pageTitle: '{page} · {brand}',
   header: {
     navLabel: 'الحساب',
+    studentsLink: 'الطلاب',
     profileLink: 'ملفي الشخصي',
     signOut: 'تسجيل الخروج',
     signingOut: 'جار تسجيل الخروج…',
