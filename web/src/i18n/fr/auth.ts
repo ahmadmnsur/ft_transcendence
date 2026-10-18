@@ -99,6 +99,8 @@ export default {
       'Connectez-vous avec votre mot de passe, puis associez 42 depuis votre profil\u00a0: {link}',
     no42Question: 'Plutôt vous inscrire sans 42\u202f? {link}',
     no42Link: "S'inscrire sans 42",
+    closed42: 'Vos informations 42 ont été utilisées par cet essai\u00a0: ce formulaire ne peut plus être envoyé.',
+    startOver42: 'Recommencer avec 42',
   },
   passwordChange: {
     title: 'Mon profil',

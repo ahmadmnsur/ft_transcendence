@@ -80,6 +80,8 @@ export default {
     emailTaken42Action: 'Sign in with your password, then connect 42 from your profile: {link}',
     no42Question: 'Prefer to sign up without 42? {link}',
     no42Link: 'Sign up without 42',
+    closed42: "Your 42 details were used by that try, so this form can't be sent again.",
+    startOver42: 'Start over with 42',
   },
   passwordChange: {
     title: 'My profile',

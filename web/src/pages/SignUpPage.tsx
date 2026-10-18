@@ -9,9 +9,9 @@ import {
   normalizeEmail,
 } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
-import { signup, signup42, signUpDraft42QueryOptions } from '../api/auth';
+import { signup, signup42, fetchSignUpDraft42, signUpDraft42QueryOptions, SIGN_UP_DRAFT_42_QUERY_KEY } from '../api/auth';
 import { SESSION_QUERY_KEY } from '../api/session';
-import { Banner, Button, Card, Checkbox, PasswordField, TextField } from '../design';
+import { Banner, Button, Card, Checkbox, PasswordField, TextField, buttonClasses } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 
@@ -27,6 +27,13 @@ function failureCode(error: unknown): unknown {
   if (error instanceof ApiRefusalError) return error.code;
   if (error instanceof ApiProtocolError) return error.code;
   return undefined;
+}
+
+// §5.6 B: the two answers that mean this browser's 42 draft is used up or
+// expired — refused `oauth_failed`, or a 404 while 42 is off behind a stale
+// `from=42` link. The read-dead effect and the submit's re-read share it.
+function draftDead(error: unknown): boolean {
+  return failureCode(error) === 'oauth_failed' || (error instanceof ApiProtocolError && error.status === 404);
 }
 
 const signUpSearch = getRouteApi('/sign-up');
@@ -66,6 +73,9 @@ export function SignUpPage(): React.JSX.Element {
   const [confirmPasswordError, setConfirmPasswordError] = useState<'empty' | 'mismatch' | undefined>(undefined);
   const [termsError, setTermsError] = useState(false);
   const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
+  // §5.6 B: set when this browser's draft was spent by a failed submit — the
+  // 42 form is over, it cannot be sent again, and the card closes.
+  const [closed42, setClosed42] = useState(false);
   const [pending, setPending] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const displayNameRef = useRef<HTMLInputElement>(null);
@@ -79,30 +89,64 @@ export function SignUpPage(): React.JSX.Element {
     maxBytes: LIMITS.password.maxBytes,
   });
 
+  // The submit's failure as a banner, shared by the form and the closed 42
+  // card: `email_unavailable` links to sign-in as a 42 one (§5.6 B), and
+  // once it renders the focus moves to it, as with the field errors below.
+  const statusBlock =
+    status !== undefined ? (
+      <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
+        {is42 && status.code === 'email_unavailable' ? (
+          // §5.6 B: a taken email never links by email — its owner signs in with
+          // their password and connects 42 there.
+          <Banner
+            tone="danger"
+            title={t.auth.signUp.emailTaken42}
+            body={format(t.auth.signUp.emailTaken42Action, {
+              link: (
+                <Link
+                  to="/sign-in"
+                  className="rounded text-link underline underline-offset-2 focus-ring"
+                >
+                  {t.auth.signUp.signInLink}
+                </Link>
+              ),
+            })}
+          />
+        ) : (
+          <Banner tone="danger" title={errorText(status.code)} />
+        )}
+      </div>
+    ) : null;
+
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors below.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
+  // One page instance serves both variants, so a banner that answers one
+  // variant's failed submit must not show for the other: clear it when the
+  // variant changes.
+  useEffect(() => {
+    setStatus(undefined);
+  }, [is42]);
+
   // §5.6 B: a dead draft — `oauth_failed` with no live draft, or 404
   // `not_found` while 42 is off behind a stale `from=42` link — sends the
   // browser back to sign-in, whose `?oauth=failed` failure sentence is the
   // whole form's answer. A replaced navigation: no one returns to a form
   // that cannot be sent again. Any other failure keeps the form below with
-  // a retry.
+  // a retry. Once the submit spent the draft (`closed42`), the form is
+  // already closed and no read may navigate away.
   useEffect(() => {
-    if (!is42) return;
+    if (!is42 || closed42) return;
     const error: unknown = draftQuery.error;
     if (error === null || error === undefined) return;
-    const dead =
-      failureCode(error) === 'oauth_failed' ||
-      (error instanceof ApiProtocolError && error.status === 404);
-    if (!dead) return;
+    if (!draftDead(error)) return;
     void navigate({ to: '/sign-in', search: { oauth: 'failed' }, replace: true }).catch(() => {
       // The URL stays as it is if the replacement fails; the sentence shows.
     });
-  }, [is42, draftQuery.error, navigate]);
+  }, [is42, closed42, draftQuery.error, navigate]);
 
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
@@ -165,6 +209,24 @@ export function SignUpPage(): React.JSX.Element {
         });
         return;
       }
+      if (is42) {
+        // §5.6 B: the server takes the draft for every request past its
+        // throttle, whatever it answers next, so this failure may have spent
+        // it. Re-read directly — not through `draftQuery`, whose dead read
+        // would navigate away and lose this banner — and close the form on
+        // a used-up draft; any other answer leaves it open for a retry. The
+        // cache is dropped too: its 30s stale time would still show the old
+        // live read, so a later visit re-reads, finds the draft dead, and
+        // the read-dead effect sends it to sign-in as for any dead draft.
+        try {
+          await fetchSignUpDraft42();
+        } catch (readError) {
+          if (draftDead(readError)) {
+            queryClient.removeQueries({ queryKey: SIGN_UP_DRAFT_42_QUERY_KEY });
+            setClosed42(true);
+          }
+        }
+      }
       setStatus({ code });
     } finally {
       setPending(false);
@@ -180,7 +242,19 @@ export function SignUpPage(): React.JSX.Element {
         </h1>
         <div className="mt-4 flex min-w-0 flex-col gap-4">
           <Card>
-            {is42 && draftQuery.isPending ? (
+            {is42 && closed42 ? (
+              // §5.6 B: the draft is used once, taken past the throttle, so this
+              // failed submit spent it. The banner says what the submit was
+              // answered; the fields are gone, since the form cannot be sent
+              // again; the link goes back to sign-in to start over with 42.
+              <div className="flex min-w-0 flex-col gap-4">
+                {statusBlock}
+                <p className="text-sm text-ink-muted">{t.auth.signUp.closed42}</p>
+                <Link to="/sign-in" className={`${buttonClasses()} w-full`}>
+                  {t.auth.signUp.startOver42}
+                </Link>
+              </div>
+            ) : is42 && draftQuery.isPending ? (
               // §5.6 B: the draft read is still running — say so instead of
               // empty fields.
               <p className="text-sm text-ink-muted">{t.auth.signUp.loading42}</p>
@@ -189,42 +263,18 @@ export function SignUpPage(): React.JSX.Element {
               // for a retry here, its errorText above the button. A dead
               // draft's one frame of this branch already navigates to
               // sign-in.
-              <>
+              <div className="flex min-w-0 flex-col gap-4">
                 <Banner tone="danger" title={errorText(failureCode(draftQuery.error))} />
                 <Button type="button" className="w-full" onClick={() => void draftQuery.refetch()}>
                   {t.auth.signUp.retry42}
                 </Button>
-              </>
+              </div>
             ) : (
               <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
                 {is42 && draft !== undefined ? (
                   <Banner tone="info" title={t.auth.signUp.notePrefilled} />
                 ) : null}
-                {status !== undefined ? (
-                  <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
-                    {is42 && status.code === 'email_unavailable' ? (
-                      // §5.6 B: a taken email never links by email — its
-                      // owner signs in with their password and connects 42
-                      // there.
-                      <Banner
-                        tone="danger"
-                        title={t.auth.signUp.emailTaken42}
-                        body={format(t.auth.signUp.emailTaken42Action, {
-                          link: (
-                            <Link
-                              to="/sign-in"
-                              className="rounded text-link underline underline-offset-2 focus-ring"
-                            >
-                              {t.auth.signUp.signInLink}
-                            </Link>
-                          ),
-                        })}
-                      />
-                    ) : (
-                      <Banner tone="danger" title={errorText(status.code)} />
-                    )}
-                  </div>
-                ) : null}
+                {statusBlock}
                 <TextField
                   ref={emailRef}
                   label={t.auth.signUp.emailLabel}

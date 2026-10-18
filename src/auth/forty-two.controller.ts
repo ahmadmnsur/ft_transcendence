@@ -20,7 +20,8 @@ import {
   serializeAttemptCookie,
   serializeSessionCookie,
 } from '../core/session-cookie';
-import { requestActor, Public } from '../core/session.guard';
+import { SessionResolver } from '../core/session-resolver';
+import { requestActor, Public, authenticateSession } from '../core/session.guard';
 import { ThrottleStore, type ThrottleSlot } from '../core/throttle';
 import { Disconnect42Dto, Start42Dto, SignupDto } from './dto';
 import { FortyTwoService, type ThrottledPasswordCheck } from './forty-two.service';
@@ -54,6 +55,7 @@ export class FortyTwoController {
   constructor(
     private readonly fortyTwo: FortyTwoService,
     private readonly throttle: ThrottleStore,
+    private readonly sessions: SessionResolver,
   ) {}
 
   private key(request: Request, normalisedEmail: string): string {
@@ -196,17 +198,24 @@ export class FortyTwoController {
     return created.student;
   }
 
-  // `POST /api/auth/42/disconnect` (§5.6 B): a session route (no `@Public`),
-  // so the guard resolves the Student; `requestActor` builds the `Actor` the
-  // service acts for (§3.4); the throttle counts under that Student's own
-  // email, its slot settled counted on a `CountedRefusal` and released in
-  // `finally`, as `changePassword` does.
+  // `POST /api/auth/42/disconnect` (§5.6 B): a session route. `@Public` only
+  // so the controller's enabled guard answers 404 first while 42 is off
+  // (§5.6 A), before any session lookup; the handler does the session
+  // resolution the global guard would, through the same
+  // `authenticateSession` (§5.3), so a stale `s.` cookie still gets 401 plus
+  // the cleared cookie. `requestActor` builds the `Actor` the service acts
+  // for (§3.4); the throttle counts under that Student's own email, its slot
+  // settled counted on a `CountedRefusal` and released in `finally`, as
+  // `changePassword` does.
+  @Public()
   @Post('disconnect')
   @HttpCode(200)
   async disconnect(
     @Body() dto: Disconnect42Dto,
     @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
   ): Promise<Record<string, never>> {
+    await authenticateSession(this.sessions, request, response);
     const actor = requestActor(request);
     const slot = this.reserveOrRefuse(request, request.auth?.email ?? '');
     try {

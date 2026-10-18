@@ -1951,6 +1951,17 @@ amendment's note, ADR-0018 d7's note).
     their password and connect 42: nothing links by email. If another row took the `id` meanwhile,
     the `forty_two_id` unique admits one, and the loser gets `oauth_failed` and its Supabase Auth
     user is deleted, as for a duplicate email.
+
+    > **Updated 2026-10-19** (#70, from the review of PR #188): "takes the draft and runs §5.1's
+    > sign-up from step 1" runs in this order. §5.1 step 1's validation comes first. Then a request
+    > without `pc_session=a.<token>` or a live draft is refused `oauth_failed` before the throttle,
+    > so it counts no attempt: §5.5's "every attempt" of the 42 sign-up form starts after this
+    > refusal. Then the throttle counts the attempt, and only then is the draft **taken**, used once,
+    > before §5.1's steps 2–5 run. So a body that fails validation, or a request the throttle
+    > refuses, keeps its draft. Every request past the throttle uses the draft up, whatever it
+    > answers next (`email_unavailable`, `busy_retry_later`, …), and the form then says it cannot be
+    > sent again and offers to start over with 42.
+
   - **An ordinary sign-up never uses a draft**, even while one is live in that browser. A 42 sign-up
     form that goes through therefore always creates an account connected to that 42 account;
     someone who leaves it for the ordinary sign-up creates an ordinary account and can connect 42

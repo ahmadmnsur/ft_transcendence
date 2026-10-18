@@ -131,7 +131,14 @@ export function FortyTwoCard({
           setStatus({ kind: 'disconnected' });
         }
       } catch (error) {
-        if (mountedRef.current) setStatus({ kind: 'failed', code: failureCode(error) });
+        const code = failureCode(error);
+        if (mountedRef.current) setStatus({ kind: 'failed', code });
+        // A `forty_two_not_connected` answer says the cached flag was wrong:
+        // re-read the profile (§6.2) so the card renders the right button.
+        if (code === 'forty_two_not_connected') {
+          await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
+          void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+        }
       } finally {
         setPending(null);
       }
@@ -151,7 +158,14 @@ export function FortyTwoCard({
       }, 5000);
     } catch (error) {
       if (!mountedRef.current) return;
-      setStatus({ kind: 'failed', code: failureCode(error) });
+      const code = failureCode(error);
+      setStatus({ kind: 'failed', code });
+      // A `forty_two_connected` answer says the cached flag was wrong:
+      // re-read the profile (§6.2) so the card renders the right button.
+      if (code === 'forty_two_connected') {
+        await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
+        void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+      }
       setPending(null);
     }
   }
