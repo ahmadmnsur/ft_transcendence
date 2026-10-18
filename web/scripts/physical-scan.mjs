@@ -1,11 +1,14 @@
-// Finds the physical (left/right) Tailwind v4 classes and CSS declarations in a folder.
-// Used for docs/research/rtl-mirroring.md, section 1; kept for #146, which settles the rule.
-// Rebuilt on 2026-10-13 and 2026-10-14 after Ahmad's reviews of 18e04ea, 52957a1 and 1c75324
-// (#140), and changed on 2026-10-15 after his review of da93ab2. How it was checked against
-// Tailwind 4.3.3's own code: the doc, section 2.
+// Finds the physical (left/right) Tailwind v4 classes and CSS declarations in a folder, and fails
+// the SPA's build on one (docs/spec.md §3.5.2 *The check*; ADR-0020 d7). Written for
+// docs/research/rtl-mirroring.md on `research/rtl-mirroring`, rebuilt on 2026-10-13 and
+// 2026-10-14 after Ahmad's reviews of 18e04ea, 52957a1 and 1c75324 (#140), and changed on
+// 2026-10-15 after his review of da93ab2. How it was checked against Tailwind 4.3.3's own code:
+// that doc, section 2. Moved into web/ on 2026-10-18 (#173), where three rules join it: a class
+// behind `rtl:` or `ltr:` passes, a line to read by hand passes once `checkedByHand` names it,
+// and this file is not read.
 //
-// Usage: node physical-scan.mjs web
-// It needs the SPA's own TypeScript and PostCSS (`npm --prefix web ci` first); its last line
+// Usage: node scripts/physical-scan.mjs . (from web/; `npm run build` runs it before
+// `vite build`). It needs the SPA's own TypeScript and PostCSS (`npm ci` first); its last line
 // names the versions it used.
 //
 // Files. It reads what Tailwind 4.3.3 reads in that folder when it is Vite's root and the CSS
@@ -87,19 +90,20 @@
 // - JavaScript that assumes left to right (`scrollLeft` math, arrow keys, inline `scaleX`).
 // It matches names, not CSS, so it also reports some words Tailwind would not compile
 // (`right-to-left`, `ml-4A`), and a class named inside a variant (`ml-4` in `has-[.ml-4]:p-2`). A
-// class behind `rtl:` or `ltr:` is reported too (`rtl:origin-right`): whether that is allowed is
-// #146's choice.
+// class behind `rtl:` or `ltr:` passes (`rtl:origin-right`): §3.5.2 writes a side that has no
+// flow-relative class that way.
 //
-// Exit code: 1 when it reports a class outside a comment, a CSS declaration or a line to read
-// by hand; 0 otherwise; 2 when TypeScript or PostCSS is missing.
+// Exit code: 1 when it reports a class outside a comment, a CSS declaration, or a line to read
+// by hand that `checkedByHand` does not name; 0 otherwise; 2 when TypeScript or PostCSS is missing.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
 const root = process.argv[2];
 if (!root) {
-  console.error('Usage: node physical-scan.mjs <dir>');
+  console.error('Usage: node scripts/physical-scan.mjs <dir>');
   process.exit(2);
 }
 
@@ -265,6 +269,9 @@ function isPhysical(base) {
 // The utility a class names, without its variants, an `!` before or after, or a leading `-`.
 const baseOf = (candidate) =>
   splitTop(candidate, ':').pop().replace(/^!/, '').replace(/!$/, '').replace(/^-/, '');
+
+// A class behind `rtl:` or `ltr:` (`rtl:origin-right`, `md:ltr:bg-linear-to-l`), which passes.
+const directional = (candidate) => splitTop(candidate, ':').slice(0, -1).some((v) => v === 'rtl' || v === 'ltr');
 
 // Tailwind's boundaries: what may come just before and just after a class.
 const space = /\s/;
@@ -540,7 +547,18 @@ function listFiles(dir) {
     .sort();
 }
 
-const files = listFiles(root);
+// This file names physical classes in its comments only, and `src/index.css` keeps it from
+// Tailwind with `@source not`, so the scanner does not read it either.
+const self = path.relative(path.resolve(root), fileURLToPath(import.meta.url)).split(path.sep).join('/');
+const files = listFiles(root).filter((name) => name !== self);
+
+// The lines to read by hand that a reviewer has read, each as the scanner prints it, without
+// its last column. A line it lists that is not named here fails the build, so the PR that adds
+// one names it here, where the reviewer sees it.
+const checkedByHand = new Set([
+  "src/index.css:6\t@source not '../scripts'",
+]);
+
 const read = new Set(files);
 const hits = [];
 const declarations = [];
@@ -583,7 +601,7 @@ function checkCss(css, at, name, lineOf, apply) {
       const afterName = (rule.raws.afterName ?? '').length;
       const start = at + rule.source.start.offset + 1 + rule.name.length + afterName;
       for (const [candidate, offset] of applyList(list)) {
-        if (!isPhysical(baseOf(candidate))) continue;
+        if (!isPhysical(baseOf(candidate)) || directional(candidate)) continue;
         hit(name, lineOf, start + offset, candidate, false);
       }
       return;
@@ -670,7 +688,7 @@ for (const [index, name] of files.entries()) {
     }
   }
   for (const [candidate, offset] of physicalClasses(preProcess(text, ext))) {
-    hit(name, lineOf, offset, candidate, mask !== null && mask[offset] === 1);
+    if (!directional(candidate)) hit(name, lineOf, offset, candidate, mask !== null && mask[offset] === 1);
   }
 }
 
@@ -678,10 +696,12 @@ for (const [index, name] of files.entries()) {
 hits.sort((a, b) => a.file - b.file || a.offset - b.offset);
 for (const h of hits) console.log(`${h.where}\t${h.text}${h.comment ? '\t(comment)' : ''}`);
 for (const d of declarations) console.log(d);
-for (const b of byHand) console.log(b);
+const checked = (line) => checkedByHand.has(line.slice(0, line.lastIndexOf('\t')));
+for (const b of byHand) console.log(checked(b) ? b.replace(/\(read by hand\)$/, '(read by hand, checked)') : b);
+const unchecked = byHand.filter((b) => !checked(b)).length;
 const inCode = hits.filter((h) => !h.comment).length;
 console.log(`\n${inCode} in code, ${hits.length - inCode} in comments, `
-  + `${declarations.length} CSS declarations, ${byHand.length} lines to read by hand `
-  + `(TypeScript ${ts.version}, PostCSS ${postcss().version})`);
+  + `${declarations.length} CSS declarations, ${byHand.length} lines to read by hand, `
+  + `${unchecked} not checked (TypeScript ${ts.version}, PostCSS ${postcss().version})`);
 // Not `process.exit()`, which can cut the output short when it goes to a pipe.
-process.exitCode = inCode > 0 || declarations.length > 0 || byHand.length > 0 ? 1 : 0;
+process.exitCode = inCode > 0 || declarations.length > 0 || unchecked > 0 ? 1 : 0;

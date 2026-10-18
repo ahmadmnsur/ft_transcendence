@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import './design/tokens.css';
 
+/* The left-or-right check, scripts/physical-scan.mjs, names physical classes in its comments,
+   so Tailwind does not read it. */
+@source not '../scripts';
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
