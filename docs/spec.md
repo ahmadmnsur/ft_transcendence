@@ -774,6 +774,13 @@ icon set of hand-authored inline SVG React components (no icon package, no CDN).
   Font License 1.1, with no Reserved Font Name; the cut file is a Modified Version, so it keeps its
   copyright notice, and `OFL.txt` ships beside it. Its Arabic-Indic digits share one width, so
   `tabular-nums` lines numbers up in tables.
+
+  > **Measured 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173):
+  > the cut file is 82,876 bytes. Firefox 157 fetches it on English and French pages too, since
+  > every page shows the switcher (§3.5.5): Tailwind's base styles give its `<select>` the page's
+  > font, and Firefox sizes the select from all its options, `العربية` included. Chrome 155
+  > fetches it only for a page that shows Arabic. It stays so, because the bundled file also draws
+  > the switcher's `العربية` on a computer with no Arabic font.
 - **Arrows flip in Arabic, and nothing else does** (ADR-0020 d7). An icon that points somewhere, such
   as the `Pagination` chevrons, is marked where it is drawn as one that flips, for example by a prop
   on `IconBase` that adds `rtl:-scale-x-100`. The check mark, the search glass, the info, alert and

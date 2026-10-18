@@ -250,6 +250,12 @@ Unaffected:
 - **A page that shows an Arabic character fetches one font file**, about 100 kB as measured with
   its Latin glyphs, and smaller cut to Arabic alone. An English or French page showing an Arabic
   name fetches it too.
+
+  > **Measured 2026-10-18** by [Languages: the design system in French and Arabic, right to left](https://github.com/ahmadmnsur/ft_transcendence/issues/173):
+  > cut to Arabic alone, the file is 82,876 bytes. Firefox 157 fetches it on every English and
+  > French page as well, because the language switcher on every page lists `العربية`; Chrome 155
+  > fetches it only for a page that shows Arabic. `docs/spec.md` §3.5.3's note of this date says
+  > why it stays so.
 - **The legal translations land last**, near the end, and from then on a change to either page is
   written in three languages and checked by a member who did not write it.
 - **The README's Modules section counts 20 points**, with both Minors ([README: the sections with no recorded owner](https://github.com/ahmadmnsur/ft_transcendence/issues/71)).
