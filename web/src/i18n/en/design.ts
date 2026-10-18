@@ -34,7 +34,7 @@ export default {
     empty: 'This file is empty.',
     typeRefused: 'This file type is not accepted. Use {types}.',
     extensionRefused: '{extension} files are not accepted. Use {types}.',
-    typeMismatch: 'This file is named .{extension} but is not a {type} file.',
+    typeMismatch: 'This file is named {extension} but is not a {type} file.',
     overLimit: 'This file is {size}, over the {limit} limit.',
     justOverLimit: 'This file is just over the {limit} limit.',
     preview: 'Preview of {fileName}',

@@ -33,7 +33,7 @@ export default {
     empty: 'Ce fichier est vide.',
     typeRefused: "Ce type de fichier n'est pas accepté. Utilisez {types}.",
     extensionRefused: 'Les fichiers {extension} ne sont pas acceptés. Utilisez {types}.',
-    typeMismatch: "Ce fichier porte l'extension .{extension}, mais ce n'est pas un fichier {type}.",
+    typeMismatch: "Ce fichier porte l'extension {extension}, mais ce n'est pas un fichier {type}.",
     overLimit: 'Ce fichier fait {size}, au-delà de la limite de {limit}.',
     justOverLimit: 'Ce fichier dépasse de peu la limite de {limit}.',
     preview: 'Aperçu de {fileName}',

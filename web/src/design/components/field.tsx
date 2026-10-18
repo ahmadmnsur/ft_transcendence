@@ -1,4 +1,4 @@
-import { useId, useState, type AriaAttributes, type InputEvent, type ReactElement, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
 
 // A hint or an error: a plain text, or a message format() filled, so its
 // values sit in <bdi> like any other markup.
@@ -118,30 +118,58 @@ export const controlClass = (invalid: boolean): string =>
 // dir="auto" takes a field's direction from the first letter of its text, and
 // makes an empty field left to right, even on an Arabic page. So a text field
 // has dir="auto" only while it holds text: empty, it follows the page, and its
-// placeholder and caret start on the page's side. The text is read from
-// `value` when the caller controls the field, and from each input otherwise,
-// so an uncontrolled field that a form reset or a script empties keeps
-// dir="auto" until its next input. A `dir` the caller passes wins.
+// placeholder and caret start on the page's side. The text is read from the
+// element itself: after each render, which brings a controlled value or a new
+// defaultValue on a field nobody has typed in; on each input; and after its
+// form's reset, which empties the fields with no input event. A `dir` the
+// caller passes wins, and the caller's ref still gets the element.
 interface TextDirectionOptions<E> {
-  value: unknown;
-  defaultValue: unknown;
   dir: string | undefined;
   onInput: ((event: InputEvent<E>) => void) | undefined;
+  ref: Ref<E> | undefined;
 }
 
 export function useTextDirection<E extends HTMLInputElement | HTMLTextAreaElement>({
-  value,
-  defaultValue,
   dir,
   onInput,
-}: TextDirectionOptions<E>): { dir: string | undefined; onInput: (event: InputEvent<E>) => void } {
-  const [typed, setTyped] = useState(() => defaultValue != null && String(defaultValue) !== '');
-  const hasText = value != null ? String(value) !== '' : typed;
+  ref,
+}: TextDirectionOptions<E>): { dir: string | undefined; onInput: (event: InputEvent<E>) => void; ref: RefCallback<E> } {
+  const element = useRef<E | null>(null);
+  const [hasText, setHasText] = useState(false);
+  const read = useCallback(() => {
+    if (element.current) setHasText(element.current.value !== '');
+  }, []);
+  // Every render, before the page paints.
+  useLayoutEffect(read);
+  // The reset event comes before the fields are emptied, so the text is read
+  // once it is done.
+  useEffect(() => {
+    const form = element.current?.form;
+    if (!form) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onReset = (): void => {
+      timer = setTimeout(read, 0);
+    };
+    form.addEventListener('reset', onReset);
+    return () => {
+      form.removeEventListener('reset', onReset);
+      clearTimeout(timer);
+    };
+  }, [read]);
+  const setRef = useCallback(
+    (node: E | null) => {
+      element.current = node;
+      if (typeof ref === 'function') ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref],
+  );
   return {
     dir: dir ?? (hasText ? 'auto' : undefined),
     onInput: (event) => {
-      setTyped(event.currentTarget.value !== '');
+      setHasText(event.currentTarget.value !== '');
       onInput?.(event);
     },
+    ref: setRef,
   };
 }

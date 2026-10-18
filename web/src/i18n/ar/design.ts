@@ -33,7 +33,7 @@ export default {
     empty: 'هذا الملف فارغ.',
     typeRefused: 'نوع الملف هذا غير مقبول. استخدم {types}.',
     extensionRefused: 'ملفات {extension} غير مقبولة. استخدم {types}.',
-    typeMismatch: 'امتداد هذا الملف .{extension}، لكنه ليس ملف {type}.',
+    typeMismatch: 'امتداد هذا الملف {extension}، لكنه ليس ملف {type}.',
     overLimit: 'حجم هذا الملف {size}، وهو يتجاوز الحد البالغ {limit}.',
     justOverLimit: 'هذا الملف يتجاوز الحد البالغ {limit} بقليل.',
     preview: 'معاينة {fileName}',
@@ -46,7 +46,7 @@ export default {
     deleteLabel: 'حذف {fileName}',
     download: 'تنزيل {fileName}',
     confirmTitle: 'حذف هذا الملف؟',
-    confirmDescription: 'سيحذف {fileName}. لا يمكن التراجع عن ذلك.',
+    confirmDescription: 'سيتم حذف {fileName}. لا يمكن التراجع عن ذلك.',
     keep: 'الإبقاء على الملف',
   },
 } as const satisfies Catalogue<'ar', typeof design>;

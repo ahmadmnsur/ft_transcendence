@@ -552,11 +552,12 @@ function listFiles(dir) {
 const self = path.relative(path.resolve(root), fileURLToPath(import.meta.url)).split(path.sep).join('/');
 const files = listFiles(root).filter((name) => name !== self);
 
-// The lines to read by hand that a reviewer has read, each as the scanner prints it, without
-// its last column. A line it lists that is not named here fails the build, so the PR that adds
-// one names it here, where the reviewer sees it.
+// The lines to read by hand that a reviewer has read, each named by its file and its text as
+// the scanner prints them, without the line number, so an edit elsewhere in the file keeps it.
+// A line it lists that is not named here fails the build, so the PR that adds one names it
+// here, where the reviewer sees it.
 const checkedByHand = new Set([
-  "src/index.css:6\t@source not '../scripts'",
+  "src/index.css\t@source not '../scripts'",
 ]);
 
 const read = new Set(files);
@@ -696,7 +697,7 @@ for (const [index, name] of files.entries()) {
 hits.sort((a, b) => a.file - b.file || a.offset - b.offset);
 for (const h of hits) console.log(`${h.where}\t${h.text}${h.comment ? '\t(comment)' : ''}`);
 for (const d of declarations) console.log(d);
-const checked = (line) => checkedByHand.has(line.slice(0, line.lastIndexOf('\t')));
+const checked = (line) => checkedByHand.has(line.slice(0, line.lastIndexOf('\t')).replace(/:\d+\t/, '\t'));
 for (const b of byHand) console.log(checked(b) ? b.replace(/\(read by hand\)$/, '(read by hand, checked)') : b);
 const unchecked = byHand.filter((b) => !checked(b)).length;
 const inCode = hits.filter((h) => !h.comment).length;

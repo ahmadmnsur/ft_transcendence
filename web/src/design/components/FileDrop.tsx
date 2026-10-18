@@ -194,7 +194,7 @@ export function FileDrop({
         : format(t.design.fileDrop.typeRefused, { types: acceptedTypes });
     }
     if (problem.kind === 'mismatch') {
-      return format(t.design.fileDrop.typeMismatch, { extension: problem.extension, type: fileTypes[problem.type].name });
+      return format(t.design.fileDrop.typeMismatch, { extension: `.${problem.extension}`, type: fileTypes[problem.type].name });
     }
     const size = formatBytes(formatNumber, problem.size);
     const limit = formatBytes(formatNumber, maxBytes);
