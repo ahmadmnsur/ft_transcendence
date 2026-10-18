@@ -1,15 +1,24 @@
 import 'reflect-metadata';
 import type { INestApplicationContext } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { AuthService } from '../../src/auth/auth.service';
 import { assertEnvOrExit, resolveSupabaseTarget } from '../../src/core/env';
 import { ApiError, Refusal } from '../../src/core/errors';
 import { AppLogger, errorFields, exitOnUncaught } from '../../src/core/logger';
 import { PrismaService } from '../../src/core/prisma.service';
 import { SupabaseAuthClient } from '../../src/core/supabase-auth';
 import { UnitOfWork } from '../../src/core/uow';
+import { StudentsService } from '../../src/students/students.service';
 import { bootstrapStaff, createStaffAccount } from './bootstrap';
 import { insertCatalogue } from './catalogue';
 import { assertEndState, assertOnlySeedAccounts } from './checks';
+import {
+  assertIdOrder,
+  cohortPlan,
+  setCohortLists,
+  setPeerModeratorLists,
+  signUpCohort,
+} from './cohort';
 import { anyDomainRows, emptyEverything } from './empty';
 import { SeedFailure } from './failure';
 import { openLockConnection, takeSeedLock, type LockConnection } from './lock';
@@ -100,6 +109,8 @@ async function run(): Promise<number> {
     const prisma = app.get(PrismaService);
     const supabase = app.get(SupabaseAuthClient);
     const uow = app.get(UnitOfWork);
+    const auth = app.get(AuthService);
+    const students = app.get(StudentsService);
 
     // The lock comes first, before the record is read, and is kept to the end.
     lock = await step('lock', () => openLockConnection(process.env, lockLost));
@@ -137,13 +148,32 @@ async function run(): Promise<number> {
     const emptied = await step('empty', () => emptyEverything(db, supabase));
     log('seed: emptied', emptied);
 
-    const skills = await step('catalogue', () => insertCatalogue(uow));
-    log('seed: catalogue', { skills });
+    // §14.4 step 1: the catalogue, the bootstrap accounts, the thirty
+    // sign-ups with their lists and Goals, then the Peer Moderator's lists.
+    const skillIds = await step('catalogue', () => insertCatalogue(uow));
+    log('seed: catalogue', { skills: skillIds.size });
     const staff = bootstrapStaff(process.env);
-    await step('bootstrap accounts', async () => {
-      for (const account of staff) await createStaffAccount(account, { supabase, uow });
+    // The step returns the Peer Moderator's id, for their lists below.
+    const peerModeratorId = await step('bootstrap accounts', async () => {
+      let id: string | undefined;
+      for (const account of staff) {
+        const created = await createStaffAccount(account, { supabase, uow });
+        if (account.role === 'PEER_MODERATOR') id = created.id;
+      }
+      if (id === undefined) throw new SeedFailure('the bootstrap accounts hold no Peer Moderator');
+      return id;
     });
     log('seed: bootstrap accounts', { accounts: staff.length });
+
+    const cohort = cohortPlan();
+    const studentIds = await step('cohort sign-ups', () => signUpCohort(cohort, process.env, auth));
+    await step('cohort id order', () => assertIdOrder(prisma, cohort));
+    const goals = await step('cohort lists', () => setCohortLists(cohort, studentIds, skillIds, students));
+    log('seed: cohort', { students: studentIds.length, goals });
+    const peerModeratorLists = await step('Peer Moderator lists', () =>
+      setPeerModeratorLists(peerModeratorId, skillIds, students),
+    );
+    log('seed: Peer Moderator lists', peerModeratorLists);
 
     await step('end-state assertions', () => assertEndState(prisma));
     await step('completion record', () => writeRecord(db, FIXTURE_VERSION));

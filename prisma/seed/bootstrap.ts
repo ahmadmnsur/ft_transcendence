@@ -44,6 +44,22 @@ export function bootstrapStaff(env: EnvRecord): StaffAccountInput[] {
   ];
 }
 
+// Sign-up's validation (§6.0.3), which the seed makes itself because it calls
+// past the DTO, so no account is made that no sign-in can match. `label`
+// names the account in the failure without its email or name (§3.9).
+export function assertSignUpFields(
+  label: string,
+  input: { email: string; password: string; displayName: string },
+): void {
+  for (const [field, valid] of [
+    ['email', isValidEmail(input.email)],
+    ['password', isValidPassword(input.password)],
+    ['display name', isValidDisplayName(input.displayName)],
+  ] as const) {
+    if (!valid) throw new SeedFailure(`${label}'s ${field} breaks sign-up's rule`);
+  }
+}
+
 // §14.1: a staff account, made the way sign-up makes every account (ADR-0008
 // d12's note of 2026-10-02): NestJS makes the id, Supabase's admin create sets
 // the password, then the `Student` row is written with its role and both name
@@ -53,16 +69,9 @@ export async function createStaffAccount(
   input: StaffAccountInput,
   deps: { supabase: SupabaseAuthClient; uow: UnitOfWork },
 ): Promise<{ id: string; email: string }> {
-  // Sign-up's validation (§6.0.3), so no staff account is made that no
-  // sign-in can match. The password is then used trimmed, as sign-up and
-  // sign-in use it (§5.1).
-  for (const [field, valid] of [
-    ['email', isValidEmail(input.email)],
-    ['password', isValidPassword(input.password)],
-    ['display name', isValidDisplayName(input.displayName)],
-  ] as const) {
-    if (!valid) throw new SeedFailure(`the ${input.role} account's ${field} breaks sign-up's rule`);
-  }
+  // Validated, then the password used trimmed, as sign-up and sign-in use it
+  // (§5.1).
+  assertSignUpFields(`the ${input.role} account`, input);
   const id = uuidv7();
   await deps.supabase.adminCreateUser(id, input.password.trim());
   const email = normalizeEmail(input.email);
