@@ -24,7 +24,7 @@ export default {
     goalNo: 'ليس لديه هدف تعلم',
     submit: 'بحث',
     clear: 'مسح عوامل التصفية',
-    retry: 'حاول مرة أخرى',
+    retry: 'إعادة المحاولة',
     sortLabel: 'الترتيب حسب',
     sort: {
       nameAsc: 'الاسم، تصاعدي',
