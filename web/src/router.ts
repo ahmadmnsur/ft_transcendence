@@ -111,7 +111,10 @@ declare module '@tanstack/react-router' {
 // A 401 re-probes the session with a fresh fetch, never the cache. When it
 // reports signed out, the signed-out student's cached server state is
 // dropped, the session query takes the signed-out value, and the shell
-// replaces to `/sign-in` (§3.8.2). Concurrent 401s share one re-probe and
+// replaces to `/sign-in` (§3.8.2). Already there, shown or still loading, it
+// runs that page's guards again instead: the notice in its query (the
+// password change's) survives a late 401, and a guard whose session read the
+// cache clear cancelled runs again. Concurrent 401s share one re-probe and
 // one navigation; the original requests still reject with their 401.
 let recheck: Promise<void> | null = null;
 
@@ -126,7 +129,8 @@ function handleUnauthorized(): Promise<void> {
     }
     if (!session.authenticated) {
       setSignedOut(queryClient);
-      await router.navigate({ to: '/sign-in', replace: true });
+      if (router.latestLocation.pathname === '/sign-in') await router.invalidate();
+      else await router.navigate({ to: '/sign-in', replace: true });
     }
   })().finally(() => {
     recheck = null;

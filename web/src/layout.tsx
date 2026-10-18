@@ -187,6 +187,26 @@ export function RootLayout(): React.JSX.Element {
   const { data: session } = useQuery(sessionQueryOptions());
   const studentId = session?.authenticated === true ? session.student.id : null;
   const previousStudentId = useRef(studentId);
+  // The page on screen: the leaf match the outlet renders. While a
+  // navigation is pending, the location already names the next page but
+  // this one is still shown.
+  const pageId = useRouterState({ select: (state) => state.matches.at(-1)?.id });
+  // The page's key moves only when one signed-in Student replaces another.
+  // The page on screen keeps the Student it was mounted for until another
+  // page takes its place, through any signed-out answer or pending
+  // navigation in between, so A → signed out → B still remounts it (a
+  // refetch can store signed out without leaving the page, and a page stays
+  // on screen while the next one loads). A sign-out or a sign-in never
+  // remounts it: a signed-out answer keeps the page's Student, and a page
+  // entered signed out has none until the sign-in gives it one.
+  const [pageKey, setPageKey] = useState(0);
+  const [pageOwner, setPageOwner] = useState({ pageId, studentId });
+  if (pageId !== pageOwner.pageId || (studentId !== null && studentId !== pageOwner.studentId)) {
+    if (pageOwner.studentId !== null && studentId !== null && studentId !== pageOwner.studentId) {
+      setPageKey((key) => key + 1);
+    }
+    setPageOwner({ pageId, studentId });
+  }
 
   // On a client-side navigation that changes the pathname, move focus to
   // the main so keyboard and screen-reader users land on the new page.
@@ -208,9 +228,9 @@ export function RootLayout(): React.JSX.Element {
   // from reaching the next sign-in; a normal sign-out already cleared the
   // cache, so the reset there is harmless. Signed out → a Student needs none:
   // leaving the previous Student already reset. A layout effect, not a
-  // passive one: the keyed remount below renders the new page from those
-  // cached queries, and the reset and the updates it schedules must flush
-  // before that frame is painted.
+  // passive one: on a switch to another Student, the keyed remount below
+  // renders the new page from those cached queries, and the reset and the
+  // updates it schedules must flush before that frame is painted.
   useLayoutEffect(() => {
     const previous = previousStudentId.current;
     previousStudentId.current = studentId;
@@ -225,12 +245,12 @@ export function RootLayout(): React.JSX.Element {
       <main id="main-content" ref={mainRef} tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
         <div className="mx-auto w-full max-w-6xl px-4 py-8">
           <RealtimeConnection brand={BRAND} />
-          {/* §7.5, §4.6: the key remounts the page on a Student switch, so no
-          local state of the previous Student (an unsaved draft, typed
-          passwords) survives it. A Fragment, so the page's markup is
-          unchanged; the socket stays outside the keyed element, so a switch
-          never remounts it. */}
-          <Fragment key={studentId ?? 'signed-out'}>
+          {/* §7.5, §4.6: the key remounts the page when one signed-in Student
+          replaces another, so no local state of the previous Student (an
+          unsaved draft, typed passwords) survives it. A Fragment, so the
+          page's markup is unchanged; the socket stays outside the keyed
+          element, so a switch never remounts it. */}
+          <Fragment key={pageKey}>
             <Outlet />
           </Fragment>
         </div>
