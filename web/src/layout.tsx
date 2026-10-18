@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, Outlet, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -183,6 +183,10 @@ export function RootLayout(): React.JSX.Element {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
+  const queryClient = useQueryClient();
+  const { data: session } = useQuery(sessionQueryOptions());
+  const studentId = session?.authenticated === true ? session.student.id : null;
+  const previousStudentId = useRef(studentId);
 
   // On a client-side navigation that changes the pathname, move focus to
   // the main so keyboard and screen-reader users land on the new page.
@@ -194,12 +198,41 @@ export function RootLayout(): React.JSX.Element {
     }
   }, [pathname]);
 
+  // §4.6, §7.5: the cookie is shared across tabs, so a fresh GET /api/session
+  // (a guard, a probe, the socket's confirm-before-connect read) can name a
+  // different Student than the one this tab shows, or a signed-out answer.
+  // Whenever the tab leaves a signed-in Student, drop every query cached for
+  // them — their email of §4.6 among it — so no page keeps rendering it. A
+  // guard stores a signed-out answer without clearing the other queries
+  // (`guards.ts`), so this reset is what keeps the previous Student's data
+  // from reaching the next sign-in; a normal sign-out already cleared the
+  // cache, so the reset there is harmless. Signed out → a Student needs none:
+  // leaving the previous Student already reset. A layout effect, not a
+  // passive one: the keyed remount below renders the new page from those
+  // cached queries, and the reset and the updates it schedules must flush
+  // before that frame is painted.
+  useLayoutEffect(() => {
+    const previous = previousStudentId.current;
+    previousStudentId.current = studentId;
+    if (previous === null || previous === studentId) return;
+    void queryClient.resetQueries({
+      predicate: (query) => query.queryKey[0] !== SESSION_QUERY_KEY[0],
+    });
+  }, [queryClient, studentId]);
+
   return (
     <ShellFrame>
       <main id="main-content" ref={mainRef} tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
         <div className="mx-auto w-full max-w-6xl px-4 py-8">
-          <RealtimeConnection />
-          <Outlet />
+          <RealtimeConnection brand={BRAND} />
+          {/* §7.5, §4.6: the key remounts the page on a Student switch, so no
+          local state of the previous Student (an unsaved draft, typed
+          passwords) survives it. A Fragment, so the page's markup is
+          unchanged; the socket stays outside the keyed element, so a switch
+          never remounts it. */}
+          <Fragment key={studentId ?? 'signed-out'}>
+            <Outlet />
+          </Fragment>
         </div>
       </main>
     </ShellFrame>

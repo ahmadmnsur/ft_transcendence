@@ -174,12 +174,14 @@ export class RealtimeGateway
   }
 
   // §7.6: the audience is looked up when broadcasting, and a failed lookup
-  // drops this one broadcast only — never the process. The lookup takes time,
-  // so a transition the registry has already moved past is dropped: friends
-  // must never be told the opposite of what the registry says now. An online
-  // transition that resolves inside a later grace window still matches (the
-  // registry reads online until the timer fires), and an offline one that
-  // resolves after a reconnect does not (the Student is present again).
+  // drops this one broadcast only — never the process. The check below reads
+  // §7.6's "live or grace pending" value (its note of 2026-10-18). The lookup
+  // takes time, so a transition the registry has already moved past is
+  // dropped: friends must never be told the opposite of what the registry
+  // says now. An online transition that resolves inside a later grace window
+  // still matches (the registry reads online until the timer fires), and an
+  // offline one that resolves after a reconnect does not (the Student is
+  // present again).
   private async broadcastPresence(transition: PresenceTransition): Promise<void> {
     let recipients: readonly string[];
     try {

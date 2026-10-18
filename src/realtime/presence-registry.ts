@@ -99,9 +99,9 @@ export class PresenceRegistry implements OnModuleDestroy {
   }
 
   // What GET /api/friends reads later (§7.6). True while a socket is present,
-  // and still true while a grace timer is pending: friends were never told
-  // offline for that window, and a reconnect inside it broadcasts nothing, so
-  // this is exactly what they were last told.
+  // and still true while a grace timer is pending (§7.6's note of 2026-10-18):
+  // friends were never told offline for that window, and a reconnect inside it
+  // broadcasts nothing, so this is exactly what they were last told.
   isOnline(studentId: string): boolean {
     return (this.present.get(studentId)?.size ?? 0) > 0 || this.grace.has(studentId);
   }

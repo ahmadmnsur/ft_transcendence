@@ -27,4 +27,8 @@ export default {
     description: 'Réessayez dans un instant.',
     retry: 'Réessayer',
   },
+  originRefused: {
+    title: "Cette adresse ne permet pas d'accéder à {brand}",
+    body: "Ouvrez {brand} à l'adresse configurée pour lui.",
+  },
 } as const satisfies Catalogue<'fr', typeof shell>;

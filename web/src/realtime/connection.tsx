@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchConfig } from '../api/config';
-import { fetchSession, sessionQueryOptions, setSignedOut } from '../api/session';
+import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions, setSignedOut } from '../api/session';
 import { Banner } from '../design';
-import { realtimeCopy } from './messages';
+import { useI18n } from '../i18n/context';
 import { socket } from './socket';
 
 // §7.5: after a transport failure the page pauses Socket.IO's own retry loop,
@@ -18,10 +18,11 @@ const BACKOFF_CAP_MS = 10_000;
 // a session, tells the three terminal outcomes from an outage, and shows the
 // origin banner. Events themselves belong to the tickets that own the
 // surfaces (#46, #47, #61); this component only keeps the connection honest.
-export function RealtimeConnection(): React.JSX.Element | null {
+export function RealtimeConnection({ brand }: { brand: string }): React.JSX.Element | null {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const router = useRouter();
+  const { t, formatText } = useI18n();
   const { data: session } = useQuery(sessionQueryOptions());
   const studentId = session?.authenticated === true ? session.student.id : null;
   const [originRefused, setOriginRefused] = useState(false);
@@ -43,8 +44,16 @@ export function RealtimeConnection(): React.JSX.Element | null {
   // it at its start and drops every awaited result once it no longer
   // matches, so a late result never acts on the Student signed in now.
   const sessionGenerationRef = useRef(0);
+  // The signed-in Student of the current generation, kept beside it. A probe
+  // captures both at its start, so an answer that names a different Student
+  // is another tab's sign-in, not the Student this tab shows (§7.5).
+  const sessionStudentIdRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backoffRef = useRef(BACKOFF_START_MS);
+  // Pending while a new connection has not yet lasted BACKOFF_CAP_MS. Only a
+  // connection that lasts resets the backoff, so a server that drops each
+  // connection right after accepting it is retried on the same curve.
+  const stableTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     navigateRef.current = navigate;
@@ -56,6 +65,13 @@ export function RealtimeConnection(): React.JSX.Element | null {
       if (timerRef.current !== null) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
+      }
+    }
+
+    function clearStableTimer(): void {
+      if (stableTimerRef.current !== null) {
+        clearTimeout(stableTimerRef.current);
+        stableTimerRef.current = null;
       }
     }
 
@@ -99,6 +115,7 @@ export function RealtimeConnection(): React.JSX.Element | null {
     // three outcomes.
     async function probeTransportFailure(): Promise<void> {
       const generation = sessionGenerationRef.current;
+      const studentIdAtStart = sessionStudentIdRef.current;
       if (probingGenerationRef.current === generation) return;
       probingGenerationRef.current = generation;
       try {
@@ -133,6 +150,17 @@ export function RealtimeConnection(): React.JSX.Element | null {
           await goToSignIn();
           return;
         }
+        // §7.5, §4.6: another tab may have signed this Student out and a
+        // different Student in — the cookie is shared. That answer names the
+        // Student signed in now, not the one this probe started for: install
+        // it instead of reconnecting as them. `RootLayout` drops the previous
+        // Student's caches on every such switch (the email of §4.6 among
+        // them); the session change re-runs the effect below, which probes
+        // again and connects for the new Student.
+        if (probed.student.id !== studentIdAtStart) {
+          queryClient.setQueryData(SESSION_QUERY_KEY, probed);
+          return;
+        }
         scheduleReconnect();
       } finally {
         if (probingGenerationRef.current === generation) probingGenerationRef.current = null;
@@ -140,10 +168,12 @@ export function RealtimeConnection(): React.JSX.Element | null {
     }
 
     // §7.5: a forced disconnect never reconnects on its own. The probe says
-    // which revocation it was; a session that survived (force applied to
-    // another session) may reconnect.
+    // which revocation it was. A session still signed in means the gateway's
+    // own connect step failed (or another tab signed in again), so the retry
+    // takes the outage's backoff.
     async function probeForcedDisconnect(): Promise<void> {
       const generation = sessionGenerationRef.current;
+      const studentIdAtStart = sessionStudentIdRef.current;
       if (probingGenerationRef.current === generation) return;
       probingGenerationRef.current = generation;
       try {
@@ -160,15 +190,27 @@ export function RealtimeConnection(): React.JSX.Element | null {
           await goToSignIn();
           return;
         }
-        if (stoppedRef.current) return;
-        socket.connect();
+        // §7.5, §4.6: another tab may have signed this Student out and a
+        // different Student in — the cookie is shared. Install that session
+        // instead of reconnecting as them; `RootLayout` drops the previous
+        // Student's caches on every such switch, and the session change
+        // re-runs the effect below for the new Student.
+        if (probed.student.id !== studentIdAtStart) {
+          queryClient.setQueryData(SESSION_QUERY_KEY, probed);
+          return;
+        }
+        scheduleReconnect();
       } finally {
         if (probingGenerationRef.current === generation) probingGenerationRef.current = null;
       }
     }
 
     function onConnect(): void {
-      backoffRef.current = BACKOFF_START_MS;
+      clearStableTimer();
+      stableTimerRef.current = setTimeout(() => {
+        stableTimerRef.current = null;
+        backoffRef.current = BACKOFF_START_MS;
+      }, BACKOFF_CAP_MS);
       setOriginRefused(false);
       if (firstConnectRef.current) {
         firstConnectRef.current = false;
@@ -194,6 +236,7 @@ export function RealtimeConnection(): React.JSX.Element | null {
     }
 
     function onDisconnect(reason: string): void {
+      clearStableTimer();
       // §7.5: only a server-side disconnect (revokeSessions) probes; a
       // transport drop reconnects through the client's own loop, and our own
       // disconnects are not news.
@@ -208,6 +251,7 @@ export function RealtimeConnection(): React.JSX.Element | null {
       socket.off('connect_error', onConnectError);
       socket.off('disconnect', onDisconnect);
       clearTimer();
+      clearStableTimer();
       socket.disconnect();
     };
   }, [queryClient]);
@@ -220,6 +264,7 @@ export function RealtimeConnection(): React.JSX.Element | null {
   // cookie of the account signed in now, never a stale one.
   useEffect(() => {
     const generation = ++sessionGenerationRef.current;
+    sessionStudentIdRef.current = studentId;
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -281,7 +326,11 @@ export function RealtimeConnection(): React.JSX.Element | null {
   if (!originRefused) return null;
   return (
     <div className="mb-4">
-      <Banner tone="danger" title={realtimeCopy.originRefused.title} body={realtimeCopy.originRefused.body} />
+      <Banner
+        tone="danger"
+        title={formatText(t.shell.originRefused.title, { brand })}
+        body={formatText(t.shell.originRefused.body, { brand })}
+      />
     </div>
   );
 }
