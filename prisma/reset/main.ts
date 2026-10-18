@@ -126,10 +126,12 @@ async function checkAuthAdmin(auth: SupabaseAuthClient): Promise<void> {
   } catch (err) {
     const host = new URL(process.env['SUPABASE_URL'] as string).hostname;
     // An ApiError here is busy_retry_later: no answer, a timeout or a 5xx.
+    // Anything else carries no status: a wrong key's 401 or 403, but also a
+    // path on SUPABASE_URL or a body that breaks off, so it names both values.
     stop(
       err instanceof ApiError
         ? `refused: Supabase Auth at SUPABASE_URL host ${host} did not answer; run the reset once it does`
-        : `refused: Supabase Auth at SUPABASE_URL host ${host} did not accept the admin list request; SUPABASE_SECRET_KEY must be ${target.name}'s secret key`,
+        : `refused: Supabase Auth at SUPABASE_URL host ${host} did not return the admin list; check that SUPABASE_SECRET_KEY is ${target.name}'s secret key and SUPABASE_URL its bare address, then run the reset again`,
     );
   }
 }
