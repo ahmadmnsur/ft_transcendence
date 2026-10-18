@@ -28,4 +28,8 @@ export default {
     description: 'حاول مرة أخرى بعد لحظة.',
     retry: 'إعادة المحاولة',
   },
+  originRefused: {
+    title: 'لا يمكن الوصول إلى {brand} من هذا الرابط',
+    body: 'افتح {brand} من الرابط الذي تم إعداده له.',
+  },
 } as const satisfies Catalogue<'ar', typeof shell>;

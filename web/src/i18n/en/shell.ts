@@ -27,4 +27,8 @@ export default {
     description: 'Try again in a moment.',
     retry: 'Try again',
   },
+  originRefused: {
+    title: "This address can't reach {brand}",
+    body: 'Open {brand} at the address it was set up with.',
+  },
 } as const satisfies EnGroup;

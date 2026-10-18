@@ -2471,6 +2471,12 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 - Recipients are computed when broadcasting: accepted Friends, Removed excluded. `GET /api/friends`
   reads `online` from the registry. Nothing records when anyone was last online.
 
+> **Updated 2026-10-18** (#45; ADR-0003's note of 2026-10-18): **online**, for every read of the
+> registry, `GET /api/friends` included, is "the set is non-empty **or a grace timer is pending**".
+> During the grace no friend has been told offline, and a reconnect inside it broadcasts nothing, so a
+> read in that window answers online, as the friends were last told. The transitions and broadcasts
+> above are unchanged, and nothing is stored.
+
 ---
 
 ## 8. Matching, Round lifecycle and the Prompt loop

@@ -5,7 +5,7 @@ import { HealthController } from './health.controller';
 import { StudentsModule } from './students/students.module';
 
 @Module({
-  imports: [CoreModule, AuthModule, StudentsModule],
+  imports: [CoreModule.forApp(), AuthModule, StudentsModule],
   controllers: [HealthController],
 })
 export class AppModule {}

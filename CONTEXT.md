@@ -58,6 +58,10 @@ accepted, not a defect.
 _Avoid_: Activity status, availability, last seen
 _French_: Présence · _Arabic_: تواجد
 
+> **Updated 2026-10-18** (#45; ADR-0003's note of 2026-10-18): after a Student's last connection
+> closes, they keep Presence through the 20-second grace window, because their friends have not been
+> told otherwise; a reconnect inside it is no change at all.
+
 **Friend**:
 Another Student whose connection a Student asked for and who accepted. Never one-sided: a
 request confers nothing until it is accepted, and either Student may end it. Friends see each

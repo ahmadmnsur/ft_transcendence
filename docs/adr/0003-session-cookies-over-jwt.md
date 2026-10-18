@@ -472,6 +472,13 @@ database read per chat message.
   > anywhere in the model, and would put a timestamped record of every Student's habits into the
   > Privacy Policy for a profile line neither source asks for. **Presence is whether a Student is
   > online now; when they were last online is not recorded at all.**
+  >
+  > **Sharpened 2026-10-18 by the socket gateway ([#45](https://github.com/ahmadmnsur/ft_transcendence/issues/45)).**
+  > The two details above meet in a case this note left open: during the grace window no connection
+  > is live, yet no friend has been told offline, and a reconnect inside the window broadcasts
+  > nothing. **A Student still holds Presence while that window runs**, so a Friends list loaded
+  > during a reload says what the other friends were last told. The window, its broadcasts and
+  > "never a record" are unchanged. `docs/spec.md` §7.6 and `CONTEXT.md` carry it.
 - **Whoever settles moderation depth inherits decision 6**, and should wire the moderation
   **Suspension** into session deletion rather than inventing a second mechanism.
 - **Decision 9 is a rule to hold, not a fact to observe.** The pressure to put a privileged

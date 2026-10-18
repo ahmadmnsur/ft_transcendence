@@ -13,7 +13,8 @@
     "@tanstack/react-router": "^1.170.41",
     "@tanstack/react-table": "^8.21.3",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.14",
