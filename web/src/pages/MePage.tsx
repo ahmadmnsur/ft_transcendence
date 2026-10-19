@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LIMITS, isValidPassword } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { changePassword } from '../api/auth';
+import { configQueryOptions } from '../api/config';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from '../api/session';
 import { Banner, Button, Card, TextField } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
+import { FortyTwoCard } from '../profile/FortyTwoCard';
 import { LearningGoalCard } from '../profile/LearningGoalCard';
 import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
 import { SkillsCard } from '../profile/SkillsCard';
-import { meQueryOptions } from '../api/profile';
+import { ME_QUERY_KEY, meQueryOptions } from '../api/profile';
+
+const meSearch = getRouteApi('/me');
 
 // `/me` (§3.5.1, §6.2): the profile, Skills and Learning Goal cards above the
 // password-change form under a clear heading. On success the Student is signed
@@ -28,6 +32,17 @@ export function MePage(): React.JSX.Element {
   // §6.2: the three profile cards share the own-profile read; its failure is
   // shown once here, above them, not three times inside them.
   const { data: me, isError: meError, refetch: refetchMe } = useQuery(meQueryOptions());
+  // §5.6 B: the 42 card appears only when the config says 42 is enabled; the
+  // callback's outcomes arrive as the `oauth` search param.
+  const { data: config } = useQuery(configQueryOptions());
+  const { oauth } = meSearch.useSearch();
+  // The callback's outcome is kept in state, the way SignInPage keeps its
+  // `oauth-failed` status: the same effect strips `oauth`, so a banner tied
+  // to the param would vanish on the next render. It stays until the
+  // Student acts or leaves the page.
+  const [oauthNotice, setOauthNotice] = useState<'connected' | 'in_use' | 'failed' | undefined>(
+    undefined,
+  );
   const username = session?.authenticated === true ? session.student.email : '';
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -52,6 +67,20 @@ export function MePage(): React.JSX.Element {
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
+
+  // §5.6 B: the callback's outcome moves into the state above once, then
+  // only `oauth` is taken out of the URL by replacing the history entry, so
+  // a refresh of the cleaned URL never repeats it. `connected` reaches a
+  // browser whose cached profile still says not connected, so its query is
+  // refreshed beside the read.
+  useEffect(() => {
+    if (oauth === undefined) return;
+    if (oauth === 'connected') void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+    setOauthNotice(oauth);
+    void navigate({ to: '/me', search: {}, replace: true }).catch(() => {
+      // The URL stays as it is if the replacement fails; the notice shows.
+    });
+  }, [oauth, navigate, queryClient]);
 
   function signOutAndGo(
     notice: 'password-changed' | 'password-change-unknown',
@@ -134,6 +163,18 @@ export function MePage(): React.JSX.Element {
           </p>
         ) : null}
         <div className="mt-4 flex flex-col gap-4">
+          {oauthNotice !== undefined ? (
+            <Banner
+              tone={oauthNotice === 'connected' ? 'success' : 'danger'}
+              title={
+                oauthNotice === 'connected'
+                  ? t.profile.fortyTwo.noticeConnected
+                  : oauthNotice === 'in_use'
+                    ? t.profile.fortyTwo.noticeInUse
+                    : t.errors.codes.oauth_failed
+              }
+            />
+          ) : null}
           {me === undefined && meError ? (
             // §6.15: one generic sentence and one retry for the failed read,
             // above the cards, which then keep their titles and empty bodies.
@@ -147,6 +188,9 @@ export function MePage(): React.JSX.Element {
           <ProfileDetailsCard />
           <SkillsCard />
           <LearningGoalCard />
+          {config?.oauth42Enabled === true ? (
+            <FortyTwoCard onAction={() => setOauthNotice(undefined)} />
+          ) : null}
         </div>
         <Card title={t.auth.passwordChange.cardTitle} subtitle={t.auth.passwordChange.cardSubtitle} headingLevel={2} className="mt-4">
           <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">

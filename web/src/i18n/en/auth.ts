@@ -70,6 +70,18 @@ export default {
     submitting: 'Signing up…',
     haveAccount: 'Already have an account? {link}',
     signInLink: 'Sign in',
+    // §5.6 B: the extra keys the 42 variant shows on `/sign-up?from=42`.
+    title42: 'Sign up with 42',
+    heading42: 'Finish signing up with 42',
+    notePrefilled: 'Pre-filled from your 42 account. You can change both fields.',
+    loading42: 'Loading your 42 details…',
+    retry42: 'Try again',
+    emailTaken42: 'This email already belongs to a PeerConnect account.',
+    emailTaken42Action: 'Sign in with your password, then connect 42 from your profile: {link}',
+    no42Question: 'Prefer to sign up without 42? {link}',
+    no42Link: 'Sign up without 42',
+    closed42: "Your 42 details were used by that try, so this form can't be sent again.",
+    startOver42: 'Start over with 42',
   },
   passwordChange: {
     title: 'My profile',

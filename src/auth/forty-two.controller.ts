@@ -13,12 +13,20 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AppConfig } from '../core/app-config';
-import { ApiError } from '../core/errors';
-import { clearAttemptCookie, parseSessionCookie, serializeAttemptCookie } from '../core/session-cookie';
-import { Public } from '../core/session.guard';
-import { Start42Dto } from './dto';
-import { FortyTwoService } from './forty-two.service';
+import { ApiError, CountedRefusal } from '../core/errors';
+import {
+  clearAttemptCookie,
+  parseSessionCookie,
+  serializeAttemptCookie,
+  serializeSessionCookie,
+} from '../core/session-cookie';
+import { SessionResolver } from '../core/session-resolver';
+import { requestActor, Public, authenticateSession } from '../core/session.guard';
+import { ThrottleStore, type ThrottleSlot } from '../core/throttle';
+import { Disconnect42Dto, Start42Dto, SignupDto } from './dto';
+import { FortyTwoService, type ThrottledPasswordCheck } from './forty-two.service';
 import { ATTEMPT_TTL_SECONDS } from './oauth-attempt-store';
+import { oauthFailed, tooManyAttempts } from './refusals';
 
 // §5.6 A: while either `FT_OAUTH_*` value is empty, every `/api/auth/42/*`
 // route answers 404 `not_found` — before any session or attempt lookup, any
@@ -35,14 +43,60 @@ export class FortyTwoEnabledGuard implements CanActivate {
   }
 }
 
-@UseGuards(FortyTwoEnabledGuard)
+// §6.1: the throttle stays at the HTTP boundary, keyed on address and email
+// (§5.5). The 42 sign-up counts every attempt under its body's email, the
+// way `auth/signup` does; Connect 42's start counts a refused current
+// password through the service's wrapper, under the session's email; and
+// Disconnect 42 counts under the signed-in Student's own email. The draft
+// read counts nothing: it writes nothing and carries no email.
 @Controller('auth/42')
+@UseGuards(FortyTwoEnabledGuard)
 export class FortyTwoController {
-  constructor(private readonly fortyTwo: FortyTwoService) {}
+  constructor(
+    private readonly fortyTwo: FortyTwoService,
+    private readonly throttle: ThrottleStore,
+    private readonly sessions: SessionResolver,
+  ) {}
+
+  private key(request: Request, normalisedEmail: string): string {
+    return ThrottleStore.key(ThrottleStore.clientAddress(request.headers['x-real-ip']), normalisedEmail);
+  }
+
+  private reserveOrRefuse(request: Request, normalisedEmail: string): ThrottleSlot {
+    const slot = this.throttle.reserve(this.key(request, normalisedEmail));
+    if (slot === null) throw tooManyAttempts();
+    return slot;
+  }
+
+  private settleWhenCounted(slot: ThrottleSlot, err: unknown): void {
+    if (err instanceof CountedRefusal) this.throttle.settleCounted(slot);
+  }
+
+  // §5.6 A step 2 + §5.5: Connect 42's start counts a wrong current password
+  // under the signed-in Student's own email, which the service learns only
+  // after resolving the session — so the boundary hands the service this
+  // wrapper: reserve for the email, await the check (a refusal escapes the
+  // `catch` only once it is thrown into an awaited call, §5.6 A step 2),
+  // settle counted on a `CountedRefusal`, release in `finally` (M37) — the
+  // same shape as `auth`'s `changePassword`.
+  private throttledCheck(request: Request): ThrottledPasswordCheck {
+    return async (email, check) => {
+      const slot = this.reserveOrRefuse(request, email);
+      try {
+        await check();
+      } catch (err) {
+        this.settleWhenCounted(slot, err);
+        throw err;
+      } finally {
+        this.throttle.release(slot);
+      }
+    };
+  }
 
   // `POST /api/auth/42/start` (§5.6 A step 1, §6.1): a JSON mutation. The
   // service mints the attempt under the cookie's binding; this boundary
-  // answers the SPA's next navigation.
+  // answers the SPA's next navigation. Only `sign_in` sets the `a.` cookie;
+  // a `link` start leaves the session cookie exactly as it is.
   @Public()
   @Post('start')
   @HttpCode(200)
@@ -53,9 +107,16 @@ export class FortyTwoController {
   ): Promise<unknown> {
     const started = await this.fortyTwo.start42({
       intent: dto.intent,
+      password: dto.password,
       cookie: parseSessionCookie(request.headers.cookie),
+      throttledCheck: this.throttledCheck(request),
     });
-    response.setHeader('Set-Cookie', serializeAttemptCookie(started.attemptToken, ATTEMPT_TTL_SECONDS));
+    if (started.attemptToken !== null) {
+      response.setHeader(
+        'Set-Cookie',
+        serializeAttemptCookie(started.attemptToken, ATTEMPT_TTL_SECONDS),
+      );
+    }
     return { authorizeUrl: started.authorizeUrl };
   }
 
@@ -84,6 +145,86 @@ export class FortyTwoController {
     });
     response.setHeader('Cache-Control', 'no-store');
     if (outcome.clearAttemptCookie) response.setHeader('Set-Cookie', clearAttemptCookie());
+    // A successful 42 sign-in replaces the attempt cookie: the new session
+    // cookie is the one `Set-Cookie` this answer sets (§5.6 B).
+    if (outcome.sessionCookie !== undefined) {
+      response.setHeader(
+        'Set-Cookie',
+        serializeSessionCookie(outcome.sessionCookie.token, outcome.sessionCookie.maxAge),
+      );
+    }
     return { url: outcome.location, statusCode: 302 };
+  }
+
+  // `GET /api/auth/42/draft` (§5.6 B): `{ login, email }` for the 42 sign-up
+  // form. Public, and read-only: the draft is never removed by this read.
+  @Public()
+  @Get('draft')
+  async draft(@Req() request: Request): Promise<{ login: string; email: string }> {
+    return this.fortyTwo.signUpDraft(parseSessionCookie(request.headers.cookie));
+  }
+
+  // `POST /api/auth/42/signup` (§5.6 B): a route of its own, so it can never
+  // be taken for an ordinary sign-up. The order is §5.1's: no `a.` cookie is
+  // refused `oauth_failed` here, before anything; the service then refuses a
+  // missing or expired draft the same way, before the throttle, so it costs
+  // no counted attempt; and every attempt past that is counted, the way the
+  // ordinary sign-up counts up front. The service calls back through
+  // `countAttempt` — the boundary keeps the throttle, §5.5 "Layer". On
+  // success the session cookie replaces the attempt cookie.
+  @Public()
+  @Post('signup')
+  async signUp(
+    @Body() dto: SignupDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<unknown> {
+    const cookie = parseSessionCookie(request.headers.cookie);
+    if (cookie.kind !== 'attempt') throw oauthFailed();
+    const created = await this.fortyTwo.signUp42({
+      attemptToken: cookie.token,
+      email: dto.email,
+      password: dto.password,
+      displayName: dto.displayName,
+      // Reserve, settle counted at once — counted whatever the sign-up
+      // turns out, exactly as `auth/signup` — so a full bucket refuses
+      // before anything else runs (§5.5).
+      countAttempt: (email) => {
+        const slot = this.reserveOrRefuse(request, email);
+        this.throttle.settleCounted(slot);
+      },
+    });
+    response.setHeader('Set-Cookie', serializeSessionCookie(created.token, created.maxAge));
+    return created.student;
+  }
+
+  // `POST /api/auth/42/disconnect` (§5.6 B): a session route. `@Public` only
+  // so the controller's enabled guard answers 404 first while 42 is off
+  // (§5.6 A), before any session lookup; the handler does the session
+  // resolution the global guard would, through the same
+  // `authenticateSession` (§5.3), so a stale `s.` cookie still gets 401 plus
+  // the cleared cookie. `requestActor` builds the `Actor` the service acts
+  // for (§3.4); the throttle counts under that Student's own email, its slot
+  // settled counted on a `CountedRefusal` and released in `finally`, as
+  // `changePassword` does.
+  @Public()
+  @Post('disconnect')
+  @HttpCode(200)
+  async disconnect(
+    @Body() dto: Disconnect42Dto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<Record<string, never>> {
+    await authenticateSession(this.sessions, request, response);
+    const actor = requestActor(request);
+    const slot = this.reserveOrRefuse(request, request.auth?.email ?? '');
+    try {
+      return await this.fortyTwo.disconnect42({ actor, password: dto.password });
+    } catch (err) {
+      this.settleWhenCounted(slot, err);
+      throw err;
+    } finally {
+      this.throttle.release(slot);
+    }
   }
 }

@@ -34,6 +34,8 @@ export type StudentStatus = 'ACTIVE' | 'SUSPENDED' | 'REMOVED';
 
 // `GET /api/me` and `PATCH /api/me`'s result: the only shape with the email
 // (§4.6). `avatarUrl` is null until the avatar slice uploads one.
+// `fortyTwoConnected` says whether a 42 account is connected — never the 42
+// id itself (§6.2).
 export interface OwnProfile {
   id: string;
   displayName: string;
@@ -46,6 +48,7 @@ export interface OwnProfile {
   xp: number;
   level: number;
   streak: number;
+  fortyTwoConnected: boolean;
 }
 
 // `GET /api/students/:id`: never an email, for any viewer (§4.6).

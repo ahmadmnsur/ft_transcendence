@@ -89,6 +89,18 @@ export default {
     submitting: 'Inscription…',
     haveAccount: 'Vous avez déjà un compte\u202f? {link}',
     signInLink: 'Se connecter',
+    title42: "S'inscrire avec 42",
+    heading42: 'Terminer votre inscription avec 42',
+    notePrefilled: 'Pré-rempli depuis votre compte 42. Vous pouvez modifier les deux champs.',
+    loading42: 'Chargement de vos informations 42…',
+    retry42: 'Réessayer',
+    emailTaken42: 'Cette adresse e-mail appartient déjà à un compte PeerConnect.',
+    emailTaken42Action:
+      'Connectez-vous avec votre mot de passe, puis associez 42 depuis votre profil\u00a0: {link}',
+    no42Question: 'Plutôt vous inscrire sans 42\u202f? {link}',
+    no42Link: "S'inscrire sans 42",
+    closed42: 'Vos informations 42 ont été utilisées par cet essai\u00a0: ce formulaire ne peut plus être envoyé.',
+    startOver42: 'Recommencer avec 42',
   },
   passwordChange: {
     title: 'Mon profil',

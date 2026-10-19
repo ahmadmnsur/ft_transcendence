@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   ValidateBy,
+  ValidateIf,
   type ValidationOptions,
   type ValidatorConstraintInterface,
 } from 'class-validator';
@@ -92,18 +93,28 @@ export class LoginDto {
 }
 
 // §5.6 A's start body: `{ intent, password? }`. `intent` is one of the three
-// intents; `link` and `confirm` are refused by the service until their own
-// tickets. `password` is Connect 42's (its own ticket reads it); the shape is
-// validated here so it is a legal field, and `sign_in` ignores it.
+// intents; `confirm` is refused by the service until its own ticket (#157).
+// `password` is Connect 42's (`link`) current password, required for it and
+// never used by the others — a `sign_in` carrying one still gets the same
+// field validation.
 export class Start42Dto {
   @IsIn(FORTY_TWO_INTENTS)
   intent!: FortyTwoIntent;
 
-  @IsOptional()
+  @ValidateIf((dto: Start42Dto) => dto.intent === 'link' || dto.password !== undefined)
   @IsString()
   @Trimmed()
   @IsValidPasswordDto()
   password?: string;
+}
+
+// §5.6 B: Disconnect 42's body. The current password is trimmed and
+// validated like the password change's (§5.1).
+export class Disconnect42Dto {
+  @IsString()
+  @Trimmed()
+  @IsValidPasswordDto()
+  password!: string;
 }
 
 export class PasswordDto {

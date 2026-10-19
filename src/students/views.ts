@@ -26,6 +26,8 @@ export type OwnProfile = {
   xp: number;
   level: number;
   streak: number;
+  // §6.2: whether a 42 account is connected — never the 42 id itself.
+  fortyTwoConnected: boolean;
 };
 
 export type PublicProfile = {

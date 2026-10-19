@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import type { INestApplication } from '@nestjs/common';
+import type { TestingModuleBuilder } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
@@ -50,9 +51,21 @@ async function truncatePublicTables(prisma: PrismaService): Promise<void> {
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`);
 }
 
+// Options a file may pass `useHarness`, applied before its app boots.
+// `env` entries are set before `AppModule` compiles — `AppConfig` reads the
+// environment at construction — and restored as soon as the boot returns,
+// so the values are in while the module compiles and no other file's app
+// sees them: the suite runs its files one at a time. `overrides` runs after
+// the shared provider overrides, for a file that must hand one component a
+// test double.
+export type HarnessOptions = {
+  env?: Record<string, string>;
+  overrides?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
+};
+
 // Registers the file's hooks and returns the shared harness. Call it once at
 // the top level of a `*.test.ts` file that talks to the database or the API.
-export function useHarness(): Harness {
+export function useHarness(options: HarnessOptions = {}): Harness {
   const recorder = new RecordingRealtimePublisher();
   const barriers = new BarrierRegistry();
 
@@ -76,19 +89,31 @@ export function useHarness(): Harness {
   let ipCounter = 0;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(RealtimePublisher)
-      .useValue(recorder)
-      .overrideProvider(CheckpointHook)
-      .useValue(barriers)
-      .compile();
-    const app = moduleRef.createNestApplication();
-    configureApp(app);
-    await app.listen(0, '127.0.0.1');
-    harness.app = app;
-    const address = app.getHttpServer().address();
-    harness.port = typeof address === 'object' && address !== null ? address.port : 0;
-    harness.baseUrl = `http://127.0.0.1:${harness.port}`;
+    const savedEnv = new Map<string, string | undefined>();
+    for (const [key, value] of Object.entries(options.env ?? {})) {
+      savedEnv.set(key, process.env[key]);
+      process.env[key] = value;
+    }
+    try {
+      const base = Test.createTestingModule({ imports: [AppModule] })
+        .overrideProvider(RealtimePublisher)
+        .useValue(recorder)
+        .overrideProvider(CheckpointHook)
+        .useValue(barriers);
+      const moduleRef = await (options.overrides?.(base) ?? base).compile();
+      const app = moduleRef.createNestApplication();
+      configureApp(app);
+      await app.listen(0, '127.0.0.1');
+      harness.app = app;
+      const address = app.getHttpServer().address();
+      harness.port = typeof address === 'object' && address !== null ? address.port : 0;
+      harness.baseUrl = `http://127.0.0.1:${harness.port}`;
+    } finally {
+      for (const [key, value] of savedEnv) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
   }, 30_000);
 
   beforeEach(async () => {

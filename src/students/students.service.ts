@@ -47,7 +47,14 @@ const PROFILE_SELECT = {
   },
 } as const satisfies Prisma.StudentSelect;
 
-const OWN_PROFILE_SELECT = { ...PROFILE_SELECT, email: true } as const satisfies Prisma.StudentSelect;
+// §6.2: the own profile adds the email (never another Student's, §4.6) and
+// whether a 42 account is connected — the boolean `fortyTwoConnected`, never
+// the 42 id itself (§6.2).
+const OWN_PROFILE_SELECT = {
+  ...PROFILE_SELECT,
+  email: true,
+  fortyTwoId: true,
+} as const satisfies Prisma.StudentSelect;
 
 // A search row reads the StudentRef fields, XP and the Skill rows: no Goal,
 // no Streak, never the email (§6.2, §4.6).
@@ -117,6 +124,7 @@ function toOwnProfile(row: OwnProfileRow): OwnProfile {
     xp: row.xp,
     level: levelFor(row.xp),
     streak: row.streak,
+    fortyTwoConnected: row.fortyTwoId !== null,
   };
 }
 
