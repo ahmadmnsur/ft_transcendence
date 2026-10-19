@@ -14,6 +14,7 @@ import { LearningGoalCard } from '../profile/LearningGoalCard';
 import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
 import { SkillsCard } from '../profile/SkillsCard';
 import { ME_QUERY_KEY, meQueryOptions } from '../api/profile';
+import { ConfirmWith42Card } from '../profile/ConfirmWith42Card';
 
 const meSearch = getRouteApi('/me');
 
@@ -43,6 +44,9 @@ export function MePage(): React.JSX.Element {
   const [oauthNotice, setOauthNotice] = useState<'connected' | 'in_use' | 'failed' | undefined>(
     undefined,
   );
+  // §5.6 C: `confirmed` is no banner up here: it opens the new-password form
+  // on the Confirm with 42 card, until the permission is used or gone.
+  const [confirmed42, setConfirmed42] = useState(false);
   const username = session?.authenticated === true ? session.student.email : '';
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -76,7 +80,8 @@ export function MePage(): React.JSX.Element {
   useEffect(() => {
     if (oauth === undefined) return;
     if (oauth === 'connected') void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
-    setOauthNotice(oauth);
+    if (oauth === 'confirmed') setConfirmed42(true);
+    else setOauthNotice(oauth);
     void navigate({ to: '/me', search: {}, replace: true }).catch(() => {
       // The URL stays as it is if the replacement fails; the notice shows.
     });
@@ -250,6 +255,15 @@ export function MePage(): React.JSX.Element {
             </Button>
           </form>
         </Card>
+        {config?.oauth42Enabled === true ? (
+          <ConfirmWith42Card
+            confirmed={confirmed42}
+            onAction={() => setOauthNotice(undefined)}
+            onConfirmedEnd={() => setConfirmed42(false)}
+            onSignedOut={signOutAndGo}
+            className="mt-4"
+          />
+        ) : null}
       </div>
     </>
   );

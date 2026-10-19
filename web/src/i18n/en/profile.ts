@@ -24,6 +24,17 @@ export default {
     noticeInUse: 'This 42 account is connected to another PeerConnect account.',
     disconnectedNotice: 'Your 42 account is disconnected.',
   },
+  // §5.6 C: recovery through Confirm with 42, on `/me` while a 42 account is
+  // connected.
+  confirm42: {
+    title: 'Forgot your password?',
+    subtitle: 'Confirm with 42, then set a new password within ten minutes. This signs you out everywhere.',
+    confirm: 'Confirm with 42',
+    confirming: 'Opening 42…',
+    confirmedNotice: '42 confirmed your account. Set your new password within ten minutes.',
+    submit: 'Set new password',
+    submitting: 'Setting…',
+  },
   details: {
     title: 'Profile details',
     subtitle: 'Your display name and the email you sign in with.',

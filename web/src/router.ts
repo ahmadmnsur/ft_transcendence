@@ -72,9 +72,9 @@ const signUpRoute = createRoute({
   component: SignUpPage,
 });
 
-// 42's Connect answers on the profile page (§5.6 B); anything else is no
-// notice, so a hand-written query never shows a banner.
-type MeOAuth = 'connected' | 'in_use' | 'failed';
+// 42's Connect and Confirm answers on the profile page (§5.6 B, C); anything
+// else is no notice, so a hand-written query never shows a banner.
+type MeOAuth = 'connected' | 'in_use' | 'failed' | 'confirmed';
 
 const meRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -82,7 +82,10 @@ const meRoute = createRoute({
   beforeLoad: requireSession,
   validateSearch: (search: Record<string, unknown>): { oauth?: MeOAuth } => ({
     oauth:
-      search.oauth === 'connected' || search.oauth === 'in_use' || search.oauth === 'failed'
+      search.oauth === 'connected' ||
+      search.oauth === 'in_use' ||
+      search.oauth === 'failed' ||
+      search.oauth === 'confirmed'
         ? search.oauth
         : undefined,
   }),

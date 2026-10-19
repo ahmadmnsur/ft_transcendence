@@ -8,7 +8,8 @@ import { CheckpointHook, UnitOfWork } from '../core/uow';
 import { movedPasswordVersion, tooManyAttempts, wrongPassword } from './refusals';
 
 // §5.1's step 3, as a parameter: check the current password, or throw. The
-// password change passes the Supabase check; #157 passes Confirm with 42.
+// password change passes the Supabase check; the new password after Confirm
+// with 42 passes its permission (§5.6 C).
 export type PasswordStep3 = (studentId: string, currentPassword: string) => Promise<void>;
 
 // The shared password check (§5.1): the grant on the Student's login. Refused
@@ -89,6 +90,20 @@ export class SignedOutFailure extends Error {
   }
 }
 
+// Whether a failed change left the Student signed out, so the boundary
+// clears the cookie with the failure: a step-5 failure, or step 4's
+// `unauthenticated` — a sanction, or a session a previous change already
+// deleted. The routes resolve their session before the change runs, so an
+// `unauthenticated` from inside it is always step 4's. A refusal at step 3
+// or before signs nobody out.
+export function signedOutBy(err: unknown): boolean {
+  return (
+    err instanceof PasswordUpdateFailed ||
+    err instanceof SignedOutFailure ||
+    (err instanceof ApiError && err.code === 'unauthenticated')
+  );
+}
+
 // §5.1's password change, steps 2 and 4–6, as one function: step 1
 // (validation, throttle) already ran at the boundary, and step 3 arrives as
 // a parameter. Steps 2 and 3 run outside the lock; the lock is taken just
@@ -106,8 +121,9 @@ export async function changePasswordCore(
     checkCurrentPassword: PasswordStep3;
     // The actor's session, or null for an actor the seed or a test
     // constructs, which skips the check. A change running on a session a
-    // previous change already deleted is refused in step 4 (§3.4). #157's
-    // path passes its own actor's `sessionHash` the same way.
+    // previous change already deleted is refused in step 4 (§3.4). The new
+    // password after Confirm with 42 passes its own actor's `sessionHash`
+    // the same way.
     sessionHash: string | null;
   },
   deps: PasswordChangeDeps,

@@ -1,66 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import {
-  FortyTwoClient,
-  type FortyTwoIdentity,
-  type TokenAnswer,
-} from '../../src/auth/forty-two-client';
 import { PrismaService } from '../../src/core/prisma.service';
 import { useHarness } from '../harness/app';
 import { createTestAccount } from '../harness/accounts';
+import {
+  FIXED_EMAIL,
+  FIXED_ID,
+  callback,
+  fixedFortyTwo,
+  roundTrip,
+  setCookies,
+  stateOf,
+} from '../harness/forty-two';
 
-// The fixed `/v2/me` answer (§16.3 row 12): one 42 identity, whose `id` the
-// login resolves through and whose `email` another Student takes.
-const FIXED_ID = 42424242;
-const FIXED_EMAIL = 'fixed_login@42.example';
-
-// The token exchange and `/v2/me` are replaced by fixed answers (§16.3 row
-// 12); the authorize URL and everything else stay the real code. `identity`
-// answers `login` and `email` only when the caller asked for them, mirroring
-// §5.6 A step 7's read.
-class FixedFortyTwoClient extends FortyTwoClient {
-  override async exchangeCode(): Promise<TokenAnswer> {
-    return { accessToken: 'fixed-access-token', secretValidUntil: null };
-  }
-
-  override async identity(
-    accessToken: string,
-    options: { withProfile: boolean },
-  ): Promise<FortyTwoIdentity> {
-    return {
-      id: FIXED_ID,
-      login: options.withProfile ? 'fixed_login' : '',
-      email: options.withProfile ? FIXED_EMAIL : '',
-    };
-  }
-}
-
-const harness = useHarness({
-  env: { FT_OAUTH_CLIENT_ID: 'test-42-client-id', FT_OAUTH_CLIENT_SECRET: 'test-42-client-secret' },
-  overrides: (builder) => builder.overrideProvider(FortyTwoClient).useClass(FixedFortyTwoClient),
-});
-
-// Only the `pc_session=…` pairs, as a browser would send them: a
-// `Set-Cookie` line carries attributes (`Max-Age`, `Path`, …) that a
-// `Cookie` header never carries.
-function setCookies(headers: Record<string, string | string[] | undefined>): string {
-  return [headers['set-cookie'] ?? []]
-    .flat()
-    .map((line) => (line.includes(';') ? line.slice(0, line.indexOf(';')) : line))
-    .filter((pair) => pair.startsWith('pc_session='))
-    .join('; ');
-}
-
-function authorizeUrl(body: unknown): string {
-  const url = (body as { data?: { authorizeUrl?: unknown } }).data?.authorizeUrl;
-  if (typeof url !== 'string') throw new Error('start42: no authorize_url.');
-  return url;
-}
-
-function stateOf(body: unknown): string {
-  const state = new URL(authorizeUrl(body)).searchParams.get('state');
-  if (state === null || state === '') throw new Error('start42: no state.');
-  return state;
-}
+const harness = useHarness(fixedFortyTwo());
 
 // §16.3 row 12: a 42 login finds its Student only by `forty_two_id`. Student
 // A connects the fixed 42 account through the real boundary, then another
@@ -76,15 +28,7 @@ describe('a 42 login finds its Student only by forty_two_id', () => {
 
     // Connect 42: A starts the flow with their password and finishes the
     // callback that their browser would carry back, session cookie along.
-    const started = await harness
-      .post('/api/auth/42/start')
-      .set('Cookie', A.cookie)
-      .send({ intent: 'link', password: A.password });
-    expect(started.body).toMatchObject({ ok: true });
-    const state = stateOf(started.body);
-    const connected = await harness
-      .get(`/api/auth/42/callback?code=fixed-code&state=${encodeURIComponent(state)}`)
-      .set('Cookie', A.cookie);
+    const connected = await roundTrip(harness, A, 'link');
     expect(connected.status).toBe(302);
     expect(connected.headers.location).toBe('/me?oauth=connected');
 
@@ -103,10 +47,7 @@ describe('a 42 login finds its Student only by forty_two_id', () => {
     const first = await harness.post('/api/auth/42/start').send({ intent: 'sign_in' });
     expect(first.body).toMatchObject({ ok: true });
     expect(setCookies(first.headers)).toContain('pc_session=a.');
-    const state2 = stateOf(first.body);
-    const finished = await harness
-      .get(`/api/auth/42/callback?code=fixed-code&state=${encodeURIComponent(state2)}`)
-      .set('Cookie', setCookies(first.headers));
+    const finished = await callback(harness, stateOf(first.body), setCookies(first.headers));
     expect(finished.status).toBe(302);
     // The feed, not the sign-up draft: the Student exists.
     expect(finished.headers.location).toBe('/');

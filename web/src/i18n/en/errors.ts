@@ -21,6 +21,7 @@ const codes = {
   oauth_failed: 'Sign in with 42 failed. Try again.',
   forty_two_connected: 'This PeerConnect account already has a 42 account connected.',
   forty_two_not_connected: 'Your account has no 42 account connected.',
+  confirmation_required: 'Confirm with 42 again, then set your new password.',
   student_removed: 'This Student was removed.',
   self_action_forbidden: "You can't do this to your own account.",
   last_active_admin: 'There must always be at least one active Admin.',

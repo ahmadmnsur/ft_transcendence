@@ -53,9 +53,17 @@ export function fortyTwoConnected(): Refusal {
   return refusal('forty_two_connected', 'This PeerConnect account already has a 42 account connected.');
 }
 
-// §5.6 B: Disconnect 42 with no 42 account connected.
+// §5.6 A step 2, §5.6 B: Confirm with 42 or Disconnect 42 with no 42 account
+// connected.
 export function fortyTwoNotConnected(): Refusal {
   return refusal('forty_two_not_connected', 'Your account has no 42 account connected.');
+}
+
+// §5.6 C, §6.15: a new password with no fresh Confirm with 42 — no
+// permission, an expired one, or a 42 account no longer the confirmed one.
+// Not counted: the route checks no password (§5.5).
+export function confirmationRequired(): Refusal {
+  return refusal('confirmation_required', 'Confirm with 42 again, then set your new password.');
 }
 
 export function tooManyAttempts(): Refusal {

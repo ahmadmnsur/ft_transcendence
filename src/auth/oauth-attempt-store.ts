@@ -3,8 +3,8 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Clock } from '../core/clock';
 
 // §5.6 A: one transport serves three intents — `sign_in` for Sign in with
-// 42, `link` for Connect 42, `confirm` for Confirm with 42 (§5.6 C, another
-// ticket's flow). The intent is part of the attempt from the start.
+// 42, `link` for Connect 42, `confirm` for Confirm with 42 (§5.6 C). The
+// intent is part of the attempt from the start.
 export const FORTY_TWO_INTENTS = ['sign_in', 'link', 'confirm'] as const;
 
 export type FortyTwoIntent = (typeof FORTY_TWO_INTENTS)[number];
@@ -13,6 +13,10 @@ export type FortyTwoIntent = (typeof FORTY_TWO_INTENTS)[number];
 // carries the same number. A sign-up draft keeps the attempt's `expiresAt`
 // (§5.6 B), so it ends with the same ten minutes.
 export const ATTEMPT_TTL_SECONDS = 10 * 60;
+
+// §5.6 C: a Confirm with 42 permission lives ten minutes from the callback
+// that stored it, not from its attempt's start.
+export const PERMISSION_TTL_SECONDS = 10 * 60;
 
 // §5.6 A step 4: at most 1,000 entries, expired evicted first, then the
 // oldest. Drafts live under the bound with the attempts.
@@ -26,7 +30,7 @@ export type OAuthAttempt = {
   state: string;
   codeVerifier: string;
   intent: FortyTwoIntent;
-  // Connect 42's Student: the one who started the flow. Null for `sign_in`,
+  // The Student who started a `link` or `confirm` flow. Null for `sign_in`,
   // which names no Student until the callback finds one by the identity.
   studentId: string | null;
   expiresAt: Date;
@@ -49,7 +53,20 @@ export type SignUpDraft = {
   expiresAt: Date;
 };
 
-export type OAuthStoreEntry = OAuthAttempt | SignUpDraft;
+// §5.6 C: what a Confirm with 42 callback keeps once 42's `id` equals the
+// Student's `forty_two_id`: leave to set one new password without the
+// current one. Never a database row. It replaces the attempt under the same
+// key, the session token's, is taken by `POST /api/auth/42/password` and
+// used once. Same secret rules: never logged, never persisted.
+export type ConfirmPermission = {
+  kind: 'permission';
+  bindingKey: string;
+  studentId: string;
+  fortyTwoId: number;
+  expiresAt: Date;
+};
+
+export type OAuthStoreEntry = OAuthAttempt | SignUpDraft | ConfirmPermission;
 
 // §3.4: the `auth` module's in-memory OAuth attempt store. Never persisted,
 // never logged, lost on restart (§5.6 A step 4). Callers never hash tokens
@@ -101,9 +118,10 @@ export class OAuthAttemptStore {
   }
 
   // §5.6 A's callback step 2: the entry is **taken** — removed now, whatever
-  // follows, so `state` and the verifier are used once. A draft comes out
-  // the same way and is never an attempt; the caller checks the kind, then
-  // the expiry as step 3. An expired entry comes out like any other.
+  // follows, so `state` and the verifier are used once. A draft or a
+  // permission comes out the same way and is never an attempt; the caller
+  // checks the kind, then the expiry as step 3. An expired entry comes out
+  // like any other.
   take(bindingKey: string): OAuthStoreEntry | null {
     const entry = this.attempts.get(bindingKey);
     if (entry === undefined) return null;
@@ -126,6 +144,15 @@ export class OAuthAttemptStore {
   takeDraft(bindingKey: string): SignUpDraft | null {
     const entry = this.take(bindingKey);
     if (entry === null || entry.kind !== 'draft') return null;
+    if (entry.expiresAt.getTime() <= this.clock.now().getTime()) return null;
+    return entry;
+  }
+
+  // §5.6 C: the permission the new password's request takes. Removed
+  // whatever it is — used once; only a live permission is handed over.
+  takePermission(bindingKey: string): ConfirmPermission | null {
+    const entry = this.take(bindingKey);
+    if (entry === null || entry.kind !== 'permission') return null;
     if (entry.expiresAt.getTime() <= this.clock.now().getTime()) return null;
     return entry;
   }

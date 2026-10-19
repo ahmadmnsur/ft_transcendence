@@ -20,6 +20,16 @@ export default {
     noticeInUse: 'Ce compte 42 est associé à un autre compte PeerConnect.',
     disconnectedNotice: 'Votre compte 42 est dissocié.',
   },
+  confirm42: {
+    title: 'Mot de passe oublié ?',
+    subtitle:
+      'Confirmez avec 42, puis définissez un nouveau mot de passe dans les dix minutes. Cela vous déconnecte partout.',
+    confirm: 'Confirmer avec 42',
+    confirming: 'Ouverture de 42…',
+    confirmedNotice: '42 a confirmé votre compte. Définissez votre nouveau mot de passe dans les dix minutes.',
+    submit: 'Définir le nouveau mot de passe',
+    submitting: 'Enregistrement…',
+  },
   details: {
     title: 'Informations du profil',
     subtitle: "Votre nom d'affichage et l'e-mail avec lequel vous vous connectez.",

@@ -31,9 +31,10 @@ export async function changePassword(input: {
 // §5.6 A: the 42 transport's start. The caller navigates to `authorizeUrl`
 // with `window.location.assign`. 404 while 42 is off, so the caller only
 // reaches here when the config said it is on. `link` is Connect 42 and also
-// sends the current password; a `sign_in` start sends the intent alone.
+// sends the current password; a `sign_in` or `confirm` start sends the
+// intent alone.
 export async function start42(
-  intent: 'sign_in' | 'link',
+  intent: 'sign_in' | 'link' | 'confirm',
   password?: string,
 ): Promise<{ authorizeUrl: string }> {
   const body: Record<string, string> = { intent };
@@ -81,6 +82,14 @@ export async function signup42(input: {
 // handles as it does everywhere.
 export async function disconnect42(password: string): Promise<unknown> {
   return apiFetch<unknown>('/auth/42/disconnect', { method: 'POST', body: { password } });
+}
+
+// §5.6 C: the new password after Confirm with 42. `{}` on success, with the
+// Student signed out everywhere, like the password change; the 200 refusals
+// are `confirmation_required` and `password_incorrect` (a change that lost a
+// race).
+export async function setPassword42(newPassword: string): Promise<unknown> {
+  return apiFetch<unknown>('/auth/42/password', { method: 'POST', body: { newPassword } });
 }
 
 // One query key for the 42 sign-up draft, read once per visit of the form.

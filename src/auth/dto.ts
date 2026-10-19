@@ -93,10 +93,9 @@ export class LoginDto {
 }
 
 // §5.6 A's start body: `{ intent, password? }`. `intent` is one of the three
-// intents; `confirm` is refused by the service until its own ticket (#157).
-// `password` is Connect 42's (`link`) current password, required for it and
-// never used by the others — a `sign_in` carrying one still gets the same
-// field validation.
+// intents. `password` is Connect 42's (`link`) current password, required
+// for it and never used by the others — a `sign_in` or `confirm` carrying
+// one still gets the same field validation.
 export class Start42Dto {
   @IsIn(FORTY_TWO_INTENTS)
   intent!: FortyTwoIntent;
@@ -115,6 +114,15 @@ export class Disconnect42Dto {
   @Trimmed()
   @IsValidPasswordDto()
   password!: string;
+}
+
+// §5.6 C: the new password after Confirm with 42, trimmed and validated like
+// the password change's (§5.1), before the permission is taken.
+export class Password42Dto {
+  @IsString()
+  @Trimmed()
+  @IsValidPasswordDto()
+  newPassword!: string;
 }
 
 export class PasswordDto {

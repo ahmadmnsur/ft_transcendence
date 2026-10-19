@@ -14,10 +14,10 @@ export const PUBLIC_KEY = 'pc:public';
 // `POST /api/auth/42/start`, `GET /api/auth/42/callback`,
 // `GET /api/auth/42/draft` and `POST /api/auth/42/signup` (the enabled guard
 // on that controller answers 404 first while 42 is off).
-// `POST /api/auth/42/disconnect` is `@Public` too, but only so that guard
-// answers 404 before any session lookup while 42 is off: it resolves the
-// session itself through `authenticateSession` below, so it stays a
-// signed-in route.
+// `POST /api/auth/42/disconnect` and `POST /api/auth/42/password` are
+// `@Public` too, but only so that guard answers 404 before any session
+// lookup while 42 is off: each resolves the session itself through
+// `authenticateSession` below, so both stay signed-in routes.
 export const Public = (): MethodDecorator & ClassDecorator => SetMetadata(PUBLIC_KEY, true);
 
 // What the guard attaches to the request on success: the Actor (§3.4) plus
