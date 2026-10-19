@@ -6,3 +6,9 @@ export class BlockStudentDto {
   @IsUUID()
   studentId!: string;
 }
+
+// `POST /api/friends/requests` (§6.4), validated the same way.
+export class FriendRequestDto {
+  @IsUUID()
+  studentId!: string;
+}

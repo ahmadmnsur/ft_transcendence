@@ -108,8 +108,8 @@ const studentRoute = createRoute({
   component: StudentPage,
 });
 
-// §3.5.1: the signed-in Student's own `/friends`. It lists their Blocks for
-// now; Friends and requests join with #46.
+// §3.5.1: the signed-in Student's own `/friends`: Friends with Presence,
+// friend requests and Blocks.
 const friendsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/friends',

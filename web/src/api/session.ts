@@ -61,3 +61,32 @@ export function setSignedOut(client: QueryClient): void {
   client.clear();
   client.setQueryData(SESSION_QUERY_KEY, { authenticated: false });
 }
+
+// The Student the cached session names now, or null when signed out.
+function signedInStudentId(client: QueryClient): string | null {
+  const session = client.getQueryData<SessionValue>(SESSION_QUERY_KEY);
+  return session?.authenticated === true ? session.student.id : null;
+}
+
+// A write whose answer updates the cache. The answer belongs to the Student
+// who sent it: if another Student signed in while it was in flight, the cache
+// holds that Student's data by then (§4.6), so none of the answer reaches it,
+// neither `apply` on success nor `reread` on failure. A failure is still
+// rethrown for the screen to show.
+export async function writeAsSignedIn<T>(
+  client: QueryClient,
+  send: () => Promise<T>,
+  apply: (result: T) => Promise<void>,
+  reread: () => void,
+): Promise<void> {
+  const writer = signedInStudentId(client);
+  let result: T;
+  try {
+    result = await send();
+  } catch (error) {
+    if (signedInStudentId(client) === writer) reread();
+    throw error;
+  }
+  if (signedInStudentId(client) !== writer) return;
+  await apply(result);
+}

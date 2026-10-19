@@ -1,6 +1,7 @@
 import { Global, Module, ValidationPipe } from '@nestjs/common';
 import type { DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { PresenceRegistry } from '../realtime/presence-registry';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { AppConfig } from './app-config';
@@ -10,6 +11,7 @@ import { JsonMutationGuard, UploadCsrfGuard } from './csrf.guards';
 import { EnvelopeInterceptor } from './envelope';
 import { ApiExceptionFilter } from './exception.filter';
 import { AppLogger } from './logger';
+import { OfflinePresenceReader, PresenceReader } from './presence-reader';
 import { PrismaService } from './prisma.service';
 import { NoopRealtimePublisher, RealtimePublisher } from './realtime-publisher';
 import { RolesGuard } from './roles.guard';
@@ -35,6 +37,7 @@ import { CheckpointHook, UnitOfWork } from './uow';
     ThrottleStore,
     { provide: Clock, useClass: SystemClock },
     { provide: RealtimePublisher, useClass: NoopRealtimePublisher },
+    { provide: PresenceReader, useClass: OfflinePresenceReader },
     {
       provide: APP_PIPE,
       useValue: new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
@@ -53,6 +56,7 @@ import { CheckpointHook, UnitOfWork } from './uow';
     UnitOfWork,
     CheckpointHook,
     Clock,
+    PresenceReader,
     RealtimePublisher,
     SupabaseAuthClient,
     SessionResolver,
@@ -60,16 +64,20 @@ import { CheckpointHook, UnitOfWork } from './uow';
   ],
 })
 export class CoreModule {
-  // What the app imports: the socket gateway implements RealtimePublisher.
-  // The dynamic provider is inserted after the decorator's, so it replaces
-  // the no-op for every module that injects the port — AuthModule included —
-  // while a plain `imports: [CoreModule]` (the seed) keeps the no-op (§3.7,
-  // §7.4).
+  // What the app imports: the socket gateway implements RealtimePublisher,
+  // and the Presence registry implements PresenceReader. The dynamic
+  // providers are inserted after the decorator's, so they replace the no-op
+  // and the offline reader for every module that injects the ports —
+  // AuthModule and SocialModule included — while a plain `imports:
+  // [CoreModule]` (the seed) keeps both (§3.7, §7.4, §7.6).
   static forApp(): DynamicModule {
     return {
       module: CoreModule,
       imports: [RealtimeModule],
-      providers: [{ provide: RealtimePublisher, useExisting: RealtimeGateway }],
+      providers: [
+        { provide: RealtimePublisher, useExisting: RealtimeGateway },
+        { provide: PresenceReader, useExisting: PresenceRegistry },
+      ],
     };
   }
 }

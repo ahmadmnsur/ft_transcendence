@@ -22,6 +22,13 @@ enum SkillKind {
   LEARN
 }
 
+// §4.2: a friend request waits, then is accepted. Declining, cancelling,
+// ending and a Block delete the row instead, so there is no third status.
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
 // §4.3.1: the account; every person is one. `id` has no default: sign-up
 // makes it with `v7()` before the Supabase Auth user that shares it (§4.1).
 model Student {
@@ -47,6 +54,8 @@ model Student {
   studentSkills              StudentSkill[] @relation("StudentSkills")
   blocksSet                  Block[]        @relation("BlocksSet")
   blocksReceived             Block[]        @relation("BlocksReceived")
+  friendRequestsSent         Friendship[]   @relation("FriendRequestsSent")
+  friendRequestsReceived     Friendship[]   @relation("FriendRequestsReceived")
   // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
   // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
   learningGoal               StudentSkill?  @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -107,4 +116,23 @@ model Block {
 
   @@unique([blockerId, blockedId])
   @@index([blockedId])
+}
+
+// §4.3.7: a directed request with an acceptance, one per unordered pair. That
+// unique is raw SQL, `friendship_unordered_pair` (§4.4 step 6), which Prisma
+// cannot represent. Hard-deleted on decline, cancel, end or a Block. The
+// service checks that the two Students differ and sets `responded_at` exactly
+// when the row is accepted.
+model Friendship {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  requesterId String           @map("requester_id") @db.Uuid
+  addresseeId String           @map("addressee_id") @db.Uuid
+  status      FriendshipStatus
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  respondedAt DateTime?        @map("responded_at") @db.Timestamptz(3)
+  requester   Student          @relation("FriendRequestsSent", fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  addressee   Student          @relation("FriendRequestsReceived", fields: [addresseeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([addresseeId, status])
+  @@index([requesterId, status])
 }

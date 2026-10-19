@@ -12,9 +12,10 @@ export const socket: Socket = io({
   reconnectionDelayMax: 10000,
 });
 
-// The tickets that own a client reaction (§7.4: #46 `presence:update`, #47
-// `dm:message`, #61 `round:*`, `match:ready`, `post:created`) attach their
-// listeners through here, so this file stays the one owner of the client.
+// The surfaces that own a client reaction (§7.4: `presence:update` in
+// `social/PresenceUpdates.tsx`; #47 `dm:message`, #61 `round:*`,
+// `match:ready`, `post:created`) attach their listeners through here, so
+// this file stays the one owner of the client.
 export function subscribe(event: string, listener: (...args: unknown[]) => void): () => void {
   socket.on(event, listener);
   return () => {
