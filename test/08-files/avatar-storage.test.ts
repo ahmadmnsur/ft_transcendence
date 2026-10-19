@@ -7,7 +7,7 @@ import { BUCKET_SETTINGS, FILE_KINDS, TEST_BUCKETS, ensureBuckets, type FileBuck
 import { CLEANUP_MIN_AGE_MS, FileCleanup } from '../../src/files/cleanup';
 import { useHarness } from '../harness/app';
 import { createTestAccount } from '../harness/accounts';
-import { eventually, makePng, putAvatar, tokenOf } from '../harness/files';
+import { eventually, makePdf, makePng, putAvatar, tokenOf } from '../harness/files';
 import { startNginx, type NginxHarness } from '../harness/nginx';
 
 const harness = useHarness();
@@ -129,6 +129,11 @@ describe('avatar files in Storage', () => {
     for (let i = 0; i < 5; i += 1) {
       await storage().upload(BUCKET, randomUUID(), makePng(), 'image/png');
     }
+    // An Evidence file just as old. Evidence has no table in this build, so
+    // the cleanup lists its bucket and deletes nothing there; #54 changes
+    // this when it reads `Evidence.token`.
+    const evidence = randomUUID();
+    await storage().upload(TEST_BUCKETS.evidence, evidence, makePdf(), 'application/pdf');
     // The newest file, which the clock below makes exactly an hour old.
     const youngest = randomUUID();
     await storage().upload(BUCKET, youngest, makePng(), 'image/png');
@@ -150,6 +155,8 @@ describe('avatar files in Storage', () => {
       const stale = file.name !== named && file.createdAt.getTime() < youngestAt.getTime();
       expect(left.has(file.name)).toBe(!stale);
     }
+    const evidenceLeft = await storage().listAll(TEST_BUCKETS.evidence);
+    expect(evidenceLeft.map((file) => file.name)).toContain(evidence);
   });
 
   it('(4) creates both buckets, private with their caps and types, and sets back changed settings', async () => {

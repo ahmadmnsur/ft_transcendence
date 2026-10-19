@@ -4171,6 +4171,13 @@ only way an empty suite is excused, and it ends for good with the first test fil
   itself.** The application code the seed drives stays round-robin, and so does the code that calls
   Supabase: sign-up and the password change, the file cleanup and the boot check, which `08-files`
   and `12-sign-in` cover.
+
+  > **Updated 2026-10-19** (#43, from the review of PR #193): the buckets' settings are in
+  > `src/files/buckets.ts`, not under `prisma/seed/**` as this item expected. The bucket names,
+  > their privacy, caps and types, and the bucket step that sets them are in that one file, which
+  > the seed's first step, the `api`'s cleanup and the test harness all import. It is inside the
+  > gate, and the gate list names it here, in `CONTRIBUTING.md`, in the PR template and in
+  > `.coderabbit.yaml`.
 - **Kamel reviews; Ahmad deputises when Kamel is blocked more than 24 hours**; Ahmad also watches
   for the stall. The developer authors the migration. **When the gate holder authors a gated PR,
   Ahmad reviews it** — nobody reviews their own PR (§17.4), and Ahmad is already the gate's deputy.

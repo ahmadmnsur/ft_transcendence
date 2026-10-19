@@ -17,15 +17,22 @@ function frames(stack: string, header = '', message = ''): string[] {
   return lines.slice(first).map((line) => line.trim());
 }
 
+// An error whose message names no value by construction (a call and a
+// status, say), so errorFields logs it as `reason`. StorageError is one.
+export class SafeMessageError extends Error {}
+
+type ErrorFields = { error: string; code: string | null; stack: string[]; reason?: string };
+
 // What a log may say about an error: its class, its Prisma code if any, and
-// its call frames. Never its message.
-export function errorFields(err: unknown): { error: string; code: string | null; stack: string[] } {
+// its call frames. Never its message, unless it is a SafeMessageError.
+export function errorFields(err: unknown): ErrorFields {
   if (!(err instanceof Error)) return { error: typeof err, code: null, stack: [] };
   const code = (err as { code?: unknown }).code;
   return {
     error: err.constructor.name,
     code: typeof code === 'string' && /^P\d{4}$/.test(code) ? code : null,
     stack: frames(err.stack ?? '', Error.prototype.toString.call(err), String(err.message)),
+    ...(err instanceof SafeMessageError ? { reason: err.message } : {}),
   };
 }
 

@@ -1,6 +1,5 @@
 import { Injectable, type OnApplicationBootstrap, type OnApplicationShutdown } from '@nestjs/common';
 import { AppLogger, errorFields } from '../core/logger';
-import { StorageError } from '../core/supabase-storage';
 import { FileCleanup } from './cleanup';
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -39,9 +38,8 @@ export class FileCleanupSchedule implements OnApplicationBootstrap, OnApplicatio
       const deleted = (await this.cleanup.run()).filter((result) => result.deleted > 0);
       if (deleted.length > 0) this.logger.entry('log', { message: 'file cleanup', deleted });
     } catch (err) {
-      // A StorageError's message names a call and a status only.
-      const reason = err instanceof StorageError ? { reason: err.message } : {};
-      this.logger.entry('error', { operation: 'file-cleanup', ...errorFields(err), ...reason });
+      // errorFields carries a StorageError's call and status as `reason`.
+      this.logger.entry('error', { operation: 'file-cleanup', ...errorFields(err) });
     } finally {
       this.running = false;
     }

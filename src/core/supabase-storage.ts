@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppConfig } from './app-config';
+import { SafeMessageError } from './logger';
 
 // §9.8: Supabase Storage, called by the API alone, from the server, with the
 // secret key. Plain `fetch`, no Supabase package, like the Auth client.
@@ -28,8 +29,9 @@ const LIST_PAGE_SIZE = 100;
 const DELETE_BATCH_SIZE = 100;
 
 // A failed Storage call. The message names the call and Storage's status,
-// never a body or a key, so it is safe in a log line or the seed's failure.
-export class StorageError extends Error {
+// never a body or a key, so it is safe in the seed's failure and in a log
+// line, which carries it as `reason` (errorFields).
+export class StorageError extends SafeMessageError {
   constructor(what: string, status?: number) {
     super(
       status === undefined

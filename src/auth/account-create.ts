@@ -26,14 +26,14 @@ export function toStudentView(row: {
   displayName: string;
   email: string;
   role: Role;
-  avatar?: { token: string } | null;
+  avatar: { token: string } | null;
 }): StudentView {
   return {
     id: row.id,
     displayName: row.displayName,
     email: row.email,
     role: row.role,
-    avatarUrl: avatarUrlFor(row.avatar ?? null),
+    avatarUrl: avatarUrlFor(row.avatar),
   };
 }
 
@@ -134,7 +134,8 @@ export async function createAccountWithSession(
       // A new account has none; the delete keeps every creation path alike.
       await tx.session.deleteMany({ where: { studentId: id, expiresAt: { lte: ctx.now } } });
       return {
-        student: toStudentView(student),
+        // A new account has no avatar.
+        student: toStudentView({ ...student, avatar: null }),
         token: session.token,
         expiresAt,
         maxAge: maxAgeUntil(expiresAt, ctx.now),
