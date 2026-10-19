@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { PoolConfig } from 'pg';
-import { resolveSupabaseTarget, type EnvRecord } from './env';
+import { isTlsSetting, resolveSupabaseTarget, type EnvRecord } from './env';
 
 // Supabase signs the pooler's certificate with its own authority, which Node
 // does not trust, so the team project is verified against this committed copy
@@ -21,7 +21,7 @@ export function connectionConfig(env: EnvRecord): ConnectionConfig {
     // `?sslmode=no-verify` would switch the check off: the team URL loses them all.
     const url = new URL(env['DATABASE_URL'] as string);
     for (const key of [...url.searchParams.keys()]) {
-      if (key.startsWith('ssl') || key === 'uselibpqcompat') url.searchParams.delete(key);
+      if (isTlsSetting(key)) url.searchParams.delete(key);
     }
     config.connectionString = url.toString();
     config.ssl = { ca: readFileSync(SUPABASE_CA_PATH), rejectUnauthorized: true };

@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveSupabaseTarget, type EnvRecord } from '../../src/core/env';
+import { firstNonTlsParameter, resolveSupabaseTarget, type EnvRecord } from '../../src/core/env';
 import { recreateTestDatabase } from './database';
 import {
   apiSnippetPath,
@@ -13,9 +13,10 @@ import {
 
 // The suite only ever runs against the local fallback; a team or unknown target
 // would let a stray `.env` point the harness at real data (§16.2). A query
-// `host` or `hostaddr` is refused too, because pg would connect there instead
-// of the hostname. Any scheme but postgresql: or postgres: is refused too,
-// because pg reads a socket: URL's path as a socket directory.
+// parameter other than a TLS setting is refused too, as the boot check's step 1
+// refuses it (§15.4), because pg could take the user, password, host or port
+// from it instead of the URL's own. Any scheme but postgresql: or postgres: is refused
+// too, because pg reads a socket: URL's path as a socket directory.
 function assertFallback(env: EnvRecord): void {
   let databaseUrl: URL | undefined;
   try {
@@ -30,12 +31,11 @@ function assertFallback(env: EnvRecord): void {
   ) {
     throw new Error('Test setup refused: DATABASE_URL is not a postgresql: or postgres: URL.');
   }
-  for (const parameter of ['host', 'hostaddr']) {
-    if (databaseUrl?.searchParams.has(parameter)) {
-      throw new Error(
-        `Test setup refused: DATABASE_URL sets ${parameter} in its query, not the local fallback.`,
-      );
-    }
+  const parameter = databaseUrl === undefined ? undefined : firstNonTlsParameter(databaseUrl);
+  if (parameter !== undefined) {
+    throw new Error(
+      `Test setup refused: DATABASE_URL sets ${parameter} in its query; only its TLS settings may stay.`,
+    );
   }
   const target = resolveSupabaseTarget(env);
   if (target.kind === 'fallback') return;

@@ -51,6 +51,44 @@ function parseUrl(value: string | undefined): URL | undefined {
   }
 }
 
+// A DATABASE_URL's TLS settings: each `ssl…` key, and `uselibpqcompat`, which
+// changes what `sslmode` means.
+export function isTlsSetting(name: string): boolean {
+  return name.startsWith('ssl') || name === 'uselibpqcompat';
+}
+
+// A fixed list of the query parameters node-postgres or Prisma reads, the only
+// names a message prints: in a password typed with a raw `@` and then `?`, the
+// rest of the password becomes the first parameter's name (§3.9).
+// `connect_timeout` is on it because `prisma.config.ts` sets it on the pooler
+// URL, so a `.env` that still carries one is told which to remove.
+const NAMED_PARAMETERS = new Set([
+  'host',
+  'hostaddr',
+  'port',
+  'user',
+  'password',
+  'database',
+  'options',
+  'application_name',
+  'schema',
+  'pgbouncer',
+  'connection_limit',
+  'connect_timeout',
+]);
+
+// node-postgres takes the user, password, host and port from a query parameter
+// before the URL's own, so a parameter could move the connection after both
+// steps had checked the URL (§15.4). It reads every parameter, so this names
+// what may stay rather than what is known to move it. Returns the first other
+// parameter as a message prints it: its name when it is a known one.
+export function firstNonTlsParameter(url: URL): string | undefined {
+  for (const name of url.searchParams.keys()) {
+    if (!isTlsSetting(name)) return NAMED_PARAMETERS.has(name) ? name : 'a parameter';
+  }
+  return undefined;
+}
+
 // The pooler user carries the project ref; its host and the API host must both
 // belong to Supabase before the two values can name the team project.
 export function resolveSupabaseTarget(env: EnvRecord): SupabaseTarget {
@@ -136,6 +174,15 @@ export function validateEnv(env: EnvRecord): EnvResult {
     databaseUrl.pathname === '/'
   ) {
     return fail('DATABASE_URL', 'must be a PostgreSQL URL with a host, user, password and database');
+  }
+  // It holds on both targets, and names the parameter only, since a value may
+  // be a password.
+  const parameter = firstNonTlsParameter(databaseUrl);
+  if (parameter !== undefined) {
+    return fail(
+      'DATABASE_URL',
+      `must carry no query parameter except its TLS settings, and it sets ${parameter}`,
+    );
   }
 
   const supabaseUrl = parseUrl(env['SUPABASE_URL']);
