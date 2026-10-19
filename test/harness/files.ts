@@ -18,17 +18,21 @@ function pngChunk(type: string, data: Buffer): Buffer {
 }
 
 // A valid RGBA PNG. With `size`, a private ancillary chunk, which readers
-// skip, pads it to exactly that many bytes.
-export function makePng(options: { width?: number; height?: number; size?: number } = {}): Buffer {
+// skip, pads it to exactly that many bytes. With `depth`, `IHDR` gives that
+// bit depth, and the pixel data fits it; RGBA allows only 8 and 16.
+export function makePng(
+  options: { width?: number; height?: number; size?: number; depth?: number } = {},
+): Buffer {
   const width = options.width ?? 4;
   const height = options.height ?? 4;
+  const depth = options.depth ?? 8;
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);
-  // 8-bit RGBA; compression, filter and interlace methods 0.
-  header[8] = 8;
+  // RGBA; compression, filter and interlace methods 0.
+  header[8] = depth;
   header[9] = 6;
-  const pixels = deflateSync(Buffer.alloc((width * 4 + 1) * height));
+  const pixels = deflateSync(Buffer.alloc((Math.ceil((width * 4 * depth) / 8) + 1) * height));
   const head = Buffer.concat([PNG_SIGNATURE, pngChunk('IHDR', header), pngChunk('IDAT', pixels)]);
   const end = pngChunk('IEND', Buffer.alloc(0));
   if (options.size === undefined) return Buffer.concat([head, end]);
@@ -74,6 +78,14 @@ export function makePngWithBadCrc(): Buffer {
   // The padding chunk's CRC ends just before `IEND`, the last 12 bytes.
   png[png.length - 13] ^= 0xff;
   return png;
+}
+
+// A valid PNG whose `IEND` holds one byte, with its CRC correct; `IEND`
+// must be empty.
+export function makePngWithFullEnd(): Buffer {
+  const png = makePng();
+  // `IEND` is the last 12 bytes.
+  return Buffer.concat([png.subarray(0, png.length - 12), pngChunk('IEND', Buffer.from([0]))]);
 }
 
 // A valid JPEG cut before its first scan (`FF DA`) and ended with `FF D9`,

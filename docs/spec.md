@@ -2807,14 +2807,25 @@ Evidence is the one mutable attachment.
 
    > **Updated 2026-10-19** (#43, from the review of PR #193): the two image decoders do less than
    > this step says. `pngjs` 7.0.0 checks the CRC only of the chunks it reads (`IHDR`, `PLTE`,
-   > `tRNS`, `gAMA`, `IDAT`, `IEND`) and skips every other chunk unchecked, and it reads a second
-   > `IHDR` over the first, so a file whose first `IHDR` says 4×4 decodes at the second one's size,
-   > past the 4096 limit. `jpeg-js` 0.4.4 decodes a JPEG cut before its first start of scan
-   > (`FF DA`) and ended with `FF D9` as a blank image. So the build walks the bytes before each
-   > decoder (`src/files/validate.ts`): a PNG's chunks, each whole with a correct CRC, `IHDR` first
-   > and only there, up to `IEND`; a JPEG's segments, refused when they reach `FF D9` before any
-   > `FF DA`. A JPEG segment the walk cannot follow, such as a phone's malformed APP1 that
-   > `jpeg-js` recovers from, is left to `jpeg-js`. Both are `file_invalid`, as this step asks.
+   > `tRNS`, `gAMA`, `IDAT`, `IEND`) and skips every other chunk unchecked; it reads a second `IHDR`
+   > over the first, so a file whose first `IHDR` says 4×4 decodes at the second one's size, past
+   > the 4096 limit; and it does not check how the critical chunks are laid out. `jpeg-js` 0.4.4
+   > decodes a JPEG cut before its first start of scan (`FF DA`) and ended with `FF D9` as a blank
+   > image. So the build walks the bytes before each decoder (`src/files/validate.ts`), and refuses
+   > with `file_invalid`:
+   >
+   > - a PNG unless, against the PNG spec, every chunk is whole, its type four letters, its CRC
+   >   correct; `IHDR` comes first and only there, with a bit depth its color type allows; at most
+   >   one `PLTE`, of 1–256 entries, before the image data and never for a grey image; the `IDAT`s
+   >   in one run; then an empty `IEND`;
+   > - a JPEG whose segments, walked from `FF D8` through those `jpeg-js` reads before a scan, do
+   >   not reach `FF DA`. That refuses too a file `jpeg-js` would recover, a phone's malformed APP1
+   >   say, which is malformed content all the same.
+   >
+   > Two of 37,503 PNGs on one developer machine carry a wrong CRC on their `iCCP` chunk; browsers
+   > show them, and they are now refused, as this step asks. What the walk does not catch is a JPEG
+   > built so that `jpeg-js` reads a segment's fields past or short of its length: it can still
+   > decode with no scan, as a blank image, served like any avatar.
 5. **Claims must agree**: a supplied filename extension must be `.png`, `.jpg`/`.jpeg` or `.pdf`
    matching the detected format (case-insensitive); a part `Content-Type` other than
    `application/octet-stream` must equal the detected canonical type. Disagreement →
