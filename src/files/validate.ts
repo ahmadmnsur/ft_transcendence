@@ -1,3 +1,4 @@
+import { crc32 } from 'node:zlib';
 import { decode as decodeJpeg } from 'jpeg-js';
 import { PNG } from 'pngjs';
 import { LIMITS } from '../shared/limits';
@@ -44,15 +45,35 @@ function detectFormat(bytes: Buffer): Format | null {
   return null;
 }
 
-// Step 4 for a PNG: `IHDR` first, each side 1–4096, then a full pngjs read,
-// which checks every chunk's CRC and requires `IEND`.
-function checkPng(bytes: Buffer): void {
-  // The signature (8), IHDR's length (4) and type (4), then width and height.
-  if (bytes.length < 24 || bytes.toString('latin1', 12, 16) !== 'IHDR') throw fileInvalid();
-  const width = bytes.readUInt32BE(16);
-  const height = bytes.readUInt32BE(20);
+// `IHDR`'s data: 13 bytes, the width and the height first, each 1–4096.
+function checkPngHeader(data: Buffer): void {
+  if (data.length !== 13) throw fileInvalid();
+  const width = data.readUInt32BE(0);
+  const height = data.readUInt32BE(4);
   if (width === 0 || height === 0 || width > PNG_MAX_SIDE || height > PNG_MAX_SIDE) {
     throw fileInvalid();
+  }
+}
+
+// Step 4 for a PNG. pngjs checks the CRC only of the chunks it reads and
+// skips the others unchecked, and it reads a second `IHDR` over the first,
+// so the chunks are walked first (§9.5's note of 2026-10-19): each one
+// whole with a correct CRC, `IHDR` first and only there, up to `IEND`. Then
+// a full pngjs read.
+function checkPng(bytes: Buffer): void {
+  let at = PNG_SIGNATURE.length;
+  let type = '';
+  while (type !== 'IEND') {
+    // A chunk: its data's length (4), its type (4), the data, and a CRC (4)
+    // of the type and the data.
+    if (bytes.length - at < 12) throw fileInvalid();
+    const end = at + 12 + bytes.readUInt32BE(at);
+    if (end > bytes.length) throw fileInvalid();
+    if (crc32(bytes.subarray(at + 4, end - 4)) !== bytes.readUInt32BE(end - 4)) throw fileInvalid();
+    type = bytes.toString('latin1', at + 4, at + 8);
+    if ((type === 'IHDR') !== (at === PNG_SIGNATURE.length)) throw fileInvalid();
+    if (type === 'IHDR') checkPngHeader(bytes.subarray(at + 8, end - 4));
+    at = end;
   }
   try {
     PNG.sync.read(bytes);
@@ -61,12 +82,34 @@ function checkPng(bytes: Buffer): void {
   }
 }
 
-// Step 4 for a JPEG: it ends with `FF D9`, then a full jpeg-js decode capped
-// at 17 megapixels.
+// Whether a walk of a JPEG's segments, from just after `FF D8`, reaches
+// `FF D9` before any start of scan (`FF DA`): a JPEG with no image data,
+// which jpeg-js decodes as a blank image (§9.5's note of 2026-10-19). A
+// segment is a marker, `FF` and a code, after any `FF` fill bytes, then a
+// two-byte length that counts itself; `FF 00`, `TEM` and `RST0`–`RST7`
+// stand alone. A byte the walk cannot follow ends it with false, leaving
+// the file to jpeg-js, which recovers from some (a phone's malformed APP1).
+function endsBeforeScan(bytes: Buffer): boolean {
+  let at = 2;
+  while (at + 1 < bytes.length && bytes[at] === 0xff) {
+    const code = bytes[at + 1];
+    if (code === 0xd9) return true;
+    if (code === 0xda) return false;
+    if (code === 0xff) at += 1;
+    else if (code === 0x00 || code === 0x01 || (code >= 0xd0 && code <= 0xd7)) at += 2;
+    else if (at + 3 < bytes.length) at += 2 + bytes.readUInt16BE(at + 2);
+    else return false;
+  }
+  return false;
+}
+
+// Step 4 for a JPEG: it ends with `FF D9` and has a scan, then a full
+// jpeg-js decode capped at 17 megapixels.
 function checkJpeg(bytes: Buffer): void {
   if (bytes.length < 4 || bytes[bytes.length - 2] !== 0xff || bytes[bytes.length - 1] !== 0xd9) {
     throw fileInvalid();
   }
+  if (endsBeforeScan(bytes)) throw fileInvalid();
   try {
     decodeJpeg(bytes, { maxResolutionInMP: JPEG_MAX_MEGAPIXELS, useTArray: true });
   } catch {

@@ -30,15 +30,16 @@ export class FileCleanup {
     for (const kind of FILE_KINDS) {
       const bucket = this.buckets[kind];
       const files = await this.storage.listAll(bucket, pageSize);
-      // Read after the list: a row committed since can only name a file
-      // under 30 minutes old (the save's 30-minute rule), which the hour
-      // keeps anyway.
+      // The hour counts back from before the rows are read, which is after
+      // the list: a row committed after the read can only name a file under
+      // 30 minutes older than the read (the save's 30-minute rule), which
+      // the hour keeps, however long this run then takes or sleeps.
+      const cutoff = this.clock.now().getTime() - CLEANUP_MIN_AGE_MS;
       const named = await this.namedTokens(kind);
       if (named === null) {
         results.push({ bucket, listed: files.length, deleted: 0 });
         continue;
       }
-      const cutoff = this.clock.now().getTime() - CLEANUP_MIN_AGE_MS;
       const stale = files
         .filter((file) => !named.has(file.name) && file.createdAt.getTime() < cutoff)
         .map((file) => file.name);

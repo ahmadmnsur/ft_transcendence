@@ -4,7 +4,16 @@ import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { TEST_BUCKETS } from '../../src/files/buckets';
 import { useHarness } from '../harness/app';
 import { createTestAccount } from '../harness/accounts';
-import { makeJpeg, makePdf, makePng, putAvatar, tokenOf } from '../harness/files';
+import {
+  makeJpeg,
+  makeJpegWithoutScan,
+  makePdf,
+  makePng,
+  makePngWithBadCrc,
+  makePngWithSecondHeader,
+  putAvatar,
+  tokenOf,
+} from '../harness/files';
 import { startNginx, type NginxHarness } from '../harness/nginx';
 
 const harness = useHarness();
@@ -81,7 +90,10 @@ describe('avatar acceptance through nginx', () => {
     ['a malformed PNG', () => Buffer.concat([makePng().subarray(0, 8), Buffer.alloc(64, 0x41)]), 'avatar.png', 'image/png', INVALID],
     ['a truncated PNG', () => makePng({ size: 4096 }).subarray(0, 2048), 'avatar.png', 'image/png', INVALID],
     ['a PNG wider than 4096', () => makePng({ width: 4097, height: 1 }), 'avatar.png', 'image/png', INVALID],
+    ['a PNG with a second IHDR', () => makePngWithSecondHeader(8192, 1), 'avatar.png', 'image/png', INVALID],
+    ['a PNG with a wrong chunk CRC', () => makePngWithBadCrc(), 'avatar.png', 'image/png', INVALID],
     ['a truncated JPEG', () => makeJpeg().subarray(0, 300), 'avatar.jpg', 'image/jpeg', INVALID],
+    ['a JPEG with no scan', () => makeJpegWithoutScan(), 'avatar.jpg', 'image/jpeg', INVALID],
     ['an extension-spoofed PNG', () => makePng(), 'avatar.jpg', 'application/octet-stream', TYPE_NOT_ALLOWED],
     ['a Content-Type-spoofed PNG', () => makePng(), 'avatar.png', 'image/jpeg', TYPE_NOT_ALLOWED],
     ['a PDF', () => makePdf(), 'avatar.pdf', 'application/pdf', TYPE_NOT_ALLOWED],

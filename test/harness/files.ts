@@ -58,6 +58,32 @@ export function makeJpeg(size?: number): Buffer {
   return Buffer.concat(parts);
 }
 
+// A valid PNG with a second `IHDR` giving other sides, and pixel data for
+// those: pngjs alone would decode it at the second one's size.
+export function makePngWithSecondHeader(width: number, height: number): Buffer {
+  const second = makePng({ width, height });
+  // The signature (8) and the first `IHDR` (25), then the second PNG from
+  // its `IHDR` on.
+  return Buffer.concat([makePng().subarray(0, 33), second.subarray(8)]);
+}
+
+// A valid PNG whose private ancillary chunk has a wrong CRC, which pngjs
+// alone skips unchecked.
+export function makePngWithBadCrc(): Buffer {
+  const png = makePng({ size: 256 });
+  // The padding chunk's CRC ends just before `IEND`, the last 12 bytes.
+  png[png.length - 13] ^= 0xff;
+  return png;
+}
+
+// A valid JPEG cut before its first scan (`FF DA`) and ended with `FF D9`,
+// which jpeg-js alone decodes as a blank image.
+export function makeJpegWithoutScan(): Buffer {
+  const image = makeJpeg();
+  const scan = image.indexOf(Buffer.from([0xff, 0xda]));
+  return Buffer.concat([image.subarray(0, scan), Buffer.from([0xff, 0xd9])]);
+}
+
 // A one-page PDF's opening and end, enough for the format check: an Avatar
 // that is a PDF is refused before any PDF parsing (§9.5 step 3).
 export function makePdf(): Buffer {

@@ -2804,6 +2804,17 @@ Evidence is the one mutable attachment.
    - JPEG: ends with `FF D9`, then `jpeg-js` decode with `maxResolutionInMP: 17`;
    - PDF: `%%EOF` within the last 1024 bytes, then `pdf-lib` `PDFDocument.load(bytes, {
      throwOnInvalidObject: true, updateMetadata: false })` with at least one page.
+
+   > **Updated 2026-10-19** (#43, from the review of PR #193): the two image decoders do less than
+   > this step says. `pngjs` 7.0.0 checks the CRC only of the chunks it reads (`IHDR`, `PLTE`,
+   > `tRNS`, `gAMA`, `IDAT`, `IEND`) and skips every other chunk unchecked, and it reads a second
+   > `IHDR` over the first, so a file whose first `IHDR` says 4×4 decodes at the second one's size,
+   > past the 4096 limit. `jpeg-js` 0.4.4 decodes a JPEG cut before its first start of scan
+   > (`FF DA`) and ended with `FF D9` as a blank image. So the build walks the bytes before each
+   > decoder (`src/files/validate.ts`): a PNG's chunks, each whole with a correct CRC, `IHDR` first
+   > and only there, up to `IEND`; a JPEG's segments, refused when they reach `FF D9` before any
+   > `FF DA`. A JPEG segment the walk cannot follow, such as a phone's malformed APP1 that
+   > `jpeg-js` recovers from, is left to `jpeg-js`. Both are `file_invalid`, as this step asks.
 5. **Claims must agree**: a supplied filename extension must be `.png`, `.jpg`/`.jpeg` or `.pdf`
    matching the detected format (case-insensitive); a part `Content-Type` other than
    `application/octet-stream` must equal the detected canonical type. Disagreement →
