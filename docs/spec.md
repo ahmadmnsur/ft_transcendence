@@ -2809,18 +2809,20 @@ Evidence is the one mutable attachment.
    > this step says. `pngjs` 7.0.0 checks the CRC only of the chunks it reads (`IHDR`, `PLTE`,
    > `tRNS`, `gAMA`, `IDAT`, `IEND`) and skips every other chunk unchecked; it reads a second `IHDR`
    > over the first, so a file whose first `IHDR` says 4×4 decodes at the second one's size, past
-   > the 4096 limit; and it does not check how the critical chunks are laid out. `jpeg-js` 0.4.4
-   > decodes a JPEG cut before its first start of scan (`FF DA`) and ended with `FF D9` as a blank
-   > image. So the build walks the bytes before each decoder (`src/files/validate.ts`), and refuses
-   > with `file_invalid`:
+   > the 4096 limit; it does not check how the critical chunks are laid out; and its inflate passes
+   > over a zlib error and decodes whatever its buffer held, so corrupt image data can pass.
+   > `jpeg-js` 0.4.4 decodes a JPEG cut before its first start of scan (`FF DA`) and ended with
+   > `FF D9` as a blank image. So the build walks the bytes before each decoder
+   > (`src/files/validate.ts`), and refuses with `file_invalid`:
    >
    > - a PNG unless, against the PNG spec, every chunk is whole, its type four letters, its CRC
    >   correct; `IHDR` comes first and only there, with a bit depth its color type allows; at most
-   >   one `PLTE`, of 1–256 entries, before the image data and never for a grey image; the `IDAT`s
-   >   in one run; then an empty `IEND`;
+   >   one `PLTE`, before the image data, never for a grey image, of 1–256 entries and no more than
+   >   a palette image's bit depth can index; the `IDAT`s in one run; then an empty `IEND`; and
+   >   unless the image data inflates, as one whole zlib stream, to exactly the size `IHDR` implies;
    > - a JPEG whose segments, walked from `FF D8` through those `jpeg-js` reads before a scan, do
-   >   not reach `FF DA`. That refuses too a file `jpeg-js` would recover, a phone's malformed APP1
-   >   say, which is malformed content all the same.
+   >   not reach a `FF DA` whose header names 1–4 components. That refuses too a file `jpeg-js`
+   >   would recover, a phone's malformed APP1 say, which is malformed content all the same.
    >
    > Two of 37,503 PNGs on one developer machine carry a wrong CRC on their `iCCP` chunk; browsers
    > show them, and they are now refused, as this step asks. What the walk does not catch is a JPEG

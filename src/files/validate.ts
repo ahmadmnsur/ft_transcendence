@@ -1,4 +1,4 @@
-import { crc32 } from 'node:zlib';
+import { crc32, inflateSync } from 'node:zlib';
 import { decode as decodeJpeg } from 'jpeg-js';
 import { PNG } from 'pngjs';
 import { LIMITS } from '../shared/limits';
@@ -33,15 +33,27 @@ const PDF_START = Buffer.from('%PDF-', 'latin1');
 const PNG_MAX_SIDE = 4096;
 const JPEG_MAX_MEGAPIXELS = 17;
 
-// The bit depths each PNG color type allows (the PNG spec's `IHDR`): grey,
-// RGB, palette, grey with alpha, RGBA.
-const PNG_DEPTHS: Partial<Record<number, readonly number[]>> = {
-  0: [1, 2, 4, 8, 16],
-  2: [8, 16],
-  3: [1, 2, 4, 8],
-  4: [8, 16],
-  6: [8, 16],
+// Each PNG color type's channels and the bit depths it allows (the PNG
+// spec's `IHDR`): grey, RGB, palette, grey with alpha, RGBA.
+const PNG_COLOR_TYPES: Partial<Record<number, { channels: number; depths: readonly number[] }>> = {
+  0: { channels: 1, depths: [1, 2, 4, 8, 16] },
+  2: { channels: 3, depths: [8, 16] },
+  3: { channels: 1, depths: [1, 2, 4, 8] },
+  4: { channels: 2, depths: [8, 16] },
+  6: { channels: 4, depths: [8, 16] },
 };
+
+// Adam7's seven passes over an interlaced PNG: each one's first column and
+// first row, then its steps across and down.
+const ADAM7_PASSES: readonly (readonly [number, number, number, number])[] = [
+  [0, 0, 8, 8],
+  [4, 0, 8, 8],
+  [0, 4, 4, 8],
+  [2, 0, 4, 4],
+  [0, 2, 2, 4],
+  [1, 0, 2, 2],
+  [0, 1, 1, 2],
+];
 
 // The segments jpeg-js reads before a scan besides APP0–APP15, each with a
 // two-byte length that counts itself: SOF0–SOF2, DHT, DQT, DRI and COM.
@@ -59,33 +71,73 @@ function detectFormat(bytes: Buffer): Format | null {
   return null;
 }
 
-// `IHDR`'s data: 13 bytes, the width and the height each 1–4096, then a bit
-// depth its color type allows; pngjs checks the other fields. Returns the
-// color type.
-function checkPngHeader(data: Buffer): number {
+// What a checked `IHDR` says.
+type PngHeader = {
+  width: number;
+  height: number;
+  depth: number;
+  colorType: number;
+  channels: number;
+  interlaced: boolean;
+};
+
+// `IHDR`'s data: 13 bytes, the width and the height each 1–4096, a bit
+// depth its color type allows, compression and filter methods 0, and
+// interlace method 0 or 1.
+function checkPngHeader(data: Buffer): PngHeader {
   if (data.length !== 13) throw fileInvalid();
   const width = data.readUInt32BE(0);
   const height = data.readUInt32BE(4);
   if (width === 0 || height === 0 || width > PNG_MAX_SIDE || height > PNG_MAX_SIDE) {
     throw fileInvalid();
   }
-  if (!PNG_DEPTHS[data[9]]?.includes(data[8])) throw fileInvalid();
-  return data[9];
+  const color = PNG_COLOR_TYPES[data[9]];
+  if (color === undefined || !color.depths.includes(data[8])) throw fileInvalid();
+  if (data[10] !== 0 || data[11] !== 0 || data[12] > 1) throw fileInvalid();
+  return {
+    width,
+    height,
+    depth: data[8],
+    colorType: data[9],
+    channels: color.channels,
+    interlaced: data[12] === 1,
+  };
+}
+
+// The bytes a PNG's image data inflates to: each row is a filter byte and
+// its packed pixels; an interlaced image has the rows of Adam7's seven
+// passes, a pass with no pixel having none.
+function pngDataSize(header: PngHeader): number {
+  const rows = (width: number, height: number): number => {
+    if (width <= 0 || height <= 0) return 0;
+    return (Math.ceil((width * header.channels * header.depth) / 8) + 1) * height;
+  };
+  if (!header.interlaced) return rows(header.width, header.height);
+  return ADAM7_PASSES.reduce(
+    (size, [x, y, across, down]) =>
+      size + rows(Math.ceil((header.width - x) / across), Math.ceil((header.height - y) / down)),
+    0,
+  );
 }
 
 // Step 4 for a PNG. pngjs checks the CRC only of the chunks it reads, reads
 // a second `IHDR` over the first and does not check how the critical chunks
 // are laid out, so the chunks are walked first, against the PNG spec
 // (§9.5's note of 2026-10-19): each one whole, its type four letters, its
-// CRC correct; `IHDR` first and only there; at most one `PLTE`, of 1–256
-// entries, before the image data and never for a grey image; the `IDAT`s
-// in one run; then an empty `IEND`. Then a full pngjs read, which requires
-// `PLTE` for a palette image and refuses bytes after `IEND`.
+// CRC correct; `IHDR` first and only there; at most one `PLTE`, before the
+// image data and never for a grey image, of 1–256 entries and no more than
+// a palette image's bit depth can index; the `IDAT`s in one run; then an
+// empty `IEND`. pngjs's own inflate passes over a zlib error and decodes
+// whatever its buffer held, so the image data is inflated here too, capped
+// at the size `IHDR` implies, and must be a whole zlib stream of exactly
+// that size. Then a full pngjs read, which requires `PLTE` for a palette
+// image, checks each row's filter and refuses bytes after `IEND`.
 function checkPng(bytes: Buffer): void {
   let at = PNG_SIGNATURE.length;
-  let colorType = -1;
+  let header: PngHeader | null = null;
   let palette = false;
   let imageData: 'before' | 'in' | 'after' = 'before';
+  const compressed: Buffer[] = [];
   let type = '';
   while (type !== 'IEND') {
     // A chunk: its data's length (4), its type (4), the data, and a CRC (4)
@@ -99,23 +151,36 @@ function checkPng(bytes: Buffer): void {
     if (!/^[A-Za-z]{4}$/.test(type) || (type === 'IHDR') !== (at === PNG_SIGNATURE.length)) {
       throw fileInvalid();
     }
-    if (type === 'IHDR') colorType = checkPngHeader(data);
+    if (type === 'IHDR') header = checkPngHeader(data);
     if (type === 'PLTE') {
       const entries = data.length / 3;
-      const grey = colorType === 0 || colorType === 4;
+      const grey = header?.colorType === 0 || header?.colorType === 4;
+      // A palette image's bit depth caps its entries.
+      const max = header?.colorType === 3 ? 2 ** header.depth : 256;
       if (palette || imageData !== 'before' || grey || !Number.isInteger(entries)) throw fileInvalid();
-      if (entries < 1 || entries > 256) throw fileInvalid();
+      if (entries < 1 || entries > max) throw fileInvalid();
       palette = true;
     }
     if (type === 'IDAT') {
       if (imageData === 'after') throw fileInvalid();
       imageData = 'in';
+      compressed.push(data);
     } else if (imageData === 'in') {
       imageData = 'after';
     }
     if (type === 'IEND' && (data.length > 0 || imageData === 'before')) throw fileInvalid();
     at = end;
   }
+  // Never so: the walk takes `IHDR` first.
+  if (header === null) throw fileInvalid();
+  const size = pngDataSize(header);
+  let inflated: Buffer;
+  try {
+    inflated = inflateSync(Buffer.concat(compressed), { maxOutputLength: size });
+  } catch {
+    throw fileInvalid();
+  }
+  if (inflated.length !== size) throw fileInvalid();
   try {
     PNG.sync.read(bytes);
   } catch {
@@ -124,8 +189,9 @@ function checkPng(bytes: Buffer): void {
 }
 
 // Whether a walk of a JPEG's segments, from just after `FF D8`, reaches a
-// start of scan (`FF DA`); jpeg-js decodes a JPEG with no scan as a blank
-// image (§9.5's note of 2026-10-19). The walk takes only the segments
+// start of scan (`FF DA`) whose header names 1–4 components; jpeg-js
+// decodes a JPEG with no scan, or a scan of no component, as a blank image
+// (§9.5's note of 2026-10-19). The walk takes only the segments
 // jpeg-js reads before a scan: a marker, `FF` and a code, after any `FF`
 // fill bytes, then a two-byte length that counts itself. Anything else
 // first, `FF D9`, another marker, a byte that is no marker or the end,
@@ -135,7 +201,12 @@ function reachesScan(bytes: Buffer): boolean {
   let at = 2;
   while (at + 3 < bytes.length && bytes[at] === 0xff) {
     const code = bytes[at + 1];
-    if (code === 0xda) return true;
+    if (code === 0xda) {
+      // The scan's header: its length (2), its component count (1), 2 bytes
+      // for each of 1–4 components, then 3 more bytes.
+      const components = bytes[at + 4];
+      return components >= 1 && components <= 4 && bytes.readUInt16BE(at + 2) === 6 + 2 * components;
+    }
     if (code === 0xff) {
       at += 1;
     } else if ((code >= 0xe0 && code <= 0xef) || JPEG_SEGMENTS_BEFORE_SCAN.includes(code)) {
