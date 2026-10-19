@@ -252,7 +252,11 @@ export class FortyTwoController {
     const cookie = parseSessionCookie(request.headers.cookie);
     if (cookie.kind !== 'session') throw new ApiError('unauthenticated');
     try {
-      await this.fortyTwo.setPassword42({ actor, sessionToken: cookie.token, newPassword: dto.newPassword });
+      await this.fortyTwo.setPasswordAfter42({
+        actor,
+        sessionToken: cookie.token,
+        newPassword: dto.newPassword,
+      });
     } catch (err) {
       if (signedOutBy(err)) response.setHeader('Set-Cookie', clearSessionCookie());
       throw err;

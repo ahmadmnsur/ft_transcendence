@@ -148,11 +148,14 @@ export class OAuthAttemptStore {
     return entry;
   }
 
-  // §5.6 C: the permission the new password's request takes. Removed
-  // whatever it is — used once; only a live permission is handed over.
+  // §5.6 C: the permission the new password's request takes — removed, live
+  // or expired, so it is used once; only a live one is handed over. Anything
+  // else under the session's key is a Connect or Confirm attempt in flight,
+  // and stays: a stale request from another tab must not break its callback.
   takePermission(bindingKey: string): ConfirmPermission | null {
-    const entry = this.take(bindingKey);
-    if (entry === null || entry.kind !== 'permission') return null;
+    const entry = this.attempts.get(bindingKey);
+    if (entry === undefined || entry.kind !== 'permission') return null;
+    this.attempts.delete(bindingKey);
     if (entry.expiresAt.getTime() <= this.clock.now().getTime()) return null;
     return entry;
   }

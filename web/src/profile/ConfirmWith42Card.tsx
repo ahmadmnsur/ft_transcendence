@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LIMITS, isValidPassword } from '@shared/limits';
 import { ApiRefusalError } from '../api/client';
-import { setPassword42, start42 } from '../api/auth';
+import { setPasswordAfter42, start42 } from '../api/auth';
 import { fetchSession } from '../api/session';
 import { meQueryOptions } from '../api/profile';
 import { Banner, Button, Card, TextField } from '../design';
@@ -14,9 +14,9 @@ import { failureCode } from './failure';
 // Connect 42 does, and asks for no password; the callback's answer comes
 // back as `/me?oauth=confirmed`, which the page passes in as `confirmed`.
 // Then the card is the new-password form: set within ten minutes, once, it
-// signs the Student out everywhere, like the password change. Any refusal
-// means the permission is used or gone, so the card goes back to Confirm
-// with 42 with the refusal's sentence.
+// signs the Student out everywhere, like the password change. Once sent,
+// the permission is used or gone, so a failure that leaves the Student
+// signed in takes the card back to Confirm with 42 with its sentence.
 export function ConfirmWith42Card({
   confirmed,
   onAction,
@@ -124,19 +124,19 @@ export function ConfirmWith42Card({
     }
     setPending('set');
     try {
-      await setPassword42(newPassword.trim());
+      await setPasswordAfter42(newPassword.trim());
       await onSignedOut('password-changed');
     } catch (error) {
-      if (error instanceof ApiRefusalError) {
-        // Still signed in, and the permission is used or gone. A lost race
-        // answers `password_incorrect`, whose sentence names a password this
-        // form never asked for; its remedy is a missing permission's.
-        setFailure({ code: error.code === 'password_incorrect' ? 'confirmation_required' : error.code });
+      if (error instanceof ApiRefusalError && error.code === 'confirmation_required') {
+        // Still signed in, and the permission is used or gone.
+        setFailure({ code: error.code });
         resetForm();
         return;
       }
       // Anything else may have signed the Student out (§5.1): the session
-      // probe decides, as on the password change.
+      // probe decides, as on the password change. A lost race
+      // (`password_incorrect`) is among them: the change that won already
+      // deleted every session.
       let signedOut = true;
       try {
         signedOut = !(await fetchSession()).authenticated;

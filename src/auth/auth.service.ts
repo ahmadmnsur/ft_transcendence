@@ -132,9 +132,8 @@ export class AuthService {
     await changePasswordCore(
       {
         studentId: actor.studentId,
-        currentPassword,
         newPassword,
-        checkCurrentPassword: passwordStep3(this.supabase),
+        checkStep3: () => passwordStep3(this.supabase)(actor.studentId, currentPassword),
         sessionHash: actor.sessionHash,
       },
       {

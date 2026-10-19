@@ -88,7 +88,7 @@ export async function disconnect42(password: string): Promise<unknown> {
 // Student signed out everywhere, like the password change; the 200 refusals
 // are `confirmation_required` and `password_incorrect` (a change that lost a
 // race).
-export async function setPassword42(newPassword: string): Promise<unknown> {
+export async function setPasswordAfter42(newPassword: string): Promise<unknown> {
   return apiFetch<unknown>('/auth/42/password', { method: 'POST', body: { newPassword } });
 }
 

@@ -21,12 +21,7 @@ import {
   type FortyTwoIntent,
   type OAuthAttempt,
 } from './oauth-attempt-store';
-import {
-  changePasswordCore,
-  passwordStep3,
-  PasswordChangeLock,
-  type PasswordStep3,
-} from './password-change';
+import { changePasswordCore, passwordStep3, PasswordChangeLock } from './password-change';
 import {
   alreadySignedIn,
   confirmationRequired,
@@ -570,28 +565,43 @@ export class FortyTwoService {
   // validated it and resolved the session; there is no throttle, since the
   // route checks no password (§5.5). §5.1's password change runs with its
   // step 3 replaced by the permission, taken under this session's key so it
-  // is used once, whatever follows: none, an expired one, or a Student whose
-  // `forty_two_id`, re-read, no longer equals the confirmed one →
-  // `confirmation_required`. Steps 4–6, the version guards and the lock
-  // stand, so this change and an ordinary one never both go through.
-  async setPassword42(input: { actor: Actor; sessionToken: string; newPassword: string }): Promise<void> {
+  // is used once, whatever follows: none, or an expired one →
+  // `confirmation_required`. A Student whose `forty_two_id` no longer equals
+  // the confirmed one is refused the same way by step 4's transaction, which
+  // re-reads it before it writes (§3.6.1), so a Disconnect 42 that commits
+  // after step 3 still stops the change. Steps 4–6, the version guards and
+  // the lock stand, so this change and an ordinary one never both go
+  // through.
+  async setPasswordAfter42(input: {
+    actor: Actor;
+    sessionToken: string;
+    newPassword: string;
+  }): Promise<void> {
+    const { studentId } = input.actor;
     const bindingKey = OAuthAttemptStore.bindingKey(input.sessionToken);
-    const confirmed: PasswordStep3 = async (studentId) => {
-      const permission = this.attempts.takePermission(bindingKey);
-      if (permission === null || permission.studentId !== studentId) throw confirmationRequired();
-      const student = await this.prisma.student.findUnique({
-        where: { id: studentId },
-        select: { fortyTwoId: true },
-      });
-      if (student === null || student.fortyTwoId !== permission.fortyTwoId) throw confirmationRequired();
-    };
+    let confirmedFortyTwoId: number | null = null;
     await changePasswordCore(
       {
-        studentId: input.actor.studentId,
-        // Step 3 checks the permission, not a password.
-        currentPassword: '',
+        studentId,
         newPassword: input.newPassword,
-        checkCurrentPassword: confirmed,
+        checkStep3: async () => {
+          const permission = this.attempts.takePermission(bindingKey);
+          if (permission === null || permission.studentId !== studentId) throw confirmationRequired();
+          confirmedFortyTwoId = permission.fortyTwoId;
+        },
+        recheckInStep4: async (tx) => {
+          const student = await tx.student.findUnique({
+            where: { id: studentId },
+            select: { fortyTwoId: true },
+          });
+          if (
+            confirmedFortyTwoId === null ||
+            student === null ||
+            student.fortyTwoId !== confirmedFortyTwoId
+          ) {
+            throw confirmationRequired();
+          }
+        },
         sessionHash: input.actor.sessionHash,
       },
       {
