@@ -440,10 +440,12 @@ and why there is no `SESSION_SECRET`.
    > The check's step 1 above now covers `DATABASE_URL`'s query: on both targets it may carry no
    > parameter except its TLS settings, the names that start with `ssl` and `uselibpqcompat`.
    > node-postgres takes the user, password, host and port from a query parameter before the URL's
-   > own, so a parameter would move the connection after steps 1 and 2 had checked the URL, and
-   > `make up` or a reset would reach one project's database and another's Auth and Storage. The
+   > own, so a parameter could move the connection after steps 1 and 2 had checked the URL, and
+   > `make up` or a reset could reach one project's database and another's Auth and Storage. The
    > rule lists what may stay, not what is known to move the connection, since node-postgres reads
-   > every parameter. The failure names the parameter, never its value. The boot chain, `main.js`,
+   > every parameter. The failure names the parameter only when it is one node-postgres or Prisma
+   > reads, since in a password typed with a raw `@` and then `?` the rest of the password becomes
+   > the first parameter's name, and it never prints a value. The boot chain, `main.js`,
    > the seed entry and both resets refuse the same way, and the harness's own `host` and
    > `hostaddr` list gives way to the same rule (`docs/spec.md` §15.4 and §16.2).
 

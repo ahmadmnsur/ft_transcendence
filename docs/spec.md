@@ -1169,8 +1169,9 @@ http {
   logs step names and counts, the demo Student's email and how long its run took (§14.8), never a
   password. The throttle never logs its keys. Prisma's own `log` option is empty. The token a
   password check returns, the Supabase keys and the 42 secret are never logged; the boot check and
-  the test harness name a variable and a host, never a secret value (§15.5, §16.2). The file
-  cleanup logs one line only when it deletes a file, and a failed run (§9.8). Sign in with 42 logs
+  the test harness name a variable, a host or a query parameter node-postgres or Prisma reads,
+  never a secret value (§15.4, §15.5, §16.2). The file cleanup logs one line only when it deletes
+  a file, and a failed run (§9.8). Sign in with 42 logs
   a warning naming `secret_valid_until` in the secret's last seven days (§5.6).
 - **Postgres on the fallback**: the `db` service runs Supabase's image with `-c
   config_file=/etc/postgresql/postgresql.conf -c log_error_verbosity=terse -c
@@ -3702,17 +3703,21 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
   plain value in `compose.yaml`, so bare Compose works with no `.env` (ADR-0004 d8).
 - **Boot validation**: the boot check's steps 1 and 2 (§15.5), shared by the boot chain, the seed
   entry, both resets and the test harness. A failure prints one message naming the variable and,
-  for a URL, its host or the query parameter it sets, never a secret value, and exits 1. Step 1
-  checks that the `api`'s entries are non-empty (all but the OAuth pair and the fallback's nine
+  for a URL, its host or a query parameter it sets that node-postgres or Prisma reads, never a
+  secret value, and exits 1. Step 1 checks that the `api`'s entries are non-empty (all but the
+  OAuth pair and the fallback's nine
   signing secrets and keys, which the `api` never reads), that `PUBLIC_ORIGIN` is a bare origin,
   that the staff and seed passwords meet the password rule (§5.1), and that `DATABASE_URL` carries
   no query parameter except its TLS settings, the names that start with `ssl` and
   `uselibpqcompat`, on both targets (ADR-0004 d8's note of 2026-10-18). node-postgres reads every
   parameter and takes the user, password, host and port from one before the URL's own, so any
-  other parameter would move the connection after steps 1 and 2 had checked the URL; the rule
+  other parameter could move the connection after steps 1 and 2 had checked the URL; the rule
   lists what may stay, not what is known to move it. For example: `Invalid environment:
-  DATABASE_URL: must carry no query parameter except its TLS settings, and it sets user`. The test
-  harness applies the same rule (§16.2).
+  DATABASE_URL: must carry no query parameter except its TLS settings, and it sets user`. Only a
+  name node-postgres or Prisma reads is printed (`host`, `hostaddr`, `port`, `user`, `password`,
+  `database`, `options`, `application_name`, `schema`, `pgbouncer`, `connection_limit`); any other
+  reads `it sets a parameter`, since in a password typed with a raw `@` and then `?` the rest of
+  the password becomes the first parameter's name. The test harness applies the same rule (§16.2).
 - **Duplicated sources, resolved by checks rather than new entries**:
   - `DATABASE_URL` and `SUPABASE_URL` must name one target (the boot check's step 2). Compose layers
     `.env` over `.env.example` one variable at a time, so a `.env` that missed one would otherwise
@@ -3925,9 +3930,9 @@ names, run locally as `make test`.
     `make reset-local` runs (the target function of `src/core/env.ts`): `DATABASE_URL` and
     `SUPABASE_URL` must both name the fallback, or the run stops and names the variable and the host
     it points at, never the password. It also refuses a `DATABASE_URL` query parameter other than
-    the TLS settings, with step 1's rule (§15.4), and names the parameter. `make test` reads
-    `.env.example` alone, but `npx vitest run` can be typed anywhere, and `prisma.config.ts` loads
-    `.env` by itself;
+    the TLS settings, with step 1's rule (§15.4), and names the parameter as step 1 does.
+    `make test` reads `.env.example` alone, but `npx vitest run` can be typed anywhere, and
+    `prisma.config.ts` loads `.env` by itself;
   - global setup derives the test database name `<database of DATABASE_URL>_test`, drops and recreates
     it (`DROP DATABASE … WITH (FORCE)`), runs `npx prisma generate --config prisma.config.ts` first —
     the client is gitignored (§3.2), a fresh clone has none, so nothing may import it before it exists,

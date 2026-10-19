@@ -14,7 +14,7 @@ import {
 // The suite only ever runs against the local fallback; a team or unknown target
 // would let a stray `.env` point the harness at real data (§16.2). A query
 // parameter other than a TLS setting is refused too, as the boot check's step 1
-// refuses it (§15.4), because pg would take the user, password, host or port
+// refuses it (§15.4), because pg could take the user, password, host or port
 // from it instead of the URL's own. Any scheme but postgresql: or postgres: is refused
 // too, because pg reads a socket: URL's path as a socket directory.
 function assertFallback(env: EnvRecord): void {

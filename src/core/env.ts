@@ -57,14 +57,31 @@ export function isTlsSetting(name: string): boolean {
   return name.startsWith('ssl') || name === 'uselibpqcompat';
 }
 
+// The query parameters node-postgres or Prisma reads, the only names a message
+// prints: in a password typed with a raw `@` and then `?`, the rest of the
+// password becomes the first parameter's name (§3.9).
+const NAMED_PARAMETERS = new Set([
+  'host',
+  'hostaddr',
+  'port',
+  'user',
+  'password',
+  'database',
+  'options',
+  'application_name',
+  'schema',
+  'pgbouncer',
+  'connection_limit',
+]);
+
 // node-postgres takes the user, password, host and port from a query parameter
-// before the URL's own, so a parameter would move the connection after both
+// before the URL's own, so a parameter could move the connection after both
 // steps had checked the URL (§15.4). It reads every parameter, so this names
 // what may stay rather than what is known to move it. Returns the first other
-// parameter's name, as a message prints it.
+// parameter as a message prints it: its name when it is a known one.
 export function firstNonTlsParameter(url: URL): string | undefined {
   for (const name of url.searchParams.keys()) {
-    if (!isTlsSetting(name)) return name === '' ? 'a parameter with no name' : name;
+    if (!isTlsSetting(name)) return NAMED_PARAMETERS.has(name) ? name : 'a parameter';
   }
   return undefined;
 }
