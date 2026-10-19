@@ -4,6 +4,7 @@ import { setUnauthorizedHandler } from './api/client';
 import { fetchSession, setSignedOut } from './api/session';
 import { ErrorContent, NotFoundPage, RootErrorPage, RootLayout } from './layout';
 import { requireSession, requireSignedOut } from './guards';
+import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
 import { MePage } from './pages/MePage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -83,6 +84,15 @@ const studentRoute = createRoute({
   component: StudentPage,
 });
 
+// §3.5.1: the signed-in Student's own `/friends`. It lists their Blocks for
+// now; Friends and requests join with #46.
+const friendsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/friends',
+  beforeLoad: requireSession,
+  component: FriendsPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -102,6 +112,7 @@ const routeTree = rootRoute.addChildren([
   meRoute,
   studentsRoute,
   studentRoute,
+  friendsRoute,
   privacyRoute,
   termsRoute,
 ]);

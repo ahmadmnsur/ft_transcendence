@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { createColumnHelper, type SortingState } from '@tanstack/react-table';
 import { LIMITS, PAGING, isValidSearchQuery } from '@shared/limits';
@@ -10,14 +10,14 @@ import {
   type SearchOrder,
   type SearchSort,
   type SkillView,
-  type StudentRef,
   type StudentSearchItem,
 } from '../api/profile';
-import { Avatar, Banner, Button, DataTable, PersonName, RoleLabel, Select, TextField } from '../design';
+import { Banner, Button, DataTable, Select, TextField } from '../design';
 import { useI18n } from '../i18n/context';
 import { isolate } from '../i18n/text';
 import { PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
+import { StudentLink } from '../profile/StudentLink';
 
 // `/students`' search params: the applied filters, the sort and the page. An
 // absent one is its default, so the address stays short.
@@ -192,25 +192,6 @@ function FiltersForm({
   );
 }
 
-// The name links to the profile; an Admin carries the Admin label (§12.8).
-// Removed Students never reach the results (§4.6), but the tombstone rule
-// still holds through PersonName.
-function NameCell({ student }: { student: StudentRef }): React.JSX.Element {
-  return (
-    <span className="flex flex-wrap items-center gap-2">
-      <Link
-        to="/students/$studentId"
-        params={{ studentId: student.id }}
-        className="inline-flex min-w-0 items-center gap-2 rounded font-medium text-link underline-offset-2 hover:underline focus-ring"
-      >
-        <Avatar src={student.avatarUrl} alt="" size="xs" />
-        <PersonName name={student.displayName} removed={student.removed} />
-      </Link>
-      {student.isAdmin && !student.removed ? <RoleLabel /> : null}
-    </span>
-  );
-}
-
 const column = createColumnHelper<StudentSearchItem>();
 
 // §6.2, §3.5.1: the Advanced search. Filters, sort and page live in the
@@ -268,7 +249,7 @@ export function StudentsPage(): React.JSX.Element {
       column.accessor((row) => row.student.displayName, {
         id: 'name',
         header: copy.columns.name,
-        cell: ({ row }) => <NameCell student={row.original.student} />,
+        cell: ({ row }) => <StudentLink student={row.original.student} />,
       }),
       column.display({
         id: 'teaches',

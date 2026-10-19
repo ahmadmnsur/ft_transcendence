@@ -94,6 +94,12 @@ function SiteHeader(): React.JSX.Element {
                 {t.shell.header.studentsLink}
               </Link>
               <Link
+                to="/friends"
+                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
+              >
+                {t.shell.header.friendsLink}
+              </Link>
+              <Link
                 to="/me"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
               >
