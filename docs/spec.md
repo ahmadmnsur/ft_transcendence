@@ -3789,9 +3789,11 @@ The dev image runs the same check first, from a copy outside the bind mount, the
   engine does not find a relative path. A wrong or missing certificate stops both connections. The
   project also enforces SSL, so an unencrypted connection is refused, and the boot check names it.
 - **`prisma migrate` waits 30 s for the pooler.** Its engine waits 5 s by default, and from some
-  networks the pooler takes over 15 s to answer, so `prisma.config.ts` also sets
+  networks the pooler takes more than 5 s to answer, so `prisma.config.ts` also sets
   `connect_timeout=30` on a URL on Supabase's pooler, replacing any it has (ADR-0004 d11's note of
-  2026-10-19). No `.env` needs one, and the boot check refuses one (§15.4).
+  2026-10-19). No `.env` needs one, and the boot check refuses one (§15.4). The boot check's step 4
+  runs first and gives its own connection 10 s, so a pooler slower than that still stops the boot
+  there.
 - **Each `api`'s pool is capped at 5 connections.** In session mode the pooler accepts at most the
   project's Pool Size, 15 (the default for its compute size), per role and database. Two members'
   stacks of 5, `prisma migrate deploy`, and the seed's two connections, its pool's and its lock's,

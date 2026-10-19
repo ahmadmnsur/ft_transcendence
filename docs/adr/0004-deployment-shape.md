@@ -443,10 +443,10 @@ and why there is no `SESSION_SECRET`.
    > own, so a parameter could move the connection after steps 1 and 2 had checked the URL, and
    > `make up` or a reset could reach one project's database and another's Auth and Storage. The
    > rule lists what may stay, not what is known to move the connection, since node-postgres reads
-   > every parameter. The failure names the parameter only when it is one node-postgres or Prisma
-   > reads, since in a password typed with a raw `@` and then `?` the rest of the password becomes
-   > the first parameter's name, and it never prints a value. The boot chain, `main.js`,
-   > the seed entry and both resets refuse the same way, and the harness's own `host` and
+   > every parameter. The failure names the parameter only when it is on a fixed list of the names
+   > node-postgres or Prisma reads, since in a password typed with a raw `@` and then `?` the rest of
+   > the password becomes the first parameter's name, and it never prints a value. The boot chain,
+   > `main.js`, the seed entry and both resets refuse the same way, and the harness's own `host` and
    > `hostaddr` list gives way to the same rule (`docs/spec.md` §15.4 and §16.2). A `.env` that
    > carried `?connect_timeout` for a slow pooler needs none: `prisma.config.ts` sets it (decision
    > 11's note of 2026-10-19).
@@ -610,11 +610,12 @@ and why there is no `SESSION_SECRET`.
     >
     > > **Extended 2026-10-19 by [Boot check: refuse a DATABASE_URL query that moves the connection](https://github.com/ahmadmnsur/ft_transcendence/issues/180).**
     > > `prisma.config.ts` also sets `connect_timeout=30` on a URL on Supabase's pooler, replacing
-    > > any: the engine waits 5 s by default, and from some networks the pooler takes over 15 s to
-    > > answer, so `prisma migrate deploy` stopped with `P1001` in 4 of 6 boots on one member's
+    > > any: the engine waits 5 s by default, and from some networks the pooler takes more than 5 s
+    > > to answer, so `prisma migrate deploy` stopped with `P1001` in 4 of 6 boots on one member's
     > > network until that member's `.env` added `?connect_timeout=30`. The boot check now refuses
     > > every query parameter but the TLS settings (decision 8's note of 2026-10-18), so the setting
-    > > moves here, where it reaches every member and the defense.
+    > > moves here, where it reaches every member and the defense. The boot check's step 4 runs
+    > > first and gives its own connection 10 s, so the 30 s helps a pooler that answers within that.
     >
     > **The seed on the team project.** It writes its fixture at the first boot there, and every
     > later boot skips it until the reset below, so the data a demo adds stays (ADR-0017 d10). That
