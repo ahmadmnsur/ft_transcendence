@@ -234,14 +234,16 @@ export function isPresenceUpdate(value: unknown): value is PresenceUpdate {
 }
 
 // §7.4's client reaction to `presence:update`: the cached Friends list takes
-// the new status. A read in flight may have answered before the change, so it
-// is cancelled and made again instead, even a first read with no data yet. An
-// update about a Student the list does not hold means the list is out of date
-// (the other Student accepted a request in their own tab, say): both lists
-// are read again.
+// the new status. An update about a Student the list does not hold means the
+// lists are out of date (the other Student accepted a request in their own
+// tab, say): both are read again, so the request leaves Sent as the other
+// Student joins the Friends. A Friends read in flight may have answered
+// before the change, so it is cancelled and made again instead, even a first
+// read with no data yet; whether its answer holds the Student is not known
+// yet, so the requests are read again with it.
 export function applyPresence(queryClient: QueryClient, update: PresenceUpdate): void {
   if (queryClient.getQueryState(FRIENDS_QUERY_KEY)?.fetchStatus === 'fetching') {
-    void readAgain(queryClient, FRIENDS_QUERY_KEY);
+    readListsAgain(queryClient);
     return;
   }
   const list = queryClient.getQueryData<FriendList>(FRIENDS_QUERY_KEY);
