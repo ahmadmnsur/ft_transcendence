@@ -5,8 +5,8 @@ import { useHarness } from '../harness/app';
 const harness = useHarness();
 
 // §4.4 step 9, §16.3 row 2: `Student.display_name` carries the `und-x-icu`
-// collation, so every stack sorts names alike. Nothing else in this category
-// yet: its other objects do not exist.
+// collation, so every stack sorts names alike. Each migration's other raw
+// objects are asserted in a file of their own, beside this one.
 describe('accounts and sessions migration', () => {
   it('gives Student.display_name the und-x-icu collation', async () => {
     const rows = await harness.app

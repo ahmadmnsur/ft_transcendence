@@ -16,8 +16,9 @@ const BACKOFF_CAP_MS = 10_000;
 // The shell's socket lifecycle (§7.5, M27). Mounted once, inside the root
 // layout: it connects the client of `socket.ts` once GET /api/session reports
 // a session, tells the three terminal outcomes from an outage, and shows the
-// origin banner. Events themselves belong to the tickets that own the
-// surfaces (#46, #47, #61); this component only keeps the connection honest.
+// origin banner. Events themselves belong to the surfaces that own them
+// (`presence:update`: `social/PresenceUpdates.tsx`; #47, #61); this component
+// only keeps the connection honest.
 export function RealtimeConnection({ brand }: { brand: string }): React.JSX.Element | null {
   const queryClient = useQueryClient();
   const navigate = useNavigate();

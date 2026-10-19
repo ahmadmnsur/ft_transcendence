@@ -1,6 +1,8 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
+import { dropFromFriendLists } from './friends';
 import type { StudentRef } from './profile';
+import { writeAsSignedIn } from './session';
 
 // §6.4's Block routes, with the exact wire shapes the API returns.
 
@@ -68,24 +70,26 @@ async function cacheBlockRemoved(queryClient: QueryClient, studentId: string): P
 
 // The two writes as both screens use them. A failure reads the list again,
 // since the server may hold another one (another tab blocked or lifted
-// first), and is rethrown for the screen to show.
+// first), and is rethrown for the screen to show. A Block also deleted the
+// pair's Friendship row, pending or accepted (§11.2), so the Friends lists
+// drop that Student too. An answer that arrives after another Student signed
+// in reaches none of the cache (`writeAsSignedIn`).
 export async function addBlock(queryClient: QueryClient, studentId: string): Promise<void> {
-  let block: BlockView;
-  try {
-    block = await blockStudent(studentId);
-  } catch (error) {
-    void queryClient.invalidateQueries({ queryKey: BLOCKS_QUERY_KEY });
-    throw error;
-  }
-  await cacheBlockAdded(queryClient, block);
+  await writeAsSignedIn(
+    queryClient,
+    () => blockStudent(studentId),
+    async (block) => {
+      await Promise.all([cacheBlockAdded(queryClient, block), dropFromFriendLists(queryClient, block.student.id)]);
+    },
+    () => void queryClient.invalidateQueries({ queryKey: BLOCKS_QUERY_KEY }),
+  );
 }
 
 export async function liftBlock(queryClient: QueryClient, studentId: string): Promise<void> {
-  try {
-    await unblockStudent(studentId);
-  } catch (error) {
-    void queryClient.invalidateQueries({ queryKey: BLOCKS_QUERY_KEY });
-    throw error;
-  }
-  await cacheBlockRemoved(queryClient, studentId);
+  await writeAsSignedIn(
+    queryClient,
+    () => unblockStudent(studentId),
+    () => cacheBlockRemoved(queryClient, studentId),
+    () => void queryClient.invalidateQueries({ queryKey: BLOCKS_QUERY_KEY }),
+  );
 }

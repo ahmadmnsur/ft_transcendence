@@ -9,6 +9,7 @@ import { useI18n } from './i18n/context';
 import { languageNames, languages } from './i18n/language';
 import { AlertIcon, Button, EmptyState, PersonName, SearchIcon, Select, buttonClasses } from './design';
 import { RealtimeConnection } from './realtime/connection';
+import { PresenceUpdates } from './social/PresenceUpdates';
 
 // The product name is never translated.
 export const BRAND = '42 PeerConnect';
@@ -257,6 +258,7 @@ export function RootLayout(): React.JSX.Element {
       <main id="main-content" ref={mainRef} tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
         <div className="mx-auto w-full max-w-6xl px-4 py-8">
           <RealtimeConnection brand={BRAND} />
+          <PresenceUpdates />
           {/* §7.5, §4.6: the key remounts the page when one signed-in Student
           replaces another, so no local state of the previous Student (an
           unsaved draft, typed passwords) survives it. A Fragment, so the

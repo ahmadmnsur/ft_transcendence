@@ -1,4 +1,5 @@
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { PresenceReader } from '../core/presence-reader';
 import type { RevokeTarget } from '../core/realtime-publisher';
 
 // §7.6: how long a Student stays online after their last socket goes, so a
@@ -15,9 +16,10 @@ export type PresenceListener = (transition: PresenceTransition) => void;
 // §7.6: the process-local registry — `studentId → Set<socketId>` for
 // Presence, plus the socket bindings a forced disconnect needs. Never
 // stored anywhere, and nothing records when anyone was last online: a
-// restart reads everyone offline (ADR-0003 Consequences, `CONTEXT.md`).
+// restart reads everyone offline (ADR-0003 Consequences, `CONTEXT.md`). It is
+// the app's PresenceReader, which GET /api/friends reads.
 @Injectable()
-export class PresenceRegistry implements OnModuleDestroy {
+export class PresenceRegistry extends PresenceReader implements OnModuleDestroy {
   private readonly bindings = new Map<string, { studentId: string; sessionHash: string }>();
   private readonly present = new Map<string, Set<string>>();
   private readonly grace = new Map<string, NodeJS.Timeout>();
@@ -98,11 +100,11 @@ export class PresenceRegistry implements OnModuleDestroy {
     return ids;
   }
 
-  // What GET /api/friends reads later (§7.6). True while a socket is present,
-  // and still true while a grace timer is pending (§7.6's note of 2026-10-18):
+  // What GET /api/friends reads (§7.6). True while a socket is present, and
+  // still true while a grace timer is pending (§7.6's note of 2026-10-18):
   // friends were never told offline for that window, and a reconnect inside it
   // broadcasts nothing, so this is exactly what they were last told.
-  isOnline(studentId: string): boolean {
+  override isOnline(studentId: string): boolean {
     return (this.present.get(studentId)?.size ?? 0) > 0 || this.grace.has(studentId);
   }
 

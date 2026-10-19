@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 17 October 2026
+**42 PeerConnect** · Last updated: 19 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -102,7 +102,8 @@ Who or what you reported, the reason you chose, anything you wrote, and how staf
 
 One record for each browser you are signed in on: whose it is, and when it expires.
 
-Other records also carry the time they were made; a sign-in session records only when it expires.
+Other records also carry the time they were made, and a Friendship also when it was accepted; a sign-in
+session records only when it expires.
 
 **What PeerConnect does not record: when you were last online.** Your Friends can see whether you are
 online *now*. That status lives only in the running server's memory, is never saved, and resets
@@ -146,6 +147,7 @@ your email address is used only to sign in.
 | Whether you are online now | your Friends only |
 | Your email address | you and Admins — never shown on your profile or in search |
 | Your list of Friends | you only |
+| A friend request you sent or received, while it waits for an answer | you and the other Student only |
 | Your Matches: who you were paired with, their status, the Compatibility Score and its explanation | the two of you, and Admins. No profile lists anyone's Matches, and a Public Takeaway never names the Mentor |
 | Your Learning Outcome and Evidence | the two Students in that Match, and Admins |
 | Private Feedback, including its rating | the Mentor it is about, Admins, and you, its author. It is **not anonymous**: the Mentor sees that it came from you |
@@ -242,6 +244,9 @@ Some things end sooner:
   your learn list.
 - **A Like** is deleted when you take it back, **a Friendship** when either of you ends it, and **a
   Block** when you lift it.
+- **A friend request** is deleted when the Student it was sent to declines it or you cancel it; when
+  it is accepted, it becomes your Friendship. **A Block** deletes any Friendship or friend request
+  between the two of you, whichever of you set it.
 - **Online status** is never stored, and **attempt counts** (sign-in, sign-up and wrong passwords)
   live only in memory.
 
@@ -290,7 +295,7 @@ In PeerConnect you can:
 - stop being matched, by removing all your Skills;
 - decline any Match;
 - Block another Student, and lift a Block you set;
-- end a Friendship, or take back a Like;
+- cancel a friend request you sent, decline one you received, end a Friendship, or take back a Like;
 - delete or replace your Evidence, and remove or replace your avatar;
 - ask an Admin to remove your account (see below).
 

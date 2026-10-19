@@ -1,11 +1,75 @@
 import type { EnGroup } from '../types';
 
-// `/friends` and the Block control on a profile (§6.4, §11.2, §11.3). A
-// failed read or write shows the errors area's sentence for its code, and a
-// Removed Student's name is people's tombstone.
+// `/friends` and the friend and Block controls on a profile (§6.4, §11.1–
+// §11.3). A failed read or write shows the errors area's sentence for its
+// code, and a Removed Student's name is people's tombstone.
 export default {
   friends: {
     title: 'Friends',
+  },
+  // The friend actions both screens share, and what they report.
+  friendActions: {
+    send: 'Send friend request',
+    sending: 'Sending…',
+    accept: 'Accept',
+    accepting: 'Accepting…',
+    decline: 'Decline',
+    declining: 'Declining…',
+    cancelRequest: 'Cancel request',
+    cancelling: 'Cancelling…',
+    end: 'End Friendship',
+    ending: 'Ending…',
+    sent: 'You sent {name} a friend request.',
+    accepted: 'You and {name} are now Friends.',
+    declined: 'You declined the friend request from {name}.',
+    cancelled: 'You cancelled your friend request to {name}.',
+    ended: 'You ended your Friendship with {name}.',
+    // Accept refused `friend_request_unavailable` (the other Student was
+    // Removed meanwhile): the errors area's sentence speaks of sending.
+    acceptUnavailable: 'You can no longer accept this friend request.',
+  },
+  // §11.1: ending a Friendship asks first, since only a new request restores it.
+  endConfirm: {
+    title: 'End your Friendship with {name}?',
+    body: "You will both stop seeing whether the other is online, and {name} will leave your Friends, as you will leave theirs. To be Friends again, one of you will need to send a new friend request.",
+    keep: 'Keep Friendship',
+  },
+  // §7.6: a Friend's Presence, as text beside a dot, never colour alone.
+  presence: {
+    online: 'Online',
+    offline: 'Offline',
+  },
+  // The friend control on another Student's profile.
+  friendProfile: {
+    friendsNote: 'You are Friends.',
+    outgoingNote: 'You sent this Student a friend request.',
+    incomingNote: 'This Student sent you a friend request.',
+  },
+  // The Friends list on `/friends`.
+  friendList: {
+    title: 'Your Friends',
+    subtitle: 'Only you see this list. Your Friends see whether you are online.',
+    loading: 'Loading your Friends…',
+    emptyTitle: "You don't have any Friends yet.",
+    emptyDescription: "You can send a friend request from a Student's profile.",
+    // Each row's End Friendship button; it starts with the visible text.
+    endNamed: 'End Friendship with {name}',
+  },
+  // The friend requests on `/friends`.
+  requests: {
+    title: 'Friend requests',
+    subtitle: 'A request is seen only by you and the other Student.',
+    loading: 'Loading your friend requests…',
+    incomingTitle: 'Received',
+    outgoingTitle: 'Sent',
+    incomingEmpty: 'No friend request is waiting for your answer.',
+    outgoingEmpty: 'No request you sent is waiting.',
+    receivedOn: 'Received on {date}',
+    sentOn: 'Sent on {date}',
+    // Each row's buttons; every name starts with the visible text.
+    acceptNamed: 'Accept the friend request from {name}',
+    declineNamed: 'Decline the friend request from {name}',
+    cancelNamed: 'Cancel request to {name}',
   },
   // The Block actions both screens share, and what they report.
   actions: {

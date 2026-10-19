@@ -1,12 +1,14 @@
 import { useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { blocksQueryOptions } from '../api/blocks';
+import { friendRequestsQueryOptions, friendsQueryOptions } from '../api/friends';
 import { ApiProtocolError } from '../api/client';
 import { studentQueryOptions, type SkillView } from '../api/profile';
 import { AlertIcon, Avatar, Button, EmptyState, PersonName, RoleLabel, SkillChip, SkillName } from '../design';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { BlockControl } from '../social/BlockControl';
+import { FriendControl } from '../social/FriendControl';
 
 // The shape the API's ParseUUIDPipe accepts (§6.0.1). A malformed id is
 // known here, so no request is sent for it and the console stays clean
@@ -62,10 +64,13 @@ export function StudentPage(): React.JSX.Element {
     ...studentQueryOptions(studentId),
     enabled: wellFormedId,
   });
-  // The Block control reads the viewer's own Blocks. Starting that read
-  // beside the profile's, rather than once the profile shows, keeps the
-  // control from appearing late and moving the page.
+  // The friend and Block controls read the viewer's own Friends, requests
+  // and Blocks. Starting those reads beside the profile's, rather than once
+  // the profile shows, keeps the controls from appearing late and moving the
+  // page.
   useQuery({ ...blocksQueryOptions(), enabled: wellFormedId });
+  useQuery({ ...friendsQueryOptions(), enabled: wellFormedId });
+  useQuery({ ...friendRequestsQueryOptions(), enabled: wellFormedId });
 
   if (!wellFormedId) return <NotFoundPage />;
 
@@ -115,9 +120,10 @@ export function StudentPage(): React.JSX.Element {
             {student.isAdmin && !removed ? <RoleLabel /> : null}
           </h1>
         </div>
-        {/* §6.4: Block and Unblock; not on the viewer's own profile. Keyed by
-        the Student, so a status or an open dialog never carries over to the
-        next profile. */}
+        {/* §6.4: the friend request button, then Block and Unblock; neither
+        on the viewer's own profile. Keyed by the Student, so a status or an
+        open dialog never carries over to the next profile. */}
+        <FriendControl key={`friend-${student.id}`} student={student} />
         <BlockControl key={student.id} student={student} />
         {removed || profile === null ? (
           <p className="text-sm text-ink-muted">{copy.removedNote}</p>
