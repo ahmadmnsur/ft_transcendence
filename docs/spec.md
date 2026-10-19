@@ -3667,7 +3667,7 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
 | `POSTGRES_USER` | `postgres` | api (consistency check) | the `api`'s role on the fallback; `db`'s own superuser is set in `compose.yaml` |
 | `POSTGRES_PASSWORD` | `peerconnect-dev-password` | db (first boot), api (check) | repeated as plain values in `compose.yaml` (§15.1) |
 | `POSTGRES_DB` | `postgres` | api (check) | |
-| `DATABASE_URL` | `postgresql://postgres:peerconnect-dev-password@db:5432/postgres` | api, Prisma CLI, seed | the only database connection the application uses. Team `.env`: the dashboard's plain Session pooler string, `postgresql://postgres.<ref>:<password>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres`, with no TLS settings: the code adds them, and replaces or removes any the URL carries, so none can weaken the check (§15.5). On either target it carries no other query parameter: node-postgres takes the user, password, host and port from one before the URL's own, so the boot check refuses every parameter but the TLS settings (*Boot validation*, below) |
+| `DATABASE_URL` | `postgresql://postgres:peerconnect-dev-password@db:5432/postgres` | api, Prisma CLI, seed | the only database connection the application uses. Team `.env`: the dashboard's plain Session pooler string, `postgresql://postgres.<ref>:<password>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres`, with no TLS settings: the code adds them, and replaces or removes any the URL carries, so none can weaken the check (§15.5). On either target it carries no other query parameter: node-postgres takes the user, password, host and port from one before the URL's own, so the boot check refuses every parameter but the TLS settings (*Boot validation*, below). A slow network needs no `connect_timeout` either: `prisma.config.ts` sets one (§15.5) |
 | `NODE_ENV` | `production` | api | overlay sets `development` |
 | `PUBLIC_ORIGIN` | `https://localhost:8443` | api, proxy template | overlay sets `http://localhost:8081` |
 | `HTTPS_PORT` | `8443` | Compose interpolation (default `8443`), api (check) | |
@@ -3714,10 +3714,11 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
   other parameter could move the connection after steps 1 and 2 had checked the URL; the rule
   lists what may stay, not what is known to move it. For example: `Invalid environment:
   DATABASE_URL: must carry no query parameter except its TLS settings, and it sets user`. Only a
-  name node-postgres or Prisma reads is printed (`host`, `hostaddr`, `port`, `user`, `password`,
-  `database`, `options`, `application_name`, `schema`, `pgbouncer`, `connection_limit`); any other
-  reads `it sets a parameter`, since in a password typed with a raw `@` and then `?` the rest of
-  the password becomes the first parameter's name. The test harness applies the same rule (§16.2).
+  name on a fixed list of those node-postgres or Prisma reads is printed (`host`, `hostaddr`,
+  `port`, `user`, `password`, `database`, `options`, `application_name`, `schema`, `pgbouncer`,
+  `connection_limit`, `connect_timeout`); any other reads `it sets a parameter`, since in a
+  password typed with a raw `@` and then `?` the rest of the password becomes the first
+  parameter's name. The test harness applies the same rule (§16.2).
 - **Duplicated sources, resolved by checks rather than new entries**:
   - `DATABASE_URL` and `SUPABASE_URL` must name one target (the boot check's step 2). Compose layers
     `.env` over `.env.example` one variable at a time, so a `.env` that missed one would otherwise
@@ -3787,6 +3788,10 @@ The dev image runs the same check first, from a copy outside the bind mount, the
   `sslcert=<absolute path>` on the query of a URL on Supabase's pooler, replacing any it has; the
   engine does not find a relative path. A wrong or missing certificate stops both connections. The
   project also enforces SSL, so an unencrypted connection is refused, and the boot check names it.
+- **`prisma migrate` waits 30 s for the pooler.** Its engine waits 5 s by default, and from some
+  networks the pooler takes over 15 s to answer, so `prisma.config.ts` also sets
+  `connect_timeout=30` on a URL on Supabase's pooler, replacing any it has (ADR-0004 d11's note of
+  2026-10-19). No `.env` needs one, and the boot check refuses one (§15.4).
 - **Each `api`'s pool is capped at 5 connections.** In session mode the pooler accepts at most the
   project's Pool Size, 15 (the default for its compute size), per role and database. Two members'
   stacks of 5, `prisma migrate deploy`, and the seed's two connections, its pool's and its lock's,
@@ -3794,7 +3799,7 @@ The dev image runs the same check first, from a copy outside the bind mount, the
 
 `prisma.config.ts` imports `dotenv/config`, sets `schema: "prisma/schema.prisma"`, `migrations: {
 path: "prisma/migrations", seed: "node dist/prisma/seed/main.js" }` and `datasource: { url:
-process.env.DATABASE_URL }`, with the TLS settings above on a Supabase pooler URL. **Every Prisma CLI
+process.env.DATABASE_URL }`, with the TLS settings and the wait above on a Supabase pooler URL. **Every Prisma CLI
 invocation — boot, Makefile, CI, docs — passes `--config prisma.config.ts`** (M16), so no pinned
 invocation can load another Config. Pinning does not stop an unpinned run — an editor extension, a
 developer's bare `npx prisma` — from discovering one, which is why §3.2 forbids the files themselves

@@ -57,9 +57,11 @@ export function isTlsSetting(name: string): boolean {
   return name.startsWith('ssl') || name === 'uselibpqcompat';
 }
 
-// The query parameters node-postgres or Prisma reads, the only names a message
-// prints: in a password typed with a raw `@` and then `?`, the rest of the
-// password becomes the first parameter's name (§3.9).
+// A fixed list of the query parameters node-postgres or Prisma reads, the only
+// names a message prints: in a password typed with a raw `@` and then `?`, the
+// rest of the password becomes the first parameter's name (§3.9).
+// `connect_timeout` is on it because `prisma.config.ts` sets it on the pooler
+// URL, so a `.env` that still carries one is told which to remove.
 const NAMED_PARAMETERS = new Set([
   'host',
   'hostaddr',
@@ -72,6 +74,7 @@ const NAMED_PARAMETERS = new Set([
   'schema',
   'pgbouncer',
   'connection_limit',
+  'connect_timeout',
 ]);
 
 // node-postgres takes the user, password, host and port from a query parameter

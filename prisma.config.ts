@@ -5,7 +5,10 @@ import { defineConfig } from 'prisma/config';
 // `prisma migrate` runs on Prisma's own engine, which takes TLS from the URL
 // only. On the team project's pooler it verifies Supabase's certificate
 // strictly; the path must be absolute, since the engine does not find a
-// relative one (ADR-0004 d11). The fallback's `db` stays a plain connection.
+// relative one (ADR-0004 d11). It also waits 30 s, not the engine's 5, for the
+// pooler to answer, which can take over 15 s from some networks; the boot
+// check refuses a `connect_timeout` in `.env` (§15.4). The fallback's `db`
+// stays a plain connection.
 // This file cannot reuse src/core/env.ts: the production image has no src/.
 function datasourceUrl(raw: string | undefined): string | undefined {
   let url: URL;
@@ -20,6 +23,7 @@ function datasourceUrl(raw: string | undefined): string | undefined {
   url.searchParams.set('sslmode', 'require');
   url.searchParams.set('sslaccept', 'strict');
   url.searchParams.set('sslcert', resolve('supabase/prod-ca-2021.crt'));
+  url.searchParams.set('connect_timeout', '30');
   return url.toString();
 }
 
