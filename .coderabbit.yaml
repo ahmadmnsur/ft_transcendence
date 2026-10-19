@@ -55,6 +55,8 @@ reviews:
         - No new route, port or service exposes the database or a Data API.
         - A change to supabase/team-project.md that changes a setting with a GOTRUE_* line in its table changes that line in compose.yaml too.
         - Anything outside Markdown also needs the clean-clone boot; remind the author if the PR description does not mention it.
+    - path: "src/files/buckets.ts"
+      instructions: "Inside the schema gate (ADR-0005 d5): the Storage buckets' names, privacy, caps and types, and the bucket step that sets them. Both buckets stay private, and no SQL reaches Supabase's storage schema."
     - path: "compose*.yaml"
       instructions: "Inside the schema gate (ADR-0005 d5): the fallback's Auth settings are its GOTRUE_* lines. A changed GOTRUE_* value that supabase/team-project.md's Authentication table names must match it, and no new route, port or service may expose the database."
     - path: "src/**/*.ts"
@@ -91,7 +93,7 @@ reviews:
     custom_checks:
       - name: "Schema gate"
         mode: warning
-        instructions: "If the PR touches prisma/**, supabase/**, any compose*.yaml, or any file matching prisma.config*, prisma7.config* or .config/prisma*, or moves or renames one of these, pass only if Kamel is a requested reviewer, or Ahmad when Kamel is the author or the PR description says Kamel has been blocked for more than 24 hours. Otherwise pass."
+        instructions: "If the PR touches prisma/**, supabase/**, src/files/buckets.ts, any compose*.yaml, or any file matching prisma.config*, prisma7.config* or .config/prisma*, or moves or renames one of these, pass only if Kamel is a requested reviewer, or Ahmad when Kamel is the author or the PR description says Kamel has been blocked for more than 24 hours. Otherwise pass."
       - name: "Privacy Policy moves with personal data"
         mode: warning
         instructions: "If the PR changes what personal data about a Student is stored, who can see it, or how long it is kept, pass only if docs/legal/privacy-policy.md is also changed. Otherwise pass."

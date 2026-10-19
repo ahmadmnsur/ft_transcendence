@@ -4,11 +4,15 @@ import type { TestingModuleBuilder } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { Clock } from '../../src/core/clock';
 import { configureApp } from '../../src/core/configure-app';
 import { PrismaService } from '../../src/core/prisma.service';
 import { RealtimePublisher } from '../../src/core/realtime-publisher';
 import { CheckpointHook } from '../../src/core/uow';
+import { FileBuckets, TEST_BUCKETS } from '../../src/files/buckets';
+import { FileCleanupSchedule } from '../../src/files/cleanup-schedule';
 import { BarrierRegistry } from './barriers';
+import { TestClock } from './clock';
 import { RecordingRealtimePublisher } from './recording-publisher';
 
 type SupertestTest = ReturnType<ReturnType<typeof request>['get']>;
@@ -25,6 +29,9 @@ export type Harness = {
   clientIp: string;
   recorder: RecordingRealtimePublisher;
   barriers: BarrierRegistry;
+  // The application's clock, real time unless a test moves it; set back
+  // before every test.
+  clock: TestClock;
   http(method: HttpMethod, path: string, ip?: string): SupertestTest;
   get(path: string, ip?: string): SupertestTest;
   post(path: string, ip?: string): SupertestTest;
@@ -68,6 +75,7 @@ export type HarnessOptions = {
 export function useHarness(options: HarnessOptions = {}): Harness {
   const recorder = new RecordingRealtimePublisher();
   const barriers = new BarrierRegistry();
+  const clock = new TestClock();
 
   const harness: Harness = {
     app: undefined as unknown as INestApplication,
@@ -76,6 +84,7 @@ export function useHarness(options: HarnessOptions = {}): Harness {
     clientIp: '',
     recorder,
     barriers,
+    clock,
     http: (method, path, ip) =>
       request(harness.baseUrl)[method](path).set('X-Real-IP', ip ?? harness.clientIp),
     get: (path, ip) => harness.http('get', path, ip),
@@ -95,11 +104,19 @@ export function useHarness(options: HarnessOptions = {}): Harness {
       process.env[key] = value;
     }
     try {
+      // The suite's own buckets, and no cleanup by itself, neither at start
+      // nor hourly: `08-files` calls it (§16.2).
       const base = Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(RealtimePublisher)
         .useValue(recorder)
         .overrideProvider(CheckpointHook)
-        .useValue(barriers);
+        .useValue(barriers)
+        .overrideProvider(Clock)
+        .useValue(clock)
+        .overrideProvider(FileBuckets)
+        .useValue(TEST_BUCKETS)
+        .overrideProvider(FileCleanupSchedule)
+        .useValue({});
       const moduleRef = await (options.overrides?.(base) ?? base).compile();
       const app = moduleRef.createNestApplication();
       configureApp(app);
@@ -121,6 +138,7 @@ export function useHarness(options: HarnessOptions = {}): Harness {
     // is rejected before the truncate: the run rolls back, and the truncate
     // waits only for that.
     barriers.reset();
+    clock.reset();
     await harness.truncate();
     // Clear after the truncate, which waits for any transaction still open on
     // those tables to end.

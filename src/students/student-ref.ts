@@ -1,9 +1,8 @@
 import type { Prisma } from '../generated/prisma/client';
 import type { Role } from '../shared/roles';
 
-// §6.0.1: every place a person appears. `avatarUrl` is always null for now:
-// there is no Avatar table yet, so no row names a file. Later tickets reuse
-// this helper wherever a person appears.
+// §6.0.1: every place a person appears. Later tickets reuse this helper
+// wherever a person appears.
 export type StudentRef = {
   id: string;
   displayName: string;
@@ -19,13 +18,21 @@ export const STUDENT_REF_SELECT = {
   displayName: true,
   role: true,
   removedAt: true,
+  avatar: { select: { token: true } },
 } as const satisfies Prisma.StudentSelect;
+
+// §6.0.1: an avatar's URL is its file route, named by the row's token; a
+// Student with no row shows the bundled default.
+export function avatarUrlFor(avatar: { token: string } | null): string | null {
+  return avatar === null ? null : `/api/files/avatars/${avatar.token}`;
+}
 
 export function toStudentRef(row: {
   id: string;
   displayName: string;
   role: Role;
   removedAt: Date | null;
+  avatar: { token: string } | null;
 }): StudentRef {
   // §6.0.1: a Removed Student is exactly this tombstone.
   if (row.removedAt !== null) {
@@ -41,7 +48,7 @@ export function toStudentRef(row: {
   return {
     id: row.id,
     displayName: row.displayName,
-    avatarUrl: null,
+    avatarUrl: avatarUrlFor(row.avatar),
     isAdmin: row.role === 'ADMIN',
     removed: false,
   };

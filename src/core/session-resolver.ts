@@ -22,6 +22,9 @@ export type ActiveSession = {
   role: Role;
   email: string;
   displayName: string;
+  // The Student's Avatar row's token, or null, for `GET /api/session`'s
+  // `avatarUrl` (§6.1).
+  avatar: { token: string } | null;
   expiresAt: Date;
 };
 
@@ -57,13 +60,16 @@ export class SessionResolver {
         role: Role;
         email: string;
         display_name: string;
+        avatar_token: string | null;
         expires_at: Date;
         suspended_at: Date | null;
         removed_at: Date | null;
       }>
     >`SELECT st."id" AS "student_id", s."id" AS "session_id", st."role", st."email",
-            st."display_name", s."expires_at", st."suspended_at", st."removed_at"
+            st."display_name", a."token" AS "avatar_token", s."expires_at",
+            st."suspended_at", st."removed_at"
        FROM "Session" s JOIN "Student" st ON st."id" = s."student_id"
+       LEFT JOIN "Avatar" a ON a."student_id" = st."id"
       WHERE s."id" = ${hashSessionToken(token)} AND s."expires_at" > ${now}`;
     const row = rows[0];
     if (row === undefined) return null;
@@ -74,6 +80,7 @@ export class SessionResolver {
       role: row.role,
       email: row.email,
       displayName: row.display_name,
+      avatar: row.avatar_token === null ? null : { token: row.avatar_token },
       expiresAt: row.expires_at,
     };
   }

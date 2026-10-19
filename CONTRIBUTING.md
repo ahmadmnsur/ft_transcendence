@@ -127,6 +127,12 @@ describing the changes", and it sits in the list that gets a project **rejected*
   > **A PR that moves or renames a gated file updates this list, the PR template's and
   > `.coderabbit.yaml`'s in the same PR, and is gated itself.** The rules for the team project are in
   > *Supabase*, below.
+  >
+  > **The buckets' settings move to `src/files/buckets.ts`, 2026-10-19**
+  > ([Avatars, and PNG/JPEG byte validation](https://github.com/ahmadmnsur/ft_transcendence/issues/43)).
+  > The bucket names, their privacy, caps and types, and the bucket step that sets them are in that
+  > one file, which the seed's first step, the `api`'s cleanup and the test harness all import. It is
+  > inside the gate.
 
 ## Schema changes — read this before touching `prisma/` or `prisma.config.ts`
 

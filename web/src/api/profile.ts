@@ -33,16 +33,16 @@ export interface StudentRef {
 export type StudentStatus = 'ACTIVE' | 'SUSPENDED' | 'REMOVED';
 
 // `GET /api/me` and `PATCH /api/me`'s result: the only shape with the email
-// (§4.6). `avatarUrl` is null until the avatar slice uploads one.
-// `fortyTwoConnected` says whether a 42 account is connected — never the 42
-// id itself (§6.2).
+// (§4.6). `avatarUrl` is the avatar's file route, or null for the bundled
+// default (§6.0.1). `fortyTwoConnected` says whether a 42 account is
+// connected — never the 42 id itself (§6.2).
 export interface OwnProfile {
   id: string;
   displayName: string;
   email: string;
   role: Role;
   status: StudentStatus;
-  avatarUrl: null;
+  avatarUrl: string | null;
   skills: SkillsView;
   learningGoal: LearningGoalView | null;
   xp: number;
@@ -94,6 +94,10 @@ export interface StudentSearchParams {
 
 export const ME_QUERY_KEY = ['me'] as const;
 export const SKILLS_QUERY_KEY = ['skills'] as const;
+
+// Every search page's key starts with this, so a write can invalidate them
+// all at once.
+export const STUDENT_SEARCH_QUERY_KEY = ['students', 'search'] as const;
 
 export function studentQueryKey(id: string): readonly ['students', string] {
   return ['students', id] as const;
@@ -177,7 +181,7 @@ export function studentQueryOptions(id: string) {
 // its total never drops to zero in between.
 export function studentSearchQueryOptions(params: StudentSearchParams) {
   return queryOptions({
-    queryKey: ['students', 'search', params] as const,
+    queryKey: [...STUDENT_SEARCH_QUERY_KEY, params] as const,
     queryFn: () => searchStudents(params),
     placeholderData: keepPreviousData,
   });

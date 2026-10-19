@@ -20,7 +20,7 @@ export type OwnProfile = {
   email: string;
   role: Role;
   status: StudentStatus;
-  avatarUrl: null;
+  avatarUrl: string | null;
   skills: SkillsView;
   learningGoal: LearningGoalView | null;
   xp: number;

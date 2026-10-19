@@ -11,6 +11,23 @@ export default {
     loading: 'Loading your profile…',
     retry: 'Try again',
   },
+  // §6.3, §9.6: the avatar card on `/me`. FileDrop writes its own hint,
+  // checks and progress (the design area).
+  avatar: {
+    title: 'Avatar',
+    subtitle: 'Shown beside your name to every signed-in Student.',
+    currentAlt: 'Your avatar',
+    defaultAlt: 'The default avatar',
+    fileLabel: 'New avatar',
+    saved: 'Your avatar was updated.',
+    remove: 'Remove avatar',
+    removing: 'Removing…',
+    removed: 'Your avatar was removed. Your profile shows the default avatar.',
+    confirmTitle: 'Remove your avatar?',
+    confirmBody: 'Your profile will show the default avatar until you upload a new one.',
+    confirm: 'Remove',
+    cancel: 'Cancel',
+  },
   fortyTwo: {
     title: '42 account',
     subtitle: 'Sign in with 42 as well as with your email and password.',

@@ -122,6 +122,9 @@ export function FileDrop({
   // a picked file that is not saved yet is removed at once.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [objectUrl, setObjectUrl] = useState<{ file: File; url: string } | null>(null);
+  // A preview that failed to load, such as a picked file named .png whose
+  // bytes are no image: the file icon shows instead of a broken image.
+  const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [lastProps, setLastProps] = useState({ value, error });
   const typeNames = accept.map((type) => fileTypes[type].name);
@@ -300,8 +303,13 @@ export function FileDrop({
           className={`min-w-0 rounded-xl border p-3 ${dragging ? 'border-primary-600 bg-primary-50' : shownError ? 'border-danger-600 bg-surface' : 'border-line bg-surface'}`}
         >
           <div className="flex min-w-0 flex-wrap items-center gap-3">
-            {isImage && url ? (
-              <img src={url} alt={formatText(t.design.fileDrop.preview, { fileName: value.name })} className="h-12 w-12 shrink-0 rounded-lg bg-surface-muted object-cover" />
+            {isImage && url && url !== brokenUrl ? (
+              <img
+                src={url}
+                alt={formatText(t.design.fileDrop.preview, { fileName: value.name })}
+                onError={() => setBrokenUrl(url)}
+                className="h-12 w-12 shrink-0 rounded-lg bg-surface-muted object-cover"
+              />
             ) : (
               <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted">
                 <FileIcon size={24} />

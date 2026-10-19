@@ -1,7 +1,22 @@
-import { Body, Controller, Delete, Get, Patch, Put, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Put,
+  Query,
+  Req,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { requestActor } from '../core/session.guard';
 import { UuidParam } from '../core/uuid-param';
+import { FileUpload } from '../files/upload.interceptor';
+import type { UploadedPart } from '../files/validate';
+import { LIMITS } from '../shared/limits';
+import { AvatarsService } from './avatars.service';
 import { LearningGoalDto, SearchStudentsQueryDto, SkillsDto, UpdateProfileDto } from './dto';
 import { StudentsService } from './students.service';
 import type {
@@ -18,7 +33,10 @@ import type {
 // global SessionGuard already enforces it, so none is marked `@Public` (§5.3).
 @Controller()
 export class StudentsController {
-  constructor(private readonly students: StudentsService) {}
+  constructor(
+    private readonly students: StudentsService,
+    private readonly avatars: AvatarsService,
+  ) {}
 
   // `GET /api/skills` (§6.2): the whole catalogue, by name.
   @Get('skills')
@@ -70,5 +88,22 @@ export class StudentsController {
   @Delete('me/learning-goal')
   clearLearningGoal(@Req() request: Request): Promise<Record<string, never>> {
     return this.students.clearLearningGoal(requestActor(request));
+  }
+
+  // `PUT /api/me/avatar` (§6.3): multipart field `file`. UploadCsrfGuard and
+  // the session guard run before FileUpload's Multer reads the body.
+  @Put('me/avatar')
+  @UseInterceptors(FileUpload(LIMITS.avatar.maxBytes))
+  putAvatar(
+    @UploadedFile() file: UploadedPart | undefined,
+    @Req() request: Request,
+  ): Promise<{ avatarUrl: string | null }> {
+    return this.avatars.putAvatar(requestActor(request), file);
+  }
+
+  // `DELETE /api/me/avatar` (§6.3): `{}`, idempotent.
+  @Delete('me/avatar')
+  deleteAvatar(@Req() request: Request): Promise<Record<string, never>> {
+    return this.avatars.deleteAvatar(requestActor(request));
   }
 }

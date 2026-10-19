@@ -16,7 +16,7 @@ import {
   readActiveActor,
   updateProfileFields,
 } from './profile-writes';
-import { toStudentRef, STUDENT_REF_SELECT } from './student-ref';
+import { avatarUrlFor, toStudentRef, STUDENT_REF_SELECT } from './student-ref';
 import type {
   LearningGoalView,
   OwnProfile,
@@ -118,7 +118,7 @@ function toOwnProfile(row: OwnProfileRow): OwnProfile {
     email: row.email,
     role: row.role,
     status: deriveStatus(row),
-    avatarUrl: null,
+    avatarUrl: avatarUrlFor(row.avatar),
     skills: skillsOf(row.studentSkills),
     learningGoal: goalOf(row),
     xp: row.xp,

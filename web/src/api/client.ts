@@ -39,14 +39,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function unexpected(status: number): ApiProtocolError {
+export function unexpected(status: number): ApiProtocolError {
   return new ApiProtocolError(status, 'internal_error', 'The server returned an unexpected response.');
 }
 
 // The §3.8.1 envelope, validated before anything is read from it. A
 // non-2xx never resolves: with an `ok: false` body it keeps the server's
 // code and message, otherwise it is an unexpected response.
-function parseEnvelope<T>(status: number, body: unknown): T {
+export function parseEnvelope<T>(status: number, body: unknown): T {
   if (!isRecord(body) || typeof body.ok !== 'boolean') throw unexpected(status);
   if (body.ok) {
     if (status < 200 || status >= 300 || !('data' in body)) throw unexpected(status);
@@ -62,6 +62,18 @@ function parseEnvelope<T>(status: number, body: unknown): T {
 export interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
+}
+
+// Runs the router's 401 handler, for a request that answered 401. The
+// upload, which is not a `fetch`, calls it too. The handler never masks the
+// original failure.
+export async function notifyUnauthorized(): Promise<void> {
+  if (!unauthorizedHandler) return;
+  try {
+    await unauthorizedHandler();
+  } catch {
+    // The caller still rejects with its own failure.
+  }
 }
 
 // Same-origin `fetch` against `/api` (§3.5.2). Mutations always send JSON,
@@ -89,13 +101,7 @@ export async function apiFetch<T>(path: string, options: ApiRequestOptions = {})
     // must not skip the re-probe. The session probe itself never triggers
     // this path, and the original request still rejects with its 401 below
     // (§3.8.2).
-    if (unauthorizedHandler) {
-      try {
-        await unauthorizedHandler();
-      } catch {
-        // The handler never masks the original failure.
-      }
-    }
+    await notifyUnauthorized();
   }
   let body: unknown;
   try {
