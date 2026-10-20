@@ -141,7 +141,7 @@ export default {
     // §8.7: close is irreversible, and a lapsed Match pays nothing.
     closeConfirm: {
       title: 'Close Round {number}?',
-      body: 'Every Match not completed yet lapses and earns nothing. A closed Round can never be opened again.',
+      body: 'Every Match still in progress lapses and earns nothing. A closed Round can never be opened again.',
       cancel: 'Keep it open',
       confirm: 'Close Round',
     },
@@ -183,10 +183,8 @@ export default {
       mentor: 'Mentor',
       mentee: 'Mentee',
       status: 'Status',
-      score: 'Compatibility Score',
       mission: 'Mission',
     },
-    handMade: 'By an Admin',
     view: 'View',
     viewNamed: 'View the Match of {mentor} and {mentee}',
     emptyTitle: 'This Round has no Matches.',

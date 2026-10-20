@@ -105,7 +105,9 @@ export function PairMatchCard({
             <dt className="text-sm text-ink-muted">{parts.statusLabel}</dt>
             <dd className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-sm text-ink">
               <MatchStatusLabel status={match.status} />
-              <span>{progress}</span>
+              {/* A flex item is never narrower than its longest word: without
+              `min-w-0` and `wrap-anywhere`, a 40-character name widens the page. */}
+              <span className="min-w-0 max-w-full wrap-anywhere">{progress}</span>
             </dd>
           </div>
           <ScoreDetails score={match.compatibilityScore} sentences={sentences} />

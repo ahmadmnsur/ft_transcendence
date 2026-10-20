@@ -16,11 +16,11 @@ import { StudentLink } from '../profile/StudentLink';
 const column = createColumnHelper<AdminRoundMatch>();
 
 // §3.5.1, §6.13: `/admin/rounds/:roundId`, one Round for an Admin — its
-// Matches in creation order (pair, status, Score or hand-made, Mission), and
+// Matches in creation order (pair, status, hand-made or not, Mission), and
 // while it is open, its unmatched Students (§8.9). An unknown Round is the
 // not-found state; a malformed id is answered without a request (§3.5.2).
 export function AdminRoundPage(): React.JSX.Element {
-  const { t, format, formatText, formatNumber, formatDateTime, personNameValue, errorText } = useI18n();
+  const { t, format, formatText, formatDateTime, personNameValue, errorText } = useI18n();
   const copy = t.matching.round;
   const rounds = t.matching.rounds;
   const { roundId } = useParams({ from: '/admin/rounds/$roundId' });
@@ -39,17 +39,20 @@ export function AdminRoundPage(): React.JSX.Element {
         header: copy.columns.mentee,
         cell: ({ row }) => <StudentLink student={row.original.mentee} />,
       }),
+      // No Score column: a Score never shows without its explanation sentence
+      // (§8.11), which the Match's own page gives. A hand-made Match says so
+      // under its status.
       column.display({
         id: 'status',
         header: copy.columns.status,
-        cell: ({ row }) => <MatchStatusLabel status={row.original.status} />,
-      }),
-      column.display({
-        id: 'score',
-        header: copy.columns.score,
-        meta: { align: 'end' },
-        cell: ({ row }) =>
-          row.original.compatibilityScore === null ? copy.handMade : formatNumber(row.original.compatibilityScore),
+        cell: ({ row }) => (
+          <span className="flex flex-col items-start gap-1">
+            <MatchStatusLabel status={row.original.status} />
+            {row.original.handMade ? (
+              <span className="text-xs text-ink-muted">{t.matching.match.handMade}</span>
+            ) : null}
+          </span>
+        ),
       }),
       column.display({
         id: 'mission',
@@ -81,7 +84,7 @@ export function AdminRoundPage(): React.JSX.Element {
         ),
       }),
     ],
-    [copy, t, formatNumber, formatText, personNameValue],
+    [copy, t, formatText, personNameValue],
   );
 
   if (!wellFormedId) return <NotFoundPage />;

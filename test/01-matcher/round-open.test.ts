@@ -121,6 +121,10 @@ describe('Round open through the services', () => {
       const blocked = await createTestAccount(harness.app);
       const other = await createTestAccount(harness.app);
       // The Mentor can teach both learners; the Block leaves one viable pair.
+      // `blocked` is made before `other`, so its UUIDv7 id is the lower one:
+      // with the Block ignored, most-constrained-first picks it on the tie
+      // (§8.3 step 7) and pairs it with the Mentor. That is what lets this test
+      // catch a matcher that ignores Blocks; keep the order.
       await students.setSkills(actor(mentor.id), [docker], []);
       await students.setSkills(actor(blocked.id), [], [docker]);
       await students.setSkills(actor(other.id), [], [docker]);

@@ -109,7 +109,10 @@ export function AdminMatchPage(): React.JSX.Element {
               <dd className="mt-1 flex min-w-0 flex-col items-start gap-1 text-sm text-ink">
                 <MatchStatusLabel status={data.status} />
                 {notes.map((note, index) => (
-                  <span key={index}>{note}</span>
+                  // A name may be one 40-character word, which must wrap here.
+                  <span key={index} className="min-w-0 max-w-full wrap-anywhere">
+                    {note}
+                  </span>
                 ))}
               </dd>
             </div>
