@@ -59,6 +59,7 @@ export function Composer({ peerId }: { peerId: string }): React.JSX.Element {
     setPending(true);
     try {
       const outcome = await sendAndApply(queryClient, peerId, body);
+      if (outcome.kind === 'sessionChanged') return;
       if (outcome.kind === 'sent') {
         // Freshly sent only: a message typed meanwhile is the next one's
         // draft, and clearing it would throw it away.

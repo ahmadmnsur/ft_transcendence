@@ -2451,6 +2451,13 @@ DirectMessage }` or `{ ok: false, error: { code: dm_unavailable | validation_fai
 busy_retry_later } }`. **No other client event has a handler**; nothing a client sends performs a
 privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Consequences).
 
+> **Refined 2026-10-20 by #47, review of #196:** the failure-code list also includes
+> `unauthenticated` when the socket has no session or the sender's transaction re-read finds
+> them no longer Active, and `internal_error` for an unexpected failure. An `unauthenticated`
+> acknowledgement re-probes `/api/session` and follows §3.8.2's sign-in path. In addition to
+> §6.15's retry-exhaustion and Auth-unreachable cases, `busy_retry_later` answers a send while
+> §7.2 step 3's session re-read is pending: no message is written in that window.
+
 ### 7.4 Server → client events (the complete list)
 
 | Event | Room | Payload | Emitted after the commit of | Client reaction |

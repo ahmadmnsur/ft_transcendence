@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
+import { blockPair } from '../core/block-pair';
 import { ApiError } from '../core/errors';
 import { PresenceReader } from '../core/presence-reader';
 import { PrismaService } from '../core/prisma.service';
@@ -32,15 +33,6 @@ function friendshipPair(a: string, b: string): Prisma.FriendshipWhereInput {
     OR: [
       { requesterId: a, addresseeId: b },
       { requesterId: b, addresseeId: a },
-    ],
-  };
-}
-
-function blockPair(a: string, b: string): Prisma.BlockWhereInput {
-  return {
-    OR: [
-      { blockerId: a, blockedId: b },
-      { blockerId: b, blockedId: a },
     ],
   };
 }

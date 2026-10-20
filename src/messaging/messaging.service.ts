@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
+import { blockPair } from '../core/block-pair';
 import { encodeCursor, type Cursor } from '../core/cursor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
@@ -19,16 +20,6 @@ import type { DirectMessageView, PeerThread, ThreadPage, ThreadView } from './vi
 
 // §6.5: 50 rows per page, on the same cap Tables pages at (§6.0.1).
 const MESSAGES_PER_PAGE = PAGING.maxPageSize;
-
-// A Block between the pair, whichever Student set it (§4.3.6).
-function blockPair(a: string, b: string): Prisma.BlockWhereInput {
-  return {
-    OR: [
-      { blockerId: a, blockedId: b },
-      { blockerId: b, blockedId: a },
-    ],
-  };
-}
 
 // What `$queryRaw` returns for one message row: the pg adapter maps a uuid to
 // a string and a timestamptz to a Date.

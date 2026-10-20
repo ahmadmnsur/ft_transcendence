@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiProtocolError } from '../api/client';
 import type { StudentRef } from '../api/profile';
-import { markThreadRead, peerThreadQueryOptions, registerOpenThread } from '../api/messages';
+import { markThreadRead, peerThreadQueryOptions } from '../api/messages';
 import { sessionQueryOptions } from '../api/session';
 import { AlertIcon, Avatar, Button, EmptyState, MessageIcon, PersonName, RoleLabel } from '../design';
 import { useI18n } from '../i18n/context';
@@ -24,22 +24,12 @@ const BOTTOM_SLACK_PX = 80;
 // Student's page shows the tombstone and no way to write, and a Block
 // standing between the pair closes the page the same way.
 export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Element {
-  const { t, format, formatText, formatDateTime, personNameText, personNameValue, errorText } = useI18n();
+  const { t, format, formatText, formatDateTime, personNameValue, errorText } = useI18n();
   const copy = t.messages.page;
   const queryClient = useQueryClient();
   const session = useQuery(sessionQueryOptions());
   const viewerId = session.data?.authenticated === true ? session.data.student.id : null;
   const page = useInfiniteQuery(peerThreadQueryOptions(peerId));
-
-  // While this peer's page is on screen, §7.4's `dm:message` for them
-  // settles by being marked read rather than counted, in the effect below.
-  // Registering is all this effect does: the mark keys on the messages the
-  // data holds, so a page marks itself once its data is in, not a second
-  // time here alongside it.
-  useEffect(() => {
-    registerOpenThread(peerId);
-    return () => registerOpenThread(null);
-  }, [peerId]);
 
   // The page's marks, keyed on what the loaded pages hold. The first runs
   // once the data is in, whether or not that data holds a message to the
@@ -146,7 +136,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
   // The name a received message shows for its sender, in the sr-only line
   // ahead of its body: the peer's name, the tombstone for a Removed one.
   // The viewer's own messages say "You" instead.
-  const receivedSender = first === undefined ? '' : personNameText(first.peer.displayName, first.peer.removed);
 
   let body: React.ReactNode;
   if (loaded === undefined) {
@@ -214,7 +203,11 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
                   the background colour say it to a sighted viewer only, so a
                   screen reader gets the words, and the time after reads as
                   before. */}
-                  <p className="sr-only">{own ? copy.ownSender : receivedSender}</p>
+                  <p className="sr-only">
+                    {own ? copy.ownSender : first === undefined ? null : (
+                      <PersonName name={first.peer.displayName} removed={first.peer.removed} />
+                    )}
+                  </p>
                   <p
                     dir="auto"
                     className={`min-w-0 whitespace-pre-wrap break-words text-sm text-ink ${
