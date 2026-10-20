@@ -121,7 +121,7 @@ export function AdminMatchPage(): React.JSX.Element {
           </dl>
         </Card>
         <Link to="/admin/rounds" className="self-start rounded text-link underline underline-offset-2 focus-ring">
-          {copy.roundsLink}
+          {t.matching.round.roundsLink}
         </Link>
       </div>
     </>

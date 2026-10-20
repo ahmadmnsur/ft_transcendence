@@ -28,6 +28,8 @@ const column = createColumnHelper<MatchView>();
 // §3.5.1, §6.6: `/matches`, the signed-in Student's own Matches, every status,
 // newest first. No profile lists Matches (§4.6): this is the only list of
 // them, and only its owner sees it. The table is not sorted by the reader.
+// It shows no Score: a Score never shows without its explanation sentence
+// (§8.11), which each Match's own page gives.
 export function MatchesPage(): React.JSX.Element {
   const { t, formatText, formatNumber, errorText } = useI18n();
   const copy = t.matching.history;
@@ -59,13 +61,6 @@ export function MatchesPage(): React.JSX.Element {
         id: 'status',
         header: copy.columns.status,
         cell: ({ row }) => <MatchStatusLabel status={row.original.status} />,
-      }),
-      column.display({
-        id: 'score',
-        header: copy.columns.score,
-        meta: { align: 'end' },
-        cell: ({ row }) =>
-          row.original.compatibilityScore === null ? copy.handMade : formatNumber(row.original.compatibilityScore),
       }),
       column.display({
         id: 'view',

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import type { MatchStatus } from '@shared/matches';
+import { isInProgress, type InProgressStatus, type MatchStatus } from '@shared/matches';
 import type { SkillView } from '../api/profile';
 import { Banner } from '../design';
 import { useI18n } from '../i18n/context';
@@ -31,8 +31,8 @@ export function MatchStatusLabel({ status }: { status: MatchStatus }): React.JSX
 }
 
 // What an ended Match's status means; a Match in progress has no ending.
-export function endingOf(status: MatchStatus): Exclude<MatchStatus, 'MATCHED' | 'ACCEPTED'> | null {
-  return status === 'MATCHED' || status === 'ACCEPTED' ? null : status;
+export function endingOf(status: MatchStatus): Exclude<MatchStatus, InProgressStatus> | null {
+  return isInProgress(status) ? null : status;
 }
 
 // A list of Skill names as one value: `Intl.ListFormat` in the current

@@ -3,8 +3,7 @@ import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
-import type { Mission as SchemaMission } from '../generated/prisma/client';
-import { IN_PROGRESS_STATUSES, MISSIONS, STANDING_STATUSES, type Mission } from '../shared/matches';
+import { MISSIONS, STANDING_STATUSES, isInProgress } from '../shared/matches';
 import { readActiveActor, readActiveAdmin } from '../students/profile-writes';
 import { readCandidates, unmatchedIn } from './candidates';
 import { runMatcher, type UnorderedPair } from './engine';
@@ -31,11 +30,6 @@ import type {
   MatchView,
   OpenRoundResult,
 } from './views';
-
-// The shared mirror and the schema's enum hold the same six values; the
-// round-robin order is the mirror's, which §8.10 fixes.
-type SameValues<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
-export const missionsAgree: SameValues<Mission, SchemaMission> = true;
 
 // §3.4's `matching` module: `Round`, `Match` and `MatchSkillCoverage`. A
 // write method takes an Actor and runs in exactly one `uow.run`; a read
@@ -142,8 +136,7 @@ export class MatchingService {
       const round = await tx.round.findFirst({ where: { closedAt: null }, select: { id: true } });
       if (round === null) throw noOpenRound();
       const matches = await tx.match.findMany({ where: { roundId: round.id }, select: { id: true, status: true } });
-      const inProgress: readonly string[] = IN_PROGRESS_STATUSES;
-      const toLapse = matches.filter((match) => inProgress.includes(match.status)).map((match) => match.id);
+      const toLapse = matches.filter((match) => isInProgress(match.status)).map((match) => match.id);
       await ctx.checkpoint('round.close');
 
       await tx.round.update({ where: { id: round.id }, data: { closedAt: ctx.now } });
@@ -173,7 +166,7 @@ export class MatchingService {
       const asMentor = match.mentorId === actor.studentId;
       const mine = asMentor ? match.mentorAcceptedAt : match.menteeAcceptedAt;
       const theirs = asMentor ? match.menteeAcceptedAt : match.mentorAcceptedAt;
-      const repeat = mine !== null && (match.status === 'MATCHED' || match.status === 'ACCEPTED');
+      const repeat = mine !== null && isInProgress(match.status);
       if (!repeat && match.status !== 'MATCHED') throw matchNotPending();
       await ctx.checkpoint('match.accept');
       if (repeat) return;
@@ -199,8 +192,7 @@ export class MatchingService {
         await tx.match.findUnique({ where: { id: matchId }, select: PARTICIPANT_SELECT }),
         actor.studentId,
       );
-      const inProgress: readonly string[] = IN_PROGRESS_STATUSES;
-      if (!inProgress.includes(match.status)) throw matchNotInProgress();
+      if (!isInProgress(match.status)) throw matchNotInProgress();
       await ctx.checkpoint('match.decline');
       await tx.match.update({
         where: { id: match.id },

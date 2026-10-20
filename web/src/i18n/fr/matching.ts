@@ -54,7 +54,7 @@ export default {
     declined: 'Vous avez refusé ce Match.',
     declineConfirm: {
       title: 'Refuser ce Match avec {partner} ?',
-      body: "Vous serez tous les deux sans Match pour le reste du Tour {number}, et rien ne remplace ce Match. L'appariement ne vous réunira plus jamais.",
+      body: 'Vous serez tous les deux sans Match dans le Tour {number}, et rien ne vous cherchera de nouveau Match. Aucun Tour suivant ne vous réunira automatiquement.',
       keep: 'Garder le Match',
       confirm: 'Refuser le Match',
     },
@@ -77,9 +77,7 @@ export default {
       partner: 'Partenaire',
       role: 'Votre rôle',
       status: 'Statut',
-      score: 'Score de compatibilité',
     },
-    handMade: 'Par un Admin',
     view: 'Voir',
     viewNamed: 'Voir votre Match du Tour {number}',
     emptyTitle: "Vous n'avez encore aucun Match.",
@@ -172,6 +170,5 @@ export default {
     accepted: '{name} a accepté.',
     notAccepted: "{name} n'a pas accepté.",
     declinedBy: '{name} a refusé ce Match.',
-    roundsLink: 'Tous les Tours',
   },
 } as const satisfies Catalogue<'fr', typeof matching>;

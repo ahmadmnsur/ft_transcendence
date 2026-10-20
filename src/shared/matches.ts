@@ -17,6 +17,12 @@ export type MatchStatus = (typeof MATCH_STATUSES)[number];
 export const STANDING_STATUSES = ['MATCHED', 'ACCEPTED', 'COMPLETED', 'LAPSED'] as const satisfies readonly MatchStatus[];
 export const IN_PROGRESS_STATUSES = ['MATCHED', 'ACCEPTED'] as const satisfies readonly MatchStatus[];
 
+export type InProgressStatus = (typeof IN_PROGRESS_STATUSES)[number];
+
+export function isInProgress(status: MatchStatus): status is InProgressStatus {
+  return (IN_PROGRESS_STATUSES as readonly MatchStatus[]).includes(status);
+}
+
 // §8.10: the round-robin order. Index i takes MISSIONS[i mod 6].
 export const MISSIONS = [
   'TECHNICAL_CONCEPT',

@@ -54,7 +54,7 @@ export default {
     declined: 'لقد رفضت هذه المطابقة.',
     declineConfirm: {
       title: 'هل تريد رفض هذه المطابقة مع {partner}؟',
-      body: 'ستبقيان كلاكما دون مطابقة حتى نهاية الجولة {number}، ولن تحل أي مطابقة محل هذه المطابقة. ولن يجمعكما نظام المطابقة مرة أخرى أبدا.',
+      body: 'ستبقيان كلاكما دون مطابقة في الجولة {number}، ولن يبحث النظام عن مطابقة جديدة لكما. ولن تجمعكما أي جولة لاحقة تلقائيا.',
       keep: 'الإبقاء على المطابقة',
       confirm: 'رفض المطابقة',
     },
@@ -76,9 +76,7 @@ export default {
       partner: 'الشريك',
       role: 'دورك',
       status: 'الحالة',
-      score: 'درجة التوافق',
     },
-    handMade: 'من إنشاء مسؤول',
     view: 'عرض',
     viewNamed: 'عرض مطابقتك في الجولة {number}',
     emptyTitle: 'ليست لديك أي مطابقة بعد.',
@@ -180,6 +178,5 @@ export default {
     accepted: 'تم القبول من {name}.',
     notAccepted: 'لم يتم القبول من {name} بعد.',
     declinedBy: 'تم رفض هذه المطابقة من {name}.',
-    roundsLink: 'كل الجولات',
   },
 } as const satisfies Catalogue<'ar', typeof matching>;

@@ -1,4 +1,4 @@
-import type { MatchStatus, Mission } from '@shared/matches';
+import type { InProgressStatus, MatchStatus, Mission } from '@shared/matches';
 import type { EnGroup } from '../types';
 
 // §4.2, ADR-0012 d4: the six Mission sentences, keyed by the stored code. A
@@ -30,7 +30,7 @@ const endings = {
   LAPSED: 'The Round closed before this Match was completed.',
   DECLINED: 'One of the two Students declined this Match.',
   TERMINATED_BY_ADMIN: 'An Admin ended this Match.',
-} as const satisfies Record<Exclude<MatchStatus, 'MATCHED' | 'ACCEPTED'>, string>;
+} as const satisfies Record<Exclude<MatchStatus, InProgressStatus>, string>;
 
 // `/match`, `/matches`, `/matches/:matchId` and the Admin's `/admin/rounds`,
 // `/admin/rounds/:roundId` and `/admin/matches/:matchId` (§3.5.1, §6.6,
@@ -73,10 +73,12 @@ export default {
     accepted: 'You accepted this Match.',
     declined: 'You declined this Match.',
     // §8.5: a decline is final, and nothing searches for a replacement
-    // (ADR-0002 d8); the matcher never pairs the two again (§8.3).
+    // (ADR-0002 d8). No later Round's matching proposes the pair again
+    // (§8.3), though an Admin's hand-made Match may (§8.6), so the promise is
+    // about Rounds alone.
     declineConfirm: {
       title: 'Decline this Match with {partner}?',
-      body: 'You will both be unmatched for the rest of Round {number}, and nothing replaces this Match. Matching never pairs you two again.',
+      body: 'You will both be unmatched in Round {number}, and nothing looks for a new Match for you. No later Round pairs you two again automatically.',
       keep: 'Keep Match',
       confirm: 'Decline Match',
     },
@@ -100,10 +102,7 @@ export default {
       partner: 'Partner',
       role: 'Your role',
       status: 'Status',
-      score: 'Compatibility Score',
     },
-    // A hand-made Match's Score cell (§8.11).
-    handMade: 'By an Admin',
     // Each row's link; its accessible name starts with the visible text.
     view: 'View',
     viewNamed: 'View your Match in Round {number}',
@@ -201,6 +200,5 @@ export default {
     accepted: '{name} accepted.',
     notAccepted: '{name} has not accepted.',
     declinedBy: '{name} declined this Match.',
-    roundsLink: 'All Rounds',
   },
 } as const satisfies EnGroup;

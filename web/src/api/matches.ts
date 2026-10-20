@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions, type QueryClient } from '@tanstack/react-query';
-import type { MatchRole, MatchStatus, Mission } from '@shared/matches';
+import { STANDING_STATUSES, type MatchRole, type MatchStatus, type Mission } from '@shared/matches';
 import { apiFetch } from './client';
 import type { SkillView, StudentRef } from './profile';
 import { writeAsSignedIn } from './session';
@@ -205,8 +205,9 @@ async function readAgain(queryClient: QueryClient, queryKey: readonly string[]):
   await queryClient.invalidateQueries({ queryKey });
 }
 
-// The Match as the write left it is shown at once, then every view of the
-// Student's Matches is read again: the current Match, the history and the
+// The Match as the write left it is shown at once — a declined one leaves the
+// current Match, which holds only a standing one (§6.6) — then every view of
+// the Student's Matches is read again: the current Match, the history and the
 // detail all show its status. A failure reads them again too, since the
 // partner or a Round close may have moved it first, and is rethrown for the
 // screen to show. An answer that arrives after another Student signed in
@@ -220,8 +221,9 @@ function matchWrite(queryClient: QueryClient, send: () => Promise<MatchView>): P
       written = match;
       await queryClient.cancelQueries({ queryKey: MATCHES_PREFIX });
       queryClient.setQueryData<MatchView>(matchQueryKey(match.id), match);
+      const standing: readonly MatchStatus[] = STANDING_STATUSES;
       queryClient.setQueryData<CurrentMatch>(CURRENT_MATCH_QUERY_KEY, (previous) =>
-        previous?.match?.id === match.id ? { match } : previous,
+        previous?.match?.id === match.id ? { match: standing.includes(match.status) ? match : null } : previous,
       );
       void queryClient.invalidateQueries({ queryKey: MATCHES_PREFIX });
     },
