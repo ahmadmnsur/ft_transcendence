@@ -3,9 +3,15 @@ import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack
 import { setUnauthorizedHandler } from './api/client';
 import { fetchSession, setSignedOut } from './api/session';
 import { ErrorContent, NotFoundPage, RootErrorPage, RootLayout } from './layout';
-import { requireSession, requireSignedOut } from './guards';
+import { requireRole, requireSession, requireSignedOut } from './guards';
+import { AdminMatchPage } from './pages/AdminMatchPage';
+import { AdminRoundPage } from './pages/AdminRoundPage';
+import { AdminRoundsPage } from './pages/AdminRoundsPage';
 import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
+import { MatchDetailPage } from './pages/MatchDetailPage';
+import { MatchPage } from './pages/MatchPage';
+import { MatchesPage, parseMatchesSearch } from './pages/MatchesPage';
 import { MePage } from './pages/MePage';
 import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -138,6 +144,55 @@ const threadRoute = createRoute({
   component: ThreadPage,
 });
 
+// §3.5.1: the signed-in Student's Match in the open Round, with accept and
+// decline.
+const matchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/match',
+  beforeLoad: requireSession,
+  component: MatchPage,
+});
+
+// §3.5.1, §6.6: the signed-in Student's own Matches, paged by `page`, and one
+// of them. Only the pair reads a Match: the API answers 404 to anyone else.
+const matchesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/matches',
+  beforeLoad: requireSession,
+  validateSearch: parseMatchesSearch,
+  component: MatchesPage,
+});
+
+const matchDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/matches/$matchId',
+  beforeLoad: requireSession,
+  component: MatchDetailPage,
+});
+
+// §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,
+// and the API refuses the same reads with 403 (§5.3).
+const adminRoundsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/rounds',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  component: AdminRoundsPage,
+});
+
+const adminRoundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/rounds/$roundId',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  component: AdminRoundPage,
+});
+
+const adminMatchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/matches/$matchId',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  component: AdminMatchPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -160,6 +215,12 @@ const routeTree = rootRoute.addChildren([
   friendsRoute,
   messagesRoute,
   threadRoute,
+  matchRoute,
+  matchesRoute,
+  matchDetailRoute,
+  adminRoundsRoute,
+  adminRoundRoute,
+  adminMatchRoute,
   privacyRoute,
   termsRoute,
 ]);

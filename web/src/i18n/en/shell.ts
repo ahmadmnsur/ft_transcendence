@@ -8,6 +8,9 @@ export default {
     studentsLink: 'Students',
     friendsLink: 'Friends',
     messagesLink: 'Direct Messages',
+    matchLink: 'Match',
+    // Shown to Admins only: their Round pages (§3.5.1).
+    roundsLink: 'Rounds',
     profileLink: 'My profile',
     signOut: 'Sign out',
     signingOut: 'Signing out…',

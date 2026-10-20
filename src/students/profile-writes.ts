@@ -29,6 +29,21 @@ export async function readActiveActor(
   return { email: actor.email, learningGoalStudentSkillId: actor.learningGoalStudentSkillId };
 }
 
+// §3.4, §5.3: an Admin's write re-reads the role as well as the flags. The
+// sanction flags refuse as `readActiveActor` does; a Student no longer an
+// Admin is refused `forbidden`, as the role guard would refuse them now
+// (§6.15). The guard's read is only the fast pre-check.
+export async function readActiveAdmin(tx: PrismaTx, actorId: string): Promise<void> {
+  const actor = await tx.student.findUnique({
+    where: { id: actorId },
+    select: { role: true, suspendedAt: true, removedAt: true },
+  });
+  if (actor === null || actor.suspendedAt !== null || actor.removedAt !== null) {
+    throw new ApiError('unauthenticated');
+  }
+  if (actor.role !== 'ADMIN') throw new ApiError('forbidden');
+}
+
 // §6.2's `PATCH /api/me`: a new display name writes `display_name` and
 // `display_name_search` together through `nameFields` (§4.3.1); a new email
 // writes `Student.email` alone, Supabase Auth untouched and no mail sent. The

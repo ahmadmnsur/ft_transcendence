@@ -29,6 +29,37 @@ enum FriendshipStatus {
   ACCEPTED
 }
 
+// §4.2, §8.8: where a Match stands. Standing = the first four; repudiated =
+// DECLINED and TERMINATED_BY_ADMIN; in progress = MATCHED and ACCEPTED. The
+// last four are terminal (ADR-0014 d2).
+enum MatchStatus {
+  MATCHED
+  ACCEPTED
+  COMPLETED
+  LAPSED
+  DECLINED
+  TERMINATED_BY_ADMIN
+}
+
+// §4.2, §8.10: the six meeting modes. Declaration order is the round-robin
+// order, TECHNICAL_CONCEPT first (ADR-0012 d4, d6); the sentences live in the
+// SPA only.
+enum Mission {
+  TECHNICAL_CONCEPT
+  PROJECT_PROBLEM
+  PAIR_PROGRAMMING
+  CODE_REVIEW
+  TECHNOLOGY_DISCUSSION
+  ADVICE
+}
+
+// §4.2, §4.3.11: FORWARD is what the Mentee gains (Mentor teaches, Mentee
+// learns), REVERSE what the Mentor gains.
+enum CoverageDirection {
+  FORWARD
+  REVERSE
+}
+
 // §4.3.1: the account; every person is one. `id` has no default: sign-up
 // makes it with `v7()` before the Supabase Auth user that shares it (§4.1).
 model Student {
@@ -59,6 +90,9 @@ model Student {
   directMessagesSent         DirectMessage[] @relation("DirectMessagesSent")
   directMessagesReceived     DirectMessage[] @relation("DirectMessagesReceived")
   avatar                     Avatar?
+  matchesAsMentor            Match[]         @relation("MatchMentor")
+  matchesAsMentee            Match[]         @relation("MatchMentee")
+  matchesDeclined            Match[]         @relation("MatchDeclinedBy")
   // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
   // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
   learningGoal               StudentSkill?   @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -79,9 +113,10 @@ model Session {
 // §4.3.4: the shared catalogue. Rows are inserted by the seed's catalogue
 // step and by migrations only, and are never updated or deleted (ADR-0014 d3).
 model Skill {
-  id            String         @id @default(uuid(7)) @db.Uuid
-  name          String         @unique
+  id            String               @id @default(uuid(7)) @db.Uuid
+  name          String               @unique
   studentSkills StudentSkill[]
+  matchCoverage MatchSkillCoverage[]
 }
 
 // §4.3.5: teach and learn lists. A row is hard-deleted only through the
@@ -173,4 +208,65 @@ model DirectMessage {
 
   @@index([senderId, recipientId, createdAt])
   @@index([recipientId, readAt])
+}
+
+// §4.3.9: one matching cycle. Open while `closed_at` is null; at most one is
+// open, held by the raw unique `round_single_open` (§4.4 step 7), which Prisma
+// cannot represent. Never deleted; `closed_at` is written once by close and
+// never cleared (ADR-0002). The displayed Round number is derived: its
+// 1-based position by (opened_at, id).
+model Round {
+  id       String    @id @default(uuid(7)) @db.Uuid
+  openedAt DateTime  @default(now()) @map("opened_at") @db.Timestamptz(3)
+  closedAt DateTime? @map("closed_at") @db.Timestamptz(3)
+  matches  Match[]
+}
+
+// §4.3.10: two Students in one Round, one Mentor and one Mentee. Never
+// deleted. `mission`, `compatibility_score`, `goal_bonus_applied`, the pair,
+// the Round and the coverage rows are written by the insert and never again,
+// by anyone (ADR-0012 d5, ADR-0014 d9); `status` moves only along §8.8. The
+// Score is null exactly for a hand-made Match. `match_pair_history` (§4.4
+// step 8) is a raw, NON-unique index over the unordered pair: hand-made
+// Matches may repeat a pair. At most one standing Match per Student per Round
+// is held by the creating transaction's reads, never by the schema
+// (ADR-0014 d13).
+model Match {
+  id                 String               @id @default(uuid(7)) @db.Uuid
+  roundId            String               @map("round_id") @db.Uuid
+  mentorId           String               @map("mentor_id") @db.Uuid
+  menteeId           String               @map("mentee_id") @db.Uuid
+  status             MatchStatus          @default(MATCHED)
+  mission            Mission
+  compatibilityScore Int?                 @map("compatibility_score") @db.SmallInt
+  goalBonusApplied   Boolean              @map("goal_bonus_applied")
+  mentorAcceptedAt   DateTime?            @map("mentor_accepted_at") @db.Timestamptz(3)
+  menteeAcceptedAt   DateTime?            @map("mentee_accepted_at") @db.Timestamptz(3)
+  // Set exactly when DECLINED, to the Mentor or the Mentee who declined.
+  declinedById       String?              @map("declined_by_id") @db.Uuid
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  round              Round                @relation(fields: [roundId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  mentor             Student              @relation("MatchMentor", fields: [mentorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  mentee             Student              @relation("MatchMentee", fields: [menteeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  declinedBy         Student?             @relation("MatchDeclinedBy", fields: [declinedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  coverage           MatchSkillCoverage[]
+
+  @@index([roundId, status])
+  @@index([mentorId])
+  @@index([menteeId])
+}
+
+// §4.3.11: the frozen explanation. FORWARD rows are mentor.TEACH ∩
+// mentee.LEARN and REVERSE rows mentee.TEACH ∩ mentor.LEARN, as they stood
+// when the Match was created; written in the Match's creating transaction,
+// never updated or deleted.
+model MatchSkillCoverage {
+  matchId   String            @map("match_id") @db.Uuid
+  skillId   String            @map("skill_id") @db.Uuid
+  direction CoverageDirection
+  match     Match             @relation(fields: [matchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  skill     Skill             @relation(fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([matchId, skillId, direction])
+  @@index([skillId])
 }

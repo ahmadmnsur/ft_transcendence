@@ -108,6 +108,23 @@ function SiteHeader(): React.JSX.Element {
                 {t.shell.header.messagesLink}
               </Link>
               <Link
+                to="/match"
+                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
+              >
+                {t.shell.header.matchLink}
+              </Link>
+              {/* §3.5.1: the Round pages are an Admin's alone; the session read
+              here only decides whether the link shows, and the route guard and
+              the API both check the role again. */}
+              {session.student.role === 'ADMIN' ? (
+                <Link
+                  to="/admin/rounds"
+                  className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
+                >
+                  {t.shell.header.roundsLink}
+                </Link>
+              ) : null}
+              <Link
                 to="/me"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
               >
