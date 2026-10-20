@@ -19,6 +19,8 @@ import type {
 export class AdminRoundsController {
   constructor(private readonly matching: MatchingService) {}
 
+  // `POST /api/admin/rounds/current/matches` (§8.6): two Student ids → the
+  // hand-made Match as `AdminMatchView`. 201: it creates the Match (§3.8.2).
   @Post('rounds/current/matches')
   createHandMadeMatch(@Body() body: HandMadeMatchDto, @Req() request: Request): Promise<AdminMatchView> {
     return this.matching.createHandMadeMatch(requestActor(request), body.studentIds);
