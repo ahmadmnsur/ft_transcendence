@@ -38,6 +38,8 @@ function intersect(a: readonly string[], b: readonly string[]): string[] {
 // Round open is atomic, so a regression here shows up only as Scores that
 // lie or pairs that quietly never form.
 describe('Round open through the services', () => {
+  // Twenty Students through Supabase Auth take about four seconds, close to
+  // the five-second default, so this test sets its own limit.
   it('C4: every stored Score is §8.2 of its coverage and goal flag, and names a FORWARD Skill', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
     const students = harness.app.get(StudentsService);
@@ -83,7 +85,7 @@ describe('Round open through the services', () => {
     }
     // The cohort exercises the bonus, so the check above covers both branches.
     expect(goalBonuses).toBeGreaterThan(0);
-  });
+  }, 20_000);
 
   it('never proposes a pair again once one of them declined their Match', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
