@@ -442,7 +442,10 @@ export class FortyTwoService {
   // takes the failure path. Then the store keeps a permission in place of the
   // attempt it took, under the same key — the session token's — for ten
   // minutes from now, and nothing else is written: no database row, no
-  // cookie. The session is untouched.
+  // cookie. The session is untouched. One live attempt per browser (§5.6 A
+  // step 4): an attempt under the key now is a start made while this
+  // callback waited on 42, and the newest start wins, so this callback
+  // fails rather than replace it.
   private async completeConfirm(input: {
     identity: FortyTwoIdentity;
     studentId: string;
@@ -461,6 +464,7 @@ export class FortyTwoService {
     ) {
       return input.fail();
     }
+    if (this.attempts.hasAttempt(input.bindingKey)) return input.fail();
     this.attempts.put({
       kind: 'permission',
       bindingKey: input.bindingKey,

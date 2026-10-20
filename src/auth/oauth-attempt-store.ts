@@ -117,6 +117,12 @@ export class OAuthAttemptStore {
     this.attempts.set(entry.bindingKey, entry);
   }
 
+  // §5.6 A step 4: whether an attempt sits under the key. Asked by a
+  // callback whose own step 2 emptied it, a yes means a newer start.
+  hasAttempt(bindingKey: string): boolean {
+    return this.attempts.get(bindingKey)?.kind === 'attempt';
+  }
+
   // §5.6 A's callback step 2: the entry is **taken** — removed now, whatever
   // follows, so `state` and the verifier are used once. A draft or a
   // permission comes out the same way and is never an attempt; the caller
