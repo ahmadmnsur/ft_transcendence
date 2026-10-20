@@ -96,6 +96,26 @@ describe('hand-made Matches through the services', () => {
     });
   });
 
+  it('keeps the bonus off when the Mentee\u2019s Goal lists a Skill the Mentor does not teach', async () => {
+    const skills = await insertCatalogue(harness.app.get(UnitOfWork));
+    const matching = harness.app.get(MatchingService);
+    const students = harness.app.get(StudentsService);
+    const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
+    await matching.openRound(admin);
+    const teacher = actor((await createTestAccount(harness.app)).id);
+    const learner = actor((await createTestAccount(harness.app)).id);
+    await students.setSkills(teacher, [skills.get('Docker')!], []);
+    await students.setSkills(learner, [], [skills.get('Docker')!, skills.get('Git')!]);
+    await students.setLearningGoal(learner, skills.get('Git')!, 'I want to learn Git.');
+
+    // The Goal is on the learner's list but outside the frozen FORWARD set,
+    // so the +10 depends on the chosen orientation's membership (§8.2).
+    const view = await matching.createHandMadeMatch(admin, [learner.studentId, teacher.studentId]);
+    expect(view.mentor.id).toBe(teacher.studentId);
+    expect(view.coverage.forward.map((skill) => skill.name)).toEqual(['Docker']);
+    expect(view.goalBonusApplied).toBe(false);
+  });
+
   it('allows empty coverage below the matcher floor and uses the lower id for the zero-score tie', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
     const matching = harness.app.get(MatchingService);
