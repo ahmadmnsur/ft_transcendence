@@ -1,12 +1,12 @@
 import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public, requestActor } from '../core/session.guard';
-import { ApiError, CountedRefusal } from '../core/errors';
+import { CountedRefusal } from '../core/errors';
 import { clearSessionCookie, parseSessionCookie, serializeSessionCookie } from '../core/session-cookie';
 import { ThrottleStore, type ThrottleSlot } from '../core/throttle';
 import { AuthService } from './auth.service';
 import { LoginDto, PasswordDto, SignupDto } from './dto';
-import { PasswordUpdateFailed, SignedOutFailure } from './password-change';
+import { signedOutBy } from './password-change';
 import { tooManyAttempts } from './refusals';
 
 // §6.1: the throttle is enforced here, at the HTTP boundary, never inside
@@ -124,13 +124,7 @@ export class AuthController {
       // The guard's 401 never reaches this handler, so an `unauthenticated`
       // ApiError here is the step-4 refusal — a sanction, or a session a
       // previous change already deleted — which signs out.
-      if (
-        err instanceof PasswordUpdateFailed ||
-        err instanceof SignedOutFailure ||
-        (err instanceof ApiError && err.code === 'unauthenticated')
-      ) {
-        response.setHeader('Set-Cookie', clearSessionCookie());
-      }
+      if (signedOutBy(err)) response.setHeader('Set-Cookie', clearSessionCookie());
       throw err;
     } finally {
       this.throttle.release(slot);

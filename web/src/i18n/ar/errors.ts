@@ -23,6 +23,7 @@ export default {
     oauth_failed: 'فشل تسجيل الدخول باستخدام 42. حاول مرة أخرى.',
     forty_two_connected: 'هذا الحساب على PeerConnect مرتبط بالفعل بحساب 42.',
     forty_two_not_connected: 'حسابك غير مرتبط بأي حساب 42.',
+    confirmation_required: 'أكد هويتك باستخدام 42 مرة أخرى، ثم عين كلمة المرور الجديدة.',
     student_removed: 'تم استبعاد هذا الطالب.',
     self_action_forbidden: 'لا يمكنك فعل هذا بحسابك الخاص.',
     last_active_admin: 'يجب أن يبقى مسؤول نشط واحد على الأقل دائما.',

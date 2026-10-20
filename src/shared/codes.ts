@@ -25,6 +25,7 @@ export type RefusalCode =
   | 'oauth_failed'
   | 'forty_two_connected'
   | 'forty_two_not_connected'
+  | 'confirmation_required'
   | 'student_removed'
   | 'self_action_forbidden'
   | 'last_active_admin'

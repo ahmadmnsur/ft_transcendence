@@ -16,6 +16,7 @@ import { AppConfig } from '../core/app-config';
 import { ApiError, CountedRefusal } from '../core/errors';
 import {
   clearAttemptCookie,
+  clearSessionCookie,
   parseSessionCookie,
   serializeAttemptCookie,
   serializeSessionCookie,
@@ -23,9 +24,10 @@ import {
 import { SessionResolver } from '../core/session-resolver';
 import { requestActor, Public, authenticateSession } from '../core/session.guard';
 import { ThrottleStore, type ThrottleSlot } from '../core/throttle';
-import { Disconnect42Dto, Start42Dto, SignupDto } from './dto';
+import { Disconnect42Dto, Password42Dto, Start42Dto, SignupDto } from './dto';
 import { FortyTwoService, type ThrottledPasswordCheck } from './forty-two.service';
 import { ATTEMPT_TTL_SECONDS } from './oauth-attempt-store';
+import { signedOutBy } from './password-change';
 import { oauthFailed, tooManyAttempts } from './refusals';
 
 // §5.6 A: while either `FT_OAUTH_*` value is empty, every `/api/auth/42/*`
@@ -48,7 +50,9 @@ export class FortyTwoEnabledGuard implements CanActivate {
 // way `auth/signup` does; Connect 42's start counts a refused current
 // password through the service's wrapper, under the session's email; and
 // Disconnect 42 counts under the signed-in Student's own email. The draft
-// read counts nothing: it writes nothing and carries no email.
+// read counts nothing: it writes nothing and carries no email. Confirm with
+// 42's start and its new password count nothing either: neither checks a
+// password (§5.6 C).
 @Controller('auth/42')
 @UseGuards(FortyTwoEnabledGuard)
 export class FortyTwoController {
@@ -96,7 +100,7 @@ export class FortyTwoController {
   // `POST /api/auth/42/start` (§5.6 A step 1, §6.1): a JSON mutation. The
   // service mints the attempt under the cookie's binding; this boundary
   // answers the SPA's next navigation. Only `sign_in` sets the `a.` cookie;
-  // a `link` start leaves the session cookie exactly as it is.
+  // a `link` or `confirm` start leaves the session cookie exactly as it is.
   @Public()
   @Post('start')
   @HttpCode(200)
@@ -226,5 +230,38 @@ export class FortyTwoController {
     } finally {
       this.throttle.release(slot);
     }
+  }
+
+  // `POST /api/auth/42/password` (§5.6 C): the new password after Confirm
+  // with 42, a session route `@Public` for the same reason as Disconnect 42
+  // above, and resolved the same way. No throttle: it checks no password, so
+  // it counts nothing and has nothing to slow down (§5.5). The cookie is
+  // cleared as `auth/password` clears it: on success, and on a failure that
+  // left the Student signed out (`signedOutBy`); a refusal before the first
+  // sign-out, `confirmation_required` among them, leaves it.
+  @Public()
+  @Post('password')
+  @HttpCode(200)
+  async setPassword(
+    @Body() dto: Password42Dto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<Record<string, never>> {
+    await authenticateSession(this.sessions, request, response);
+    const actor = requestActor(request);
+    const cookie = parseSessionCookie(request.headers.cookie);
+    if (cookie.kind !== 'session') throw new ApiError('unauthenticated');
+    try {
+      await this.fortyTwo.setPasswordAfter42({
+        actor,
+        sessionToken: cookie.token,
+        newPassword: dto.newPassword,
+      });
+    } catch (err) {
+      if (signedOutBy(err)) response.setHeader('Set-Cookie', clearSessionCookie());
+      throw err;
+    }
+    response.setHeader('Set-Cookie', clearSessionCookie());
+    return {};
   }
 }

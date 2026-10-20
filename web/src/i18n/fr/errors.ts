@@ -23,6 +23,7 @@ export default {
     oauth_failed: 'La connexion avec 42 a échoué. Réessayez.',
     forty_two_connected: 'Ce compte PeerConnect a déjà un compte 42 associé.',
     forty_two_not_connected: "Votre compte n'a aucun compte 42 associé.",
+    confirmation_required: 'Confirmez de nouveau avec 42, puis définissez votre nouveau mot de passe.',
     student_removed: 'Cet Étudiant a été exclu.',
     self_action_forbidden: 'Vous ne pouvez pas faire cela à votre propre compte.',
     last_active_admin: 'Il doit toujours y avoir au moins un Admin actif.',

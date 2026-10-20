@@ -4,11 +4,11 @@ import { AppLogger, errorFields } from '../core/logger';
 import { PrismaService } from '../core/prisma.service';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { SupabaseAuthClient, type PasswordCheckOutcome } from '../core/supabase-auth';
-import { CheckpointHook, UnitOfWork } from '../core/uow';
+import { CheckpointHook, UnitOfWork, type PrismaTx } from '../core/uow';
 import { movedPasswordVersion, tooManyAttempts, wrongPassword } from './refusals';
 
-// §5.1's step 3, as a parameter: check the current password, or throw. The
-// password change passes the Supabase check; #157 passes Confirm with 42.
+// The shared password check's shape (§5.1's step 3): check the current
+// password, or throw.
 export type PasswordStep3 = (studentId: string, currentPassword: string) => Promise<void>;
 
 // The shared password check (§5.1): the grant on the Student's login. Refused
@@ -89,6 +89,37 @@ export class SignedOutFailure extends Error {
   }
 }
 
+// Whether a failed change left the Student signed out, so the boundary
+// clears the cookie with the failure: a step-5 failure, or step 4's
+// `unauthenticated` — a sanction, or a session a previous change already
+// deleted. The routes resolve their session before the change runs, so an
+// `unauthenticated` from inside it is always step 4's. A refusal at step 3
+// or before signs nobody out.
+export function signedOutBy(err: unknown): boolean {
+  return (
+    err instanceof PasswordUpdateFailed ||
+    err instanceof SignedOutFailure ||
+    (err instanceof ApiError && err.code === 'unauthenticated')
+  );
+}
+
+export type PasswordChangeInput = {
+  studentId: string;
+  newPassword: string;
+  // §5.1's step 3, which throws to refuse: the current password's check for
+  // the password change, the permission for the new password after Confirm
+  // with 42 (§5.6 C).
+  checkStep3: () => Promise<void>;
+  // What else step 4's transaction reads before it writes, throwing to
+  // refuse with nothing written (§3.6.1): the new password after Confirm
+  // with 42 re-reads `forty_two_id` there. The password change has none.
+  recheckInStep4?: (tx: PrismaTx) => Promise<void>;
+  // The actor's session, or null for an actor the seed or a test
+  // constructs, which skips the check. A change running on a session a
+  // previous change already deleted is refused in step 4 (§3.4).
+  sessionHash: string | null;
+};
+
 // §5.1's password change, steps 2 and 4–6, as one function: step 1
 // (validation, throttle) already ran at the boundary, and step 3 arrives as
 // a parameter. Steps 2 and 3 run outside the lock; the lock is taken just
@@ -99,17 +130,7 @@ export class SignedOutFailure extends Error {
 // session of the Student, the current one included, and queues
 // `revokeSessions(studentId)` after commit.
 export async function changePasswordCore(
-  input: {
-    studentId: string;
-    currentPassword: string;
-    newPassword: string;
-    checkCurrentPassword: PasswordStep3;
-    // The actor's session, or null for an actor the seed or a test
-    // constructs, which skips the check. A change running on a session a
-    // previous change already deleted is refused in step 4 (§3.4). #157's
-    // path passes its own actor's `sessionHash` the same way.
-    sessionHash: string | null;
-  },
+  input: PasswordChangeInput,
   deps: PasswordChangeDeps,
 ): Promise<void> {
   const { prisma } = deps;
@@ -120,21 +141,15 @@ export async function changePasswordCore(
     select: { passwordVersion: true },
   });
   if (before === null) throw movedPasswordVersion();
-  // Step 3: the password check.
-  await input.checkCurrentPassword(studentId, input.currentPassword);
+  // Step 3: the password check, or what stands in for it.
+  await input.checkStep3();
   return deps.lock.runExclusive(studentId, () =>
     changePasswordSteps(input, deps, before.passwordVersion),
   );
 }
 
 async function changePasswordSteps(
-  input: {
-    studentId: string;
-    currentPassword: string;
-    newPassword: string;
-    checkCurrentPassword: PasswordStep3;
-    sessionHash: string | null;
-  },
+  input: PasswordChangeInput,
   deps: PasswordChangeDeps,
   expectedVersion: number,
 ): Promise<void> {
@@ -145,7 +160,8 @@ async function changePasswordSteps(
   // `unauthenticated`, nothing written and no Supabase update (§4.3.1: a
   // Removed row accepts no update). The actor's own session is re-read too:
   // a change running on a session a previous change already deleted is
-  // refused the same way, before the checkpoint (§3.4, §5.8).
+  // refused the same way, before the checkpoint (§3.4, §5.8). Then the
+  // caller's own re-read, if any.
   await uow.run('password-change:first-sign-out', async (tx, ctx) => {
     const current = await tx.student.findUnique({
       where: { id: studentId },
@@ -164,6 +180,7 @@ async function changePasswordSteps(
       });
       if (session === null) throw new ApiError('unauthenticated');
     }
+    await input.recheckInStep4?.(tx);
     await ctx.checkpoint('password-change:first-sign-out');
     await tx.student.update({ where: { id: studentId }, data: { passwordVersion: { increment: 1 } } });
     await tx.session.deleteMany({ where: { studentId } });
