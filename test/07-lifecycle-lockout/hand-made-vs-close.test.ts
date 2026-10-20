@@ -20,6 +20,40 @@ async function outcome(work: Promise<unknown>): Promise<string> {
 }
 
 describe('hand-made creation versus Round close', () => {
+  it('refuses creation when its Round closes and another opens before the retry', async () => {
+    const skills = await insertCatalogue(harness.app.get(UnitOfWork));
+    const matching = harness.app.get(MatchingService);
+    const students = harness.app.get(StudentsService);
+    const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
+    const a = actor((await createTestAccount(harness.app)).id);
+    const b = actor((await createTestAccount(harness.app)).id);
+    // Both Students are candidates, but Score 0 in both directions keeps
+    // the matcher from pairing them when either Round opens.
+    await students.setSkills(a, [skills.get('Docker')!], []);
+    await students.setSkills(b, [skills.get('Docker')!], []);
+    const first = await matching.openRound(admin);
+    expect(first.matchCount).toBe(0);
+
+    harness.barriers.arm('match.handmade');
+    const creation = outcome(matching.createHandMadeMatch(admin, [a.studentId, b.studentId]));
+    await harness.barriers.waitFor('match.handmade', 1);
+    await matching.closeRound(admin);
+    const second = await matching.openRound(admin);
+    expect(second.matchCount).toBe(0);
+    harness.recorder.clear();
+    harness.barriers.disarm('match.handmade');
+    harness.barriers.release('match.handmade');
+
+    expect(await creation).toBe('no_open_round');
+    const closed = await matching.getRound(admin, first.round.id);
+    const opened = await matching.getRound(admin, second.round.id);
+    expect(closed.round.closedAt).not.toBeNull();
+    expect(opened.round.closedAt).toBeNull();
+    expect(closed.matches).toEqual([]);
+    expect(opened.matches).toEqual([]);
+    expect(harness.recorder.events).toEqual([]);
+  });
+
   it.each(['creation', 'close'] as const)('%s commits first: no in-progress Match survives in the closed Round', async (first) => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
     const matching = harness.app.get(MatchingService);

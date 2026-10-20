@@ -75,10 +75,14 @@ export class MatchingService {
   // floor. The deciding reads share the insert's SSI transaction, so close,
   // eligibility changes and competing creations have one serial order.
   async createHandMadeMatch(actor: Actor, studentIds: readonly [string, string]): Promise<AdminMatchView> {
+    // Keep the first attempt's Round across retries: close first refuses
+    // creation rather than moving it into a later Round (ADR-0002 d7).
+    let firstRoundId: string | undefined;
     return this.uow.run('match-handmade', async (tx, ctx) => {
       await readActiveAdmin(tx, actor.studentId);
       const round = await tx.round.findFirst({ where: { closedAt: null }, select: { id: true, openedAt: true } });
-      if (round === null) throw noOpenRound();
+      if (round === null || (firstRoundId !== undefined && round.id !== firstRoundId)) throw noOpenRound();
+      firstRoundId = round.id;
       const [a, b] = studentIds.map((id) => id.toLowerCase());
       if (a === b) throw sameStudent();
       const candidates = await readCandidatesByIds(tx, [a, b]);
