@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 19 October 2026
+**42 PeerConnect** · Last updated: 20 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -148,7 +148,7 @@ your email address is used only to sign in.
 | Your email address | you and Admins — never shown on your profile or in search |
 | Your list of Friends | you only |
 | A friend request you sent or received, while it waits for an answer | you and the other Student only |
-| Your Matches: who you were paired with, their status, the Compatibility Score and its explanation | the two of you, and Admins. No profile lists anyone's Matches, and a Public Takeaway never names the Mentor |
+| Your Matches: who you were paired with, their status, the Compatibility Score and its explanation, the suggested Mission, which of you has accepted and, for Admins, which of you declined | the two of you, and Admins. No profile lists anyone's Matches, and a Public Takeaway never names the Mentor |
 | Your Learning Outcome and Evidence | the two Students in that Match, and Admins |
 | Private Feedback, including its rating | the Mentor it is about, Admins, and you, its author. It is **not anonymous**: the Mentor sees that it came from you |
 | Direct Messages | only the two Students in the conversation — not Admins, not Peer Moderators. The sender is never shown whether you have read a message |

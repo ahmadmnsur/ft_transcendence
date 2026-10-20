@@ -4,13 +4,14 @@ import auth from './auth';
 import design from './design';
 import errors from './errors';
 import legal from './legal';
+import matching from './matching';
 import people from './people';
 import profile from './profile';
 import shell from './shell';
 import social from './social';
 import messages from './messages';
 
-const ar = { shell, legal, auth, errors, people, profile, design, social, messages };
+const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, no empty text and no vowel mark in its own Arabic.

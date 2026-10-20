@@ -9,6 +9,8 @@ export default {
     studentsLink: 'Étudiants',
     friendsLink: 'Amis',
     messagesLink: 'Messages directs',
+    matchLink: 'Match',
+    roundsLink: 'Tours',
     profileLink: 'Mon profil',
     signOut: 'Se déconnecter',
     signingOut: 'Déconnexion…',

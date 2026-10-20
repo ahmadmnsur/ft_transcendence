@@ -107,7 +107,7 @@ function QueryBoolean(): PropertyDecorator {
   );
 }
 
-function QueryInteger(): PropertyDecorator {
+export function QueryInteger(): PropertyDecorator {
   return Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' && /^[0-9]+$/.test(value) ? Number(value) : value,
   );
