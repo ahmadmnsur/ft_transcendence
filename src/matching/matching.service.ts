@@ -5,8 +5,8 @@ import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
 import { MISSIONS, STANDING_STATUSES, isInProgress } from '../shared/matches';
 import { readActiveActor, readActiveAdmin } from '../students/profile-writes';
-import { readCandidates, unmatchedIn } from './candidates';
-import { runMatcher, type UnorderedPair } from './engine';
+import { readCandidates, readCandidatesByIds, unmatchedIn } from './candidates';
+import { orientPair, runMatcher, type UnorderedPair } from './engine';
 import {
   MATCH_SELECT,
   ROUND_MATCH_SELECT,
@@ -18,7 +18,17 @@ import {
   toAdminRoundMatch,
   toMatchView,
 } from './match-views';
-import { ROUND_ALREADY_OPEN, matchNotInProgress, matchNotPending, noOpenRound, roundAlreadyOpen } from './refusals';
+import {
+  ROUND_ALREADY_OPEN,
+  alreadyMatched,
+  matchNotInProgress,
+  matchNotPending,
+  noOpenRound,
+  notACandidate,
+  pairBlocked,
+  roundAlreadyOpen,
+  sameStudent,
+} from './refusals';
 import type {
   AdminMatchView,
   AdminRoundDetail,
@@ -60,6 +70,63 @@ export class MatchingService {
     private readonly uow: UnitOfWork,
     private readonly publisher: RealtimePublisher,
   ) {}
+
+  // §8.6: the same orientation as the matcher, with no history check or
+  // floor. The deciding reads share the insert's SSI transaction, so close,
+  // eligibility changes and competing creations have one serial order.
+  async createHandMadeMatch(actor: Actor, studentIds: readonly [string, string]): Promise<AdminMatchView> {
+    return this.uow.run('match-handmade', async (tx, ctx) => {
+      await readActiveAdmin(tx, actor.studentId);
+      const round = await tx.round.findFirst({ where: { closedAt: null }, select: { id: true, openedAt: true } });
+      if (round === null) throw noOpenRound();
+      const [a, b] = studentIds.map((id) => id.toLowerCase());
+      if (a === b) throw sameStudent();
+      const candidates = await readCandidatesByIds(tx, [a, b]);
+      if (candidates.length !== 2) throw notACandidate();
+      const standing = await tx.match.findFirst({
+        where: {
+          roundId: round.id,
+          status: { in: [...STANDING_STATUSES] },
+          OR: [{ mentorId: { in: [a, b] } }, { menteeId: { in: [a, b] } }],
+        },
+        select: { id: true },
+      });
+      if (standing !== null) throw alreadyMatched();
+      const block = await tx.block.findFirst({
+        where: { OR: [{ blockerId: a, blockedId: b }, { blockerId: b, blockedId: a }] },
+        select: { id: true },
+      });
+      if (block !== null) throw pairBlocked();
+      const count = await tx.match.count({ where: { roundId: round.id } });
+      await ctx.checkpoint('match.handmade');
+
+      const oriented = orientPair(candidates[0], candidates[1]);
+      const row = await tx.match.create({
+        data: {
+          roundId: round.id,
+          mentorId: oriented.mentorId,
+          menteeId: oriented.menteeId,
+          status: 'MATCHED',
+          compatibilityScore: null,
+          goalBonusApplied: oriented.goalBonusApplied,
+          mission: MISSIONS[count % MISSIONS.length],
+          coverage: {
+            createMany: {
+              data: [
+                ...oriented.forward.map((skillId) => ({ skillId, direction: 'FORWARD' as const })),
+                ...oriented.reverse.map((skillId) => ({ skillId, direction: 'REVERSE' as const })),
+              ],
+            },
+          },
+        },
+        select: MATCH_SELECT,
+      });
+      const people = await readPeople(tx, [row]);
+      const number = await roundNumberOf(tx, round);
+      ctx.afterCommit(() => this.publisher.matchReady([oriented.mentorId, oriented.menteeId]));
+      return toAdminMatchView(row, people, number);
+    });
+  }
 
   // §8.4. One SSI transaction reads the actor, whether a Round is open, every
   // candidate with Skills, Goal and XP, every Match pair and every Block pair,

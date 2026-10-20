@@ -267,3 +267,12 @@ export function openRound(queryClient: QueryClient): Promise<OpenRoundResult | u
 export function closeRound(queryClient: QueryClient): Promise<CloseRoundResult | undefined> {
   return roundWrite(queryClient, postCloseRound);
 }
+
+export function createHandMadeMatch(
+  queryClient: QueryClient,
+  studentIds: [string, string],
+): Promise<AdminMatchView | undefined> {
+  return roundWrite(queryClient, () =>
+    apiFetch<AdminMatchView>('/admin/rounds/current/matches', { method: 'POST', body: { studentIds } }),
+  );
+}

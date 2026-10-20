@@ -3,16 +3,19 @@ import { AlertIcon, Button, Card, EmptyState } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
+import { HandMadeMatchForm } from './HandMadeMatchForm';
 
 // §8.9: the open Round's unmatched Students, which the API derives when read
 // and never stores. On `/admin/rounds` and on the open Round's own page.
 export function UnmatchedCard({
   students,
+  roundId,
   error,
   onRetry,
 }: {
   // Undefined while the Round's read is pending.
   students: StudentRef[] | undefined;
+  roundId: string;
   error?: unknown;
   onRetry?: () => void;
 }): React.JSX.Element {
@@ -53,7 +56,10 @@ export function UnmatchedCard({
   }
   return (
     <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
-      {body}
+      <div className="flex min-w-0 flex-col gap-3">
+        {students !== undefined ? <HandMadeMatchForm key={roundId} students={students} /> : null}
+        {body}
+      </div>
     </Card>
   );
 }

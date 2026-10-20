@@ -150,7 +150,7 @@ export function AdminRoundPage(): React.JSX.Element {
             emptyTitle={copy.emptyTitle}
           />
         </Card>
-        {data.unmatched !== null ? <UnmatchedCard students={data.unmatched} /> : null}
+        {data.unmatched !== null ? <UnmatchedCard roundId={round.id} students={data.unmatched} /> : null}
         <Link to="/admin/rounds" className="self-start rounded text-link underline underline-offset-2 focus-ring">
           {copy.roundsLink}
         </Link>

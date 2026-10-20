@@ -145,6 +145,16 @@ export default {
     empty: 'Chaque candidat a un Match dans ce Tour.',
     loading: 'Chargement des Étudiants sans Match…',
   },
+  handMade: {
+    description: "Choisissez deux Étudiants sans Match. Leurs Compétences et Objectifs d'apprentissage déterminent qui est Mentor. Ce Match ne présente aucun Score de compatibilité.",
+    first: 'Premier Étudiant',
+    second: 'Deuxième Étudiant',
+    choose: 'Choisissez un Étudiant',
+    create: 'Créer un Match à la main',
+    creating: 'Création…',
+    created: 'Le Match à la main a été créé.',
+    view: 'Voir le Match',
+  },
   round: {
     title: 'Tour {number}',
     loading: 'Chargement de ce Tour…',

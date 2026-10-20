@@ -1,7 +1,8 @@
-import { Controller, Get, HttpCode, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { requestActor } from '../core/session.guard';
 import { UuidParam } from '../core/uuid-param';
+import { HandMadeMatchDto } from './dto';
 import { MatchingService } from './matching.service';
 import type {
   AdminMatchView,
@@ -12,11 +13,16 @@ import type {
 } from './views';
 
 // §6.13: Rounds and Matches for Admins. The global RolesGuard answers 403 to
-// anyone but an Admin on `/api/admin/*` (§5.3); the two writes re-read the
+// anyone but an Admin on `/api/admin/*` (§5.3); all writes re-read the
 // actor's role and flags inside their transaction all the same (§3.4).
 @Controller('admin')
 export class AdminRoundsController {
   constructor(private readonly matching: MatchingService) {}
+
+  @Post('rounds/current/matches')
+  createHandMadeMatch(@Body() body: HandMadeMatchDto, @Req() request: Request): Promise<AdminMatchView> {
+    return this.matching.createHandMadeMatch(requestActor(request), body.studentIds);
+  }
 
   // `GET /api/admin/rounds`: every Round, newest first.
   @Get('rounds')
