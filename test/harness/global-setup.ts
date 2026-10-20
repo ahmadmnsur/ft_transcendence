@@ -2,7 +2,10 @@ import { spawnSync } from 'node:child_process';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { AppConfig } from '../../src/core/app-config';
 import { firstNonTlsParameter, resolveSupabaseTarget, type EnvRecord } from '../../src/core/env';
+import { SupabaseStorageClient } from '../../src/core/supabase-storage';
+import { ensureBuckets, TEST_BUCKETS } from '../../src/files/buckets';
 import { recreateTestDatabase } from './database';
 import {
   apiSnippetPath,
@@ -94,4 +97,8 @@ export default async function setup(): Promise<void> {
   runPrisma(['migrate', 'deploy'], testUrl);
   // (e) Every worker inherits the test URL before PrismaService is constructed.
   process.env.DATABASE_URL = testUrl;
+  // (f) The suite's own buckets, made by the seed's bucket step with their
+  // names passed in, so a run never lists or deletes a developer's files
+  // (§16.2).
+  await ensureBuckets(new SupabaseStorageClient(new AppConfig()), TEST_BUCKETS);
 }

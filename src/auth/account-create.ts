@@ -7,16 +7,18 @@ import { SupabaseAuthClient } from '../core/supabase-auth';
 import { UnitOfWork, type PrismaTx } from '../core/uow';
 import { Refusal, type RefusalSpec } from '../core/errors';
 import { nameFields } from '../shared/fold-name';
+import { avatarUrlFor } from '../students/student-ref';
 import { emailUnavailable } from './refusals';
 
 // What sign-up and sign-in hand the browser: the student object, like
-// `GET /api/session`'s (§6.1). `avatarUrl` is null: no Avatar table yet.
+// `GET /api/session`'s (§6.1). `avatarUrl` is null without an Avatar row,
+// as for every new account.
 export type StudentView = {
   id: string;
   displayName: string;
   email: string;
   role: Role;
-  avatarUrl: null;
+  avatarUrl: string | null;
 };
 
 export function toStudentView(row: {
@@ -24,8 +26,15 @@ export function toStudentView(row: {
   displayName: string;
   email: string;
   role: Role;
+  avatar: { token: string } | null;
 }): StudentView {
-  return { id: row.id, displayName: row.displayName, email: row.email, role: row.role, avatarUrl: null };
+  return {
+    id: row.id,
+    displayName: row.displayName,
+    email: row.email,
+    role: row.role,
+    avatarUrl: avatarUrlFor(row.avatar),
+  };
 }
 
 // Extra `Student` scalar fields the sign-up transaction writes beside the
@@ -125,7 +134,8 @@ export async function createAccountWithSession(
       // A new account has none; the delete keeps every creation path alike.
       await tx.session.deleteMany({ where: { studentId: id, expiresAt: { lte: ctx.now } } });
       return {
-        student: toStudentView(student),
+        // A new account has no avatar.
+        student: toStudentView({ ...student, avatar: null }),
         token: session.token,
         expiresAt,
         maxAge: maxAgeUntil(expiresAt, ctx.now),

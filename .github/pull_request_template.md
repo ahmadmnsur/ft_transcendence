@@ -23,7 +23,8 @@
 ## Schema gate
 
 <!-- Yes if this touches prisma/** (seed: prisma/seed/**, prisma/fixtures/**; resets: prisma/reset/**),
-     prisma.config.ts, supabase/** or any compose*.yaml, or adds any file matching /prisma.config*,
+     prisma.config.ts, supabase/**, src/files/buckets.ts (the Storage buckets' settings) or any
+     compose*.yaml, or adds any file matching /prisma.config*,
      /prisma7.config*, /.config/prisma* (ADR-0005 d5, d6). Moving or renaming one of these is Yes too. -->
 
 - [ ] **No** — round-robin review

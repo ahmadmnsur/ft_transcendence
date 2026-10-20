@@ -5,6 +5,7 @@ import { envFailure, resolveSupabaseTarget, type EnvRecord, type SupabaseTarget 
 import { ApiError } from '../../src/core/errors';
 import { SupabaseAuthClient } from '../../src/core/supabase-auth';
 import { errorCodeSuffix } from '../../src/core/supabase-check';
+import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { emptyEverything } from '../seed/empty';
 import { openLockConnection, tryTakeSeedLock } from '../seed/lock';
 import { clearRecord } from '../seed/record';
@@ -103,9 +104,9 @@ async function ask(question: string): Promise<string | null> {
 // The team project's ref is printed and must be typed back before anything
 // is deleted; a wrong ref deletes nothing (§15.6 step 2).
 async function confirmRef(ref: string): Promise<void> {
-  // The files in avatars and evidence join this list with emptyEverything's (#43).
   console.log(
-    `${target.command} empties ${target.name} ${ref}: every row of our tables and every Supabase Auth user. ` +
+    `${target.command} empties ${target.name} ${ref}: every row of our tables, every Supabase Auth user ` +
+      'and every file in avatars and evidence. ' +
       'The tables, migrations, settings, buckets and keys stay. Every stack connected to it must be stopped.',
   );
   const typed = await ask('Type the project ref to go on: ');
@@ -138,7 +139,9 @@ async function checkAuthAdmin(auth: SupabaseAuthClient): Promise<void> {
 
 async function reset(): Promise<void> {
   const found = checkValues(process.env);
-  const auth = new SupabaseAuthClient(new AppConfig());
+  const config = new AppConfig();
+  const auth = new SupabaseAuthClient(config);
+  const storage = new SupabaseStorageClient(config);
   if (found.kind === 'team') await confirmRef(found.ref);
   const where = found.kind === 'team' ? `${target.name} ${found.ref}` : target.name;
 
@@ -158,13 +161,13 @@ async function reset(): Promise<void> {
   // leaves no record over the rows left (§14.9).
   wrote = true;
   await orStop('clearing the completion record', () => clearRecord(lock.client));
-  const emptied = await orStop('emptying', () => emptyEverything(lock.client, auth));
+  const emptied = await orStop('emptying', () => emptyEverything(lock.client, auth, storage));
   // Closing on purpose is no loss; the lock ends with its connection.
   await lock.release().catch(() => undefined);
 
   console.log(
-    `${target.command} emptied ${where}: the rows of ${emptied.tables} tables and ` +
-      `${emptied.authUsers} Supabase Auth users deleted. ${target.next}`,
+    `${target.command} emptied ${where}: the rows of ${emptied.tables} tables, ` +
+      `${emptied.authUsers} Supabase Auth users and ${emptied.files} files deleted. ${target.next}`,
   );
 }
 

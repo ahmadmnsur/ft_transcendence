@@ -18,6 +18,7 @@ import { RolesGuard } from './roles.guard';
 import { SessionResolver } from './session-resolver';
 import { SessionGuard } from './session.guard';
 import { SupabaseAuthClient } from './supabase-auth';
+import { SupabaseStorageClient } from './supabase-storage';
 import { ThrottleStore } from './throttle';
 import { CheckpointHook, UnitOfWork } from './uow';
 
@@ -33,6 +34,7 @@ import { CheckpointHook, UnitOfWork } from './uow';
     UnitOfWork,
     CheckpointHook,
     SupabaseAuthClient,
+    SupabaseStorageClient,
     SessionResolver,
     ThrottleStore,
     { provide: Clock, useClass: SystemClock },
@@ -59,6 +61,7 @@ import { CheckpointHook, UnitOfWork } from './uow';
     PresenceReader,
     RealtimePublisher,
     SupabaseAuthClient,
+    SupabaseStorageClient,
     SessionResolver,
     ThrottleStore,
   ],

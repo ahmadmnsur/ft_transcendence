@@ -9,6 +9,7 @@ import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from '../api/ses
 import { Banner, Button, Card, TextField } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
+import { AvatarCard } from '../profile/AvatarCard';
 import { FortyTwoCard } from '../profile/FortyTwoCard';
 import { LearningGoalCard } from '../profile/LearningGoalCard';
 import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
@@ -17,12 +18,12 @@ import { ME_QUERY_KEY, meQueryOptions } from '../api/profile';
 
 const meSearch = getRouteApi('/me');
 
-// `/me` (§3.5.1, §6.2): the profile, Skills and Learning Goal cards above the
-// password-change form under a clear heading. On success the Student is signed
-// out everywhere, so the page clears the session query and returns to
-// `/sign-in` with a notice. Any failure other than a refusal re-probes the
-// session first: signed out returns with the neutral notice, still signed in
-// stays on the form with the failure's sentence (§5.1).
+// `/me` (§3.5.1, §6.2): the avatar, profile, Skills and Learning Goal cards
+// above the password-change form under a clear heading. On success the
+// Student is signed out everywhere, so the page clears the session query and
+// returns to `/sign-in` with a notice. Any failure other than a refusal
+// re-probes the session first: signed out returns with the neutral notice,
+// still signed in stays on the form with the failure's sentence (§5.1).
 export function MePage(): React.JSX.Element {
   const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
@@ -185,6 +186,7 @@ export function MePage(): React.JSX.Element {
               </Button>
             </div>
           ) : null}
+          <AvatarCard />
           <ProfileDetailsCard />
           <SkillsCard />
           <LearningGoalCard />

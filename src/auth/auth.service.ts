@@ -7,6 +7,7 @@ import { clearSessionCookie, type ParsedCookie } from '../core/session-cookie';
 import { SessionResolver, type SessionCookieSetter } from '../core/session-resolver';
 import { SupabaseAuthClient } from '../core/supabase-auth';
 import { CheckpointHook, UnitOfWork } from '../core/uow';
+import { avatarUrlFor } from '../students/student-ref';
 import {
   createAccountWithSession,
   toStudentView,
@@ -75,7 +76,14 @@ export class AuthService {
     if (await this.hasActiveSession(input.sessionToken)) throw alreadySignedIn();
     const student = await this.prisma.student.findUnique({
       where: { email: input.email },
-      select: { id: true, passwordVersion: true, displayName: true, email: true, role: true },
+      select: {
+        id: true,
+        passwordVersion: true,
+        displayName: true,
+        email: true,
+        role: true,
+        avatar: { select: { token: true } },
+      },
     });
     if (student === null) throw noAccount();
     await passwordStep3(this.supabase)(student.id, input.password);
@@ -109,7 +117,7 @@ export class AuthService {
         displayName: session.displayName,
         email: session.email,
         role: session.role,
-        avatarUrl: null,
+        avatarUrl: avatarUrlFor(session.avatar),
       },
     };
   }

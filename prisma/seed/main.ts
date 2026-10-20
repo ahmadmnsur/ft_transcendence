@@ -7,7 +7,9 @@ import { ApiError, Refusal } from '../../src/core/errors';
 import { AppLogger, errorFields, exitOnUncaught } from '../../src/core/logger';
 import { PrismaService } from '../../src/core/prisma.service';
 import { SupabaseAuthClient } from '../../src/core/supabase-auth';
+import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { UnitOfWork } from '../../src/core/uow';
+import { BucketStepError, ensureBuckets, PRODUCTION_BUCKETS, type BucketStepResult } from '../../src/files/buckets';
 import { StudentsService } from '../../src/students/students.service';
 import { bootstrapStaff, createStaffAccount } from './bootstrap';
 import { insertCatalogue } from './catalogue';
@@ -24,6 +26,16 @@ import { SeedFailure } from './failure';
 import { openLockConnection, takeSeedLock, type LockConnection } from './lock';
 import { FIXTURE_VERSION, clearRecord, readRecord, writeRecord } from './record';
 import { SeedModule } from './seed.module';
+
+// §9.8's bucket step. Its failure names the bucket, and only a SeedFailure's
+// message reaches the log, so it is carried in one.
+async function setBuckets(storage: SupabaseStorageClient): Promise<BucketStepResult> {
+  try {
+    return await ensureBuckets(storage, PRODUCTION_BUCKETS);
+  } catch (err) {
+    throw err instanceof BucketStepError ? new SeedFailure(err.message) : err;
+  }
+}
 
 // The seed (§14): on every boot, after `migrate deploy`. It either finds its
 // completed fixture and skips, or empties and writes it whole, ending with
@@ -108,9 +120,16 @@ async function run(): Promise<number> {
     );
     const prisma = app.get(PrismaService);
     const supabase = app.get(SupabaseAuthClient);
+    const storage = app.get(SupabaseStorageClient);
     const uow = app.get(UnitOfWork);
     const auth = app.get(AuthService);
     const students = app.get(StudentsService);
+
+    // §9.8: the seed's first step, on every run, before the record is read,
+    // so a run that skips the fixture still sets the buckets. A failure stops
+    // the seed, and with it the boot.
+    const buckets = await step('buckets', () => setBuckets(storage));
+    log('seed: buckets', buckets);
 
     // The lock comes first, before the record is read, and is kept to the end.
     lock = await step('lock', () => openLockConnection(process.env, lockLost));
@@ -145,7 +164,7 @@ async function run(): Promise<number> {
       await step('clear stale record', () => clearRecord(db));
       log('seed: stale record cleared', { fixture: `v${recordedVersion}` });
     }
-    const emptied = await step('empty', () => emptyEverything(db, supabase));
+    const emptied = await step('empty', () => emptyEverything(db, supabase, storage));
     log('seed: emptied', emptied);
 
     // §14.4 step 1: the catalogue, the bootstrap accounts, the thirty

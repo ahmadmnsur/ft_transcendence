@@ -56,6 +56,7 @@ model Student {
   blocksReceived             Block[]        @relation("BlocksReceived")
   friendRequestsSent         Friendship[]   @relation("FriendRequestsSent")
   friendRequestsReceived     Friendship[]   @relation("FriendRequestsReceived")
+  avatar                     Avatar?
   // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
   // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
   learningGoal               StudentSkill?  @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -135,4 +136,19 @@ model Friendship {
 
   @@index([addresseeId, status])
   @@index([requesterId, status])
+}
+
+// §4.3.3: 0..1 per Student. No bytes: the file is in the private `avatars`
+// bucket, named by `token`, with no path column (§9.8). `token` has no
+// default: the upload makes it with `randomUUID()`, uploads the file under
+// it, then writes this row with that same token (§4.1). `mime` and `size`
+// come from the validated bytes (§9.5).
+model Avatar {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  studentId  String   @unique @map("student_id") @db.Uuid
+  token      String   @unique @db.Uuid
+  mime       String
+  size       Int
+  uploadedAt DateTime @map("uploaded_at") @db.Timestamptz(3)
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }

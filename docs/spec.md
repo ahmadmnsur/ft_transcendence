@@ -1173,6 +1173,14 @@ http {
   never a secret value (§15.4, §15.5, §16.2). The file cleanup logs one line only when it deletes
   a file, and a failed run (§9.8). Sign in with 42 logs
   a warning naming `secret_valid_until` in the secret's last seven days (§5.6).
+
+  > **Updated 2026-10-20** (#43, from the review of PR #193): the 5xx line also carries `reason`
+  > when the error is a `StorageError`: the Storage call and Storage's status (*Supabase Storage
+  > download answered 404*), never a body or a key. That message names no value by construction
+  > (`src/core/supabase-storage.ts`), and with it the team project's log tells a 403 (a key problem)
+  > from a 404 (the file is gone). The other error lines built from the same fields carry it too:
+  > the file cleanup's failed run, a save's failed delete of its new file and a failed after-commit
+  > step. Every other error's message is still left out.
 - **Postgres on the fallback**: the `db` service runs Supabase's image with `-c
   config_file=/etc/postgresql/postgresql.conf -c log_error_verbosity=terse -c
   log_min_error_statement=panic -c auto_explain.log_min_duration=-1 -c log_statement=none`.
@@ -2804,6 +2812,30 @@ Evidence is the one mutable attachment.
    - JPEG: ends with `FF D9`, then `jpeg-js` decode with `maxResolutionInMP: 17`;
    - PDF: `%%EOF` within the last 1024 bytes, then `pdf-lib` `PDFDocument.load(bytes, {
      throwOnInvalidObject: true, updateMetadata: false })` with at least one page.
+
+   > **Updated 2026-10-19** (#43, from the review of PR #193): the two image decoders do less than
+   > this step says. `pngjs` 7.0.0 checks the CRC only of the chunks it reads (`IHDR`, `PLTE`,
+   > `tRNS`, `gAMA`, `IDAT`, `IEND`) and skips every other chunk unchecked; it reads a second `IHDR`
+   > over the first, so a file whose first `IHDR` says 4×4 decodes at the second one's size, past
+   > the 4096 limit; it does not check how the critical chunks are laid out; and its inflate passes
+   > over a zlib error and decodes whatever its buffer held, so corrupt image data can pass.
+   > `jpeg-js` 0.4.4 decodes a JPEG cut before its first start of scan (`FF DA`) and ended with
+   > `FF D9` as a blank image. So the build walks the bytes before each decoder
+   > (`src/files/validate.ts`), and refuses with `file_invalid`:
+   >
+   > - a PNG unless, against the PNG spec, every chunk is whole, its type four letters, its CRC
+   >   correct; `IHDR` comes first and only there, with a bit depth its color type allows; at most
+   >   one `PLTE`, before the image data, never for a grey image, of 1–256 entries and no more than
+   >   a palette image's bit depth can index; the `IDAT`s in one run; then an empty `IEND`; and
+   >   unless the image data inflates, as one whole zlib stream, to exactly the size `IHDR` implies;
+   > - a JPEG whose segments, walked from `FF D8` through those `jpeg-js` reads before a scan, do
+   >   not reach a `FF DA` whose header names 1–4 components. That refuses too a file `jpeg-js`
+   >   would recover, a phone's malformed APP1 say, which is malformed content all the same.
+   >
+   > Two of 37,503 PNGs on one developer machine carry a wrong CRC on their `iCCP` chunk; browsers
+   > show them, and they are now refused, as this step asks. What the walk does not catch is a JPEG
+   > built so that `jpeg-js` reads a segment's fields past or short of its length: it can still
+   > decode with no scan, as a blank image, served like any avatar.
 5. **Claims must agree**: a supplied filename extension must be `.png`, `.jpg`/`.jpeg` or `.pdf`
    matching the detected format (case-insensitive); a part `Content-Type` other than
    `application/octet-stream` must equal the detected canonical type. Disagreement →
@@ -4171,6 +4203,13 @@ only way an empty suite is excused, and it ends for good with the first test fil
   itself.** The application code the seed drives stays round-robin, and so does the code that calls
   Supabase: sign-up and the password change, the file cleanup and the boot check, which `08-files`
   and `12-sign-in` cover.
+
+  > **Updated 2026-10-19** (#43, from the review of PR #193): the buckets' settings are in
+  > `src/files/buckets.ts`, not under `prisma/seed/**` as this item expected. The bucket names,
+  > their privacy, caps and types, and the bucket step that sets them are in that one file, which
+  > the seed's first step, the `api`'s cleanup and the test harness all import. It is inside the
+  > gate, and the gate list names it here, in `CONTRIBUTING.md`, in the PR template and in
+  > `.coderabbit.yaml`.
 - **Kamel reviews; Ahmad deputises when Kamel is blocked more than 24 hours**; Ahmad also watches
   for the stall. The developer authors the migration. **When the gate holder authors a gated PR,
   Ahmad reviews it** — nobody reviews their own PR (§17.4), and Ahmad is already the gate's deputy.
