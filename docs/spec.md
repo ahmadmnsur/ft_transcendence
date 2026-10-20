@@ -1173,6 +1173,14 @@ http {
   never a secret value (§15.4, §15.5, §16.2). The file cleanup logs one line only when it deletes
   a file, and a failed run (§9.8). Sign in with 42 logs
   a warning naming `secret_valid_until` in the secret's last seven days (§5.6).
+
+  > **Updated 2026-10-20** (#43, from the review of PR #193): the 5xx line also carries `reason`
+  > when the error is a `StorageError`: the Storage call and Storage's status (*Supabase Storage
+  > download answered 404*), never a body or a key. That message names no value by construction
+  > (`src/core/supabase-storage.ts`), and with it the team project's log tells a 403 (a key problem)
+  > from a 404 (the file is gone). The other error lines built from the same fields carry it too:
+  > the file cleanup's failed run, a save's failed delete of its new file and a failed after-commit
+  > step. Every other error's message is still left out.
 - **Postgres on the fallback**: the `db` service runs Supabase's image with `-c
   config_file=/etc/postgresql/postgresql.conf -c log_error_verbosity=terse -c
   log_min_error_statement=panic -c auto_explain.log_min_duration=-1 -c log_statement=none`.
