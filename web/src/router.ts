@@ -7,12 +7,14 @@ import { requireSession, requireSignedOut } from './guards';
 import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
 import { MePage } from './pages/MePage';
+import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { StudentPage } from './pages/StudentPage';
 import { StudentsPage, parseStudentsSearch } from './pages/StudentsPage';
 import { TermsPage } from './pages/TermsPage';
+import { ThreadPage } from './pages/ThreadPage';
 import { queryClient } from './queryClient';
 
 export interface RouterContext {
@@ -117,6 +119,22 @@ const friendsRoute = createRoute({
   component: FriendsPage,
 });
 
+// §6.5: `/messages`, the signed-in Student's Direct Messages list, and one
+// peer's page at `/messages/$peerId`.
+const messagesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/messages',
+  beforeLoad: requireSession,
+  component: MessagesPage,
+});
+
+const threadRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/messages/$peerId',
+  beforeLoad: requireSession,
+  component: ThreadPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -137,6 +155,8 @@ const routeTree = rootRoute.addChildren([
   studentsRoute,
   studentRoute,
   friendsRoute,
+  messagesRoute,
+  threadRoute,
   privacyRoute,
   termsRoute,
 ]);

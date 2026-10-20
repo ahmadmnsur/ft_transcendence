@@ -7,6 +7,7 @@ export default {
     navLabel: 'Main menu',
     studentsLink: 'Students',
     friendsLink: 'Friends',
+    messagesLink: 'Direct Messages',
     profileLink: 'My profile',
     signOut: 'Sign out',
     signingOut: 'Signing out…',

@@ -1,10 +1,21 @@
-import { useParams } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { blocksQueryOptions } from '../api/blocks';
 import { friendRequestsQueryOptions, friendsQueryOptions } from '../api/friends';
 import { ApiProtocolError } from '../api/client';
-import { studentQueryOptions, type SkillView } from '../api/profile';
-import { AlertIcon, Avatar, Button, EmptyState, PersonName, RoleLabel, SkillChip, SkillName } from '../design';
+import { sessionQueryOptions } from '../api/session';
+import { studentQueryOptions, type SkillView, type StudentRef } from '../api/profile';
+import {
+  AlertIcon,
+  Avatar,
+  Button,
+  EmptyState,
+  PersonName,
+  RoleLabel,
+  SkillChip,
+  SkillName,
+  buttonClasses,
+} from '../design';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { BlockControl } from '../social/BlockControl';
@@ -14,6 +25,27 @@ import { FriendControl } from '../social/FriendControl';
 // known here, so no request is sent for it and the console stays clean
 // (§3.5.2, §3.8.2).
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// §6.5, §7.3: the link to this Student's page on `/messages`, where the
+// composer sends. Never on the viewer's own profile, and never for a
+// Removed Student, who can receive nothing (§4.6).
+function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.Element | null {
+  const { t } = useI18n();
+  const { data: session } = useQuery(sessionQueryOptions());
+  const viewerId = session?.authenticated === true ? session.student.id : null;
+  if (viewerId === null || viewerId === student.id || student.removed) return null;
+  return (
+    <div>
+      <Link
+        to="/messages/$peerId"
+        params={{ peerId: student.id }}
+        className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
+      >
+        {t.messages.profile.messageLink}
+      </Link>
+    </div>
+  );
+}
 
 // One of a Student's two Skill lists, read-only: a chip without a remove
 // button, or the sentence saying the list is empty.
@@ -125,6 +157,7 @@ export function StudentPage(): React.JSX.Element {
         open dialog never carries over to the next profile. */}
         <FriendControl key={`friend-${student.id}`} student={student} />
         <BlockControl key={student.id} student={student} />
+        <DirectMessageControl student={student} />
         {removed || profile === null ? (
           <p className="text-sm text-ink-muted">{copy.removedNote}</p>
         ) : (

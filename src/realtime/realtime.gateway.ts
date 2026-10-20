@@ -1,11 +1,17 @@
-import { WebSocketGateway } from '@nestjs/websockets';
+import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import type { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets';
+import { ModuleRef } from '@nestjs/core';
 import type { Server, Socket } from 'socket.io';
+import { PROTOCOL_ERRORS, ApiError, Refusal } from '../core/errors';
 import { AppLogger, errorFields } from '../core/logger';
 import { PrismaService } from '../core/prisma.service';
 import { RealtimePublisher, type RevokeTarget } from '../core/realtime-publisher';
 import { parseSessionCookie } from '../core/session-cookie';
 import { SessionResolver, type ActiveSession } from '../core/session-resolver';
+import { MessagingService } from '../messaging/messaging.service';
+import type { DirectMessageView } from '../messaging/views';
+import { LIMITS, isValidText } from '../shared/limits';
+import { isUuid } from '../shared/uuid';
 import { PresenceAudience } from './presence-audience';
 import { PresenceRegistry, type PresenceTransition } from './presence-registry';
 
@@ -21,6 +27,25 @@ export function studentRoom(studentId: string): string {
 type SocketSession = { studentId: string; sessionHash: string };
 
 type HeldEvent = { event: string; payload: object };
+
+// §7.3's ack shapes, mirroring the HTTP envelope of §3.8: the value or the
+// failure half, the failure's message always the code's own.
+type DmSendAck =
+  | { ok: true; data: DirectMessageView }
+  | { ok: false; error: { code: string; message: string } };
+
+// §7.3's payload, validated in full before the service is called: an object
+// with exactly the two keys, a uuid recipient, and a body inside Direct
+// Message's limits (§6.0.3) — the same check the SPA runs before it emits.
+function dmSendPayload(payload: unknown): { recipientId: string; body: string } | null {
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return null;
+  const record = payload as Record<string, unknown>;
+  if (Object.keys(record).length !== 2 || !('recipientId' in record) || !('body' in record)) return null;
+  const { recipientId, body } = record;
+  if (typeof recipientId !== 'string' || typeof body !== 'string') return null;
+  if (!isUuid(recipientId) || !isValidText(body, LIMITS.directMessage, true)) return null;
+  return { recipientId, body };
+}
 
 // §7.2 step 3 while its re-read is in flight: the rooms the socket will join
 // and the events §7.4's publishers emit to them meanwhile. The flush after
@@ -38,8 +63,8 @@ function socketSession(socket: Socket): SocketSession | null {
 // §3.4's `realtime` module: the Socket.IO gateway owns the rooms, every
 // server-to-client event of §7.4 and §7.5's forced disconnect. It implements
 // RealtimePublisher, which CoreModule.forApp binds for the app (§3.7).
-// No @SubscribeMessage handler exists — `dm:send` lands with #47, and
-// nothing else ever gets one (§7.3, §19 item 6).
+// `dm:send` (§7.3) is its only client→server handler; nothing else ever gets
+// one (§7.3, §19 item 6).
 @WebSocketGateway()
 export class RealtimeGateway
   extends RealtimePublisher
@@ -49,6 +74,10 @@ export class RealtimeGateway
   private readonly waiting = new Map<string, WaitingSocket>();
 
   constructor(
+    // Only the lazy `dm:send` path touches this: the gateway and the
+    // messaging service never name each other in their constructors, because
+    // messaging's `RealtimePublisher` binding IS this gateway (§3.7).
+    private readonly moduleRef: ModuleRef,
     private readonly sessions: SessionResolver,
     private readonly prisma: PrismaService,
     private readonly registry: PresenceRegistry,
@@ -171,6 +200,51 @@ export class RealtimeGateway
     // joining after its re-read and discards its held events undelivered.
     this.waiting.delete(socket.id);
     this.registry.disconnect(socket.id);
+  }
+
+  // §7.3's one client→server event, with its acknowledgement. The service is
+  // resolved through the container at call time: MessagingService needs the
+  // RealtimePublisher binding, which is this gateway, so neither can name the
+  // other in its constructor. At handling time the app's modules are all
+  // built, so the lookup always finds messaging's own. Nest subscribes to
+  // this method and drops the promise it returns, so it must never reject:
+  // every path answers the ack.
+  @SubscribeMessage('dm:send')
+  async dmSend(socket: Socket, payload: unknown): Promise<DmSendAck> {
+    try {
+      const session = socketSession(socket);
+      if (session === null) return this.errorAck(new ApiError('unauthenticated'));
+      // §7.2 step 3 still in flight: the socket is in no room yet and hears
+      // nothing until the flush (§7.2, §7.5). Acknowledging busy is cheaper
+      // than spending a write in that window.
+      if (this.waiting.has(socket.id)) return this.errorAck(new ApiError('busy_retry_later'));
+      const request = dmSendPayload(payload);
+      if (request === null) return this.errorAck(new ApiError('validation_failed'));
+      const messaging = this.moduleRef.get(MessagingService, { strict: false });
+      const data = await messaging.send(
+        { studentId: session.studentId, sessionHash: session.sessionHash },
+        request.recipientId,
+        request.body,
+      );
+      return { ok: true, data };
+    } catch (err) {
+      return this.errorAck(err);
+    }
+  }
+
+  // Every failure is the envelope's failure half (§3.8), the message the
+  // code itself carries. An error the handler cannot name is internal_error,
+  // logged the §3.9 way: class, code and frames only — never a payload, a
+  // cookie or a token.
+  private errorAck(err: unknown): DmSendAck {
+    if (err instanceof Refusal) {
+      return { ok: false, error: { code: err.code, message: err.message } };
+    }
+    if (err instanceof ApiError) {
+      return { ok: false, error: { code: err.code, message: PROTOCOL_ERRORS[err.code].message } };
+    }
+    this.logger.entry('error', { operation: 'dm:send', ...errorFields(err) });
+    return { ok: false, error: { code: 'internal_error', message: PROTOCOL_ERRORS.internal_error.message } };
   }
 
   // §7.6: the audience is looked up when broadcasting, and a failed lookup

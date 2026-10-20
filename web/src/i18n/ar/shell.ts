@@ -8,6 +8,7 @@ export default {
     navLabel: 'القائمة الرئيسية',
     studentsLink: 'الطلاب',
     friendsLink: 'الأصدقاء',
+    messagesLink: 'الرسائل المباشرة',
     profileLink: 'ملفي الشخصي',
     signOut: 'تسجيل الخروج',
     signingOut: 'جار تسجيل الخروج…',
