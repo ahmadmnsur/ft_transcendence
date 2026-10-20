@@ -298,7 +298,7 @@ model ReflectionPrompt {
   question         String
   publishedAt      DateTime @default(now()) @map("published_at") @db.Timestamptz(3)
   publicationOrder BigInt   @unique @map("publication_order")
-  posts            Post[]
+  answers          Post[]
 }
 
 // §4.3.16: the feed item, with exactly one origin: a Prompt answer
@@ -306,10 +306,10 @@ model ReflectionPrompt {
 // raw CHECK `post_exactly_one_origin` (§4.4 step 1), which Prisma cannot
 // represent. One answer per Student per Prompt; on the Takeaway arm the null
 // `prompt_id`s are distinct, as intended (ADR-0014 d13). `answer_round_id` is
-// set on the Prompt arm only: the Round open at the answer's serialization
-// point (M3). A Takeaway's author is its Review's Mentee. `body` and the
-// origin are never updated; `removed_at` is set once, by a moderation
-// resolution (§12.5).
+// null on the Takeaway arm; on the Prompt arm it is the Round open at the
+// answer's serialization point, or null when none is open (M3). A Takeaway's
+// author is its Review's Mentee. `body` and the origin are never updated;
+// `removed_at` is set once, by a moderation resolution (§12.5).
 model Post {
   id            String            @id @default(uuid(7)) @db.Uuid
   authorId      String            @map("author_id") @db.Uuid

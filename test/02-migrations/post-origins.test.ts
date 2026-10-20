@@ -54,11 +54,11 @@ async function makeOrigins(): Promise<Origins> {
   return { authorId: mentee.id, promptId: prompt.id, reviewId: review.id, roundId: round.id };
 }
 
-// Inserts one Post; a null leaves that origin, or the answer's Round, unset.
+// Inserts one Post with these three nullable columns; a null leaves one unset.
 // Resolves to the error the insert failed with, or undefined.
 function insertPost(
   authorId: string,
-  origin: { promptId: string | null; reviewId: string | null; answerRoundId: string | null },
+  columns: { promptId: string | null; reviewId: string | null; answerRoundId: string | null },
 ): Promise<unknown> {
   return harness.app
     .get(PrismaService)
@@ -66,9 +66,9 @@ function insertPost(
       `INSERT INTO "Post" (id, author_id, body, prompt_id, review_id, answer_round_id)
          VALUES (gen_random_uuid(), $1::uuid, 'A body.', $2::uuid, $3::uuid, $4::uuid)`,
       authorId,
-      origin.promptId,
-      origin.reviewId,
-      origin.answerRoundId,
+      columns.promptId,
+      columns.reviewId,
+      columns.answerRoundId,
     )
     .then(
       () => undefined,
@@ -79,7 +79,7 @@ function insertPost(
 // §4.4 step 1, §16.3 row 2. Prisma does not represent the CHECK, so a
 // migration that loses it lets a Post carry both origins, or neither, and
 // nothing says so.
-describe('reviews, prompts and posts migration', () => {
+describe('post origins migration', () => {
   it('creates post_exactly_one_origin as a CHECK that exactly one origin is set', async () => {
     const rows = await harness.app
       .get(PrismaService)
@@ -105,11 +105,11 @@ describe('reviews, prompts and posts migration', () => {
 
   it('rejects a Post with neither origin, and one with both', async () => {
     const o = await makeOrigins();
-    for (const origin of [
+    for (const columns of [
       { promptId: null, reviewId: null, answerRoundId: null },
       { promptId: o.promptId, reviewId: o.reviewId, answerRoundId: o.roundId },
     ]) {
-      expect(violation(await insertPost(o.authorId, origin))).toEqual({
+      expect(violation(await insertPost(o.authorId, columns))).toEqual({
         code: '23514',
         message: 'new row for relation "Post" violates check constraint "post_exactly_one_origin"',
       });
