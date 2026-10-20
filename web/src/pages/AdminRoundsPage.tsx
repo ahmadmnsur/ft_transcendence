@@ -216,7 +216,8 @@ export function AdminRoundsPage(): React.JSX.Element {
         </Card>
         {current !== undefined ? (
           <UnmatchedCard
-            students={currentDetail.data === undefined ? undefined : (currentDetail.data.unmatched ?? [])}
+            roundId={current.id}
+            students={currentDetail.data?.unmatched ?? undefined}
             error={currentDetail.isError ? currentDetail.error : undefined}
             onRetry={() => void currentDetail.refetch()}
           />

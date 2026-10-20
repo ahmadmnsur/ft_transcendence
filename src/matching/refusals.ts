@@ -20,6 +20,29 @@ export function noOpenRound(): Refusal {
   return new Refusal('no_open_round', 'No Round is open.');
 }
 
+// §8.6: distinctness is the `same_student` rule, not the DTO's shape check.
+export function sameStudent(): Refusal {
+  return new Refusal('same_student', "A Student can't be matched with themselves.");
+}
+
+// §8.6, §8.1: one of the two named Students is not a candidate — an Admin, a
+// Suspended or Removed Student, or one who lists no Skill.
+export function notACandidate(): Refusal {
+  return new Refusal('not_a_candidate', 'This Student is not a candidate in this Round.');
+}
+
+// §8.6, ADR-0006 d10 as clarified: a manual Match requires both Students to
+// be currently unmatched for the Round, whatever the row's standing status.
+export function alreadyMatched(): Refusal {
+  return new Refusal('already_matched', 'This Student already has a Match in this Round.');
+}
+
+// §8.6, ADR-0006 d10: a Block either way makes the pair unmatchable by an
+// Admin exactly as it is by the algorithm.
+export function pairBlocked(): Refusal {
+  return new Refusal('pair_blocked', "These two Students can't be matched: one has blocked the other.");
+}
+
 // §8.5: accept on a Match that is no longer waiting for the actor's answer.
 export function matchNotPending(): Refusal {
   return new Refusal('match_not_pending', 'This Match is no longer waiting for an answer.');

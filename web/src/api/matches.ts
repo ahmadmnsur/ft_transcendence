@@ -239,9 +239,9 @@ export function declineMatch(queryClient: QueryClient, id: string): Promise<Matc
   return matchWrite(queryClient, () => postDecline(id));
 }
 
-// Opening or closing a Round changes every Round view and the current Round,
-// so all of them are read again, whether the write succeeded or was refused
-// (another Admin may have opened or closed it first).
+// Opening or closing a Round, or creating a hand-made Match, changes Round
+// and Match views, so all are read again whether the write succeeded or was
+// refused (another Admin may have changed the Round or its Matches first).
 function roundWrite<T>(queryClient: QueryClient, send: () => Promise<T>): Promise<T | undefined> {
   let result: T | undefined;
   const reread = (): void => {
@@ -266,4 +266,13 @@ export function openRound(queryClient: QueryClient): Promise<OpenRoundResult | u
 
 export function closeRound(queryClient: QueryClient): Promise<CloseRoundResult | undefined> {
   return roundWrite(queryClient, postCloseRound);
+}
+
+export function createHandMadeMatch(
+  queryClient: QueryClient,
+  studentIds: [string, string],
+): Promise<AdminMatchView | undefined> {
+  return roundWrite(queryClient, () =>
+    apiFetch<AdminMatchView>('/admin/rounds/current/matches', { method: 'POST', body: { studentIds } }),
+  );
 }

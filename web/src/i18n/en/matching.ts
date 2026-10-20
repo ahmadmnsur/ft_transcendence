@@ -173,6 +173,19 @@ export default {
     empty: 'Every candidate has a Match in this Round.',
     loading: 'Loading the unmatched Students…',
   },
+  handMade: {
+    description: 'Choose two unmatched Students. Their Skills and Learning Goals determine who is Mentor. This Match shows no Compatibility Score.',
+    identify: 'Names can repeat. Match the reference beside each name to the list below, and check their profile before creating the Match.',
+    studentOption: '{name} ({reference})',
+    viewProfile: 'View profile (opens in a new tab)',
+    first: 'First Student',
+    second: 'Second Student',
+    choose: 'Choose a Student',
+    create: 'Create a hand-made Match',
+    creating: 'Creating…',
+    created: 'The hand-made Match was created.',
+    view: 'View Match',
+  },
   // `/admin/rounds/:roundId`: one Round's Matches.
   round: {
     title: 'Round {number}',
