@@ -1,38 +1,14 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { Clock } from '../../src/core/clock';
+import { describe, expect, it } from 'vitest';
 import { PrismaService } from '../../src/core/prisma.service';
 import { useHarness } from '../harness/app';
 import { createTestAccount, type TestAccount } from '../harness/accounts';
 import { fixedFortyTwo, roundTrip } from '../harness/forty-two';
 
-// The application's clock, real time moved forward by the test, so the
-// permission's ten minutes pass without waiting.
-class MovableClock extends Clock {
-  private offsetMs = 0;
-
-  now(): Date {
-    return new Date(Date.now() + this.offsetMs);
-  }
-
-  advance(ms: number): void {
-    this.offsetMs += ms;
-  }
-
-  reset(): void {
-    this.offsetMs = 0;
-  }
-}
-
-const clock = new MovableClock();
-const harness = useHarness(
-  fixedFortyTwo({ overrides: (builder) => builder.overrideProvider(Clock).useValue(clock) }),
-);
+// The permission's ten minutes pass on the harness's clock, moved forward by
+// the test and set back to real time before every test.
+const harness = useHarness(fixedFortyTwo());
 const NEW_PASSWORD = 'a-new-password-1';
 const MINUTE_MS = 60 * 1000;
-
-beforeEach(() => {
-  clock.reset();
-});
 
 function setPassword(cookie: string, newPassword = NEW_PASSWORD) {
   return harness.post('/api/auth/42/password').set('Cookie', cookie).send({ newPassword });
@@ -81,7 +57,7 @@ describe('a password is set without the current one only within a fresh Confirm 
     const account = await connectedStudent();
     await confirmWith42(account);
 
-    clock.advance(11 * MINUTE_MS);
+    harness.clock.advance(11 * MINUTE_MS);
     const refused = await setPassword(account.cookie);
     expect(refused.body).toMatchObject({ ok: false, error: { code: 'confirmation_required' } });
 
@@ -91,7 +67,7 @@ describe('a password is set without the current one only within a fresh Confirm 
   it('sets the password once within ten minutes and signs the Student out everywhere', async () => {
     const account = await connectedStudent();
     await confirmWith42(account);
-    clock.advance(9 * MINUTE_MS);
+    harness.clock.advance(9 * MINUTE_MS);
 
     // Held inside its first sign-out, the request has already taken the
     // permission: a second one on the same session, still signed in, finds
