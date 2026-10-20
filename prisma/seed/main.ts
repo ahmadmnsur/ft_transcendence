@@ -10,6 +10,8 @@ import { SupabaseAuthClient } from '../../src/core/supabase-auth';
 import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { UnitOfWork } from '../../src/core/uow';
 import { BucketStepError, ensureBuckets, PRODUCTION_BUCKETS, type BucketStepResult } from '../../src/files/buckets';
+import { MatchingService } from '../../src/matching/matching.service';
+import { SocialService } from '../../src/social/social.service';
 import { StudentsService } from '../../src/students/students.service';
 import { bootstrapStaff, createStaffAccount } from './bootstrap';
 import { insertCatalogue } from './catalogue';
@@ -20,11 +22,14 @@ import {
   setCohortLists,
   setPeerModeratorLists,
   signUpCohort,
+  X_POSITION,
+  Y_POSITION,
 } from './cohort';
 import { anyDomainRows, emptyEverything } from './empty';
 import { SeedFailure } from './failure';
 import { openLockConnection, takeSeedLock, type LockConnection } from './lock';
 import { FIXTURE_VERSION, clearRecord, readRecord, writeRecord } from './record';
+import { ROUND_TARGETS, seedRound } from './rounds';
 import { SeedModule } from './seed.module';
 
 // §9.8's bucket step. Its failure names the bucket, and only a SeedFailure's
@@ -124,6 +129,8 @@ async function run(): Promise<number> {
     const uow = app.get(UnitOfWork);
     const auth = app.get(AuthService);
     const students = app.get(StudentsService);
+    const social = app.get(SocialService);
+    const matching = app.get(MatchingService);
 
     // §9.8: the seed's first step, on every run, before the record is read,
     // so a run that skips the fixture still sets the buckets. A failure stops
@@ -172,15 +179,18 @@ async function run(): Promise<number> {
     const skillIds = await step('catalogue', () => insertCatalogue(uow));
     log('seed: catalogue', { skills: skillIds.size });
     const staff = bootstrapStaff(process.env);
-    // The step returns the Peer Moderator's id, for their lists below.
-    const peerModeratorId = await step('bootstrap accounts', async () => {
-      let id: string | undefined;
+    const staffIds = await step('bootstrap accounts', async () => {
+      let adminId: string | undefined;
+      let peerModeratorId: string | undefined;
       for (const account of staff) {
         const created = await createStaffAccount(account, { supabase, uow });
-        if (account.role === 'PEER_MODERATOR') id = created.id;
+        if (account.role === 'ADMIN') adminId = created.id;
+        if (account.role === 'PEER_MODERATOR') peerModeratorId = created.id;
       }
-      if (id === undefined) throw new SeedFailure('the bootstrap accounts hold no Peer Moderator');
-      return id;
+      if (adminId === undefined || peerModeratorId === undefined) {
+        throw new SeedFailure('the bootstrap accounts must hold an Admin and a Peer Moderator');
+      }
+      return { adminId, peerModeratorId };
     });
     log('seed: bootstrap accounts', { accounts: staff.length });
 
@@ -190,9 +200,23 @@ async function run(): Promise<number> {
     const goals = await step('cohort lists', () => setCohortLists(cohort, studentIds, skillIds, students));
     log('seed: cohort', { students: studentIds.length, goals });
     const peerModeratorLists = await step('Peer Moderator lists', () =>
-      setPeerModeratorLists(peerModeratorId, skillIds, students),
+      setPeerModeratorLists(staffIds.peerModeratorId, skillIds, students),
     );
     log('seed: Peer Moderator lists', peerModeratorLists);
+
+    // §14.4 step 2 must precede the first matcher run, so G is never covered.
+    await step('X Blocks Y', () => social.block(
+      { studentId: studentIds[X_POSITION], sessionHash: null }, studentIds[Y_POSITION],
+    ));
+    log('seed: X Blocks Y');
+    const admin = { studentId: staffIds.adminId, sessionHash: null };
+    for (let number = 1; number <= 4; number += 1) {
+      const distribution = await step(`Round ${number}`, () => seedRound(matching, admin, number));
+      log('seed: Round closed', {
+        ...distribution,
+        fullFixtureTarget: ROUND_TARGETS[number - 1],
+      });
+    }
 
     await step('end-state assertions', () => assertEndState(prisma));
     await step('completion record', () => writeRecord(db, FIXTURE_VERSION));

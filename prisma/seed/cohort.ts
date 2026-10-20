@@ -15,9 +15,9 @@ const PEER_MODERATOR_OPTIONS = { size: 1, seed: 4242 } as const;
 // The gap Skill G. No seeded Student lists it but X, who teaches it, and Y,
 // who wants it, so X's Block of Y leaves it covered by no Match (ADR-0017 d8's
 // note of 2026-09-23). X and Y are reserved positions.
-const GAP_SKILL = 'Valgrind';
-const X_POSITION = 1;
-const Y_POSITION = 2;
+export const GAP_SKILL = 'Valgrind';
+export const X_POSITION = 1;
+export const Y_POSITION = 2;
 
 // The Student at position p, as the seed will make it: Skills by name, the
 // Goal as its Skill's name. The generator's XP is dropped, so everyone starts

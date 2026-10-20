@@ -5,8 +5,10 @@ import { quoteIdentifier } from './sql';
 // The fixture version this checkout writes (§14.9). Any PR that changes the
 // fixture bumps it. v1: the catalogue, the bootstrap Admin and Peer
 // Moderator, and §14.8's check 10. v2: §14.3's thirty Students with their
-// lists and Goals, the Peer Moderator's lists, and §14.8's check 7.
-export const FIXTURE_VERSION = 2;
+// lists and Goals, the Peer Moderator's lists, and §14.8's check 7. v3: X's
+// Block of Y, four closed Rounds with declines, repairs and acceptances,
+// and §14.8's checks 1 (Rounds), 2 and 8.
+export const FIXTURE_VERSION = 3;
 
 // Only this text is a record. Both databases start with Postgres's own
 // comment, "default administrative connection database", which is none.

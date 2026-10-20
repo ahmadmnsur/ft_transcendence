@@ -5,7 +5,7 @@ import { foldName } from '../../src/shared/fold-name';
 import { normalizeEmail } from '../../src/shared/limits';
 import { RARE_SKILLS } from '../fixtures/cohort';
 import { bootstrapStaff } from './bootstrap';
-import { cohortEmails } from './cohort';
+import { cohortEmails, GAP_SKILL, X_POSITION, Y_POSITION } from './cohort';
 import { SeedFailure } from './failure';
 
 // Every email the seed makes at this fixture version: the two bootstrap
@@ -40,6 +40,13 @@ const CANDIDATE_POOL: Prisma.StudentWhereInput = {
 
 // §14.8, the end-state assertions this fixture version implements.
 export async function assertEndState(prisma: PrismaService): Promise<void> {
+  // Check 1, Round half: the Prompt half joins with its seed increment.
+  const openRounds = await prisma.round.count({ where: { closedAt: null } });
+  const closedRounds = await prisma.round.count({ where: { closedAt: { not: null } } });
+  if (openRounds !== 0 || closedRounds !== 4) {
+    throw new SeedFailure(`check 1: ${openRounds} open and ${closedRounds} closed Rounds; expected 0 and 4`);
+  }
+
   // Check 7, the plain gap: a RARE_SKILLS Skill the pool wants and no one in
   // it teaches.
   const rareRows = await prisma.studentSkill.findMany({
@@ -52,6 +59,24 @@ export async function assertEndState(prisma: PrismaService): Promise<void> {
   });
   if (!plainGap) {
     throw new SeedFailure('check 7: no RARE_SKILLS Skill has Demand > 0 and Supply = 0 over the candidate pool');
+  }
+
+  // Check 8: G has demand and supply in the active candidate pool, but
+  // no coverage and no Match of the blocked pair, in either orientation.
+  const gapRows = await prisma.studentSkill.findMany({
+    where: { student: CANDIDATE_POOL, skill: { name: GAP_SKILL } },
+    select: { kind: true },
+  });
+  const gapCoverage = await prisma.matchSkillCoverage.count({ where: { skill: { name: GAP_SKILL } } });
+  const emails = cohortEmails();
+  const x = { email: emails[X_POSITION] };
+  const y = { email: emails[Y_POSITION] };
+  const blockedPairMatches = await prisma.match.count({
+    where: { OR: [{ mentor: x, mentee: y }, { mentor: y, mentee: x }] },
+  });
+  if (!gapRows.some((row) => row.kind === 'LEARN') || !gapRows.some((row) => row.kind === 'TEACH') ||
+      gapCoverage !== 0 || blockedPairMatches !== 0) {
+    throw new SeedFailure('check 8: G must have Demand > 0, Supply > 0, no coverage and no Match joining X and Y');
   }
 
   // Check 10: every Student's search column is the fold of its name. It

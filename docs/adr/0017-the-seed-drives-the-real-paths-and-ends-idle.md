@@ -197,6 +197,16 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    >   rule a hand-made Match still carries: both active and currently unmatched, no Block between
    >   them (ADR-0006 d10), and the Round open at creation (ADR-0002 d7).
 
+   > **Fixture v3, 2026-10-21 ([#50](https://github.com/ahmadmnsur/ft_transcendence/issues/50)).**
+   > This increment adds X's Block of Y before Round 1, then four Rounds through the real open,
+   > decline, hand-made repair, acceptance and close paths in `docs/spec.md` §14.5's order.
+   > It checks four closed Rounds and none open, the stronger gap on G and the blocked pair's
+   > exclusion, and logs each Round's actual distribution beside the full-fixture targets above.
+   > Reviews join in v4; Prompt answers, Suspension and Removal join in later increments.
+   > Until Reviews join, every accepted Match, including both repairs, lapses at close.
+   > This version's completion record certifies these steps and checks, not the complete end state
+   > (decision 10; `docs/ticket-plan.md` T22). The full-fixture totals remain targets.
+
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
    Both are one flag, and between them they make six settled rules visible that a clean cohort
