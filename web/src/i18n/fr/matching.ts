@@ -146,6 +146,9 @@ export default {
     loading: 'Chargement des Étudiants sans Match…',
   },
   handMade: {
+    identify: 'Plusieurs Étudiants peuvent porter le même nom. Retrouvez la référence à côté du nom dans la liste ci-dessous et vérifiez le profil avant de créer le Match.',
+    studentOption: '{name} ({reference})',
+    viewProfile: 'Voir le profil (nouvel onglet)',
     description: "Choisissez deux Étudiants sans Match. Leurs Compétences et Objectifs d'apprentissage déterminent qui est Mentor. Ce Match ne présente aucun Score de compatibilité.",
     first: 'Premier Étudiant',
     second: 'Deuxième Étudiant',

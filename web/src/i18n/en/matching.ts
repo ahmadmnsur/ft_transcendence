@@ -175,6 +175,9 @@ export default {
   },
   handMade: {
     description: 'Choose two unmatched Students. Their Skills and Learning Goals determine who is Mentor. This Match shows no Compatibility Score.',
+    identify: 'Names can repeat. Match the reference beside each name to the list below, and check their profile before creating the Match.',
+    studentOption: '{name} ({reference})',
+    viewProfile: 'View profile (opens in a new tab)',
     first: 'First Student',
     second: 'Second Student',
     choose: 'Choose a Student',

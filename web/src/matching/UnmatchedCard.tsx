@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 import { HandMadeMatchForm } from './HandMadeMatchForm';
+import { candidateReferences } from './candidate-references';
 
 // §8.9: the open Round's unmatched Students, which the API derives when read
 // and never stores. On `/admin/rounds` and on the open Round's own page.
@@ -21,6 +22,7 @@ export function UnmatchedCard({
 }): React.JSX.Element {
   const { t, errorText } = useI18n();
   const copy = t.matching.unmatched;
+  const references = candidateReferences(students ?? []);
   let body: React.ReactNode;
   if (students === undefined) {
     body =
@@ -47,8 +49,9 @@ export function UnmatchedCard({
     body = (
       <ul className="flex min-w-0 flex-col divide-y divide-line">
         {students.map((student) => (
-          <li key={student.id} className="py-2">
+          <li key={student.id} className="flex min-w-0 flex-wrap items-center gap-2 py-2">
             <StudentLink student={student} />
+            <bdi dir="ltr" className="font-mono text-xs text-ink-muted">{references.get(student.id)}</bdi>
           </li>
         ))}
       </ul>
@@ -57,7 +60,7 @@ export function UnmatchedCard({
   return (
     <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
       <div className="flex min-w-0 flex-col gap-3">
-        {students !== undefined ? <HandMadeMatchForm key={roundId} students={students} /> : null}
+        {students !== undefined ? <HandMadeMatchForm key={roundId} students={students} references={references} /> : null}
         {body}
       </div>
     </Card>
