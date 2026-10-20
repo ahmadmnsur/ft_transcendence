@@ -32,34 +32,36 @@ enum FriendshipStatus {
 // §4.3.1: the account; every person is one. `id` has no default: sign-up
 // makes it with `v7()` before the Supabase Auth user that shares it (§4.1).
 model Student {
-  id                         String         @id @db.Uuid
-  email                      String         @unique
-  passwordVersion            Int            @default(0) @map("password_version")
+  id                         String          @id @db.Uuid
+  email                      String          @unique
+  passwordVersion            Int             @default(0) @map("password_version")
   // §4.3.1, §5.6: 42's account `id`, the only key a 42 login maps a Student
   // by. Nullable; the unique admits nulls and is the backstop that keeps one
   // 42 account on one Student. Set by a 42 sign-up or Connect 42, cleared by
   // Disconnect 42; a Removed row keeps it and no Admin path touches it.
-  fortyTwoId                 Int?           @unique @map("forty_two_id")
-  displayName                String         @map("display_name")
-  displayNameSearch          String         @map("display_name_search")
-  role                       Role           @default(STUDENT)
-  xp                         Int            @default(0)
-  streak                     Int            @default(0)
-  learningGoalStudentSkillId String?        @map("learning_goal_student_skill_id") @db.Uuid
-  learningGoalText           String?        @map("learning_goal_text")
-  suspendedAt                DateTime?      @map("suspended_at") @db.Timestamptz(3)
-  removedAt                  DateTime?      @map("removed_at") @db.Timestamptz(3)
-  createdAt                  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  fortyTwoId                 Int?            @unique @map("forty_two_id")
+  displayName                String          @map("display_name")
+  displayNameSearch          String          @map("display_name_search")
+  role                       Role            @default(STUDENT)
+  xp                         Int             @default(0)
+  streak                     Int             @default(0)
+  learningGoalStudentSkillId String?         @map("learning_goal_student_skill_id") @db.Uuid
+  learningGoalText           String?         @map("learning_goal_text")
+  suspendedAt                DateTime?       @map("suspended_at") @db.Timestamptz(3)
+  removedAt                  DateTime?       @map("removed_at") @db.Timestamptz(3)
+  createdAt                  DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   sessions                   Session[]
-  studentSkills              StudentSkill[] @relation("StudentSkills")
-  blocksSet                  Block[]        @relation("BlocksSet")
-  blocksReceived             Block[]        @relation("BlocksReceived")
-  friendRequestsSent         Friendship[]   @relation("FriendRequestsSent")
-  friendRequestsReceived     Friendship[]   @relation("FriendRequestsReceived")
+  studentSkills              StudentSkill[]  @relation("StudentSkills")
+  blocksSet                  Block[]         @relation("BlocksSet")
+  blocksReceived             Block[]         @relation("BlocksReceived")
+  friendRequestsSent         Friendship[]    @relation("FriendRequestsSent")
+  friendRequestsReceived     Friendship[]    @relation("FriendRequestsReceived")
+  directMessagesSent         DirectMessage[] @relation("DirectMessagesSent")
+  directMessagesReceived     DirectMessage[] @relation("DirectMessagesReceived")
   avatar                     Avatar?
   // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
   // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
-  learningGoal               StudentSkill?  @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
+  learningGoal               StudentSkill?   @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
 }
 
 // §4.3.2: ADR-0003's session row. `id` is the lowercase hex SHA-256 of the
@@ -151,4 +153,24 @@ model Avatar {
   size       Int
   uploadedAt DateTime @map("uploaded_at") @db.Timestamptz(3)
   student    Student  @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+// §4.3.8: a Direct Message sent to exactly one other Student; there is no
+// Conversation entity to join, and the thread is the two directions of the
+// first index. Rows are never deleted, and `read_at` is written once, by the
+// recipient, from null (§11.4): there is no read receipt to send anyone. The
+// send's Unit of Work checks `sender_id ≠ recipient_id`, that the recipient is
+// not Removed and that no Block stands either way (§7.3).
+model DirectMessage {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  senderId    String    @map("sender_id") @db.Uuid
+  recipientId String    @map("recipient_id") @db.Uuid
+  body        String
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  readAt      DateTime? @map("read_at") @db.Timestamptz(3)
+  sender      Student   @relation("DirectMessagesSent", fields: [senderId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  recipient   Student   @relation("DirectMessagesReceived", fields: [recipientId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, readAt])
 }

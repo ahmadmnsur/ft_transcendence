@@ -7,8 +7,9 @@ import people from './people';
 import profile from './profile';
 import shell from './shell';
 import social from './social';
+import messages from './messages';
 
-const en = { shell, legal, auth, errors, people, profile, design, social } satisfies EnGroup;
+const en = { shell, legal, auth, errors, people, profile, design, social, messages } satisfies EnGroup;
 
 // English checked against itself: no empty text, camelCase placeholders,
 // every form of a plural holding the same ones, no reserved key.

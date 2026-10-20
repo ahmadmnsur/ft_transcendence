@@ -1219,6 +1219,13 @@ behaviour-free ticket after Rounds.
      - the ack is `ok` with the message, or `dm_unavailable`, `validation_failed` or
        `busy_retry_later`;
      - no Friendship is required.
+
+     > **Refined 2026-10-20 by #47, review of #196 (spec §7.3):** the failure list also includes
+     > `unauthenticated` for a missing session or a sender no longer Active, and `internal_error`
+     > for an unexpected failure. An `unauthenticated` acknowledgement re-probes `/api/session`
+     > and follows §3.8.2. Besides §6.15's cases, `busy_retry_later` covers §7.2 step 3's pending
+     > session re-read, without writing a message.
+
   3. `GET /api/messages/threads` returns, per peer, a `StudentRef`, the last message, `unreadCount`
      and `canSend`, with the newest activity first (§6.5).
   4. `GET /api/messages/threads/:peerId?cursor` returns both directions, newest first, 50 per
