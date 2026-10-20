@@ -93,6 +93,7 @@ model Student {
   matchesAsMentor            Match[]         @relation("MatchMentor")
   matchesAsMentee            Match[]         @relation("MatchMentee")
   matchesDeclined            Match[]         @relation("MatchDeclinedBy")
+  posts                      Post[]
   // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
   // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
   learningGoal               StudentSkill?   @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -220,6 +221,7 @@ model Round {
   openedAt DateTime  @default(now()) @map("opened_at") @db.Timestamptz(3)
   closedAt DateTime? @map("closed_at") @db.Timestamptz(3)
   matches  Match[]
+  answers  Post[]
 }
 
 // §4.3.10: two Students in one Round, one Mentor and one Mentee. Never
@@ -250,6 +252,7 @@ model Match {
   mentee             Student              @relation("MatchMentee", fields: [menteeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   declinedBy         Student?             @relation("MatchDeclinedBy", fields: [declinedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
   coverage           MatchSkillCoverage[]
+  review             Review?
 
   @@index([roundId, status])
   @@index([mentorId])
@@ -269,4 +272,60 @@ model MatchSkillCoverage {
 
   @@id([matchId, skillId, direction])
   @@index([skillId])
+}
+
+// §4.3.12: the Learning Outcome, one per Match. `match_id` is unique, and that
+// unique is the arbiter for a duplicate or retried submission (ADR-0014 d2).
+// Written only by the Match's Mentee, while the Match is ACCEPTED, in the
+// transaction that moves it to COMPLETED; never updated or deleted
+// (ADR-0014 d11). It owns the Evidence; its Public Takeaway is its Post.
+model Review {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  matchId   String   @unique @map("match_id") @db.Uuid
+  learned   String
+  canNowDo  String   @map("can_now_do")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  post      Post?
+}
+
+// §4.3.15: a Reflection Prompt, with no status column (ADR-0007 d1). The live
+// Prompt is the row with the greatest `publication_order`, which publishing
+// sets to max + 1 inside its SSI transaction, the unique backstopping it (M2);
+// `published_at` is descriptive only. Never updated or deleted (ADR-0007 d4).
+model ReflectionPrompt {
+  id               String   @id @default(uuid(7)) @db.Uuid
+  question         String
+  publishedAt      DateTime @default(now()) @map("published_at") @db.Timestamptz(3)
+  publicationOrder BigInt   @unique @map("publication_order")
+  posts            Post[]
+}
+
+// §4.3.16: the feed item, with exactly one origin: a Prompt answer
+// (`prompt_id`) or a Review's Public Takeaway (`review_id`). That rule is the
+// raw CHECK `post_exactly_one_origin` (§4.4 step 1), which Prisma cannot
+// represent. One answer per Student per Prompt; on the Takeaway arm the null
+// `prompt_id`s are distinct, as intended (ADR-0014 d13). `answer_round_id` is
+// set on the Prompt arm only: the Round open at the answer's serialization
+// point (M3). A Takeaway's author is its Review's Mentee. `body` and the
+// origin are never updated; `removed_at` is set once, by a moderation
+// resolution (§12.5).
+model Post {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  authorId      String            @map("author_id") @db.Uuid
+  body          String
+  promptId      String?           @map("prompt_id") @db.Uuid
+  reviewId      String?           @unique @map("review_id") @db.Uuid
+  answerRoundId String?           @map("answer_round_id") @db.Uuid
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  removedAt     DateTime?         @map("removed_at") @db.Timestamptz(3)
+  author        Student           @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  prompt        ReflectionPrompt? @relation(fields: [promptId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  review        Review?           @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  answerRound   Round?            @relation(fields: [answerRoundId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([promptId, authorId])
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([authorId])
+  @@index([answerRoundId])
 }
