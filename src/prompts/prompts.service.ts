@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
-import { encodeCursor, type Cursor } from '../core/cursor';
+import type { Cursor } from '../core/cursor';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
-import { isValidText, LIMITS, PAGING } from '../shared/limits';
+import { isValidText, LIMITS } from '../shared/limits';
 import { ApiError, Refusal, type RefusalSpec } from '../core/errors';
+import { readPostPage } from '../feed/post-page';
 import { readActiveAdmin } from '../students/profile-writes';
 import { STUDENT_REF_SELECT } from '../students/student-ref';
 import { toAnswerView, toPromptView, type AnswerPage, type AnswerView, type PromptPage, type PromptView } from './views';
@@ -49,19 +50,9 @@ export class PromptsService {
       if (prompt === null) throw new ApiError('not_found');
       const maximum = await tx.reflectionPrompt.aggregate({ _max: { publicationOrder: true } });
       const existing = await tx.post.findUnique({ where: { promptId_authorId: { promptId: prompt.id, authorId: actor.studentId } }, select: { id: true } });
-      const rows = await tx.post.findMany({
-        where: { promptId: prompt.id, removedAt: null, ...(cursor === null ? {} : { OR: [
-          { createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-        ] }) },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: PAGING.maxPageSize + 1,
-        include: { author: { select: STUDENT_REF_SELECT } },
-      });
-      const visible = rows.slice(0, PAGING.maxPageSize);
-      const last = visible.at(-1);
       return {
         prompt: toPromptView(prompt), live: prompt.publicationOrder === maximum._max.publicationOrder, answeredByMe: existing !== null,
-        items: visible.map((post) => toAnswerView(post, prompt)),
-        nextCursor: rows.length > PAGING.maxPageSize && last !== undefined ? encodeCursor({ createdAt: last.createdAt, id: last.id }) : null,
+        ...await readPostPage(tx, actor.studentId, { promptId: prompt.id }, cursor),
       };
     });
   }

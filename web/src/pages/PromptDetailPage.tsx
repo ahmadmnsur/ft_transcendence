@@ -4,13 +4,14 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { isValidText, LIMITS } from '@shared/limits';
 import { isUuid } from '@shared/uuid';
 import { ApiProtocolError } from '../api/client';
-import { answerPrompt, readPromptAnswers } from '../api/prompts';
+import { FEED_QUERY_KEY } from '../api/feed';
+import { answerPrompt, PROMPT_ANSWERS_QUERY_KEY, readPromptAnswers } from '../api/prompts';
 import { sessionQueryOptions } from '../api/session';
 import { Banner, Button, Card, TextArea } from '../design';
+import { PostCard } from '../feed/PostCard';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
-import { StudentLink } from '../profile/StudentLink';
 
 export function PromptDetailPage(): React.JSX.Element {
   const { promptId } = useParams({ from: '/prompts/$promptId' });
@@ -24,7 +25,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const session = useQuery(sessionQueryOptions()).data;
   const wellFormedId = isUuid(promptId);
   const answers = useInfiniteQuery({
-    queryKey: ['prompts', 'answers', promptId],
+    queryKey: [...PROMPT_ANSWERS_QUERY_KEY, promptId],
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => readPromptAnswers(promptId, pageParam),
     getNextPageParam: (last) => last.nextCursor ?? undefined,
@@ -36,7 +37,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const answer = useMutation({
     mutationFn: (text: string) => answerPrompt(promptId, text),
     onSuccess: () => { setBody(''); },
-    onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: ['feed'] }); },
+    onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: FEED_QUERY_KEY }); },
   });
   const canAnswer = detail?.live && !detail.answeredByMe && session?.authenticated && session.student.role !== 'ADMIN' && !answer.isSuccess;
   if (!wellFormedId) return <NotFoundPage />;
@@ -69,10 +70,8 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
       </Card> : null}
       <Card title={copy.answers} headingLevel={2}>
         {detail.items.length === 0 ? <p>{copy.noAnswers}</p> : <ul className="flex flex-col divide-y divide-line">
-          {answers.data?.pages.flatMap((page) => page.items).map((post) => <li key={post.id} className="flex min-w-0 flex-col gap-3 py-4">
-            <StudentLink student={post.author} />
-            <p dir="auto" className="whitespace-pre-wrap wrap-anywhere">{post.body}</p>
-            <p className="text-sm text-ink-muted">{formatDateTime(new Date(post.createdAt))}</p>
+          {answers.data?.pages.flatMap((page) => page.items).map((post) => <li key={post.id} className="min-w-0 py-4">
+            <PostCard post={post} showPrompt={false} />
           </li>)}
         </ul>}
         {answers.hasNextPage ? <Button variant="secondary" loading={answers.isFetchingNextPage} onClick={() => void answers.fetchNextPage()}>{copy.more}</Button> : null}
