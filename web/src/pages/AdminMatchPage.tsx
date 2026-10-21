@@ -1,4 +1,3 @@
-import { ReviewRecord } from '../reviews/ReviewRecord';
 import type { ReactNode } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +10,7 @@ import { NotFoundPage, PageTitle } from '../layout';
 import { MatchStatusLabel, ScoreDetails, endingOf, useSkillList } from '../matching/MatchParts';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
+import { ReviewRecord } from '../reviews/ReviewRecord';
 
 // §3.5.1, §6.13: `/admin/matches/:matchId`, any Match for an Admin, with both
 // participants named — where the pair's own view names one side's partner.

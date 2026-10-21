@@ -1,15 +1,15 @@
 import { spawnSync } from 'node:child_process';
-import { PrismaService } from '../../src/core/prisma.service';
-import { recreateTestDatabase } from '../harness/database';
 import { expect, it } from 'vitest';
 import { generateCohort } from '../../prisma/fixtures/cohort';
 import { insertCatalogue } from '../../prisma/seed/catalogue';
+import { PrismaService } from '../../src/core/prisma.service';
 import { UnitOfWork } from '../../src/core/uow';
 import { MatchingService } from '../../src/matching/matching.service';
 import { ReviewsService } from '../../src/reviews/reviews.service';
 import { StudentsService } from '../../src/students/students.service';
 import { createTestAccount, createTestStaff } from '../harness/accounts';
 import { useHarness } from '../harness/app';
+import { recreateTestDatabase } from '../harness/database';
 
 const harness = useHarness();
 const actor = (studentId: string) => ({ studentId, sessionHash: null });

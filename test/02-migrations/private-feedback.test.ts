@@ -1,6 +1,6 @@
-import { createTestAccount } from '../harness/accounts';
 import { expect, it } from 'vitest';
 import { PrismaService } from '../../src/core/prisma.service';
+import { createTestAccount } from '../harness/accounts';
 import { useHarness } from '../harness/app';
 
 const harness = useHarness();
@@ -9,7 +9,9 @@ it('keeps private_feedback_rating_range as a nullable 1–5 CHECK after migratio
   const rows = await harness.app.get(PrismaService).$queryRaw<Array<{ definition: string }>>`
     SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
     WHERE conrelid = '"PrivateFeedback"'::regclass AND conname = 'private_feedback_rating_range' AND contype = 'c'`;
-  expect(rows).toEqual([{ definition: 'CHECK (((rating >= 1) AND (rating <= 5)))' }]);
+  expect(rows).toEqual([
+    { definition: 'CHECK (((rating IS NULL) OR ((rating >= 1) AND (rating <= 5))))' },
+  ]);
 });
 
 it('backs the nullable rating range with SQL even when the service is bypassed', async () => {

@@ -1,8 +1,8 @@
-import type { ReviewDetail } from './reviews';
 import { keepPreviousData, queryOptions, type QueryClient } from '@tanstack/react-query';
 import { STANDING_STATUSES, type MatchRole, type MatchStatus, type Mission } from '@shared/matches';
 import { apiFetch } from './client';
 import type { SkillView, StudentRef } from './profile';
+import type { ReviewDetail } from './reviews';
 import { writeAsSignedIn } from './session';
 
 // §6.6 and §6.13's Round and Match routes, with the exact wire shapes the API
@@ -216,7 +216,10 @@ async function readAgain(queryClient: QueryClient, queryKey: readonly string[]):
 // partner or a Round close may have moved it first, and is rethrown for the
 // screen to show. An answer that arrives after another Student signed in
 // reaches none of the cache (`writeAsSignedIn`).
-function matchWrite(queryClient: QueryClient, send: () => Promise<MatchDetailView>): Promise<MatchDetailView | undefined> {
+function matchWrite(
+  queryClient: QueryClient,
+  send: () => Promise<MatchDetailView>,
+): Promise<MatchDetailView | undefined> {
   let written: MatchDetailView | undefined;
   return writeAsSignedIn(
     queryClient,

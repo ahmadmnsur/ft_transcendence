@@ -1,17 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
-import { ApiError, Refusal, type RefusalSpec } from '../core/errors';
+import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
 import { roundNumbers } from '../matching/match-views';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
+import { ALREADY_REVIEWED, alreadyReviewed, matchNotReviewable } from './refusals';
 import type { FeedbackPage, ReviewInput, SubmitReviewResult } from './views';
-
-const ALREADY_REVIEWED: RefusalSpec = {
-  code: 'already_reviewed',
-  message: 'You already reviewed this Match.',
-};
 
 @Injectable()
 export class ReviewsService {
@@ -33,9 +29,8 @@ export class ReviewsService {
           throw new ApiError('not_found');
         }
         if (match.mentorId === actor.studentId) throw new ApiError('forbidden');
-        if (match.status === 'COMPLETED') throw new Refusal(ALREADY_REVIEWED.code, ALREADY_REVIEWED.message);
-        if (match.status !== 'ACCEPTED')
-          throw new Refusal('match_not_reviewable', 'This Match cannot be reviewed.');
+        if (match.status === 'COMPLETED') throw alreadyReviewed();
+        if (match.status !== 'ACCEPTED') throw matchNotReviewable();
         // Sanctions write this row and the Match, ordering their transaction
         // against this submission (§9.2). Promotion does not remove participation.
         await tx.student.findUniqueOrThrow({

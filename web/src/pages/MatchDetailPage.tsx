@@ -1,4 +1,3 @@
-import { ReviewRecord } from '../reviews/ReviewRecord';
 import { useState } from 'react';
 import { Link, useParams, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +10,7 @@ import { NotFoundPage, PageTitle } from '../layout';
 import { MatchNoticeBanner, type MatchNotice } from '../matching/MatchParts';
 import { PairMatchCard } from '../matching/PairMatchCard';
 import { failureCode } from '../profile/failure';
+import { ReviewRecord } from '../reviews/ReviewRecord';
 
 // §3.5.1, §6.6: `/matches/:matchId`, one of the reader's own Matches. Only its
 // pair reads it: the API answers 404 to anyone else, an Admin outside the

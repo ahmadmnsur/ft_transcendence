@@ -1,5 +1,3 @@
-import { ReviewPage } from './pages/ReviewPage';
-import { FeedbackPage } from './pages/FeedbackPage';
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack/react-router';
 import { setUnauthorizedHandler } from './api/client';
@@ -9,6 +7,7 @@ import { requireRole, requireSession, requireSignedOut } from './guards';
 import { AdminMatchPage } from './pages/AdminMatchPage';
 import { AdminRoundPage } from './pages/AdminRoundPage';
 import { AdminRoundsPage } from './pages/AdminRoundsPage';
+import { FeedbackPage } from './pages/FeedbackPage';
 import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
 import { MatchDetailPage } from './pages/MatchDetailPage';
@@ -17,6 +16,7 @@ import { MatchesPage } from './pages/MatchesPage';
 import { MePage } from './pages/MePage';
 import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { ReviewPage } from './pages/ReviewPage';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { StudentPage } from './pages/StudentPage';
@@ -174,7 +174,9 @@ const matchDetailRoute = createRoute({
   path: '/matches/$matchId',
   beforeLoad: requireSession,
   component: MatchDetailPage,
-  validateSearch: (search: Record<string, unknown>): { reviewed?: true } => ({ reviewed: search.reviewed === true ? true : undefined }),
+  validateSearch: (search: Record<string, unknown>): { reviewed?: true } => ({
+    reviewed: search.reviewed === true ? true : undefined,
+  }),
 });
 
 // §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,

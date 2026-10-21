@@ -53,7 +53,7 @@ export class AdminRoundsController {
     return this.matching.getRound(requestActor(request), id);
   }
 
-  // `GET /api/admin/matches/:id`: any Match as `AdminMatchView`.
+  // `GET /api/admin/matches/:id`: any Match as `AdminMatchDetailView`.
   @Get('matches/:id')
   getMatch(@UuidParam('id') id: string, @Req() request: Request): Promise<AdminMatchDetailView> {
     return this.matching.getAdminMatch(requestActor(request), id);

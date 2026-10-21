@@ -1,3 +1,4 @@
+import { LIMITS } from '@shared/limits';
 import type { PrivateFeedback, ReviewDetail } from '../api/reviews';
 import { Card } from '../design';
 import { useI18n } from '../i18n/context';
@@ -14,7 +15,7 @@ export function FeedbackAnswers({ feedback }: { feedback: PrivateFeedback }): Re
         <dd className="mt-1">
           {feedback.rating === null
             ? copy.noRating
-            : format(copy.ratingValue, { rating: feedback.rating, max: 5 })}
+            : format(copy.ratingValue, { rating: feedback.rating, max: LIMITS.privateFeedback.ratingMax })}
         </dd>
       </div>
     </dl>

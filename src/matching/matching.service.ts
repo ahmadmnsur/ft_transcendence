@@ -40,7 +40,6 @@ import type {
   CurrentMatch,
   CurrentRound,
   MatchHistoryPage,
-  MatchView,
   OpenRoundResult,
 } from './views';
 

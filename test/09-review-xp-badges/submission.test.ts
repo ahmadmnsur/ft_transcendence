@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { insertCatalogue } from '../../prisma/seed/catalogue';
+import { PrismaService } from '../../src/core/prisma.service';
 import { UnitOfWork } from '../../src/core/uow';
 import { MatchingService } from '../../src/matching/matching.service';
 import { ReviewsService } from '../../src/reviews/reviews.service';
@@ -14,6 +15,16 @@ const input = {
   privateFeedback: { answerUsefulness: 'Very useful.', answerExplanation: 'Clear examples.', rating: 4 },
   publicTakeaway: 'An index avoids scanning every row.',
 };
+
+async function storedCounts(matchId: string) {
+  const prisma = harness.app.get(PrismaService);
+  const [reviews, feedback, posts] = await Promise.all([
+    prisma.review.count({ where: { matchId } }),
+    prisma.privateFeedback.count({ where: { review: { matchId } } }),
+    prisma.post.count({ where: { review: { matchId } } }),
+  ]);
+  return { reviews, feedback, posts };
+}
 
 async function acceptedMatch() {
   const matching = harness.app.get(MatchingService);
@@ -43,8 +54,8 @@ async function acceptedMatch() {
   };
 }
 
-it('commits one immutable Review, Private Feedback and public Takeaway under duplicate submission', async () => {
-  const { reviews, matching, mentor, mentee, id } = await acceptedMatch();
+it('commits one immutable Review, Private Feedback and public Takeaway under duplicate and retried submission', async () => {
+  const { reviews, matching, mentor, mentee, menteeAccount, id } = await acceptedMatch();
   harness.barriers.arm('review.submit');
   const settle = (work: Promise<unknown>) =>
     work.then(
@@ -58,6 +69,19 @@ it('commits one immutable Review, Private Feedback and public Takeaway under dup
   harness.barriers.disarm('review.submit');
   harness.barriers.releaseAll('review.submit');
   expect((await Promise.all([first, second])).sort()).toEqual(['already_reviewed', 'ok']);
+  expect(await storedCounts(id)).toEqual({ reviews: 1, feedback: 1, posts: 1 });
+  const posts = await harness.app.get(PrismaService).post.findMany({
+    where: { review: { matchId: id } },
+    select: { id: true, authorId: true, body: true, createdAt: true },
+  });
+  expect(posts.map(({ authorId, body }) => ({ authorId, body }))).toEqual([
+    { authorId: mentee.studentId, body: input.publicTakeaway },
+  ]);
+  // This request starts after commit, reaching the COMPLETED status refusal.
+  await expect(reviews.submitReview(mentee, id, input)).rejects.toMatchObject({
+    code: 'already_reviewed',
+  });
+  expect(await storedCounts(id)).toEqual({ reviews: 1, feedback: 1, posts: 1 });
   const detail = await matching.getMatch(mentee, id);
   expect(detail.status).toBe('COMPLETED');
   expect(detail.review).toMatchObject(input.learningOutcome);
@@ -66,19 +90,28 @@ it('commits one immutable Review, Private Feedback and public Takeaway under dup
     total: 1,
     items: [{ matchId: id, ...input.privateFeedback }],
   });
-  expect(harness.recorder.events).toHaveLength(1);
-  expect(harness.recorder.events[0]).toMatchObject({
-    event: 'postCreated',
-    args: [
-      {
-        origin: 'TAKEAWAY',
-        body: input.publicTakeaway,
-        author: { id: mentee.studentId },
-        likeCount: 0,
-        likedByMe: false,
-      },
-    ],
-  });
+  expect(harness.recorder.events).toEqual([
+    {
+      event: 'postCreated',
+      args: [
+        {
+          id: posts[0].id,
+          origin: 'TAKEAWAY',
+          body: input.publicTakeaway,
+          author: {
+            id: mentee.studentId,
+            displayName: menteeAccount.displayName,
+            avatarUrl: null,
+            isAdmin: false,
+            removed: false,
+          },
+          createdAt: posts[0].createdAt.toISOString(),
+          likeCount: 0,
+          likedByMe: false,
+        },
+      ],
+    },
+  ]);
   expect(JSON.stringify(harness.recorder.events)).not.toContain(mentor.studentId);
 });
 
@@ -115,6 +148,8 @@ for (const competing of ['close', 'decline'] as const) {
       );
       expect(detail.review === null).toBe(first !== 'review');
       expect(detail.privateFeedback === null).toBe(first !== 'review');
+      const count = first === 'review' ? 1 : 0;
+      expect(await storedCounts(id)).toEqual({ reviews: count, feedback: count, posts: count });
       const received = await reviews.listFeedbackReceived(mentor, 1, 20);
       expect(received.total).toBe(first === 'review' ? 1 : 0);
       expect(harness.recorder.events.filter((e) => e.event === 'postCreated')).toHaveLength(
@@ -229,8 +264,8 @@ it('validates nested Review text and optional integer rating before writing anyt
 });
 
 it('pages every received feedback newest first, including equal timestamps, without an aggregate', async () => {
-  const { reviews, matching, admin, mentor, mentee, id } = await acceptedMatch();
   harness.clock.stopAt(new Date('2026-10-21T09:00:00Z'));
+  const { reviews, matching, admin, mentor, mentee, id } = await acceptedMatch();
   await reviews.submitReview(mentee, id, input);
   await matching.closeRound(admin);
   await matching.openRound(admin);

@@ -18,4 +18,4 @@ ALTER TABLE "PrivateFeedback" ADD CONSTRAINT "PrivateFeedback_review_id_fkey" FO
 
 -- §4.4 step 5: NULL means no rating; a supplied rating is 1–5.
 ALTER TABLE "PrivateFeedback" ADD CONSTRAINT "private_feedback_rating_range"
-  CHECK ("rating" BETWEEN 1 AND 5);
+  CHECK (rating IS NULL OR rating BETWEEN 1 AND 5);

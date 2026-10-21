@@ -56,7 +56,7 @@ export function ReviewPage(): React.JSX.Element {
 }
 
 function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
-  const { t, formatText, errorText } = useI18n();
+  const { t, format, formatText, errorText } = useI18n();
   const copy = t.reviews;
   const client = useQueryClient();
   const navigate = useNavigate();
@@ -67,16 +67,26 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
   const [takeaway, setTakeaway] = useState('');
   const [rating, setRating] = useState('');
   const [pending, setPending] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const [failure, setFailure] = useState<{ code: unknown } | null>(null);
+  const invalid = {
+    learned: !isValidText(learned, LIMITS.learningOutcome, true),
+    canNowDo: !isValidText(canNowDo, LIMITS.learningOutcome, true),
+    usefulness: !isValidText(usefulness, LIMITS.privateFeedback, true),
+    explanation: !isValidText(explanation, LIMITS.privateFeedback, true),
+    takeaway: !isValidText(takeaway, LIMITS.publicTakeaway, false),
+  };
+  const outcomeLimits = { min: LIMITS.learningOutcome.minChars, max: LIMITS.learningOutcome.maxChars };
+  const feedbackLimits = { min: LIMITS.privateFeedback.minChars, max: LIMITS.privateFeedback.maxChars };
+  const takeawayLimits = { min: LIMITS.publicTakeaway.minChars, max: LIMITS.publicTakeaway.maxChars };
+  const { ratingMin, ratingMax } = LIMITS.privateFeedback;
+  const ratings = Array.from({ length: ratingMax - ratingMin + 1 }, (_, index) => ratingMin + index);
 
   async function send(event: React.SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (pending) return;
-    const valid =
-      [learned, canNowDo].every((value) => isValidText(value, LIMITS.learningOutcome, true)) &&
-      [usefulness, explanation].every((value) => isValidText(value, LIMITS.privateFeedback, true)) &&
-      isValidText(takeaway, LIMITS.publicTakeaway, false);
-    if (!valid) {
+    setAttempted(true);
+    if (Object.values(invalid).some(Boolean)) {
       setFailure({ code: 'validation_failed' });
       return;
     }
@@ -109,12 +119,16 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
           <div className="flex flex-col gap-4">
             <TextArea
               label={copy.learned}
+              hint={format(copy.textLimit, outcomeLimits)}
+              error={attempted && invalid.learned ? format(copy.textInvalid, outcomeLimits) : undefined}
               required
               value={learned}
               onChange={(e) => setLearned(e.target.value)}
             />
             <TextArea
               label={copy.canNowDo}
+              hint={format(copy.textLimit, outcomeLimits)}
+              error={attempted && invalid.canNowDo ? format(copy.textInvalid, outcomeLimits) : undefined}
               required
               value={canNowDo}
               onChange={(e) => setCanNowDo(e.target.value)}
@@ -125,21 +139,25 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
           <div className="flex flex-col gap-4">
             <TextArea
               label={copy.usefulness}
+              hint={format(copy.textLimit, feedbackLimits)}
+              error={attempted && invalid.usefulness ? format(copy.textInvalid, feedbackLimits) : undefined}
               required
               value={usefulness}
               onChange={(e) => setUsefulness(e.target.value)}
             />
             <TextArea
               label={copy.explanation}
+              hint={format(copy.textLimit, feedbackLimits)}
+              error={attempted && invalid.explanation ? format(copy.textInvalid, feedbackLimits) : undefined}
               required
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
             />
             <Select label={copy.rating} value={rating} onChange={(e) => setRating(e.target.value)}>
               <option value="">{copy.noRating}</option>
-              {[1, 2, 3, 4, 5].map((value) => (
+              {ratings.map((value) => (
                 <option key={value} value={value}>
-                  {formatText(copy.ratingValue, { rating: value, max: 5 })}
+                  {formatText(copy.ratingValue, { rating: value, max: ratingMax })}
                 </option>
               ))}
             </Select>
@@ -148,6 +166,8 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
         <Card headingLevel={2} title={copy.takeaway} subtitle={copy.takeawayReaders}>
           <TextArea
             label={copy.takeaway}
+            hint={format(copy.takeawayLimit, takeawayLimits)}
+            error={attempted && invalid.takeaway ? format(copy.takeawayInvalid, takeawayLimits) : undefined}
             rows={2}
             required
             value={takeaway}

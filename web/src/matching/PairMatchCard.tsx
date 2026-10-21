@@ -118,7 +118,13 @@ export function PairMatchCard({
           </div>
         </dl>
         {match.myRole === 'MENTEE' && match.status === 'ACCEPTED' ? (
-          <Link to="/matches/$matchId/review" params={{ matchId: match.id }} className="self-start rounded text-link underline focus-ring">{t.reviews.reviewLink}</Link>
+          <Link
+            to="/matches/$matchId/review"
+            params={{ matchId: match.id }}
+            className="self-start rounded text-link underline focus-ring"
+          >
+            {t.reviews.reviewLink}
+          </Link>
         ) : null}
         {canAccept || canDecline ? (
           <div className="flex flex-wrap gap-2">
