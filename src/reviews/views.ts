@@ -1,4 +1,5 @@
 import type { StudentRef } from '../students/student-ref';
+import type { EarnResult } from '../gamification/views';
 
 export type ReviewInput = {
   learningOutcome: { learned: string; canNowDo: string };
@@ -18,7 +19,6 @@ export type ReviewDetail = {
   privateFeedback: PrivateFeedbackView | null;
 };
 
-// XP and the earn panel join in #57.
-export type SubmitReviewResult = { reviewId: string; postId: string };
+export type SubmitReviewResult = EarnResult & { reviewId: string; postId: string };
 export type FeedbackItem = PrivateFeedbackView & { matchId: string; roundNumber: number; author: StudentRef };
 export type FeedbackPage = { items: FeedbackItem[]; total: number };

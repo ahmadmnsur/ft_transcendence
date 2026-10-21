@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import type { StudentRef } from './profile';
+import type { EarnResult } from './progress';
 
 export type PromptView = { id: string; question: string; publishedAt: string };
 export type PromptSummary = PromptView & { live: boolean; answerCount: number };
@@ -22,4 +23,4 @@ export const promptHistoryQueryOptions = (page: number, admin: boolean) => query
 });
 export const readPromptAnswers = (id: string, cursor?: string) => apiFetch<AnswerPage>(`/prompts/${id}/answers${cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`}`);
 export const publishPrompt = (question: string) => apiFetch<PromptView>('/admin/prompts', { method: 'POST', body: { question } });
-export const answerPrompt = (id: string, body: string) => apiFetch<AnswerView>(`/prompts/${id}/answers`, { method: 'POST', body: { body } });
+export const answerPrompt = (id: string, body: string) => apiFetch<EarnResult>(`/prompts/${id}/answers`, { method: 'POST', body: { body } });

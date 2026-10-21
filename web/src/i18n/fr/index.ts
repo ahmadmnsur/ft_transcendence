@@ -13,8 +13,9 @@ import shell from './shell';
 import social from './social';
 import messages from './messages';
 import prompts from './prompts';
+import progress from './progress';
 
-const fr = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed };
+const fr = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, and no empty text, whether or not an area file has its `satisfies`.

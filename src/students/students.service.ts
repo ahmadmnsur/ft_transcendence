@@ -5,7 +5,8 @@ import { ApiError } from '../core/errors';
 import { PrismaService } from '../core/prisma.service';
 import { UnitOfWork } from '../core/uow';
 import type { Prisma } from '../generated/prisma/client';
-import { levelFor } from '../gamification/level';
+import { levelFor, levelProgress } from '../gamification/level';
+import { badgeViews } from '../gamification/views';
 import { normalizeEmail } from '../shared/limits';
 import type { SearchOrder, SearchSort } from './dto';
 import { nameSearchWhere } from './name-search';
@@ -38,6 +39,10 @@ const PROFILE_SELECT = {
   ...STUDENT_REF_SELECT,
   xp: true,
   streak: true,
+  badgeAwards: {
+    select: { badge: true, awardedAt: true },
+    orderBy: [{ awardedAt: 'asc' }, { badge: 'asc' }],
+  },
   suspendedAt: true,
   learningGoalStudentSkillId: true,
   learningGoalText: true,
@@ -121,9 +126,9 @@ function toOwnProfile(row: OwnProfileRow): OwnProfile {
     avatarUrl: avatarUrlFor(row.avatar),
     skills: skillsOf(row.studentSkills),
     learningGoal: goalOf(row),
-    xp: row.xp,
-    level: levelFor(row.xp),
+    ...levelProgress(row.xp),
     streak: row.streak,
+    badges: badgeViews(row.badgeAwards),
     fortyTwoConnected: row.fortyTwoId !== null,
   };
 }
@@ -137,9 +142,9 @@ function toPublicProfile(row: ProfileRow): PublicProfile {
     profile: {
       skills: skillsOf(row.studentSkills),
       learningGoal: goalOf(row),
-      xp: row.xp,
-      level: levelFor(row.xp),
+      ...levelProgress(row.xp),
       streak: row.streak,
+      badges: badgeViews(row.badgeAwards),
     },
   };
 }

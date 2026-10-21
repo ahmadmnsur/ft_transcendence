@@ -16,6 +16,7 @@ import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
 import { SkillsCard } from '../profile/SkillsCard';
 import { ME_QUERY_KEY, meQueryOptions } from '../api/profile';
 import { ConfirmWith42Card } from '../profile/ConfirmWith42Card';
+import { OwnProgressCard } from '../progress/ProgressCard';
 
 const meSearch = getRouteApi('/me');
 
@@ -193,6 +194,7 @@ export function MePage(): React.JSX.Element {
           ) : null}
           <AvatarCard />
           <ProfileDetailsCard />
+          <OwnProgressCard />
           <SkillsCard />
           <LearningGoalCard />
           {config?.oauth42Enabled === true ? (

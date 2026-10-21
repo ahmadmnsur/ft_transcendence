@@ -125,8 +125,6 @@ export default {
     cleared: "Votre Objectif d'apprentissage a été effacé.",
   },
   stats: {
-    xp: 'XP',
-    level: 'Niveau',
     streak: 'Série',
   },
   student: {

@@ -1,5 +1,6 @@
 import type { Role } from '../shared/roles';
 import type { StudentRef } from './student-ref';
+import type { BadgeView } from '../gamification/views';
 
 // §6.2's wire shapes, exact field names: the SPA task depends on them.
 
@@ -25,6 +26,9 @@ export type OwnProfile = {
   learningGoal: LearningGoalView | null;
   xp: number;
   level: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number | null;
+  badges: BadgeView[];
   streak: number;
   // §6.2: whether a 42 account is connected — never the 42 id itself.
   fortyTwoConnected: boolean;
@@ -38,6 +42,9 @@ export type PublicProfile = {
     learningGoal: LearningGoalView | null;
     xp: number;
     level: number;
+    xpIntoLevel: number;
+    xpForNextLevel: number | null;
+    badges: BadgeView[];
     streak: number;
   };
 };

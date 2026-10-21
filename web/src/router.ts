@@ -17,6 +17,7 @@ import { MePage } from './pages/MePage';
 import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { RulesPage } from './pages/RulesPage';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { StudentPage } from './pages/StudentPage';
@@ -174,9 +175,6 @@ const matchDetailRoute = createRoute({
   path: '/matches/$matchId',
   beforeLoad: requireSession,
   component: MatchDetailPage,
-  validateSearch: (search: Record<string, unknown>): { reviewed?: true } => ({
-    reviewed: search.reviewed === true ? true : undefined,
-  }),
 });
 
 // §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,
@@ -251,6 +249,13 @@ const termsRoute = createRoute({
   component: TermsPage,
 });
 
+const rulesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/rules',
+  beforeLoad: requireSession,
+  component: RulesPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
@@ -274,6 +279,7 @@ const routeTree = rootRoute.addChildren([
   adminPromptsRoute,
   privacyRoute,
   termsRoute,
+  rulesRoute,
 ]);
 
 export const router = createRouter({

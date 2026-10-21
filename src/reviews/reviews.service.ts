@@ -3,6 +3,7 @@ import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
+import { awardMatchXp } from '../gamification/awards';
 import { roundNumbers } from '../matching/match-views';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
@@ -63,6 +64,7 @@ export class ReviewsService {
           select: { id: true, body: true, createdAt: true },
         });
         await tx.match.update({ where: { id: matchId }, data: { status: 'COMPLETED' } });
+        const earned = await awardMatchXp(tx, match.mentorId, match.menteeId, ctx.now);
         // An explicit public projection: no Review id, Mentor or private fields.
         const item = {
           id: post.id,
@@ -74,7 +76,7 @@ export class ReviewsService {
           likedByMe: false,
         };
         ctx.afterCommit(() => this.publisher.postCreated(item));
-        return { reviewId: review.id, postId: post.id };
+        return { reviewId: review.id, postId: post.id, ...earned };
       },
     );
   }

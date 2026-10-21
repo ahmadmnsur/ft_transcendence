@@ -60,6 +60,12 @@ enum CoverageDirection {
   REVERSE
 }
 
+enum Badge {
+  FIRST_MENTOR
+  KNOWLEDGE_SHARER
+  CONSISTENT_LEARNER
+}
+
 // §4.3.1: the account; every person is one. `id` has no default: sign-up
 // makes it with `v7()` before the Supabase Auth user that shares it (§4.1).
 model Student {
@@ -95,6 +101,7 @@ model Student {
   matchesDeclined            Match[]         @relation("MatchDeclinedBy")
   posts                      Post[]
   likes                      Like[]
+  badgeAwards                BadgeAward[]
   // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
   // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
   learningGoal               StudentSkill?   @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -356,4 +363,14 @@ model PrivateFeedback {
   rating            Int?     @db.SmallInt
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   review            Review   @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+// §4.3.19: a permanent threshold award, inserted at most once per Student.
+model BadgeAward {
+  studentId String   @map("student_id") @db.Uuid
+  badge     Badge
+  awardedAt DateTime @map("awarded_at") @db.Timestamptz(3)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([studentId, badge])
 }
