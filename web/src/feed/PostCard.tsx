@@ -1,26 +1,38 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import { ApiRefusalError } from '../api/client';
 import { likersQueryOptions, setLike, type PostView } from '../api/feed';
+import type { StudentRef } from '../api/profile';
 import { Button, HeartIcon, Modal } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 
-// §6.9: who liked a Post, read when the dialog opens. A Post removed since the
-// page loaded answers `post_unavailable`, shown here like any failure.
-function LikersDialog({ postId, open, onClose }: { postId: string; open: boolean; onClose: () => void }): React.JSX.Element {
+// §6.9: who liked a Post, read when the dialog opens. A refusal, such as
+// `post_unavailable` for a Post removed since the page loaded, would only be
+// refused again, so only another failure offers a retry.
+function LikersDialog({
+  likers,
+  open,
+  onClose,
+}: {
+  likers: UseQueryResult<{ items: StudentRef[] }>;
+  open: boolean;
+  onClose: () => void;
+}): React.JSX.Element {
   const { t, errorText } = useI18n();
   const copy = t.feed.likers;
-  const likers = useQuery({ ...likersQueryOptions(postId), enabled: open });
   return (
     <Modal open={open} title={copy.title} onClose={onClose} size="sm">
       {likers.isError ? (
         <div role="alert" className="flex flex-col items-start gap-3">
           <p className="text-sm text-ink-danger">{errorText(failureCode(likers.error))}</p>
-          <Button variant="secondary" size="sm" onClick={() => void likers.refetch()}>
-            {copy.retry}
-          </Button>
+          {likers.error instanceof ApiRefusalError ? null : (
+            <Button variant="secondary" size="sm" onClick={() => void likers.refetch()}>
+              {copy.retry}
+            </Button>
+          )}
         </div>
       ) : likers.data === undefined ? (
         <p aria-busy="true" className="text-sm text-ink-muted">{copy.loading}</p>
@@ -41,7 +53,9 @@ function LikersDialog({ postId, open, onClose }: { postId: string; open: boolean
 
 // §6.9, §11.5: the Like toggle and the count, which opens the likers. A Like
 // of one's own Post is allowed. The count and the toggle come from the
-// server's answer, never guessed ahead of it.
+// server's answer, never guessed ahead of it. A Post a moderator removed
+// since the page loaded answers `post_unavailable` (§4.6): its controls give
+// way to that sentence, since every further press would be refused too.
 function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   const { t, formatText, errorText } = useI18n();
   const copy = t.feed.post;
@@ -49,6 +63,8 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<{ code: unknown } | undefined>(undefined);
   const [likersOpen, setLikersOpen] = useState(false);
+  const likers = useQuery({ ...likersQueryOptions(post.id), enabled: likersOpen });
+  const unavailable = failure?.code === 'post_unavailable' || failureCode(likers.error) === 'post_unavailable';
   const count = formatText(copy.likeCount, { count: post.likeCount });
 
   async function toggle(): Promise<void> {
@@ -66,25 +82,27 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="secondary" size="sm" aria-pressed={post.likedByMe} loading={pending} onClick={() => void toggle()}>
-          <HeartIcon filled={post.likedByMe} className={`me-1.5 inline-block align-text-bottom ${post.likedByMe ? 'text-primary-600' : ''}`} />
-          {copy.like}
-        </Button>
-        {post.likeCount === 0 ? (
-          <span className="text-sm text-ink-muted">{count}</span>
-        ) : (
-          <Button variant="ghost" size="sm" aria-haspopup="dialog" onClick={() => setLikersOpen(true)}>
-            {count}
+      {unavailable ? null : (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" aria-pressed={post.likedByMe} loading={pending} onClick={() => void toggle()}>
+            <HeartIcon filled={post.likedByMe} className={`me-1.5 inline-block align-text-bottom ${post.likedByMe ? 'text-primary-600' : ''}`} />
+            {copy.like}
           </Button>
-        )}
-      </div>
-      {failure !== undefined ? (
+          {post.likeCount === 0 ? (
+            <span className="text-sm text-ink-muted">{count}</span>
+          ) : (
+            <Button variant="ghost" size="sm" aria-haspopup="dialog" onClick={() => setLikersOpen(true)}>
+              {count}
+            </Button>
+          )}
+        </div>
+      )}
+      {unavailable || failure !== undefined ? (
         <p role="alert" className="text-sm text-ink-danger">
-          {errorText(failure.code)}
+          {errorText(unavailable ? 'post_unavailable' : failure?.code)}
         </p>
       ) : null}
-      <LikersDialog postId={post.id} open={likersOpen} onClose={() => setLikersOpen(false)} />
+      <LikersDialog likers={likers} open={likersOpen} onClose={() => setLikersOpen(false)} />
     </div>
   );
 }
@@ -103,7 +121,7 @@ export function PostCard({ post, showPrompt = true }: { post: PostView; showProm
           {formatDateTime(new Date(post.createdAt))}
         </time>
       </div>
-      {post.prompt === undefined ? (
+      {post.origin === 'TAKEAWAY' ? (
         <p className="text-sm text-ink-muted">{copy.takeaway}</p>
       ) : showPrompt ? (
         <p className="text-sm text-ink-muted wrap-anywhere">

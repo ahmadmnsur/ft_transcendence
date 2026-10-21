@@ -1,18 +1,19 @@
 import { infiniteQueryOptions, queryOptions, type InfiniteData, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import type { StudentRef } from './profile';
+import { PROMPT_ANSWERS_QUERY_KEY } from './prompts';
+import { writeAsSignedIn } from './session';
 
-// §6.9's wire shapes. A Takeaway has no `prompt` and never names its Mentor.
-export interface PostView {
+// §6.9's wire shapes. A Takeaway has no `prompt` and never names its Mentor;
+// a Prompt answer always names its Prompt.
+export type PostView = {
   id: string;
-  origin: 'TAKEAWAY' | 'PROMPT_ANSWER';
-  prompt?: { id: string; question: string };
   author: StudentRef;
   body: string;
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
-}
+} & ({ origin: 'TAKEAWAY' } | { origin: 'PROMPT_ANSWER'; prompt: { id: string; question: string } });
 
 // §6.0.1's stream page: newest first, and the cursor for the next page.
 export interface PostPage {
@@ -26,11 +27,8 @@ export interface LikeState {
   likedByMe: boolean;
 }
 
-// The Prompt page reads the feed again once it publishes an answer.
 export const FEED_QUERY_KEY = ['feed'] as const;
 const STUDENT_POSTS_QUERY_KEY = ['posts', 'student'] as const;
-// The Prompt page's answer lists, which hold Posts as well (§6.8).
-const PROMPT_ANSWERS_QUERY_KEY = ['prompts', 'answers'] as const;
 
 export function likersQueryKey(postId: string): readonly [string, string, string] {
   return ['posts', 'likers', postId];
@@ -70,10 +68,16 @@ export function likersQueryOptions(postId: string) {
 
 type PostPages = InfiniteData<{ items: PostView[] }>;
 
-// Writes a Like's answer into every loaded copy of the Post: the feed, any
-// profile's Posts and any Prompt's answers. Nothing else on those pages
-// changed, so nothing is read again but the likers.
-function writeLikeState(client: QueryClient, postId: string, state: LikeState): void {
+// Every list that holds Posts: the feed, any profile's Posts and any
+// Prompt's answers (§6.8).
+const POST_LIST_QUERY_KEYS = [FEED_QUERY_KEY, STUDENT_POSTS_QUERY_KEY, PROMPT_ANSWERS_QUERY_KEY];
+
+// Writes a Like's answer into every loaded copy of the Post. A read of those
+// lists still in flight is cancelled first, so its older answer cannot land
+// over this one. Nothing else on those pages changed, so nothing is read
+// again but the likers.
+async function cacheLikeState(client: QueryClient, postId: string, state: LikeState): Promise<void> {
+  await Promise.all(POST_LIST_QUERY_KEYS.map((queryKey) => client.cancelQueries({ queryKey })));
   const update = (data: PostPages | undefined): PostPages | undefined =>
     data === undefined
       ? undefined
@@ -84,17 +88,21 @@ function writeLikeState(client: QueryClient, postId: string, state: LikeState): 
             items: page.items.map((post) => (post.id === postId ? { ...post, ...state } : post)),
           })),
         };
-  for (const queryKey of [FEED_QUERY_KEY, STUDENT_POSTS_QUERY_KEY, PROMPT_ANSWERS_QUERY_KEY]) {
-    client.setQueriesData<PostPages>({ queryKey }, update);
-  }
+  for (const queryKey of POST_LIST_QUERY_KEYS) client.setQueriesData<PostPages>({ queryKey }, update);
   void client.invalidateQueries({ queryKey: likersQueryKey(postId) });
 }
 
-// `POST` or `DELETE /api/posts/:id/like` (§6.9). A refusal, such as
+// `POST` or `DELETE /api/posts/:id/like` (§6.9). `likedByMe` belongs to the
+// Student who sent it, so an answer that arrives after another Student signed
+// in reaches none of the cache (`writeAsSignedIn`). A refusal, such as
 // `post_unavailable` for a Post a moderator removed, rejects and writes
-// nothing to the cache.
-export async function setLike(client: QueryClient, postId: string, liked: boolean): Promise<LikeState> {
-  const state = await apiFetch<LikeState>(`/posts/${postId}/like`, { method: liked ? 'POST' : 'DELETE' });
-  writeLikeState(client, postId, state);
-  return state;
+// nothing. Both writes are idempotent and answer the Post's true state, so
+// pressing again after a failure is safe.
+export async function setLike(client: QueryClient, postId: string, liked: boolean): Promise<void> {
+  await writeAsSignedIn(
+    client,
+    () => apiFetch<LikeState>(`/posts/${postId}/like`, { method: liked ? 'POST' : 'DELETE' }),
+    (state) => cacheLikeState(client, postId, state),
+    () => void client.invalidateQueries({ queryKey: likersQueryKey(postId) }),
+  );
 }

@@ -5,17 +5,15 @@ import { STUDENT_REF_SELECT, toStudentRef, type StudentRef } from '../students/s
 
 // One feed item, as the feed, a single Post, a Student's Posts and a Prompt's
 // answers return it. A Takeaway has no `prompt`, and nothing names its Review
-// or its Mentor (ADR-0018 d4).
+// or its Mentor (ADR-0018 d4); a Prompt answer always names its Prompt.
 export type PostView = {
   id: string;
-  origin: 'TAKEAWAY' | 'PROMPT_ANSWER';
-  prompt?: { id: string; question: string };
   author: StudentRef;
   body: string;
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
-};
+} & ({ origin: 'TAKEAWAY' } | { origin: 'PROMPT_ANSWER'; prompt: { id: string; question: string } });
 
 // §6.0.1's stream page: 50 items, newest first, and the cursor of the last.
 export type PostPage = { items: PostView[]; nextCursor: string | null };

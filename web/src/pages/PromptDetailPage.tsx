@@ -4,7 +4,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { isValidText, LIMITS } from '@shared/limits';
 import { isUuid } from '@shared/uuid';
 import { ApiProtocolError } from '../api/client';
-import { answerPrompt, readPromptAnswers } from '../api/prompts';
+import { FEED_QUERY_KEY } from '../api/feed';
+import { answerPrompt, PROMPT_ANSWERS_QUERY_KEY, readPromptAnswers } from '../api/prompts';
 import { sessionQueryOptions } from '../api/session';
 import { Banner, Button, Card, TextArea } from '../design';
 import { PostCard } from '../feed/PostCard';
@@ -24,7 +25,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const session = useQuery(sessionQueryOptions()).data;
   const wellFormedId = isUuid(promptId);
   const answers = useInfiniteQuery({
-    queryKey: ['prompts', 'answers', promptId],
+    queryKey: [...PROMPT_ANSWERS_QUERY_KEY, promptId],
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => readPromptAnswers(promptId, pageParam),
     getNextPageParam: (last) => last.nextCursor ?? undefined,
@@ -36,7 +37,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const answer = useMutation({
     mutationFn: (text: string) => answerPrompt(promptId, text),
     onSuccess: () => { setBody(''); },
-    onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: ['feed'] }); },
+    onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: FEED_QUERY_KEY }); },
   });
   const canAnswer = detail?.live && !detail.answeredByMe && session?.authenticated && session.student.role !== 'ADMIN' && !answer.isSuccess;
   if (!wellFormedId) return <NotFoundPage />;
