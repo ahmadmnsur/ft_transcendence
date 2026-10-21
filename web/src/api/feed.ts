@@ -95,6 +95,14 @@ async function cacheLikeState(client: QueryClient, postId: string, state: LikeSt
   for (const queryKey of reread) void client.invalidateQueries({ queryKey });
 }
 
+// Reads one list again from now. A read still in flight may have answered
+// before a change, so it is cancelled first: a refetch of a list that has no
+// data yet would otherwise be handed that same read.
+async function readAgain(client: QueryClient, queryKey: readonly string[]): Promise<void> {
+  await client.cancelQueries({ queryKey });
+  await client.invalidateQueries({ queryKey });
+}
+
 // `POST` or `DELETE /api/posts/:id/like` (§6.9). `likedByMe` belongs to the
 // Student who sent it, so an answer that arrives after another Student signed
 // in reaches none of the cache (`writeAsSignedIn`). A refusal, such as
@@ -115,7 +123,7 @@ export async function setLike(client: QueryClient, postId: string, liked: boolea
     (state) => cacheLikeState(client, postId, state),
     () => {
       const reread = refused ? [likersQueryKey(postId)] : [...POST_LIST_QUERY_KEYS, likersQueryKey(postId)];
-      for (const queryKey of reread) void client.invalidateQueries({ queryKey });
+      for (const queryKey of reread) void readAgain(client, queryKey);
     },
   );
 }
