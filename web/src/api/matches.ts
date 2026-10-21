@@ -2,6 +2,7 @@ import { keepPreviousData, queryOptions, type QueryClient } from '@tanstack/reac
 import { STANDING_STATUSES, type MatchRole, type MatchStatus, type Mission } from '@shared/matches';
 import { apiFetch } from './client';
 import type { SkillView, StudentRef } from './profile';
+import type { ReviewDetail } from './reviews';
 import { writeAsSignedIn } from './session';
 
 // §6.6 and §6.13's Round and Match routes, with the exact wire shapes the API
@@ -113,6 +114,9 @@ function adminRoundQueryKey(id: string): readonly ['admin', 'rounds', string] {
   return ['admin', 'rounds', id] as const;
 }
 
+export type MatchDetailView = MatchView & ReviewDetail;
+export type AdminMatchDetailView = AdminMatchView & ReviewDetail;
+
 // Reads (§6.6, §6.13). An id goes in the path only once the page has checked
 // its shape, so a malformed one never reaches the API (§3.5.2).
 export async function fetchCurrentRound(): Promise<CurrentRound> {
@@ -128,8 +132,8 @@ export async function fetchMatchHistory(page: number, pageSize: number): Promise
   return apiFetch<MatchHistoryPage>(`/matches?${query.toString()}`);
 }
 
-export async function fetchMatch(id: string): Promise<MatchView> {
-  return apiFetch<MatchView>(`/matches/${encodeURIComponent(id)}`);
+export async function fetchMatch(id: string): Promise<MatchDetailView> {
+  return apiFetch<MatchDetailView>(`/matches/${encodeURIComponent(id)}`);
 }
 
 export async function fetchAdminRounds(): Promise<{ items: AdminRoundSummary[] }> {
@@ -140,8 +144,8 @@ export async function fetchAdminRound(id: string): Promise<AdminRoundDetail> {
   return apiFetch<AdminRoundDetail>(`/admin/rounds/${encodeURIComponent(id)}`);
 }
 
-export async function fetchAdminMatch(id: string): Promise<AdminMatchView> {
-  return apiFetch<AdminMatchView>(`/admin/matches/${encodeURIComponent(id)}`);
+export async function fetchAdminMatch(id: string): Promise<AdminMatchDetailView> {
+  return apiFetch<AdminMatchDetailView>(`/admin/matches/${encodeURIComponent(id)}`);
 }
 
 // No event tells a Student that their partner accepted or declined (§7.4), so
@@ -182,12 +186,12 @@ export function adminMatchQueryOptions(id: string) {
 
 // Writes (§8.4, §8.5, §8.7). A refusal (`round_already_open`, `no_open_round`,
 // `match_not_pending`, `match_not_in_progress`) is a typed 200 (§6.15).
-async function postAccept(id: string): Promise<MatchView> {
-  return apiFetch<MatchView>(`/matches/${encodeURIComponent(id)}/accept`, { method: 'POST', body: {} });
+async function postAccept(id: string): Promise<MatchDetailView> {
+  return apiFetch<MatchDetailView>(`/matches/${encodeURIComponent(id)}/accept`, { method: 'POST', body: {} });
 }
 
-async function postDecline(id: string): Promise<MatchView> {
-  return apiFetch<MatchView>(`/matches/${encodeURIComponent(id)}/decline`, { method: 'POST', body: {} });
+async function postDecline(id: string): Promise<MatchDetailView> {
+  return apiFetch<MatchDetailView>(`/matches/${encodeURIComponent(id)}/decline`, { method: 'POST', body: {} });
 }
 
 async function postOpenRound(): Promise<OpenRoundResult> {
@@ -212,15 +216,18 @@ async function readAgain(queryClient: QueryClient, queryKey: readonly string[]):
 // partner or a Round close may have moved it first, and is rethrown for the
 // screen to show. An answer that arrives after another Student signed in
 // reaches none of the cache (`writeAsSignedIn`).
-function matchWrite(queryClient: QueryClient, send: () => Promise<MatchView>): Promise<MatchView | undefined> {
-  let written: MatchView | undefined;
+function matchWrite(
+  queryClient: QueryClient,
+  send: () => Promise<MatchDetailView>,
+): Promise<MatchDetailView | undefined> {
+  let written: MatchDetailView | undefined;
   return writeAsSignedIn(
     queryClient,
     send,
     async (match) => {
       written = match;
       await queryClient.cancelQueries({ queryKey: MATCHES_PREFIX });
-      queryClient.setQueryData<MatchView>(matchQueryKey(match.id), match);
+      queryClient.setQueryData<MatchDetailView>(matchQueryKey(match.id), match);
       const standing: readonly MatchStatus[] = STANDING_STATUSES;
       queryClient.setQueryData<CurrentMatch>(CURRENT_MATCH_QUERY_KEY, (previous) =>
         previous?.match?.id === match.id ? { match: standing.includes(match.status) ? match : null } : previous,
@@ -231,11 +238,11 @@ function matchWrite(queryClient: QueryClient, send: () => Promise<MatchView>): P
   ).then(() => written);
 }
 
-export function acceptMatch(queryClient: QueryClient, id: string): Promise<MatchView | undefined> {
+export function acceptMatch(queryClient: QueryClient, id: string): Promise<MatchDetailView | undefined> {
   return matchWrite(queryClient, () => postAccept(id));
 }
 
-export function declineMatch(queryClient: QueryClient, id: string): Promise<MatchView | undefined> {
+export function declineMatch(queryClient: QueryClient, id: string): Promise<MatchDetailView | undefined> {
   return matchWrite(queryClient, () => postDecline(id));
 }
 

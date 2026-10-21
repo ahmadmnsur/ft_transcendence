@@ -287,6 +287,7 @@ model Review {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   match     Match    @relation(fields: [matchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   post      Post?
+  privateFeedback PrivateFeedback?
 }
 
 // §4.3.15: a Reflection Prompt, with no status column (ADR-0007 d1). The live
@@ -328,4 +329,16 @@ model Post {
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([authorId])
   @@index([answerRoundId])
+}
+
+// §4.3.13: immutable testimony, separate from the public Takeaway.
+// The creating migration supplies private_feedback_rating_range (§4.4).
+model PrivateFeedback {
+  id                String   @id @default(uuid(7)) @db.Uuid
+  reviewId          String   @unique @map("review_id") @db.Uuid
+  answerUsefulness  String   @map("answer_usefulness")
+  answerExplanation String   @map("answer_explanation")
+  rating            Int?     @db.SmallInt
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  review            Review   @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }

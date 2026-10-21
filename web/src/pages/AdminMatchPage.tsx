@@ -10,6 +10,7 @@ import { NotFoundPage, PageTitle } from '../layout';
 import { MatchStatusLabel, ScoreDetails, endingOf, useSkillList } from '../matching/MatchParts';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
+import { ReviewRecord } from '../reviews/ReviewRecord';
 
 // §3.5.1, §6.13: `/admin/matches/:matchId`, any Match for an Admin, with both
 // participants named — where the pair's own view names one side's partner.
@@ -123,6 +124,7 @@ export function AdminMatchPage(): React.JSX.Element {
             </div>
           </dl>
         </Card>
+        <ReviewRecord review={data.review} privateFeedback={data.privateFeedback} />
         <Link to="/admin/rounds" className="self-start rounded text-link underline underline-offset-2 focus-ring">
           {t.matching.round.roundsLink}
         </Link>

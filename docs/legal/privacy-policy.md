@@ -80,6 +80,12 @@ When you submit a Review as a Mentee, its three parts are stored separately:
 - your **Private Feedback** on your Mentor: two written answers and an optional rating from 1 to 5;
 - your **Public Takeaway**, which becomes a Post.
 
+Your Learning Outcome and Private Feedback can be re-read on the Match’s detail page by its two
+Students, and through the Admin’s Match page by Admins. The Mentor also has a private list of every
+Private Feedback received, newest first, including feedback from a former student. This list is never
+on a profile, and ratings are never averaged or combined into a score. The Public Takeaway contains
+your confirmed words, attributed to you, without a field naming your Mentor.
+
 **Your activity in the community**
 
 - your Posts: Public Takeaways and answers to Reflection Prompts. An answer is visible immediately

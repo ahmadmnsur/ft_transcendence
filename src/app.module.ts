@@ -6,6 +6,7 @@ import { FilesModule } from './files/files.module';
 import { HealthController } from './health.controller';
 import { MatchingModule } from './matching/matching.module';
 import { MessagingModule } from './messaging/messaging.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { SocialModule } from './social/social.module';
 import { StudentsModule } from './students/students.module';
 import { PromptsModule } from './prompts/prompts.module';
@@ -13,7 +14,10 @@ import { PromptsModule } from './prompts/prompts.module';
 // The schedule is provided here, not in FilesModule, so only the `api` runs
 // the cleanup: the seed imports StudentsModule, and with it FilesModule.
 @Module({
-  imports: [CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule, MessagingModule, MatchingModule, PromptsModule],
+  imports: [
+    CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule,
+    MessagingModule, MatchingModule, PromptsModule, ReviewsModule,
+  ],
   controllers: [HealthController],
   providers: [FileCleanupSchedule],
 })

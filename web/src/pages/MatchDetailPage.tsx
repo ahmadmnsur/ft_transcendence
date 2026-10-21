@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useParams, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { isUuid } from '@shared/uuid';
 import { ApiProtocolError } from '../api/client';
 import { matchQueryOptions } from '../api/matches';
-import { AlertIcon, Button, EmptyState } from '../design';
+import { AlertIcon, Banner, Button, EmptyState } from '../design';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { MatchNoticeBanner, type MatchNotice } from '../matching/MatchParts';
 import { PairMatchCard } from '../matching/PairMatchCard';
 import { failureCode } from '../profile/failure';
+import { ReviewRecord } from '../reviews/ReviewRecord';
 
 // §3.5.1, §6.6: `/matches/:matchId`, one of the reader's own Matches. Only its
 // pair reads it: the API answers 404 to anyone else, an Admin outside the
@@ -18,6 +19,7 @@ import { failureCode } from '../profile/failure';
 export function MatchDetailPage(): React.JSX.Element {
   const { t, format, formatText, errorText } = useI18n();
   const copy = t.matching.detail;
+  const { reviewed } = useSearch({ from: '/matches/$matchId' });
   const { matchId } = useParams({ from: '/matches/$matchId' });
   const wellFormedId = isUuid(matchId);
   const { data, error, isError, refetch } = useQuery({ ...matchQueryOptions(matchId), enabled: wellFormedId });
@@ -57,8 +59,10 @@ export function MatchDetailPage(): React.JSX.Element {
       <PageTitle name={formatText(copy.title, { number: data.roundNumber })} />
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <h1 className="text-2xl font-semibold text-ink">{format(copy.title, { number: data.roundNumber })}</h1>
+        {reviewed ? <Banner tone="success" title={t.reviews.submitted} /> : null}
         <MatchNoticeBanner notice={notice} />
         <PairMatchCard match={data} onNotice={setNotice} />
+        <ReviewRecord review={data.review} privateFeedback={data.privateFeedback} />
         <Link to="/matches" className="self-start rounded text-link underline underline-offset-2 focus-ring">
           {copy.historyLink}
         </Link>

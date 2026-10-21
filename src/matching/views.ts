@@ -1,3 +1,4 @@
+import type { ReviewDetail } from '../reviews/views';
 import type { MatchRole, MatchStatus, Mission } from '../shared/matches';
 import type { StudentRef } from '../students/student-ref';
 import type { SkillView } from '../students/views';
@@ -25,6 +26,9 @@ export type MatchView = {
   iAccepted: boolean;
   partnerAccepted: boolean;
 };
+
+export type MatchDetailView = MatchView & ReviewDetail;
+export type AdminMatchDetailView = AdminMatchView & ReviewDetail;
 
 // §6.13: one Match with both participants named, for an Admin.
 export type AdminMatchView = {

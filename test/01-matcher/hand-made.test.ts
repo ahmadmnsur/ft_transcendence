@@ -89,7 +89,7 @@ describe('hand-made Matches through the services', () => {
     });
     await students.setSkills(lower, [], []);
     await students.setSkills(higher, [], []);
-    expect(await matching.getAdminMatch(admin, view.id)).toEqual(view);
+    expect(await matching.getAdminMatch(admin, view.id)).toEqual({ ...view, review: null, privateFeedback: null });
     expect(await matching.getMatch(lower, view.id)).toMatchObject({
       myRole: 'MENTEE', compatibilityScore: null, handMade: true,
       coverage: view.coverage, goalBonusApplied: true,

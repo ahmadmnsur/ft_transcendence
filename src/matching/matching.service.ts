@@ -3,6 +3,7 @@ import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
+import { readReview } from '../reviews/read-review';
 import { MISSIONS, STANDING_STATUSES, isInProgress } from '../shared/matches';
 import { readActiveActor, readActiveAdmin } from '../students/profile-writes';
 import { readCandidates, readCandidatesByIds, unmatchedIn } from './candidates';
@@ -31,13 +32,14 @@ import {
 } from './refusals';
 import type {
   AdminMatchView,
+  AdminMatchDetailView,
+  MatchDetailView,
   AdminRoundDetail,
   AdminRoundSummary,
   CloseRoundResult,
   CurrentMatch,
   CurrentRound,
   MatchHistoryPage,
-  MatchView,
   OpenRoundResult,
 } from './views';
 
@@ -231,7 +233,7 @@ export class MatchingService {
   // acceptances racing write one row, so one retries and makes the
   // transition. No event: the pair reads the new status on the next load
   // (§7.4). The view is read after the commit.
-  async accept(actor: Actor, matchId: string): Promise<MatchView> {
+  async accept(actor: Actor, matchId: string): Promise<MatchDetailView> {
     await this.uow.run('match-accept', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
       const match = asParticipant(
@@ -260,7 +262,7 @@ export class MatchingService {
   // becomes DECLINED, naming who declined; anything else is
   // `match_not_in_progress`. Both Students are unmatched again (derived), and
   // nothing searches for a replacement (ADR-0002 d8). No event.
-  async decline(actor: Actor, matchId: string): Promise<MatchView> {
+  async decline(actor: Actor, matchId: string): Promise<MatchDetailView> {
     await this.uow.run('match-decline', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
       const match = asParticipant(
@@ -336,12 +338,15 @@ export class MatchingService {
   // §6.6's `GET /api/matches/:id`: the pair only, whatever their current role;
   // anyone else, an Admin outside the pair included, gets 404. Admins read
   // every Match through `getAdminMatch`.
-  async getMatch(actor: Actor, matchId: string): Promise<MatchView> {
+  async getMatch(actor: Actor, matchId: string): Promise<MatchDetailView> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.match.findUnique({ where: { id: matchId }, select: MATCH_SELECT });
       const own = asParticipant(row, actor.studentId);
       const people = await readPeople(tx, [own]);
-      return toMatchView(own, people, actor.studentId, await roundNumberOf(tx, own.round));
+      return {
+        ...toMatchView(own, people, actor.studentId, await roundNumberOf(tx, own.round)),
+        ...await readReview(tx, matchId),
+      };
     });
   }
 
@@ -403,12 +408,15 @@ export class MatchingService {
 
   // §6.13's `GET /api/admin/matches/:id`: any Match, both participants
   // named. Unknown → 404.
-  async getAdminMatch(actor: Actor, matchId: string): Promise<AdminMatchView> {
+  async getAdminMatch(actor: Actor, matchId: string): Promise<AdminMatchDetailView> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.match.findUnique({ where: { id: matchId }, select: MATCH_SELECT });
       if (row === null) throw new ApiError('not_found');
       const people = await readPeople(tx, [row]);
-      return toAdminMatchView(row, people, await roundNumberOf(tx, row.round));
+      return {
+        ...toAdminMatchView(row, people, await roundNumberOf(tx, row.round)),
+        ...await readReview(tx, matchId),
+      };
     });
   }
 }

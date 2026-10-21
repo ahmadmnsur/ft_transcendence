@@ -7,6 +7,7 @@ import { requireRole, requireSession, requireSignedOut } from './guards';
 import { AdminMatchPage } from './pages/AdminMatchPage';
 import { AdminRoundPage } from './pages/AdminRoundPage';
 import { AdminRoundsPage } from './pages/AdminRoundsPage';
+import { FeedbackPage } from './pages/FeedbackPage';
 import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
 import { MatchDetailPage } from './pages/MatchDetailPage';
@@ -15,6 +16,7 @@ import { MatchesPage } from './pages/MatchesPage';
 import { MePage } from './pages/MePage';
 import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { ReviewPage } from './pages/ReviewPage';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { StudentPage } from './pages/StudentPage';
@@ -172,6 +174,9 @@ const matchDetailRoute = createRoute({
   path: '/matches/$matchId',
   beforeLoad: requireSession,
   component: MatchDetailPage,
+  validateSearch: (search: Record<string, unknown>): { reviewed?: true } => ({
+    reviewed: search.reviewed === true ? true : undefined,
+  }),
 });
 
 // §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,
@@ -220,6 +225,20 @@ const adminPromptsRoute = createRoute({
   component: AdminPromptsPage,
 });
 
+const reviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/matches/$matchId/review',
+  beforeLoad: requireSession,
+  component: ReviewPage,
+});
+const feedbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/feedback',
+  beforeLoad: requireSession,
+  validateSearch: parsePageSearch,
+  component: FeedbackPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -245,6 +264,8 @@ const routeTree = rootRoute.addChildren([
   matchRoute,
   matchesRoute,
   matchDetailRoute,
+  reviewRoute,
+  feedbackRoute,
   adminRoundsRoute,
   adminRoundRoute,
   adminMatchRoute,
