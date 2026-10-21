@@ -1,4 +1,3 @@
-import reviews from './reviews';
 import type { Checked, EnGroup } from '../types';
 import auth from './auth';
 import design from './design';
@@ -7,6 +6,7 @@ import legal from './legal';
 import matching from './matching';
 import people from './people';
 import profile from './profile';
+import reviews from './reviews';
 import shell from './shell';
 import social from './social';
 import messages from './messages';

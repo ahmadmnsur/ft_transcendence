@@ -76,9 +76,9 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
     explanation: !isValidText(explanation, LIMITS.privateFeedback, true),
     takeaway: !isValidText(takeaway, LIMITS.publicTakeaway, false),
   };
-  const outcomeLimits = { min: LIMITS.learningOutcome.minChars, max: LIMITS.learningOutcome.maxChars };
-  const feedbackLimits = { min: LIMITS.privateFeedback.minChars, max: LIMITS.privateFeedback.maxChars };
-  const takeawayLimits = { min: LIMITS.publicTakeaway.minChars, max: LIMITS.publicTakeaway.maxChars };
+  const outcomeLimits = { min: LIMITS.learningOutcome.minChars, count: LIMITS.learningOutcome.maxChars };
+  const feedbackLimits = { min: LIMITS.privateFeedback.minChars, count: LIMITS.privateFeedback.maxChars };
+  const takeawayLimits = { min: LIMITS.publicTakeaway.minChars, count: LIMITS.publicTakeaway.maxChars };
   const { ratingMin, ratingMax } = LIMITS.privateFeedback;
   const ratings = Array.from({ length: ratingMax - ratingMin + 1 }, (_, index) => ratingMin + index);
 

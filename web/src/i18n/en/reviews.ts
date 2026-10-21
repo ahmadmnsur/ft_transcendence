@@ -12,10 +12,22 @@ export default {
   rating: 'Rating (optional)',
   noRating: 'No rating',
   ratingValue: '{rating} out of {max}',
-  textLimit: '{min}–{max} characters.',
-  textInvalid: 'Enter {min}–{max} characters. Remove unsupported control characters.',
-  takeawayLimit: '{min}–{max} characters on one line.',
-  takeawayInvalid: 'Enter {min}–{max} characters on one line. Remove control characters.',
+  textLimit: {
+    one: '{min}–{count} character.',
+    other: '{min}–{count} characters.',
+  },
+  textInvalid: {
+    one: 'Enter {min}–{count} character. Remove unsupported control characters.',
+    other: 'Enter {min}–{count} characters. Remove unsupported control characters.',
+  },
+  takeawayLimit: {
+    one: '{min}–{count} character on one line.',
+    other: '{min}–{count} characters on one line.',
+  },
+  takeawayInvalid: {
+    one: 'Enter {min}–{count} character on one line. Remove control characters.',
+    other: 'Enter {min}–{count} characters on one line. Remove control characters.',
+  },
   takeaway: 'Public Takeaway',
   takeawayReaders: 'Everyone signed in can read this Post. Do not name your Mentor.',
   immutable: 'Confirm your three parts before submitting. They cannot be edited afterwards.',

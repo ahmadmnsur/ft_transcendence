@@ -1,4 +1,3 @@
-import reviews from './reviews';
 import type en from '../en';
 import type { Checked } from '../types';
 import auth from './auth';
@@ -8,6 +7,7 @@ import legal from './legal';
 import matching from './matching';
 import people from './people';
 import profile from './profile';
+import reviews from './reviews';
 import shell from './shell';
 import social from './social';
 import messages from './messages';
