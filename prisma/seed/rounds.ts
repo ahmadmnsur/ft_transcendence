@@ -1,9 +1,10 @@
 import type { Actor } from '../../src/core/actor';
 import { Refusal } from '../../src/core/errors';
 import type { MatchingService } from '../../src/matching/matching.service';
-import type { AdminRoundMatch } from '../../src/matching/views';
+import type { AdminRoundMatch, MatchDetailView } from '../../src/matching/views';
 import type { MatchRole } from '../../src/shared/matches';
 import { SeedFailure } from './failure';
+import type { SubmitReview } from './reviews';
 
 // §14.5 step c, in Round order. Each entry acts on M[0], then M[1]
 // when present. The snapshot of M precedes every decline and repair.
@@ -15,7 +16,8 @@ const DECLINES = [
 ] as const satisfies readonly (readonly MatchRole[])[];
 
 // §14.5's full-fixture targets, reported beside the actual counts, never
-// asserted. Until Reviews and sanctions join, accepted Matches lapse.
+// asserted. Until the sanctions join, the Matches that S's Suspension and R's
+// Removal would terminate complete instead.
 export const ROUND_TARGETS = [
   { matcherMatches: 15, COMPLETED: 12, LAPSED: 2, DECLINED: 2, TERMINATED_BY_ADMIN: 0 },
   { matcherMatches: 15, COMPLETED: 12, LAPSED: 2, DECLINED: 1, TERMINATED_BY_ADMIN: 0 },
@@ -23,16 +25,30 @@ export const ROUND_TARGETS = [
   { matcherMatches: 15, COMPLETED: 11, LAPSED: 2, DECLINED: 1, TERMINATED_BY_ADMIN: 1 },
 ] as const;
 
-async function acceptBoth(matching: MatchingService, match: AdminRoundMatch): Promise<void> {
+// Returns the Mentee's view, read after its acceptance.
+async function acceptBoth(matching: MatchingService, match: AdminRoundMatch): Promise<MatchDetailView> {
   await matching.accept({ studentId: match.mentor.id, sessionHash: null }, match.id);
-  await matching.accept({ studentId: match.mentee.id, sessionHash: null }, match.id);
+  return matching.accept({ studentId: match.mentee.id, sessionHash: null }, match.id);
+}
+
+// Both accept, then the Mentee reviews, completing the Match (§14.5 steps d
+// and h).
+async function complete(
+  matching: MatchingService,
+  submitReview: SubmitReview,
+  match: AdminRoundMatch,
+): Promise<void> {
+  const menteeView = await acceptBoth(matching, match);
+  await submitReview({ studentId: match.mentee.id, sessionHash: null }, menteeView);
 }
 
 // §14.5 step d. Only a pair refused by the application is tried again;
-// infrastructure and protocol failures stop the seed. A repair is accepted
-// immediately, at its place in the script, before the remaining Matches.
+// infrastructure and protocol failures stop the seed. A repair is completed
+// immediately, at its place in the script, before the remaining Matches, so
+// its Review precedes the Round's step-h Reviews.
 async function repair(
   matching: MatchingService,
+  submitReview: SubmitReview,
   admin: Actor,
   first: AdminRoundMatch,
   second: AdminRoundMatch,
@@ -51,16 +67,21 @@ async function repair(
       if (err instanceof Refusal) continue;
       throw err;
     }
-    await acceptBoth(matching, match);
+    await complete(matching, submitReview, match);
     return;
   }
   throw new SeedFailure('no hand-made repair accepted any of the four pairs');
 }
 
-// §14.5 steps a, c, d, g, h (acceptances) and i. The application's Round
-// detail is in creation order: the matcher's selection order before repairs.
-// No seed write sets a Match status or fabricates coverage.
-export async function seedRound(matching: MatchingService, admin: Actor, number: number) {
+// §14.5 steps a, c, d, g, h and i. The application's Round detail is in
+// creation order: the matcher's selection order before repairs. No seed
+// write sets a Match status or fabricates coverage.
+export async function seedRound(
+  matching: MatchingService,
+  submitReview: SubmitReview,
+  admin: Actor,
+  number: number,
+) {
   const declines = DECLINES[number - 1];
   if (declines === undefined) throw new SeedFailure('the per-Round script only covers Rounds 1–4');
   const opened = await matching.openRound(admin);
@@ -76,7 +97,7 @@ export async function seedRound(matching: MatchingService, admin: Actor, number:
     await matching.decline({ studentId, sessionHash: null }, match.id);
   }
   const hasRepair = number === 1 || number === 3;
-  if (hasRepair) await repair(matching, admin, matches[0], matches[1]);
+  if (hasRepair) await repair(matching, submitReview, admin, matches[0], matches[1]);
 
   // Step g: M[n−1] both accept; M[n−2] only the Mentor accepts.
   await acceptBoth(matching, matches[matches.length - 1]);
@@ -84,7 +105,7 @@ export async function seedRound(matching: MatchingService, admin: Actor, number:
   await matching.accept({ studentId: mentorOnly.mentor.id, sessionHash: null }, mentorOnly.id);
 
   // Step h: selection order, excluding declines and the two lapse indices.
-  for (const match of matches.slice(declines.length, -2)) await acceptBoth(matching, match);
+  for (const match of matches.slice(declines.length, -2)) await complete(matching, submitReview, match);
   await matching.closeRound(admin);
 
   const { items } = await matching.listRounds(admin);

@@ -11,6 +11,7 @@ import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { UnitOfWork } from '../../src/core/uow';
 import { BucketStepError, ensureBuckets, PRODUCTION_BUCKETS, type BucketStepResult } from '../../src/files/buckets';
 import { MatchingService } from '../../src/matching/matching.service';
+import { ReviewsService } from '../../src/reviews/reviews.service';
 import { SocialService } from '../../src/social/social.service';
 import { StudentsService } from '../../src/students/students.service';
 import { bootstrapStaff, createStaffAccount } from './bootstrap';
@@ -29,6 +30,7 @@ import { anyDomainRows, emptyEverything } from './empty';
 import { SeedFailure } from './failure';
 import { openLockConnection, takeSeedLock, type LockConnection } from './lock';
 import { FIXTURE_VERSION, clearRecord, readRecord, writeRecord } from './record';
+import { submitReviewsInOrder } from './reviews';
 import { ROUND_TARGETS, seedRound } from './rounds';
 import { SeedModule } from './seed.module';
 
@@ -131,6 +133,7 @@ async function run(): Promise<number> {
     const students = app.get(StudentsService);
     const social = app.get(SocialService);
     const matching = app.get(MatchingService);
+    const reviews = app.get(ReviewsService);
 
     // §9.8: the seed's first step, on every run, before the record is read,
     // so a run that skips the fixture still sets the buckets. A failure stops
@@ -210,8 +213,9 @@ async function run(): Promise<number> {
     ));
     log('seed: X Blocks Y');
     const admin = { studentId: staffIds.adminId, sessionHash: null };
+    const submitReview = submitReviewsInOrder(reviews);
     for (let number = 1; number <= 4; number += 1) {
-      const distribution = await step(`Round ${number}`, () => seedRound(matching, admin, number));
+      const distribution = await step(`Round ${number}`, () => seedRound(matching, submitReview, admin, number));
       log('seed: Round closed', {
         ...distribution,
         fullFixtureTarget: ROUND_TARGETS[number - 1],
