@@ -3,7 +3,9 @@ import type { EnGroup } from '../types';
 export default {
   title: 'Reflection Prompts', adminTitle: 'Publish a Reflection Prompt', live: 'Live', closed: 'Closed',
   history: 'Prompt history', noPrompts: 'No Reflection Prompts have been published.', loading: 'Loading Reflection Prompts…',
-  answers: 'Answers', answerCount: 'Answers: {count}', noAnswers: 'No answers yet.',
+  answers: 'Answers',
+  answerCount: { one: '{count} answer', other: '{count} answers' },
+  noAnswers: 'No answers yet.',
   question: 'Reflection question', publish: 'Publish', publishing: 'Publishing…', published: 'Your Reflection Prompt is published.',
   publishHint: 'Publishing closes the previous Prompt. Questions and answers cannot be edited or deleted.',
   confirmTitle: 'Publish this Reflection Prompt?', cancel: 'Cancel',
