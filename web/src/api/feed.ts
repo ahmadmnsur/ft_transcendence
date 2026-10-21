@@ -72,12 +72,15 @@ type PostPages = InfiniteData<{ items: PostView[] }>;
 // Prompt's answers (§6.8).
 const POST_LIST_QUERY_KEYS = [FEED_QUERY_KEY, STUDENT_POSTS_QUERY_KEY, PROMPT_ANSWERS_QUERY_KEY];
 
-// Writes a Like's answer into every loaded copy of the Post. A read of those
-// lists still in flight is cancelled first, so its older answer cannot land
-// over this one. Nothing else on those pages changed, so nothing is read
-// again but the likers.
+// Writes a Like's answer into every loaded copy of the Post at once, then
+// reads those lists and the likers again, so whatever order answers arrive
+// in, each ends on the server's state: an older Like's late answer cannot
+// stay over a newer un-Like. Reads still in flight are cancelled first, since
+// one that started before this write would answer from before it; cancelling
+// a list's first read leaves it waiting, so the read again starts it anew.
 async function cacheLikeState(client: QueryClient, postId: string, state: LikeState): Promise<void> {
-  await Promise.all(POST_LIST_QUERY_KEYS.map((queryKey) => client.cancelQueries({ queryKey })));
+  const reread = [...POST_LIST_QUERY_KEYS, likersQueryKey(postId)];
+  await Promise.all(reread.map((queryKey) => client.cancelQueries({ queryKey })));
   const update = (data: PostPages | undefined): PostPages | undefined =>
     data === undefined
       ? undefined
@@ -89,7 +92,7 @@ async function cacheLikeState(client: QueryClient, postId: string, state: LikeSt
           })),
         };
   for (const queryKey of POST_LIST_QUERY_KEYS) client.setQueriesData<PostPages>({ queryKey }, update);
-  void client.invalidateQueries({ queryKey: likersQueryKey(postId) });
+  for (const queryKey of reread) void client.invalidateQueries({ queryKey });
 }
 
 // `POST` or `DELETE /api/posts/:id/like` (§6.9). `likedByMe` belongs to the

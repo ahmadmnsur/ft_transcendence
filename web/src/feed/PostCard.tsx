@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { ApiRefusalError } from '../api/client';
@@ -64,8 +64,22 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   const [failure, setFailure] = useState<{ code: unknown } | undefined>(undefined);
   const [likersOpen, setLikersOpen] = useState(false);
   const likers = useQuery({ ...likersQueryOptions(post.id), enabled: likersOpen });
+  const likeRef = useRef<HTMLButtonElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  const wasOpen = useRef(false);
   const unavailable = failure?.code === 'post_unavailable' || failureCode(likers.error) === 'post_unavailable';
   const count = formatText(copy.likeCount, { count: post.likeCount });
+
+  // The dialog returns focus to the count that opened it. When that count
+  // went while the dialog was open (the last Like withdrawn, or the Post
+  // removed), focus moves to the toggle, or to the notice that replaced it.
+  // This runs after the dialog's own effect has closed it.
+  useEffect(() => {
+    if (wasOpen.current && !likersOpen && (document.activeElement === null || document.activeElement === document.body)) {
+      (likeRef.current ?? noticeRef.current)?.focus();
+    }
+    wasOpen.current = likersOpen;
+  }, [likersOpen]);
 
   async function toggle(): Promise<void> {
     if (pending) return;
@@ -84,7 +98,7 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
     <div className="flex min-w-0 flex-col gap-2">
       {unavailable ? null : (
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="sm" aria-pressed={post.likedByMe} loading={pending} onClick={() => void toggle()}>
+          <Button ref={likeRef} variant="secondary" size="sm" aria-pressed={post.likedByMe} loading={pending} onClick={() => void toggle()}>
             <HeartIcon filled={post.likedByMe} className={`me-1.5 inline-block align-text-bottom ${post.likedByMe ? 'text-primary-600' : ''}`} />
             {copy.like}
           </Button>
@@ -98,7 +112,7 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
         </div>
       )}
       {unavailable || failure !== undefined ? (
-        <p role="alert" className="text-sm text-ink-danger">
+        <p ref={noticeRef} tabIndex={-1} role="alert" className="rounded text-sm text-ink-danger focus-ring">
           {errorText(unavailable ? 'post_unavailable' : failure?.code)}
         </p>
       ) : null}
