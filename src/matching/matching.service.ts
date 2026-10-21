@@ -234,7 +234,7 @@ export class MatchingService {
   // acceptances racing write one row, so one retries and makes the
   // transition. No event: the pair reads the new status on the next load
   // (§7.4). The view is read after the commit.
-  async accept(actor: Actor, matchId: string): Promise<MatchView> {
+  async accept(actor: Actor, matchId: string): Promise<MatchDetailView> {
     await this.uow.run('match-accept', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
       const match = asParticipant(
@@ -263,7 +263,7 @@ export class MatchingService {
   // becomes DECLINED, naming who declined; anything else is
   // `match_not_in_progress`. Both Students are unmatched again (derived), and
   // nothing searches for a replacement (ADR-0002 d8). No event.
-  async decline(actor: Actor, matchId: string): Promise<MatchView> {
+  async decline(actor: Actor, matchId: string): Promise<MatchDetailView> {
     await this.uow.run('match-decline', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
       const match = asParticipant(
