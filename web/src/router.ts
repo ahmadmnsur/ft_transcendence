@@ -21,6 +21,9 @@ import { StudentPage } from './pages/StudentPage';
 import { StudentsPage, parseStudentsSearch } from './pages/StudentsPage';
 import { TermsPage } from './pages/TermsPage';
 import { ThreadPage } from './pages/ThreadPage';
+import { PromptsPage } from './pages/PromptsPage';
+import { PromptDetailPage } from './pages/PromptDetailPage';
+import { AdminPromptsPage } from './pages/AdminPromptsPage';
 import { queryClient } from './queryClient';
 
 export interface RouterContext {
@@ -193,6 +196,29 @@ const adminMatchRoute = createRoute({
   component: AdminMatchPage,
 });
 
+const promptsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/prompts',
+  beforeLoad: requireSession,
+  validateSearch: parseMatchesSearch,
+  component: PromptsPage,
+});
+
+const promptDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/prompts/$promptId',
+  beforeLoad: requireSession,
+  component: PromptDetailPage,
+});
+
+const adminPromptsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/prompts',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  validateSearch: parseMatchesSearch,
+  component: AdminPromptsPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -221,6 +247,9 @@ const routeTree = rootRoute.addChildren([
   adminRoundsRoute,
   adminRoundRoute,
   adminMatchRoute,
+  promptsRoute,
+  promptDetailRoute,
+  adminPromptsRoute,
   privacyRoute,
   termsRoute,
 ]);

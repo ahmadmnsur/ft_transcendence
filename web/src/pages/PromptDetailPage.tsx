@@ -1,0 +1,70 @@
+import { useState } from 'react';
+import { Link, useParams } from '@tanstack/react-router';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isValidText, LIMITS } from '@shared/limits';
+import { answerPrompt, readPromptAnswers } from '../api/prompts';
+import { sessionQueryOptions } from '../api/session';
+import { Banner, Button, Card, TextArea } from '../design';
+import { useI18n } from '../i18n/context';
+import { PageTitle } from '../layout';
+import { failureCode } from '../profile/failure';
+import { StudentLink } from '../profile/StudentLink';
+
+export function PromptDetailPage(): React.JSX.Element {
+  const { promptId } = useParams({ from: '/prompts/$promptId' });
+  const { t, formatDateTime, errorText } = useI18n();
+  const copy = t.prompts;
+  const client = useQueryClient();
+  const session = useQuery(sessionQueryOptions()).data;
+  const answers = useInfiniteQuery({
+    queryKey: ['prompts', 'answers', promptId],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => readPromptAnswers(promptId, pageParam),
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
+  const detail = answers.data?.pages[0];
+  const [body, setBody] = useState('');
+  const [invalid, setInvalid] = useState(false);
+  const answer = useMutation({
+    mutationFn: (text: string) => answerPrompt(promptId, text),
+    onSuccess: () => { setBody(''); },
+    onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: ['feed'] }); },
+  });
+  const canAnswer = detail?.live && !detail.answeredByMe && session?.authenticated && session.student.role !== 'ADMIN' && !answer.isSuccess;
+  return <div className="flex min-w-0 flex-col gap-6">
+    <PageTitle name={copy.title} />
+    <h1 className="text-2xl font-semibold">{copy.title}</h1>
+    <Link to="/prompts" className="rounded text-link underline focus-ring">{copy.back}</Link>
+    {answers.isError ? <Banner tone="danger" title={errorText(failureCode(answers.error))} body={<Button onClick={() => void answers.refetch()}>{copy.retry}</Button>} /> : null}
+    {detail === undefined ? (answers.isError ? null : <p aria-busy="true">{copy.loading}</p>) : <>
+      <Card title={detail.live ? copy.live : copy.closed} headingLevel={2}>
+        <p dir="auto" className="whitespace-pre-wrap wrap-anywhere">{detail.prompt.question}</p>
+        <p className="mt-3 text-sm text-ink-muted">{formatDateTime(new Date(detail.prompt.publishedAt))}</p>
+      </Card>
+      {answer.isSuccess ? <Banner tone="success" title={copy.saved} /> : detail.answeredByMe ? <p role="status">{copy.answered}</p> : null}
+      {answer.isError ? <Banner tone="danger" title={errorText(failureCode(answer.error))} /> : null}
+      {canAnswer ? <Card>
+        <form noValidate className="flex flex-col gap-4" onSubmit={(event) => {
+          event.preventDefault();
+          if (answer.isPending) return;
+          const valid = isValidText(body, LIMITS.promptAnswer, true);
+          setInvalid(!valid);
+          if (valid) answer.mutate(body);
+        }}>
+          <TextArea label={copy.answerLabel} value={body} onChange={(event) => { setBody(event.target.value); setInvalid(false); answer.reset(); }} hint={copy.answerHint} error={invalid ? errorText('validation_failed') : undefined} disabled={answer.isPending} />
+          <Button type="submit" loading={answer.isPending}>{answer.isPending ? copy.submitting : copy.submit}</Button>
+        </form>
+      </Card> : null}
+      <Card title={copy.answers} headingLevel={2}>
+        {detail.items.length === 0 ? <p>{copy.noAnswers}</p> : <ul className="flex flex-col divide-y divide-line">
+          {answers.data?.pages.flatMap((page) => page.items).map((post) => <li key={post.id} className="flex min-w-0 flex-col gap-3 py-4">
+            <StudentLink student={post.author} />
+            <p dir="auto" className="whitespace-pre-wrap wrap-anywhere">{post.body}</p>
+            <p className="text-sm text-ink-muted">{formatDateTime(new Date(post.createdAt))}</p>
+          </li>)}
+        </ul>}
+        {answers.hasNextPage ? <Button variant="secondary" loading={answers.isFetchingNextPage} onClick={() => void answers.fetchNextPage()}>{copy.more}</Button> : null}
+      </Card>
+    </>}
+  </div>;
+}
