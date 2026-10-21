@@ -1,3 +1,4 @@
+import type { PostPage } from '../feed/views';
 import { toStudentRef, type StudentRef } from '../students/student-ref';
 
 export type PromptView = { id: string; question: string; publishedAt: string };
@@ -13,12 +14,12 @@ export type AnswerView = {
   likeCount: number;
   likedByMe: boolean;
 };
-export type AnswerPage = {
+// §6.8: the Prompt, then one page of its non-removed answer Posts, read as
+// the feed reads them.
+export type AnswerPage = PostPage & {
   prompt: PromptView;
   live: boolean;
   answeredByMe: boolean;
-  items: AnswerView[];
-  nextCursor: string | null;
 };
 
 export function toPromptView(row: { id: string; question: string; publishedAt: Date }): PromptView {

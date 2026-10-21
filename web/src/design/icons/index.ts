@@ -9,6 +9,7 @@ export { EyeIcon } from './EyeIcon';
 export { EyeOffIcon } from './EyeOffIcon';
 export { FileIcon } from './FileIcon';
 export { FlagIcon } from './FlagIcon';
+export { HeartIcon } from './HeartIcon';
 export { InfoIcon } from './InfoIcon';
 export { MessageIcon } from './MessageIcon';
 export { SearchIcon } from './SearchIcon';

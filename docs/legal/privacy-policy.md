@@ -263,7 +263,8 @@ Some things are permanent:
 
 - **Direct Messages** can't be deleted, even after either Student's account is removed.
 - **Posts, Reviews, Private Feedback, answers to Reflection Prompts and Reports** can't be edited or
-  deleted once submitted. A Post removed by moderation leaves the feed, but its text is kept.
+  deleted once submitted. A Post removed by moderation leaves the feed, but its text is kept, and so
+  are its Likes: once a Post is removed, a Like on it can't be taken back.
 - **Badges** are never taken away.
 - **The email address of a removed account** can never be used again.
 

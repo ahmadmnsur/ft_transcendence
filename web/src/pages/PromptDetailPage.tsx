@@ -7,10 +7,10 @@ import { ApiProtocolError } from '../api/client';
 import { answerPrompt, readPromptAnswers } from '../api/prompts';
 import { sessionQueryOptions } from '../api/session';
 import { Banner, Button, Card, TextArea } from '../design';
+import { PostCard } from '../feed/PostCard';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
-import { StudentLink } from '../profile/StudentLink';
 
 export function PromptDetailPage(): React.JSX.Element {
   const { promptId } = useParams({ from: '/prompts/$promptId' });
@@ -69,10 +69,8 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
       </Card> : null}
       <Card title={copy.answers} headingLevel={2}>
         {detail.items.length === 0 ? <p>{copy.noAnswers}</p> : <ul className="flex flex-col divide-y divide-line">
-          {answers.data?.pages.flatMap((page) => page.items).map((post) => <li key={post.id} className="flex min-w-0 flex-col gap-3 py-4">
-            <StudentLink student={post.author} />
-            <p dir="auto" className="whitespace-pre-wrap wrap-anywhere">{post.body}</p>
-            <p className="text-sm text-ink-muted">{formatDateTime(new Date(post.createdAt))}</p>
+          {answers.data?.pages.flatMap((page) => page.items).map((post) => <li key={post.id} className="min-w-0 py-4">
+            <PostCard post={post} showPrompt={false} />
           </li>)}
         </ul>}
         {answers.hasNextPage ? <Button variant="secondary" loading={answers.isFetchingNextPage} onClick={() => void answers.fetchNextPage()}>{copy.more}</Button> : null}

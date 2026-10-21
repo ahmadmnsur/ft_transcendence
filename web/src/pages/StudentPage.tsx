@@ -1,6 +1,7 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { blocksQueryOptions } from '../api/blocks';
+import { studentPostsQueryOptions } from '../api/feed';
 import { friendRequestsQueryOptions, friendsQueryOptions } from '../api/friends';
 import { ApiProtocolError } from '../api/client';
 import { sessionQueryOptions } from '../api/session';
@@ -16,6 +17,7 @@ import {
   SkillName,
   buttonClasses,
 } from '../design';
+import { PostList } from '../feed/PostList';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { BlockControl } from '../social/BlockControl';
@@ -78,12 +80,25 @@ function SkillSection({
   );
 }
 
+// §6.2: the Student's non-removed Posts, newest first, with their Likes.
+function StudentPosts({ studentId }: { studentId: string }): React.JSX.Element {
+  const { t } = useI18n();
+  const copy = t.feed.profile;
+  const posts = useInfiniteQuery(studentPostsQueryOptions(studentId));
+  return (
+    <section className="min-w-0">
+      <h2 className="mb-3 text-base font-semibold text-ink">{copy.heading}</h2>
+      <PostList query={posts} empty={<p className="text-sm text-ink-muted">{copy.empty}</p>} />
+    </section>
+  );
+}
+
 // §6.2, §4.6: any signed-in Student's profile. A Removed Student renders as
 // the tombstone: the API's `displayName` is ignored, the avatar falls back
-// to the bundled default, and no Skills, Goal or numbers show. A malformed
-// id is answered here without a request; a 404 from the API is this page's
-// not-found state; any other failure shows the generic sentence (§3.8.2,
-// §6.15). Never an email.
+// to the bundled default, and no Skills, Goal, numbers or Posts show. A
+// malformed id is answered here without a request; a 404 from the API is
+// this page's not-found state; any other failure shows the generic sentence
+// (§3.8.2, §6.15). Never an email.
 export function StudentPage(): React.JSX.Element {
   const { t, personNameText, formatNumber } = useI18n();
   const copy = t.profile.student;
@@ -203,6 +218,7 @@ export function StudentPage(): React.JSX.Element {
                 <dd className="mt-0.5 text-lg font-semibold text-ink">{formatNumber(profile.streak)}</dd>
               </div>
             </dl>
+            <StudentPosts key={student.id} studentId={student.id} />
           </>
         )}
       </div>

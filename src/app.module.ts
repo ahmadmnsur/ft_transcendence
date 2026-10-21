@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { CoreModule } from './core/core.module';
+import { FeedModule } from './feed/feed.module';
 import { FileCleanupSchedule } from './files/cleanup-schedule';
 import { FilesModule } from './files/files.module';
 import { HealthController } from './health.controller';
@@ -16,7 +17,7 @@ import { PromptsModule } from './prompts/prompts.module';
 @Module({
   imports: [
     CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule,
-    MessagingModule, MatchingModule, PromptsModule, ReviewsModule,
+    MessagingModule, MatchingModule, PromptsModule, ReviewsModule, FeedModule,
   ],
   controllers: [HealthController],
   providers: [FileCleanupSchedule],
