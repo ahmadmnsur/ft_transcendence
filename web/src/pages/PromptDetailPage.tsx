@@ -2,25 +2,33 @@ import { useState } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidText, LIMITS } from '@shared/limits';
+import { isUuid } from '@shared/uuid';
+import { ApiProtocolError } from '../api/client';
 import { answerPrompt, readPromptAnswers } from '../api/prompts';
 import { sessionQueryOptions } from '../api/session';
 import { Banner, Button, Card, TextArea } from '../design';
 import { useI18n } from '../i18n/context';
-import { PageTitle } from '../layout';
+import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 
 export function PromptDetailPage(): React.JSX.Element {
   const { promptId } = useParams({ from: '/prompts/$promptId' });
+  return <PromptDetail key={promptId} promptId={promptId} />;
+}
+
+function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const { t, formatDateTime, errorText } = useI18n();
   const copy = t.prompts;
   const client = useQueryClient();
   const session = useQuery(sessionQueryOptions()).data;
+  const wellFormedId = isUuid(promptId);
   const answers = useInfiniteQuery({
     queryKey: ['prompts', 'answers', promptId],
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => readPromptAnswers(promptId, pageParam),
     getNextPageParam: (last) => last.nextCursor ?? undefined,
+    enabled: wellFormedId,
   });
   const detail = answers.data?.pages[0];
   const [body, setBody] = useState('');
@@ -31,6 +39,10 @@ export function PromptDetailPage(): React.JSX.Element {
     onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: ['feed'] }); },
   });
   const canAnswer = detail?.live && !detail.answeredByMe && session?.authenticated && session.student.role !== 'ADMIN' && !answer.isSuccess;
+  if (!wellFormedId) return <NotFoundPage />;
+  if (answers.isError && answers.error instanceof ApiProtocolError && answers.error.status === 404) {
+    return <NotFoundPage />;
+  }
   return <div className="flex min-w-0 flex-col gap-6">
     <PageTitle name={copy.title} />
     <h1 className="text-2xl font-semibold">{copy.title}</h1>
