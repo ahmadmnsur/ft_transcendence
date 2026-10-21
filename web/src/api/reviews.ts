@@ -1,8 +1,10 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
+import type { LIMITS } from '@shared/limits';
 import type { StudentRef } from './profile';
 import type { EarnResult } from './progress';
 import { apiFetch } from './client';
 import { writeAsSignedIn } from './session';
+import { uploadFile, type UploadOptions } from './upload';
 
 export type ReviewInput = {
   learningOutcome: { learned: string; canNowDo: string };
@@ -15,8 +17,17 @@ export type PrivateFeedback = {
   rating: number | null;
   createdAt: string;
 };
+// §9.3, §9.4: Evidence metadata. The file is read at `evidenceUrl(token)`.
+export type EvidenceView = { token: string; mime: EvidenceType; size: number; filename: string };
+export type EvidenceType = (typeof LIMITS.evidence.mimeTypes)[number];
 export type ReviewDetail = {
-  review: { id: string; learned: string; canNowDo: string; createdAt: string } | null;
+  review: {
+    id: string;
+    learned: string;
+    canNowDo: string;
+    createdAt: string;
+    evidence: EvidenceView | null;
+  } | null;
   privateFeedback: PrivateFeedback | null;
 };
 export type FeedbackItem = PrivateFeedback & { matchId: string; roundNumber: number; author: StudentRef };
@@ -48,4 +59,22 @@ export async function submitReview(client: QueryClient, id: string, input: Revie
     reread,
   );
   return submitted;
+}
+
+// §6.3: where the file is read, for its preview and download.
+export function evidenceUrl(token: string): string {
+  return `/api/files/evidence/${encodeURIComponent(token)}`;
+}
+
+// §9.4: the Mentee's upload, create or replace, through `uploadFile` for its
+// progress (§9.7).
+export function uploadEvidence(reviewId: string, file: File, options: UploadOptions): Promise<EvidenceView> {
+  return uploadFile<EvidenceView>(`/reviews/${encodeURIComponent(reviewId)}/evidence`, file, options);
+}
+
+export function deleteEvidence(reviewId: string): Promise<Record<string, never>> {
+  return apiFetch<Record<string, never>>(`/reviews/${encodeURIComponent(reviewId)}/evidence`, {
+    method: 'DELETE',
+    body: {},
+  });
 }

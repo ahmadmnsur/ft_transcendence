@@ -6,7 +6,7 @@ import { makePng, putAvatar } from '../harness/files';
 const harness = useHarness();
 
 // §16.3 row 4, the avatar half: an avatar URL answers 401 signed out and
-// 200 to any signed-in Student. Evidence's half lands with Evidence (#54).
+// 200 to any signed-in Student. Evidence's half is evidence-access.test.ts.
 describe('avatar file access', () => {
   it('is 401 signed out and 200 with the file to any signed-in Student', async () => {
     const owner = await createTestAccount(harness.app);

@@ -1,5 +1,6 @@
 import { crc32, inflateSync } from 'node:zlib';
 import { decode as decodeJpeg } from 'jpeg-js';
+import { PDFDocument } from 'pdf-lib';
 import { PNG } from 'pngjs';
 import { LIMITS } from '../shared/limits';
 import { fileInvalid, fileTooLarge, fileTypeNotAllowed } from './refusals';
@@ -17,6 +18,11 @@ export type ImageType = 'image/png' | 'image/jpeg';
 // the bytes, never from client metadata (step 6).
 export type ValidatedImage = { bytes: Buffer; mime: ImageType; size: number };
 
+export type EvidenceType = (typeof LIMITS.evidence.mimeTypes)[number];
+
+// Validated Evidence carries its sanitised name too (step 6).
+export type ValidatedEvidence = { bytes: Buffer; mime: EvidenceType; size: number; filename: string };
+
 type Format = 'png' | 'jpeg' | 'pdf';
 
 // Each format's canonical type and the extensions that may name it.
@@ -29,6 +35,10 @@ const FORMATS = {
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const JPEG_START = Buffer.from([0xff, 0xd8, 0xff]);
 const PDF_START = Buffer.from('%PDF-', 'latin1');
+
+const PDF_END = Buffer.from('%%EOF', 'latin1');
+// How far from the end a PDF's `%%EOF` may sit.
+const PDF_END_WINDOW = 1024;
 
 const PNG_MAX_SIDE = 4096;
 const JPEG_MAX_MEGAPIXELS = 17;
@@ -232,6 +242,21 @@ function checkJpeg(bytes: Buffer): void {
   }
 }
 
+// Step 4 for a PDF: `%%EOF` within its last 1024 bytes, then a full pdf-lib
+// load that refuses an invalid object and writes nothing back, with at least
+// one page. An encrypted PDF fails the load, which reads no password.
+async function checkPdf(bytes: Buffer): Promise<void> {
+  if (!bytes.subarray(Math.max(0, bytes.length - PDF_END_WINDOW)).includes(PDF_END)) throw fileInvalid();
+  let pages: number;
+  try {
+    const document = await PDFDocument.load(bytes, { throwOnInvalidObject: true, updateMetadata: false });
+    pages = document.getPageCount();
+  } catch {
+    throw fileInvalid();
+  }
+  if (pages < 1) throw fileInvalid();
+}
+
 // Step 5: a supplied extension and a part type other than
 // `application/octet-stream` must both name the detected format; nothing is
 // relabelled. A name with no extension claims nothing, as in the SPA's
@@ -265,4 +290,41 @@ export function validateAvatar(part: UploadedPart): ValidatedImage {
   IMAGE_CHECKS[format](bytes);
   checkClaims(part, format);
   return { bytes, mime: FORMATS[format].type, size: bytes.length };
+}
+
+const CONTROL_CHARACTERS = /\p{Cc}/gu;
+
+// Step 6: the name Evidence keeps. The basename of the name the client sent,
+// with its control characters removed and trimmed, at most 255 characters
+// (code points, §6.0.3): a longer name loses the end of its stem and keeps
+// its extension. Nothing left is `evidence.<ext>`.
+function evidenceFilename(originalName: string, format: Format): string {
+  const separator = Math.max(originalName.lastIndexOf('/'), originalName.lastIndexOf('\\'));
+  const name = originalName.slice(separator + 1).replace(CONTROL_CHARACTERS, '').trim();
+  if (name === '') return `evidence.${FORMATS[format].extensions[0]}`;
+  const characters = [...name];
+  const max = LIMITS.evidence.filenameMaxChars;
+  if (characters.length <= max) return name;
+  const dot = characters.lastIndexOf('.');
+  const extension = dot > 0 ? characters.slice(dot) : [];
+  return [...characters.slice(0, max - extension.length), ...extension].join('');
+}
+
+// Evidence (§9.4, §9.5): PDF, PNG or JPEG, at most 5,242,880 bytes, judged in
+// the order an avatar is. Its PNG and JPEG take the avatar's checks.
+export async function validateEvidence(part: UploadedPart): Promise<ValidatedEvidence> {
+  const bytes = part.buffer;
+  if (bytes.length > LIMITS.evidence.maxBytes) throw fileTooLarge();
+  if (bytes.length === 0) throw fileInvalid();
+  const format = detectFormat(bytes);
+  if (format === null) throw fileTypeNotAllowed();
+  if (format === 'pdf') await checkPdf(bytes);
+  else IMAGE_CHECKS[format](bytes);
+  checkClaims(part, format);
+  return {
+    bytes,
+    mime: FORMATS[format].type,
+    size: bytes.length,
+    filename: evidenceFilename(part.originalname, format),
+  };
 }

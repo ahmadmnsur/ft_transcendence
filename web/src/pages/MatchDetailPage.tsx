@@ -60,7 +60,12 @@ export function MatchDetailPage(): React.JSX.Element {
         <h1 className="text-2xl font-semibold text-ink">{format(copy.title, { number: data.roundNumber })}</h1>
         <MatchNoticeBanner notice={notice} />
         <PairMatchCard match={data} onNotice={setNotice} />
-        <ReviewRecord review={data.review} privateFeedback={data.privateFeedback} />
+        <ReviewRecord
+          review={data.review}
+          privateFeedback={data.privateFeedback}
+          matchId={data.id}
+          evidenceEditable={data.myRole === 'MENTEE'}
+        />
         <Link to="/matches" className="self-start rounded text-link underline underline-offset-2 focus-ring">
           {copy.historyLink}
         </Link>

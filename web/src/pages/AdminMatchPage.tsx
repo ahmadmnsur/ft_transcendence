@@ -124,7 +124,12 @@ export function AdminMatchPage(): React.JSX.Element {
             </div>
           </dl>
         </Card>
-        <ReviewRecord review={data.review} privateFeedback={data.privateFeedback} />
+        <ReviewRecord
+          review={data.review}
+          privateFeedback={data.privateFeedback}
+          matchId={data.id}
+          evidenceEditable={false}
+        />
         <Link to="/admin/rounds" className="self-start rounded text-link underline underline-offset-2 focus-ring">
           {t.matching.round.roundsLink}
         </Link>

@@ -20,8 +20,13 @@ import { fileTooLarge } from './refusals';
 // multipart fault, a second file, another field or a broken body, is
 // `validation_failed`. Guards run before interceptors, so UploadCsrfGuard
 // and the session guard have already run before Multer reads a byte (§5.4).
+// A browser sends the file's name as UTF-8, which Busboy would read as
+// Latin-1 unless told, garbling an accented or Arabic Evidence name.
 export function FileUpload(maxBytes: number): Type<NestInterceptor> {
-  const Multer = FileInterceptor('file', { limits: { fileSize: maxBytes + 1, files: 1, fields: 0 } });
+  const Multer = FileInterceptor('file', {
+    limits: { fileSize: maxBytes + 1, files: 1, fields: 0 },
+    defParamCharset: 'utf8',
+  });
 
   @Injectable()
   class FileUploadInterceptor implements NestInterceptor {

@@ -2,6 +2,7 @@ import { LIMITS } from '@shared/limits';
 import type { PrivateFeedback, ReviewDetail } from '../api/reviews';
 import { Card } from '../design';
 import { useI18n } from '../i18n/context';
+import { EvidenceCard } from './EvidenceCard';
 
 export function FeedbackAnswers({ feedback }: { feedback: PrivateFeedback }): React.JSX.Element {
   const { t, format } = useI18n();
@@ -33,7 +34,18 @@ function Answer({ label, value }: { label: string; value: string }): React.JSX.E
   );
 }
 
-export function ReviewRecord({ review, privateFeedback }: ReviewDetail): React.JSX.Element | null {
+export interface ReviewRecordProps extends ReviewDetail {
+  matchId: string;
+  // Whether the reader is the Match's Mentee, who alone writes the Evidence.
+  evidenceEditable: boolean;
+}
+
+export function ReviewRecord({
+  review,
+  privateFeedback,
+  matchId,
+  evidenceEditable,
+}: ReviewRecordProps): React.JSX.Element | null {
   const { t } = useI18n();
   if (review === null) return null;
   return (
@@ -44,6 +56,7 @@ export function ReviewRecord({ review, privateFeedback }: ReviewDetail): React.J
           <Answer label={t.reviews.canNowDo} value={review.canNowDo} />
         </dl>
       </Card>
+      <EvidenceCard matchId={matchId} reviewId={review.id} evidence={review.evidence} editable={evidenceEditable} />
       {privateFeedback !== null ? (
         <Card headingLevel={2} title={t.reviews.feedback}>
           <FeedbackAnswers feedback={privateFeedback} />

@@ -40,6 +40,14 @@ export function requestActor(request: Request): Actor {
   return { studentId: auth.studentId, sessionHash: auth.sessionHash };
 }
 
+// The role this request's session guard read: what a read-only method that
+// decides by role relies on (§3.4). A write re-reads it in its transaction.
+export function requestRole(request: Request): RequestAuth['role'] {
+  const auth = request.auth;
+  if (auth === undefined) throw new ApiError('unauthenticated');
+  return auth.role;
+}
+
 // §5.3: the session authentication every signed-in request goes through.
 // Only an `s.` value proceeds; an `a.` value or anything else fails with 401
 // without clearing the cookie, since this clears only a cookie it read as

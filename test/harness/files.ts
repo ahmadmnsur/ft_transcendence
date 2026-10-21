@@ -1,5 +1,6 @@
 import { crc32, deflateSync } from 'node:zlib';
 import { encode as encodeJpeg } from 'jpeg-js';
+import { PDFDocument } from 'pdf-lib';
 import request from 'supertest';
 import { AppConfig } from '../../src/core/app-config';
 
@@ -158,6 +159,28 @@ export function makePdf(): Buffer {
   return Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n', 'latin1');
 }
 
+// A valid PDF of `pages` pages, one unless given, as pdf-lib writes it. With
+// `size`, an unreferenced stream, which readers skip, pads it to exactly that
+// many bytes.
+export async function makeValidPdf(options: { size?: number; pages?: number } = {}): Promise<Buffer> {
+  const build = async (padding: number): Promise<Buffer> => {
+    const doc = await PDFDocument.create();
+    for (let page = 0; page < (options.pages ?? 1); page += 1) doc.addPage([200, 200]);
+    if (padding > 0) doc.context.register(doc.context.stream(new Uint8Array(padding)));
+    return Buffer.from(await doc.save({ useObjectStreams: false, addDefaultPage: false }));
+  };
+  let pdf = await build(0);
+  if (options.size === undefined) return pdf;
+  // The stream's own length is written in digits, so a second guess lands it.
+  let padding = options.size - pdf.length;
+  for (let tries = 0; tries < 5 && pdf.length !== options.size; tries += 1) {
+    pdf = await build(padding);
+    padding += options.size - pdf.length;
+  }
+  if (pdf.length !== options.size) throw new Error('makeValidPdf: this size cannot be padded to.');
+  return pdf;
+}
+
 export type UploadOptions = {
   filename?: string;
   contentType?: string;
@@ -166,17 +189,46 @@ export type UploadOptions = {
   csrf?: string | null;
 };
 
-// `PUT /api/me/avatar` as the SPA sends it: the session cookie, Origin,
+// An upload as the SPA sends it: the session cookie, Origin,
 // `X-PeerConnect-CSRF: 1` and one `file` part (§3.5.2, §5.4).
-export function putAvatar(baseUrl: string, cookie: string, bytes: Buffer, options: UploadOptions = {}) {
-  let upload = request(baseUrl).put('/api/me/avatar').set('Cookie', cookie);
+function putFile(
+  baseUrl: string,
+  path: string,
+  cookie: string,
+  bytes: Buffer,
+  options: UploadOptions,
+  defaults: { filename: string; contentType: string },
+) {
+  let upload = request(baseUrl).put(path).set('Cookie', cookie);
   const origin = options.origin === undefined ? new AppConfig().publicOrigin : options.origin;
   if (origin !== null) upload = upload.set('Origin', origin);
   const csrf = options.csrf === undefined ? '1' : options.csrf;
   if (csrf !== null) upload = upload.set('X-PeerConnect-CSRF', csrf);
   return upload.attach('file', bytes, {
-    filename: options.filename ?? 'avatar.png',
-    contentType: options.contentType ?? 'image/png',
+    filename: options.filename ?? defaults.filename,
+    contentType: options.contentType ?? defaults.contentType,
+  });
+}
+
+// `PUT /api/me/avatar`.
+export function putAvatar(baseUrl: string, cookie: string, bytes: Buffer, options: UploadOptions = {}) {
+  return putFile(baseUrl, '/api/me/avatar', cookie, bytes, options, {
+    filename: 'avatar.png',
+    contentType: 'image/png',
+  });
+}
+
+// `PUT /api/reviews/:reviewId/evidence`.
+export function putEvidence(
+  baseUrl: string,
+  cookie: string,
+  reviewId: string,
+  bytes: Buffer,
+  options: UploadOptions = {},
+) {
+  return putFile(baseUrl, `/api/reviews/${reviewId}/evidence`, cookie, bytes, options, {
+    filename: 'evidence.pdf',
+    contentType: 'application/pdf',
   });
 }
 
