@@ -207,6 +207,19 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > This version's completion record certifies these steps and checks, not the complete end state
    > (decision 10; `docs/ticket-plan.md` T22). The full-fixture totals remain targets.
 
+   > **Fixture v4, 2026-10-21 ([#53](https://github.com/ahmadmnsur/ft_transcendence/issues/53)).**
+   > This increment adds the Mentee's Review of both repairs, at their step d, and of every step-h
+   > Match in selection order, through the real submission path, with `docs/spec.md` §14.5's
+   > sentences and ratings. A Review's Skill is its Match's first FORWARD Skill by code point, the
+   > team project's `C.UTF-8` order, so the fallback's linguistic collation cannot change it; with
+   > no FORWARD Skill it is *"a new topic"*. It checks at least three distinct non-null ratings
+   > (§14.8 check 4). **So the v3 note's last behaviour no longer holds**: both repairs and every
+   > step-h Match now complete, and only each Round's two lapse indices lapse. Until Suspension and
+   > Removal join, the two Matches they would terminate complete instead, and their two Reviews take
+   > places in the submission order, so the version that adds the sanctions also moves every later
+   > Review's rating. This version's completion record certifies these steps and checks, not the
+   > complete end state (decision 10; `docs/ticket-plan.md` T25).
+
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
    Both are one flag, and between them they make six settled rules visible that a clean cohort

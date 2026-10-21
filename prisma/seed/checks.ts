@@ -47,6 +47,17 @@ export async function assertEndState(prisma: PrismaService): Promise<void> {
     throw new SeedFailure(`check 1: ${openRounds} open and ${closedRounds} closed Rounds; expected 0 and 4`);
   }
 
+  // Check 4: the seeded Private Feedback carries at least three distinct
+  // ratings, unrated rows aside.
+  const ratings = await prisma.privateFeedback.findMany({
+    where: { rating: { not: null } },
+    distinct: ['rating'],
+    select: { rating: true },
+  });
+  if (ratings.length < 3) {
+    throw new SeedFailure(`check 4: ${ratings.length} distinct non-null ratings among Private Feedback; expected at least 3`);
+  }
+
   // Check 7, the plain gap: a RARE_SKILLS Skill the pool wants and no one in
   // it teaches.
   const rareRows = await prisma.studentSkill.findMany({

@@ -7,8 +7,10 @@ import { quoteIdentifier } from './sql';
 // Moderator, and §14.8's check 10. v2: §14.3's thirty Students with their
 // lists and Goals, the Peer Moderator's lists, and §14.8's check 7. v3: X's
 // Block of Y, four closed Rounds with declines, repairs and acceptances,
-// and §14.8's checks 1 (Rounds), 2 and 8.
-export const FIXTURE_VERSION = 3;
+// and §14.8's checks 1 (Rounds), 2 and 8. v4: the Mentee's Review of both
+// repairs and every step-h Match, with §14.5's sentences and ratings, and
+// §14.8's check 4.
+export const FIXTURE_VERSION = 4;
 
 // Only this text is a record. Both databases start with Postgres's own
 // comment, "default administrative connection database", which is none.

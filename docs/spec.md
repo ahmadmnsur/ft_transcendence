@@ -3409,6 +3409,12 @@ Let `M[0..n−1]` be the matcher's Matches in selection order.
   An empty FORWARD set is not hypothetical: a hand-made repair may cover nothing (§8.6), and a replay
   of this script over the fixture pairs both repairs with no Skill covered either way. Prompt answers
   are fixed sentences in the seed module chosen by position; their wording carries no rule.
+
+  > **Refined 2026-10-21** by [Seed v4: Reviews](https://github.com/ahmadmnsur/ft_transcendence/issues/53):
+  > "sorts first" compares names by code point, the team project's `C.UTF-8` order, and the seed
+  > compares them itself. The fallback's database sorts linguistically (`en_US.UTF-8`), which puts
+  > *Sockets* before *SQL*, and one seeded Match covers exactly those two, so reading the order from
+  > the database would write a different fixture on each target (§14.9).
 - **Target** with 15 matcher Matches a Round: Round 1 = 11 completed + 2 lapsed + 2 declined (+1
   repair completed); Round 2 = 12 + 2 + 1; Round 3 = 10 + 2 + 2 + 1 terminated (+1 repair); Round 4 =
   11 + 2 + 1 + 1 terminated. **Totals 62: 46 `COMPLETED`, 8 `LAPSED`, 6 `DECLINED`, 2
