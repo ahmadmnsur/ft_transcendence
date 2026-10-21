@@ -1,3 +1,4 @@
+import reviews from './reviews';
 import type en from '../en';
 import type { Checked } from '../types';
 import auth from './auth';
@@ -12,7 +13,7 @@ import social from './social';
 import messages from './messages';
 import prompts from './prompts';
 
-const fr = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts };
+const fr = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, and no empty text, whether or not an area file has its `satisfies`.

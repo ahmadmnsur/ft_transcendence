@@ -1,3 +1,4 @@
+import { ReviewRecord } from '../reviews/ReviewRecord';
 import type { ReactNode } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -123,6 +124,7 @@ export function AdminMatchPage(): React.JSX.Element {
             </div>
           </dl>
         </Card>
+        <ReviewRecord review={data.review} privateFeedback={data.privateFeedback} />
         <Link to="/admin/rounds" className="self-start rounded text-link underline underline-offset-2 focus-ring">
           {t.matching.round.roundsLink}
         </Link>

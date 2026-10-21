@@ -6,6 +6,7 @@ import { HandMadeMatchDto } from './dto';
 import { MatchingService } from './matching.service';
 import type {
   AdminMatchView,
+  AdminMatchDetailView,
   AdminRoundDetail,
   AdminRoundSummary,
   CloseRoundResult,
@@ -54,7 +55,7 @@ export class AdminRoundsController {
 
   // `GET /api/admin/matches/:id`: any Match as `AdminMatchView`.
   @Get('matches/:id')
-  getMatch(@UuidParam('id') id: string, @Req() request: Request): Promise<AdminMatchView> {
+  getMatch(@UuidParam('id') id: string, @Req() request: Request): Promise<AdminMatchDetailView> {
     return this.matching.getAdminMatch(requestActor(request), id);
   }
 }

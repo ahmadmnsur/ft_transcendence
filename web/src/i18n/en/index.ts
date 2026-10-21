@@ -1,3 +1,4 @@
+import reviews from './reviews';
 import type { Checked, EnGroup } from '../types';
 import auth from './auth';
 import design from './design';
@@ -11,7 +12,7 @@ import social from './social';
 import messages from './messages';
 import prompts from './prompts';
 
-const en = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts } satisfies EnGroup;
+const en = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews } satisfies EnGroup;
 
 // English checked against itself: no empty text, camelCase placeholders,
 // every form of a plural holding the same ones, no reserved key.

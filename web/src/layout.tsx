@@ -107,6 +107,9 @@ function SiteHeader(): React.JSX.Element {
               >
                 {t.shell.header.messagesLink}
               </Link>
+              <Link to="/feedback" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+                {t.reviews.feedback}
+              </Link>
               <Link
                 to="/match"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}

@@ -1,3 +1,5 @@
+import { ReviewPage } from './pages/ReviewPage';
+import { FeedbackPage } from './pages/FeedbackPage';
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack/react-router';
 import { setUnauthorizedHandler } from './api/client';
@@ -172,6 +174,7 @@ const matchDetailRoute = createRoute({
   path: '/matches/$matchId',
   beforeLoad: requireSession,
   component: MatchDetailPage,
+  validateSearch: (search: Record<string, unknown>): { reviewed?: true } => ({ reviewed: search.reviewed === true ? true : undefined }),
 });
 
 // §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,
@@ -220,6 +223,20 @@ const adminPromptsRoute = createRoute({
   component: AdminPromptsPage,
 });
 
+const reviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/matches/$matchId/review',
+  beforeLoad: requireSession,
+  component: ReviewPage,
+});
+const feedbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/feedback',
+  beforeLoad: requireSession,
+  validateSearch: parsePageSearch,
+  component: FeedbackPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -245,6 +262,8 @@ const routeTree = rootRoute.addChildren([
   matchRoute,
   matchesRoute,
   matchDetailRoute,
+  reviewRoute,
+  feedbackRoute,
   adminRoundsRoute,
   adminRoundRoute,
   adminMatchRoute,

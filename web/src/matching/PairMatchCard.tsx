@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { acceptMatch, declineMatch, type MatchView } from '../api/matches';
@@ -116,6 +117,9 @@ export function PairMatchCard({
             <dd className="mt-1 text-ink">{t.matching.missions[match.mission]}</dd>
           </div>
         </dl>
+        {match.myRole === 'MENTEE' && match.status === 'ACCEPTED' ? (
+          <Link to="/matches/$matchId/review" params={{ matchId: match.id }} className="self-start rounded text-link underline focus-ring">{t.reviews.reviewLink}</Link>
+        ) : null}
         {canAccept || canDecline ? (
           <div className="flex flex-wrap gap-2">
             {canAccept ? (

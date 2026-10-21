@@ -1,3 +1,4 @@
+import type { ReviewDetail } from './reviews';
 import { keepPreviousData, queryOptions, type QueryClient } from '@tanstack/react-query';
 import { STANDING_STATUSES, type MatchRole, type MatchStatus, type Mission } from '@shared/matches';
 import { apiFetch } from './client';
@@ -128,8 +129,8 @@ export async function fetchMatchHistory(page: number, pageSize: number): Promise
   return apiFetch<MatchHistoryPage>(`/matches?${query.toString()}`);
 }
 
-export async function fetchMatch(id: string): Promise<MatchView> {
-  return apiFetch<MatchView>(`/matches/${encodeURIComponent(id)}`);
+export async function fetchMatch(id: string): Promise<MatchView & ReviewDetail> {
+  return apiFetch<MatchView & ReviewDetail>(`/matches/${encodeURIComponent(id)}`);
 }
 
 export async function fetchAdminRounds(): Promise<{ items: AdminRoundSummary[] }> {
@@ -140,8 +141,8 @@ export async function fetchAdminRound(id: string): Promise<AdminRoundDetail> {
   return apiFetch<AdminRoundDetail>(`/admin/rounds/${encodeURIComponent(id)}`);
 }
 
-export async function fetchAdminMatch(id: string): Promise<AdminMatchView> {
-  return apiFetch<AdminMatchView>(`/admin/matches/${encodeURIComponent(id)}`);
+export async function fetchAdminMatch(id: string): Promise<AdminMatchView & ReviewDetail> {
+  return apiFetch<AdminMatchView & ReviewDetail>(`/admin/matches/${encodeURIComponent(id)}`);
 }
 
 // No event tells a Student that their partner accepted or declined (§7.4), so
