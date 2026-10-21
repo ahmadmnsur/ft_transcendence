@@ -5,6 +5,41 @@ import { PrismaService } from '../../src/core/prisma.service';
 
 const harness = useHarness();
 
+it('the third Prompt answer counts removed Posts and duplicate submissions pay and award once', async () => {
+  const admin = await createTestStaff(harness.app, 'ADMIN');
+  const student = await createTestAccount(harness.app);
+  for (let count = 1; count <= 4; count++) {
+    const prompt = await harness.post('/api/admin/prompts').set('Cookie', admin.cookie).send({ question: `Reflection ${count}?` });
+    const path = `/api/prompts/${prompt.body.data.id}/answers`;
+    const send = () => harness.post(path).set('Cookie', student.cookie).send({ body: 'A lesson.' }).then((r) => r);
+    if (count === 3) harness.barriers.arm('prompt.answer');
+    const first = send();
+    if (count === 3) {
+      await harness.barriers.waitFor('prompt.answer', 1);
+      const duplicate = send();
+      await harness.barriers.waitFor('prompt.answer', 2);
+      harness.barriers.disarm('prompt.answer');
+      harness.barriers.release('prompt.answer');
+      expect((await first).status).toBe(201);
+      harness.barriers.release('prompt.answer');
+      expect((await duplicate).body.error.code).toBe('already_answered');
+    }
+    const result = await first;
+    expect(result.body.data).toEqual({
+      xpAwarded: 20, xp: count * 20, level: 1, xpIntoLevel: count * 20, xpForNextLevel: 250,
+      badgesAwarded: count === 3 ? ['KNOWLEDGE_SHARER'] : [],
+    });
+    expect((await send()).body.error.code).toBe('already_answered');
+    if (count === 1) {
+      // The moderation path joins later; removal keeps the earning event.
+      await harness.app.get(PrismaService).post.updateMany({ where: { authorId: student.id }, data: { removedAt: new Date() } });
+    }
+  }
+  const progress = (await harness.get('/api/me/progress').set('Cookie', student.cookie)).body.data;
+  expect(progress).toMatchObject({ xp: 80, streak: 0, badges: [{ badge: 'KNOWLEDGE_SHARER', awardedAt: expect.any(String) }] });
+  expect(progress.badges).toHaveLength(1);
+});
+
 it('a duplicate answer creates one immutable Post and a retry keeps the slot used', async () => {
   const admin = await createTestStaff(harness.app, 'ADMIN');
   const student = await createTestAccount(harness.app);

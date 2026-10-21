@@ -1,5 +1,6 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import type { Role } from '@shared/roles';
+import type { Badge } from './progress';
 import { apiFetch } from './client';
 
 // §6.2's profile routes, with the exact wire shapes the API returns. The
@@ -47,6 +48,9 @@ export interface OwnProfile {
   learningGoal: LearningGoalView | null;
   xp: number;
   level: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number | null;
+  badges: { badge: Badge; awardedAt: string }[];
   streak: number;
   fortyTwoConnected: boolean;
 }
@@ -60,6 +64,9 @@ export interface PublicProfile {
     learningGoal: LearningGoalView | null;
     xp: number;
     level: number;
+    xpIntoLevel: number;
+    xpForNextLevel: number | null;
+    badges: { badge: Badge; awardedAt: string }[];
     streak: number;
   };
 }

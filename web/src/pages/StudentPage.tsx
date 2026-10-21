@@ -22,6 +22,7 @@ import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { BlockControl } from '../social/BlockControl';
 import { FriendControl } from '../social/FriendControl';
+import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
 
 // The shape the API's ParseUUIDPipe accepts (§6.0.1). A malformed id is
 // known here, so no request is sent for it and the console stays clean
@@ -102,7 +103,7 @@ function StudentPosts({ studentId }: { studentId: string }): React.JSX.Element {
 export function StudentPage(): React.JSX.Element {
   const { t, personNameText, formatNumber } = useI18n();
   const copy = t.profile.student;
-  const stats = t.profile.stats;
+  const session = useQuery(sessionQueryOptions()).data;
   const { studentId } = useParams({ from: '/students/$studentId' });
   const wellFormedId = UUID_PATTERN.test(studentId);
   // The query is disabled for a malformed id: the not-found state below
@@ -204,20 +205,7 @@ export function StudentPage(): React.JSX.Element {
                 </>
               )}
             </section>
-            <dl className="grid min-w-0 grid-cols-3 gap-4 rounded-xl border border-line bg-surface p-4">
-              <div className="min-w-0">
-                <dt className="text-sm text-ink-muted">{stats.xp}</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-ink">{formatNumber(profile.xp)}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-sm text-ink-muted">{stats.level}</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-ink">{formatNumber(profile.level)}</dd>
-              </div>
-              <div className="min-w-0">
-                <dt className="text-sm text-ink-muted">{stats.streak}</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-ink">{formatNumber(profile.streak)}</dd>
-              </div>
-            </dl>
+            {session?.authenticated && session.student.id === student.id ? <OwnProgressCard /> : <ProgressCard progress={profile} />}
             <StudentPosts key={student.id} studentId={student.id} />
           </>
         )}

@@ -17,6 +17,7 @@ import { MePage } from './pages/MePage';
 import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { RulesPage } from './pages/RulesPage';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { StudentPage } from './pages/StudentPage';
@@ -251,6 +252,13 @@ const termsRoute = createRoute({
   component: TermsPage,
 });
 
+const rulesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/rules',
+  beforeLoad: requireSession,
+  component: RulesPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
@@ -274,6 +282,7 @@ const routeTree = rootRoute.addChildren([
   adminPromptsRoute,
   privacyRoute,
   termsRoute,
+  rulesRoute,
 ]);
 
 export const router = createRouter({

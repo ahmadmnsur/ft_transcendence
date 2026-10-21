@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import type { StudentRef } from './profile';
+import type { EarnResult } from './progress';
 import { apiFetch } from './client';
 import { writeAsSignedIn } from './session';
 
@@ -28,10 +29,10 @@ export function feedbackQueryOptions(page: number, pageSize: number) {
   });
 }
 
-export async function submitReview(client: QueryClient, id: string, input: ReviewInput): Promise<boolean> {
-  let submitted = false;
+export async function submitReview(client: QueryClient, id: string, input: ReviewInput): Promise<EarnResult | null> {
+  let submitted: EarnResult | null = null;
   const reread = (): void => {
-    for (const key of ['matches', 'admin', 'feedback', 'feed']) {
+    for (const key of ['matches', 'admin', 'feedback', 'feed', 'progress', 'me', 'students']) {
       void client
         .cancelQueries({ queryKey: [key] })
         .then(() => client.invalidateQueries({ queryKey: [key] }));
@@ -39,9 +40,9 @@ export async function submitReview(client: QueryClient, id: string, input: Revie
   };
   await writeAsSignedIn(
     client,
-    () => apiFetch(`/matches/${encodeURIComponent(id)}/review`, { method: 'POST', body: input }),
-    async () => {
-      submitted = true;
+    () => apiFetch<EarnResult>(`/matches/${encodeURIComponent(id)}/review`, { method: 'POST', body: input }),
+    async (result) => {
+      submitted = result;
       reread();
     },
     reread,

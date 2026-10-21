@@ -101,7 +101,8 @@ your confirmed words, attributed to you, without a field naming your Mentor.
 **Your progress**
 
 Your XP, your Streak, and each Badge you have earned, with the date you earned it. Your Level is
-worked out from your XP rather than stored.
+worked out from your XP rather than stored. Your profile shows your XP, Level progress, Streak and
+earned Badges with their dates to every signed-in Student.
 
 **Reports you file**
 

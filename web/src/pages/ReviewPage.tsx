@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidText, LIMITS } from '@shared/limits';
 import { isUuid } from '@shared/uuid';
@@ -11,9 +11,12 @@ import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 import { ReviewRecord } from '../reviews/ReviewRecord';
+import type { EarnResult } from '../api/progress';
+import { EarnPanel } from '../progress/EarnPanel';
 
 export function ReviewPage(): React.JSX.Element {
   const { matchId } = useParams({ from: '/matches/$matchId/review' });
+  const [earned, setEarned] = useState<{ matchId: string; result: EarnResult } | null>(null);
   const { t, errorText } = useI18n();
   const match = useQuery({ ...matchQueryOptions(matchId), enabled: isUuid(matchId) });
   if (!isUuid(matchId) || (match.error instanceof ApiProtocolError && match.error.status === 404))
@@ -37,10 +40,11 @@ export function ReviewPage(): React.JSX.Element {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <PageTitle name={t.reviews.title} />
       <h1 className="text-2xl font-semibold text-ink">{t.reviews.title}</h1>
+      {earned?.matchId === matchId ? <EarnPanel earned={earned.result} title={t.reviews.submitted} /> : null}
       {data.review !== null ? (
         <ReviewRecord {...data} />
       ) : data.myRole === 'MENTEE' && data.status === 'ACCEPTED' ? (
-        <ReviewForm key={matchId} matchId={matchId} />
+        <ReviewForm key={matchId} matchId={matchId} onSubmitted={(result) => setEarned({ matchId, result })} />
       ) : (
         <Banner tone="info" title={t.reviews.unavailable} />
       )}
@@ -55,11 +59,10 @@ export function ReviewPage(): React.JSX.Element {
   );
 }
 
-function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
+function ReviewForm({ matchId, onSubmitted }: { matchId: string; onSubmitted: (result: EarnResult) => void }): React.JSX.Element | null {
   const { t, format, formatText, errorText } = useI18n();
   const copy = t.reviews;
   const client = useQueryClient();
-  const navigate = useNavigate();
   const [learned, setLearned] = useState('');
   const [canNowDo, setCanNowDo] = useState('');
   const [usefulness, setUsefulness] = useState('');
@@ -67,6 +70,7 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
   const [takeaway, setTakeaway] = useState('');
   const [rating, setRating] = useState('');
   const [pending, setPending] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [failure, setFailure] = useState<{ code: unknown } | null>(null);
   const invalid = {
@@ -84,7 +88,7 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
 
   async function send(event: React.SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (pending) return;
+    if (pending || submitted) return;
     setAttempted(true);
     if (Object.values(invalid).some(Boolean)) {
       setFailure({ code: 'validation_failed' });
@@ -102,14 +106,16 @@ function ReviewForm({ matchId }: { matchId: string }): React.JSX.Element {
       publicTakeaway: takeaway.trim(),
     };
     try {
-      if (await submitReview(client, matchId, input))
-        await navigate({ to: '/matches/$matchId', params: { matchId }, search: { reviewed: true } });
+      const result = await submitReview(client, matchId, input);
+      if (result !== null) { setSubmitted(true); onSubmitted(result); }
     } catch (error) {
       setFailure({ code: failureCode(error) });
     } finally {
       setPending(false);
     }
   }
+
+  if (submitted) return null;
 
   return (
     <form noValidate onSubmit={(event) => void send(event)} className="flex min-w-0 flex-col gap-6">

@@ -3,12 +3,14 @@ import type { Actor } from '../core/actor';
 import type { Cursor } from '../core/cursor';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
+import { awardPromptXp } from '../gamification/awards';
+import type { EarnResult } from '../gamification/views';
 import { isValidText, LIMITS } from '../shared/limits';
 import { ApiError, Refusal, type RefusalSpec } from '../core/errors';
 import { readPostPage } from '../feed/post-page';
 import { readActiveAdmin } from '../students/profile-writes';
 import { STUDENT_REF_SELECT } from '../students/student-ref';
-import { toAnswerView, toPromptView, type AnswerPage, type AnswerView, type PromptPage, type PromptView } from './views';
+import { toAnswerView, toPromptView, type AnswerPage, type PromptPage, type PromptView } from './views';
 
 const ALREADY_ANSWERED = { code: 'already_answered', message: 'You have already answered this Reflection Prompt.' } as const satisfies RefusalSpec;
 
@@ -16,7 +18,7 @@ const ALREADY_ANSWERED = { code: 'already_answered', message: 'You have already 
 export class PromptsService {
   constructor(private readonly uow: UnitOfWork, private readonly publisher: RealtimePublisher) {}
 
-  answer(actor: Actor, promptId: string, body: string): Promise<AnswerView> {
+  answer(actor: Actor, promptId: string, body: string): Promise<EarnResult> {
     if (!isValidText(body, LIMITS.promptAnswer, true)) throw new ApiError('validation_failed');
     return this.uow.run({ name: 'prompt.answer', uniqueRefusals: { Post_prompt_id_author_id_key: ALREADY_ANSWERED } }, async (tx, ctx) => {
       const author = await tx.student.findUnique({
@@ -34,13 +36,15 @@ export class PromptsService {
       });
       if (existing !== null) throw new Refusal(ALREADY_ANSWERED.code, ALREADY_ANSWERED.message);
       const round = await tx.round.findFirst({ where: { closedAt: null }, select: { id: true } });
+      const promptPostCount = await tx.post.count({ where: { authorId: author.id, promptId: { not: null } } });
       await ctx.checkpoint('prompt.answer');
       const post = await tx.post.create({ data: {
         authorId: author.id, promptId: prompt.id, body: body.trim(), answerRoundId: round?.id ?? null, createdAt: ctx.now,
       } });
       const item = toAnswerView({ ...post, author }, prompt);
+      const earned = await awardPromptXp(tx, author.id, promptPostCount + 1, ctx.now);
       ctx.afterCommit(() => this.publisher.postCreated(item));
-      return item;
+      return earned;
     });
   }
 

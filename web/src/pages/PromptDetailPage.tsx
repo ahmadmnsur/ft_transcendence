@@ -12,6 +12,7 @@ import { PostCard } from '../feed/PostCard';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
+import { EarnPanel } from '../progress/EarnPanel';
 
 export function PromptDetailPage(): React.JSX.Element {
   const { promptId } = useParams({ from: '/prompts/$promptId' });
@@ -37,7 +38,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const answer = useMutation({
     mutationFn: (text: string) => answerPrompt(promptId, text),
     onSuccess: () => { setBody(''); },
-    onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: FEED_QUERY_KEY }); },
+    onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: FEED_QUERY_KEY }); for (const key of ['progress', 'me', 'students']) void client.invalidateQueries({ queryKey: [key] }); },
   });
   const canAnswer = detail?.live && !detail.answeredByMe && session?.authenticated && session.student.role !== 'ADMIN' && !answer.isSuccess;
   if (!wellFormedId) return <NotFoundPage />;
@@ -54,7 +55,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
         <p dir="auto" className="whitespace-pre-wrap wrap-anywhere">{detail.prompt.question}</p>
         <p className="mt-3 text-sm text-ink-muted">{formatDateTime(new Date(detail.prompt.publishedAt))}</p>
       </Card>
-      {answer.isSuccess ? <Banner tone="success" title={copy.saved} /> : detail.answeredByMe ? <p role="status">{copy.answered}</p> : null}
+      {answer.isSuccess ? <EarnPanel earned={answer.data} title={copy.saved} /> : detail.answeredByMe ? <p role="status">{copy.answered}</p> : null}
       {answer.isError ? <Banner tone="danger" title={errorText(failureCode(answer.error))} /> : null}
       {canAnswer ? <Card>
         <form noValidate className="flex flex-col gap-4" onSubmit={(event) => {

@@ -5,6 +5,7 @@ import { UnitOfWork } from '../../src/core/uow';
 import { MatchingService } from '../../src/matching/matching.service';
 import { ReviewsService } from '../../src/reviews/reviews.service';
 import { StudentsService } from '../../src/students/students.service';
+import { PromptsService } from '../../src/prompts/prompts.service';
 import { createTestAccount, createTestStaff, openTestSession } from '../harness/accounts';
 import { useHarness } from '../harness/app';
 
@@ -55,7 +56,7 @@ async function acceptedMatch() {
 }
 
 it('commits one immutable Review, Private Feedback and public Takeaway under duplicate and retried submission', async () => {
-  const { reviews, matching, mentor, mentee, menteeAccount, id } = await acceptedMatch();
+  const { reviews, matching, mentor, mentee, mentorAccount, menteeAccount, id } = await acceptedMatch();
   harness.barriers.arm('review.submit');
   const settle = (work: Promise<unknown>) =>
     work.then(
@@ -70,6 +71,14 @@ it('commits one immutable Review, Private Feedback and public Takeaway under dup
   harness.barriers.releaseAll('review.submit');
   expect((await Promise.all([first, second])).sort()).toEqual(['already_reviewed', 'ok']);
   expect(await storedCounts(id)).toEqual({ reviews: 1, feedback: 1, posts: 1 });
+  const progress = (cookie: string) => harness.get('/api/me/progress').set('Cookie', cookie);
+  expect((await progress(mentorAccount.cookie)).body.data).toMatchObject({
+    xp: 80, level: 1, xpIntoLevel: 80, xpForNextLevel: 250,
+    badges: [{ badge: 'FIRST_MENTOR', awardedAt: expect.any(String) }],
+  });
+  expect((await progress(menteeAccount.cookie)).body.data).toEqual({
+    xp: 120, level: 1, xpIntoLevel: 120, xpForNextLevel: 250, streak: 0, badges: [],
+  });
   const posts = await harness.app.get(PrismaService).post.findMany({
     where: { review: { matchId: id } },
     select: { id: true, authorId: true, body: true, createdAt: true },
@@ -150,6 +159,9 @@ for (const competing of ['close', 'decline'] as const) {
       expect(detail.privateFeedback === null).toBe(first !== 'review');
       const count = first === 'review' ? 1 : 0;
       expect(await storedCounts(id)).toEqual({ reviews: count, feedback: count, posts: count });
+      const progress = async (studentId: string) => harness.get('/api/me/progress').set('Cookie', await openTestSession(harness.app, { id: studentId }));
+      expect((await progress(mentor.studentId)).body.data).toMatchObject({ xp: count * 80, badges: count ? [{ badge: 'FIRST_MENTOR' }] : [] });
+      expect((await progress(mentee.studentId)).body.data).toMatchObject({ xp: count * 120, badges: [] });
       const received = await reviews.listFeedbackReceived(mentor, 1, 20);
       expect(received.total).toBe(first === 'review' ? 1 : 0);
       expect(harness.recorder.events.filter((e) => e.event === 'postCreated')).toHaveLength(
@@ -175,8 +187,15 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   // Fixture promotion: the role-management paths join in their own ticket.
   await harness.app.get(UnitOfWork).run('fixture-promotion', async (tx) => {
     await tx.student.update({ where: { id: mentee.studentId }, data: { role: 'ADMIN' } });
+    await tx.student.update({ where: { id: mentor.studentId }, data: { role: 'ADMIN' } });
   });
   expect((await post(menteeAccount.cookie)).status).toBe(201);
+  expect((await harness.get('/api/me').set('Cookie', mentorAccount.cookie)).body.data).toMatchObject({
+    role: 'ADMIN', xp: 80, level: 1, badges: [{ badge: 'FIRST_MENTOR' }],
+  });
+  expect((await harness.get('/api/me').set('Cookie', menteeAccount.cookie)).body.data).toMatchObject({
+    role: 'ADMIN', xp: 120, level: 1, badges: [],
+  });
   for (const cookie of [menteeAccount.cookie, mentorAccount.cookie]) {
     const detail = await harness.get(`/api/matches/${id}`).set('Cookie', cookie);
     expect(detail.status).toBe(200);
@@ -212,6 +231,66 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   expect(received.items[0]).toMatchObject(input.privateFeedback);
   expect((await matching.getMatch(mentor, id)).review).toMatchObject(input.learningOutcome);
   expect((await harness.get('/api/me/feedback-received')).status).toBe(401);
+});
+
+for (const paid of ['mentor', 'mentee'] as const) {
+  it.each(['review', 'answer'] as const)(`a Review and an answer paying the ${paid}, %s first, both accumulate`, async (first) => {
+    const { admin, mentor, mentee, mentorAccount, menteeAccount, id } = await acceptedMatch();
+    const student = paid === 'mentor' ? mentorAccount : menteeAccount;
+    const prompts = harness.app.get(PromptsService);
+    const prompt = await prompts.publish(admin, 'What did you learn?');
+    harness.barriers.arm('review.submit');
+    harness.barriers.arm('prompt.answer');
+    const review = harness.post(`/api/matches/${id}/review`).set('Cookie', menteeAccount.cookie).send(input).then((r) => r);
+    const answer = harness.post(`/api/prompts/${prompt.id}/answers`).set('Cookie', student.cookie).send({ body: 'A parallel lesson.' }).then((r) => r);
+    await harness.barriers.waitFor('review.submit', 1);
+    await harness.barriers.waitFor('prompt.answer', 1);
+    harness.barriers.disarm('review.submit');
+    harness.barriers.disarm('prompt.answer');
+    harness.barriers.release(first === 'review' ? 'review.submit' : 'prompt.answer');
+    expect((await (first === 'review' ? review : answer)).status).toBe(201);
+    harness.barriers.release(first === 'review' ? 'prompt.answer' : 'review.submit');
+    const result = await review;
+    expect(result.body.data).toMatchObject({ xpAwarded: 120, badgesAwarded: [] });
+    expect((await answer).status).toBe(201);
+    const progress = (await harness.get('/api/me/progress').set('Cookie', student.cookie)).body.data;
+    expect(progress.xp).toBe(paid === 'mentor' ? 100 : 140);
+    expect(progress.badges).toEqual(paid === 'mentor' ? [{ badge: 'FIRST_MENTOR', awardedAt: expect.any(String) }] : []);
+    expect((await harness.get('/api/me').set('Cookie', student.cookie)).body.data).toMatchObject(progress);
+    expect((await harness.get(`/api/students/${student.id}`).set('Cookie', menteeAccount.cookie)).body.data.profile).toMatchObject(progress);
+    expect(await storedCounts(id)).toEqual({ reviews: 1, feedback: 1, posts: 1 });
+    expect((await prompts.answers(actor(student.id), prompt.id, null)).items).toHaveLength(1);
+  });
+}
+
+it.each(['older', 'newer', 'together'] as const)('Knowledge Sharer with supersession, %s released first: the pivot pays nothing', async (order) => {
+  const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
+  const student = await createTestAccount(harness.app);
+  const prompts = harness.app.get(PromptsService);
+  const author = actor(student.id);
+  for (let i = 0; i < 2; i++) {
+    const prompt = await prompts.publish(admin, `First lessons ${i}?`);
+    await prompts.answer(author, prompt.id, 'A lesson.');
+  }
+  const old = await prompts.publish(admin, 'Older question?');
+  harness.barriers.arm('prompt.answer');
+  const older = harness.post(`/api/prompts/${old.id}/answers`).set('Cookie', student.cookie).send({ body: 'Older answer.' }).then((r) => r);
+  await harness.barriers.waitFor('prompt.answer', 1);
+  const next = await prompts.publish(admin, 'Newer question?');
+  const newer = harness.post(`/api/prompts/${next.id}/answers`).set('Cookie', student.cookie).send({ body: 'Newer answer.' }).then((r) => r);
+  await harness.barriers.waitFor('prompt.answer', 2);
+  harness.barriers.disarm('prompt.answer');
+  if (order === 'together') harness.barriers.releaseAll('prompt.answer');
+  else {
+    harness.barriers.releaseAt('prompt.answer', order === 'older' ? 0 : 1);
+    await (order === 'older' ? older : newer);
+    harness.barriers.release('prompt.answer');
+  }
+  expect((await older).body).toMatchObject({ ok: false, error: { code: 'prompt_not_live' } });
+  expect((await newer).body.data).toEqual({ xpAwarded: 20, xp: 60, level: 1, xpIntoLevel: 60, xpForNextLevel: 250, badgesAwarded: ['KNOWLEDGE_SHARER'] });
+  expect((await prompts.answers(author, old.id, null)).items).toEqual([]);
+  expect((await prompts.answers(author, next.id, null)).items).toHaveLength(1);
+  expect((await harness.get('/api/me/progress').set('Cookie', student.cookie)).body.data).toMatchObject({ xp: 60, badges: [{ badge: 'KNOWLEDGE_SHARER' }] });
 });
 
 it('validates nested Review text and optional integer rating before writing anything', async () => {
