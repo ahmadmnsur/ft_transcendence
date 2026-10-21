@@ -11,7 +11,7 @@ import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
 import { MatchDetailPage } from './pages/MatchDetailPage';
 import { MatchPage } from './pages/MatchPage';
-import { MatchesPage, parseMatchesSearch } from './pages/MatchesPage';
+import { MatchesPage } from './pages/MatchesPage';
 import { MePage } from './pages/MePage';
 import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -25,6 +25,7 @@ import { PromptsPage } from './pages/PromptsPage';
 import { PromptDetailPage } from './pages/PromptDetailPage';
 import { AdminPromptsPage } from './pages/AdminPromptsPage';
 import { queryClient } from './queryClient';
+import { parsePageSearch } from './search';
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -162,7 +163,7 @@ const matchesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/matches',
   beforeLoad: requireSession,
-  validateSearch: parseMatchesSearch,
+  validateSearch: parsePageSearch,
   component: MatchesPage,
 });
 
@@ -200,7 +201,7 @@ const promptsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/prompts',
   beforeLoad: requireSession,
-  validateSearch: parseMatchesSearch,
+  validateSearch: parsePageSearch,
   component: PromptsPage,
 });
 
@@ -215,7 +216,7 @@ const adminPromptsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/prompts',
   beforeLoad: (args) => requireRole(args, 'ADMIN'),
-  validateSearch: parseMatchesSearch,
+  validateSearch: parsePageSearch,
   component: AdminPromptsPage,
 });
 

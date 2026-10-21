@@ -1,4 +1,4 @@
-import type { StudentRef } from '../students/student-ref';
+import { toStudentRef, type StudentRef } from '../students/student-ref';
 
 export type PromptView = { id: string; question: string; publishedAt: string };
 export type PromptSummary = PromptView & { live: boolean; answerCount: number };
@@ -23,4 +23,20 @@ export type AnswerPage = {
 
 export function toPromptView(row: { id: string; question: string; publishedAt: Date }): PromptView {
   return { id: row.id, question: row.question, publishedAt: row.publishedAt.toISOString() };
+}
+
+export function toAnswerView(
+  post: { id: string; body: string; createdAt: Date; author: Parameters<typeof toStudentRef>[0] },
+  prompt: { id: string; question: string },
+): AnswerView {
+  return {
+    id: post.id,
+    origin: 'PROMPT_ANSWER',
+    prompt: { id: prompt.id, question: prompt.question },
+    author: toStudentRef(post.author),
+    body: post.body,
+    createdAt: post.createdAt.toISOString(),
+    likeCount: 0,
+    likedByMe: false,
+  };
 }

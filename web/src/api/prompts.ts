@@ -14,8 +14,8 @@ export type AnswerPage = { prompt: PromptView; live: boolean; answeredByMe: bool
 export const livePromptQueryOptions = () => queryOptions({
   queryKey: ['prompts', 'live'], queryFn: () => apiFetch<{ prompt: PromptView | null; answeredByMe: boolean }>('/prompts/live'),
 });
-export const promptHistoryQueryOptions = (page: number) => queryOptions({
-  queryKey: ['prompts', 'history', page], queryFn: () => apiFetch<PromptPage>(`/prompts?page=${page}`),
+export const promptHistoryQueryOptions = (page: number, admin: boolean) => queryOptions({
+  queryKey: ['prompts', 'history', { page, admin }], queryFn: () => apiFetch<PromptPage>(`${admin ? '/admin' : ''}/prompts?page=${page}`),
 });
 export const readPromptAnswers = (id: string, cursor?: string) => apiFetch<AnswerPage>(`/prompts/${id}/answers${cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`}`);
 export const publishPrompt = (question: string) => apiFetch<PromptView>('/admin/prompts', { method: 'POST', body: { question } });

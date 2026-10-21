@@ -1,7 +1,6 @@
 import { IsString, ValidateIf } from 'class-validator';
 import { sharedValidator, Trimmed } from '../auth/dto';
 import { isValidText, LIMITS } from '../shared/limits';
-import { MatchHistoryQueryDto } from '../matching/dto';
 
 const Question = sharedValidator('promptQuestion', (value) => isValidText(value, LIMITS.promptQuestion, true));
 const Answer = sharedValidator('promptAnswer', (value) => isValidText(value, LIMITS.promptAnswer, true));
@@ -19,8 +18,6 @@ export class AnswerPromptDto {
   @Answer()
   body!: string;
 }
-
-export class PromptHistoryQueryDto extends MatchHistoryQueryDto {}
 
 export class AnswersQueryDto {
   @ValidateIf((_dto, value) => value !== undefined)

@@ -6,8 +6,8 @@ import { UnitOfWork } from '../core/uow';
 import { isValidText, LIMITS, PAGING } from '../shared/limits';
 import { ApiError, Refusal, type RefusalSpec } from '../core/errors';
 import { readActiveAdmin } from '../students/profile-writes';
-import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
-import { toPromptView, type AnswerPage, type AnswerView, type PromptPage, type PromptView } from './views';
+import { STUDENT_REF_SELECT } from '../students/student-ref';
+import { toAnswerView, toPromptView, type AnswerPage, type AnswerView, type PromptPage, type PromptView } from './views';
 
 const ALREADY_ANSWERED = { code: 'already_answered', message: 'You have already answered this Reflection Prompt.' } as const satisfies RefusalSpec;
 
@@ -37,10 +37,7 @@ export class PromptsService {
       const post = await tx.post.create({ data: {
         authorId: author.id, promptId: prompt.id, body: body.trim(), answerRoundId: round?.id ?? null, createdAt: ctx.now,
       } });
-      const item: AnswerView = {
-        id: post.id, origin: 'PROMPT_ANSWER', prompt: { id: prompt.id, question: prompt.question },
-        author: toStudentRef(author), body: post.body, createdAt: post.createdAt.toISOString(), likeCount: 0, likedByMe: false,
-      };
+      const item = toAnswerView({ ...post, author }, prompt);
       ctx.afterCommit(() => this.publisher.postCreated(item));
       return item;
     });
@@ -63,10 +60,7 @@ export class PromptsService {
       const last = visible.at(-1);
       return {
         prompt: toPromptView(prompt), live: prompt.publicationOrder === maximum._max.publicationOrder, answeredByMe: existing !== null,
-        items: visible.map((post) => ({
-          id: post.id, origin: 'PROMPT_ANSWER', prompt: { id: prompt.id, question: prompt.question }, author: toStudentRef(post.author),
-          body: post.body, createdAt: post.createdAt.toISOString(), likeCount: 0, likedByMe: false,
-        })),
+        items: visible.map((post) => toAnswerView(post, prompt)),
         nextCursor: rows.length > PAGING.maxPageSize && last !== undefined ? encodeCursor({ createdAt: last.createdAt, id: last.id }) : null,
       };
     });
@@ -94,7 +88,7 @@ export class PromptsService {
     });
   }
 
-  history(page: number, pageSize: number): Promise<PromptPage> {
+  history(_actor: Actor, page: number, pageSize: number): Promise<PromptPage> {
     return this.uow.readOnly(async (tx) => {
       const maximum = await tx.reflectionPrompt.aggregate({ _max: { publicationOrder: true } });
       const total = await tx.reflectionPrompt.count();

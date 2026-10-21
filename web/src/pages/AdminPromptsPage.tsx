@@ -41,7 +41,7 @@ export function AdminPromptsPage(): React.JSX.Element {
         <Button type="submit" loading={publish.isPending}>{publish.isPending ? copy.publishing : copy.publish}</Button>
       </form>
     </Card>
-    <PromptHistory page={search.page ?? 1} onPageChange={(page) => void navigate({ search: { page: page > 1 ? page : undefined } })} />
+    <PromptHistory admin page={search.page ?? 1} onPageChange={(page) => void navigate({ search: { page: page > 1 ? page : undefined } })} />
     <Modal open={confirming} title={copy.confirmTitle} initialFocusRef={cancelRef} onClose={() => { if (!publish.isPending) setConfirming(false); }}>
       <p className="mb-3">{copy.publishHint}</p>
       <p dir="auto" className="mb-4 whitespace-pre-wrap wrap-anywhere">{question}</p>

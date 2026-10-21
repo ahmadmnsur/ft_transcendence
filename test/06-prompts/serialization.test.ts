@@ -129,7 +129,8 @@ it('equal publication timestamps still leave exactly one live Prompt in durable 
   expect((await a).status).toBe(201);
   harness.barriers.release('prompt.publish');
   expect((await b).status).toBe(201);
-  const history = await harness.get('/api/prompts').set('Cookie', admin.cookie);
+  const history = await harness.get('/api/admin/prompts').set('Cookie', admin.cookie);
+  expect(history.status).toBe(200);
   expect(history.body.data.items.map((p: { question: string; live: boolean }) => [p.question, p.live])).toEqual([
     ['Third reflection?', true], ['Second reflection?', false], ['First reflection?', false],
   ]);

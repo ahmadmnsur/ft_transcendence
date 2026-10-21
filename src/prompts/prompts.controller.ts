@@ -3,7 +3,8 @@ import type { Request } from 'express';
 import { requestActor } from '../core/session.guard';
 import { decodeCursor } from '../core/cursor';
 import { UuidParam } from '../core/uuid-param';
-import { AnswerPromptDto, AnswersQueryDto, PromptHistoryQueryDto, PublishPromptDto } from './dto';
+import { PageQueryDto } from '../core/paging';
+import { AnswerPromptDto, AnswersQueryDto, PublishPromptDto } from './dto';
 import { PromptsService } from './prompts.service';
 
 @Controller()
@@ -30,8 +31,8 @@ export class PromptsController {
     return this.prompts.live(requestActor(request));
   }
 
-  @Get('prompts')
-  history(@Query() query: PromptHistoryQueryDto) {
-    return this.prompts.history(query.page, query.pageSize);
+  @Get(['prompts', 'admin/prompts'])
+  history(@Query() query: PageQueryDto, @Req() request: Request) {
+    return this.prompts.history(requestActor(request), query.page, query.pageSize);
   }
 }
