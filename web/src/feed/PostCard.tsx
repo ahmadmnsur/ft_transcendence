@@ -67,19 +67,26 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   const likeRef = useRef<HTMLButtonElement>(null);
   const noticeRef = useRef<HTMLParagraphElement>(null);
   const wasOpen = useRef(false);
+  const wasUnavailable = useRef(false);
   const unavailable = failure?.code === 'post_unavailable' || failureCode(likers.error) === 'post_unavailable';
   const count = formatText(copy.likeCount, { count: post.likeCount });
 
-  // The dialog returns focus to the count that opened it. When that count
-  // went while the dialog was open (the last Like withdrawn, or the Post
-  // removed), focus moves to the toggle, or to the notice that replaced it.
-  // This runs after the dialog's own effect has closed it.
+  // Focus stays on the card when the control holding it goes. The dialog
+  // returns focus to the count that opened it, but that count can go while
+  // the dialog is open (the last Like withdrawn, or the Post removed), and a
+  // removed Post's notice replaces the toggle that was pressed. Focus then
+  // moves to the toggle, or to the notice. This runs after the dialog's own
+  // effect has closed it.
   useEffect(() => {
-    if (wasOpen.current && !likersOpen && (document.activeElement === null || document.activeElement === document.body)) {
+    const closed = wasOpen.current && !likersOpen;
+    const replaced = unavailable && !wasUnavailable.current;
+    wasOpen.current = likersOpen;
+    wasUnavailable.current = unavailable;
+    if (likersOpen || !(closed || replaced)) return;
+    if (document.activeElement === null || document.activeElement === document.body) {
       (likeRef.current ?? noticeRef.current)?.focus();
     }
-    wasOpen.current = likersOpen;
-  }, [likersOpen]);
+  }, [likersOpen, unavailable]);
 
   async function toggle(): Promise<void> {
     if (pending) return;

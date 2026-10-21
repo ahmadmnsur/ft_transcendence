@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, type InfiniteData, type QueryClient } from '@tanstack/react-query';
-import { apiFetch } from './client';
+import { ApiRefusalError, apiFetch } from './client';
 import type { StudentRef } from './profile';
 import { PROMPT_ANSWERS_QUERY_KEY } from './prompts';
 import { writeAsSignedIn } from './session';
@@ -98,14 +98,24 @@ async function cacheLikeState(client: QueryClient, postId: string, state: LikeSt
 // `POST` or `DELETE /api/posts/:id/like` (§6.9). `likedByMe` belongs to the
 // Student who sent it, so an answer that arrives after another Student signed
 // in reaches none of the cache (`writeAsSignedIn`). A refusal, such as
-// `post_unavailable` for a Post a moderator removed, rejects and writes
-// nothing. Both writes are idempotent and answer the Post's true state, so
-// pressing again after a failure is safe.
+// `post_unavailable` for a Post a moderator removed, wrote nothing, so only
+// the likers are read again and the Post stays on screen with its notice.
+// Any other failure may have reached the server, a Like committed with its
+// answer lost, so the lists are read again too. Both writes are idempotent,
+// so pressing again after a failure is safe.
 export async function setLike(client: QueryClient, postId: string, liked: boolean): Promise<void> {
+  let refused = false;
   await writeAsSignedIn(
     client,
-    () => apiFetch<LikeState>(`/posts/${postId}/like`, { method: liked ? 'POST' : 'DELETE' }),
+    () =>
+      apiFetch<LikeState>(`/posts/${postId}/like`, { method: liked ? 'POST' : 'DELETE' }).catch((error: unknown) => {
+        refused = error instanceof ApiRefusalError;
+        throw error;
+      }),
     (state) => cacheLikeState(client, postId, state),
-    () => void client.invalidateQueries({ queryKey: likersQueryKey(postId) }),
+    () => {
+      const reread = refused ? [likersQueryKey(postId)] : [...POST_LIST_QUERY_KEYS, likersQueryKey(postId)];
+      for (const queryKey of reread) void client.invalidateQueries({ queryKey });
+    },
   );
 }
