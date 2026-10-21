@@ -11,18 +11,6 @@ import { MatchStatusLabel } from '../matching/MatchParts';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 
-// `/matches`' one search param: the page, absent on the first.
-export interface MatchesSearch {
-  page?: number;
-}
-
-// §3.5.2: a page the API would refuse is dropped here, so an edited address
-// never sends a failing request.
-export function parseMatchesSearch(search: Record<string, unknown>): MatchesSearch {
-  const page = search.page;
-  return { page: typeof page === 'number' && Number.isSafeInteger(page) && page > 1 ? page : undefined };
-}
-
 const column = createColumnHelper<MatchView>();
 
 // §3.5.1, §6.6: `/matches`, the signed-in Student's own Matches, every status,

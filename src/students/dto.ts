@@ -1,3 +1,4 @@
+import { QueryInteger } from '../core/paging';
 import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -98,18 +99,11 @@ export type SearchSort = (typeof SEARCH_SORTS)[number];
 export const SEARCH_ORDERS = ['asc', 'desc'] as const;
 export type SearchOrder = (typeof SEARCH_ORDERS)[number];
 
-// A query string carries only strings. These turn exactly `true`/`false` and a
-// run of digits into their values; anything else is left as it came, so the
-// validators below refuse it as `validation_failed`.
+// A query string carries only strings: turn exactly `true`/`false` into
+// booleans and leave anything else for the validator to refuse.
 function QueryBoolean(): PropertyDecorator {
   return Transform(({ value }: { value: unknown }) =>
     value === 'true' ? true : value === 'false' ? false : value,
-  );
-}
-
-export function QueryInteger(): PropertyDecorator {
-  return Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' && /^[0-9]+$/.test(value) ? Number(value) : value,
   );
 }
 

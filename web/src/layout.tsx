@@ -124,6 +124,12 @@ function SiteHeader(): React.JSX.Element {
                   {t.shell.header.roundsLink}
                 </Link>
               ) : null}
+              <Link to="/prompts" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+                {t.prompts.title}
+              </Link>
+              {session.student.role === 'ADMIN' ? <Link to="/admin/prompts" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+                {t.prompts.adminTitle}
+              </Link> : null}
               <Link
                 to="/me"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}

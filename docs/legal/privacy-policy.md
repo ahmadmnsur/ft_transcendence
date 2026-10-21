@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 20 October 2026
+**42 PeerConnect** · Last updated: 21 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -82,8 +82,11 @@ When you submit a Review as a Mentee, its three parts are stored separately:
 
 **Your activity in the community**
 
-- your Posts: Public Takeaways and answers to Reflection Prompts, and for an answer, which Round
-  it counted towards for your Streak;
+- your Posts: Public Takeaways and answers to Reflection Prompts. An answer is visible immediately
+  to every signed-in Student, including those who have not answered. It cannot be edited or deleted
+  by its author, and stays readable when its Prompt closes unless it is removed by moderation. For
+  each answer we also record the Round open when the answer is accepted, or no Round when none is
+  open, so it can count towards your Streak;
 - your Likes;
 - your friend requests and Friendships;
 - the Blocks you set;

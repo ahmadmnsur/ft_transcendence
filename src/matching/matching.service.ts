@@ -208,6 +208,10 @@ export class MatchingService {
       if (round === null) throw noOpenRound();
       const matches = await tx.match.findMany({ where: { roundId: round.id }, select: { id: true, status: true } });
       const toLapse = matches.filter((match) => isInProgress(match.status)).map((match) => match.id);
+      // Establish the answer predicate before closing: an overlapping answer
+      // reads this Round and inserts into this set, so SSI retries whichever
+      // operation follows the other. Streak calculation joins in the progress slice.
+      await tx.post.count({ where: { answerRoundId: round.id } });
       await ctx.checkpoint('round.close');
 
       await tx.round.update({ where: { id: round.id }, data: { closedAt: ctx.now } });

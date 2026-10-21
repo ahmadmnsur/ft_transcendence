@@ -11,7 +11,7 @@ import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
 import { MatchDetailPage } from './pages/MatchDetailPage';
 import { MatchPage } from './pages/MatchPage';
-import { MatchesPage, parseMatchesSearch } from './pages/MatchesPage';
+import { MatchesPage } from './pages/MatchesPage';
 import { MePage } from './pages/MePage';
 import { MessagesPage } from './pages/MessagesPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -21,7 +21,11 @@ import { StudentPage } from './pages/StudentPage';
 import { StudentsPage, parseStudentsSearch } from './pages/StudentsPage';
 import { TermsPage } from './pages/TermsPage';
 import { ThreadPage } from './pages/ThreadPage';
+import { PromptsPage } from './pages/PromptsPage';
+import { PromptDetailPage } from './pages/PromptDetailPage';
+import { AdminPromptsPage } from './pages/AdminPromptsPage';
 import { queryClient } from './queryClient';
+import { parsePageSearch } from './search';
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -159,7 +163,7 @@ const matchesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/matches',
   beforeLoad: requireSession,
-  validateSearch: parseMatchesSearch,
+  validateSearch: parsePageSearch,
   component: MatchesPage,
 });
 
@@ -193,6 +197,29 @@ const adminMatchRoute = createRoute({
   component: AdminMatchPage,
 });
 
+const promptsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/prompts',
+  beforeLoad: requireSession,
+  validateSearch: parsePageSearch,
+  component: PromptsPage,
+});
+
+const promptDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/prompts/$promptId',
+  beforeLoad: requireSession,
+  component: PromptDetailPage,
+});
+
+const adminPromptsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/prompts',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  validateSearch: parsePageSearch,
+  component: AdminPromptsPage,
+});
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
@@ -221,6 +248,9 @@ const routeTree = rootRoute.addChildren([
   adminRoundsRoute,
   adminRoundRoute,
   adminMatchRoute,
+  promptsRoute,
+  promptDetailRoute,
+  adminPromptsRoute,
   privacyRoute,
   termsRoute,
 ]);
