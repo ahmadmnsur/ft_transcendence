@@ -6,39 +6,49 @@ import { Worker } from 'node:worker_threads';
 // megabytes could ask for gigabytes: the thread every request waits on held
 // meanwhile, then the process out of memory. So each load runs in its own
 // worker thread, one at a time, and finds no page when:
-// - one stream would decode past `maxStreamBytes`, memory the worker shares
-//   with the API, checked before pdf-lib allocates it;
+// - its decoders together would allocate more than `maxDecodedBytes` over
+//   the whole load, memory the worker shares with the API, counted before
+//   pdf-lib allocates it: a chain of filters on one stream holds a buffer
+//   for each filter, and every one counts;
 // - the worker's heap passes `maxHeapMb`;
 // - the load is still running `timeoutMs` after its worker started; the
 //   wait for an earlier load does not count.
-export type PdfCheckLimits = { timeoutMs: number; maxStreamBytes: number; maxHeapMb: number };
+export type PdfCheckLimits = { timeoutMs: number; maxDecodedBytes: number; maxHeapMb: number };
 
-// 16 MiB is four times the most an honest PDF was measured to need: 4 MiB,
-// for 20,500 pages with every object in one object stream. A power of two,
-// so pdf-lib's doubling buffer never grows past it.
+// 32 MiB is nine times the most any of 122 real PDFs under 5 MiB needed
+// (3.55 MiB), and twice a generated PDF of 20,500 pages with every object in
+// one object stream (16.5 MiB).
 export const PDF_CHECK_LIMITS: PdfCheckLimits = {
   timeoutMs: 5_000,
-  maxStreamBytes: 16 * 1024 * 1024,
+  maxDecodedBytes: 32 * 1024 * 1024,
   maxHeapMb: 256,
 };
 
 // The worker, as source rather than a file of its own, so it runs the same
 // from `src/` under Vitest and from `dist/` in the image. Every pdf-lib
 // decoder grows its buffer through `DecodeStream.prototype.ensureBuffer`, so
-// the cap sits there, in the worker's own copy of pdf-lib. The load's
-// options are §9.5's; `Fastest` stops pdf-lib yielding, since the worker has
-// nothing else to answer. A load that throws, or one pdf-lib recovers after
-// the cap, posts 0 pages.
+// the budget sits there, in the worker's own copy of pdf-lib: each new
+// buffer is sized as pdf-lib sizes it, doubling from its minimum until the
+// request fits, and counted before pdf-lib allocates it. The load's options
+// are §9.5's; `Fastest` stops pdf-lib yielding, since the worker has nothing
+// else to answer. A load that throws, or one pdf-lib recovers after the
+// budget ran out, posts 0 pages.
 const PDF_WORKER = `
 const { parentPort, workerData } = require('node:worker_threads');
 const { PDFDocument, ParseSpeeds } = require(workerData.pdfLib);
 const DecodeStream = require(workerData.decodeStream).default;
 const ensureBuffer = DecodeStream.prototype.ensureBuffer;
-let overCap = false;
+let allocated = 0;
+let overBudget = false;
 DecodeStream.prototype.ensureBuffer = function (requested) {
-  if (requested > workerData.maxStreamBytes) {
-    overCap = true;
-    throw new Error('A stream decodes past the cap.');
+  if (requested > this.buffer.byteLength) {
+    let size = this.minBufferLength;
+    while (size < requested) size *= 2;
+    allocated += size;
+    if (allocated > workerData.maxDecodedBytes) {
+      overBudget = true;
+      throw new Error('The decoders pass their budget.');
+    }
   }
   return ensureBuffer.call(this, requested);
 };
@@ -52,7 +62,7 @@ DecodeStream.prototype.ensureBuffer = function (requested) {
     });
     pages = document.getPageCount();
   } catch {}
-  parentPort.postMessage(overCap ? 0 : pages);
+  parentPort.postMessage(overBudget ? 0 : pages);
 })();
 `;
 
@@ -108,7 +118,7 @@ export async function pdfPageCount(bytes: Buffer, limits: PdfCheckLimits = PDF_C
       bytes,
       pdfLib: require.resolve('pdf-lib'),
       decodeStream: require.resolve('pdf-lib/cjs/core/streams/DecodeStream'),
-      maxStreamBytes: limits.maxStreamBytes,
+      maxDecodedBytes: limits.maxDecodedBytes,
     },
     limits,
   );
