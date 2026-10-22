@@ -43,6 +43,10 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
   // The upload in flight, so a new pick or a removal can stop it: two
   // uploads at once would leave whichever commits last.
   const controllerRef = useRef<AbortController | null>(null);
+  // The delete still waiting for its answer. An upload picked meanwhile waits
+  // for it, so the delete's answer cannot land after the upload's and clear
+  // the new Evidence from the page (§9.7).
+  const removalRef = useRef<Promise<void> | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
   // The status slot renders only while there is a message; once it renders,
@@ -72,6 +76,9 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
     setStatus(undefined);
     setUpload({ file, progress: 0 });
     try {
+      await removalRef.current;
+      // Emptied or replaced by another pick while it waited.
+      if (controllerRef.current !== controller) return;
       const saved = await uploadEvidence(reviewId, file, {
         signal: controller.signal,
         onProgress: (progress) => {
@@ -99,13 +106,18 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
 
   async function remove(): Promise<void> {
     setStatus(undefined);
-    try {
-      await deleteEvidence(reviewId);
-      await applyEvidence(null);
-      setStatus({ kind: 'removed' });
-    } catch (error) {
-      setStatus({ kind: 'failed', code: failureCode(error) });
-    }
+    const removal = (async () => {
+      try {
+        await deleteEvidence(reviewId);
+        await applyEvidence(null);
+        setStatus({ kind: 'removed' });
+      } catch (error) {
+        setStatus({ kind: 'failed', code: failureCode(error) });
+      }
+    })();
+    removalRef.current = removal;
+    await removal;
+    if (removalRef.current === removal) removalRef.current = null;
   }
 
   // FileDrop hands a file that passed its checks, or null. Null on a picked
