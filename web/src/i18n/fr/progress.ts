@@ -11,7 +11,7 @@ export default {
   badgeConditions: {
     FIRST_MENTOR: 'Terminez votre premier Match comme Mentor lorsque votre Mentoré soumet un Bilan.',
     KNOWLEDGE_SHARER: 'Répondez à au moins trois Sujets de réflexion. Les réponses retirées du fil comptent toujours.',
-    CONSISTENT_LEARNER: 'Atteignez une Série de trois Tours. Un Match terminé ou une réponse à un Sujet de réflexion pendant un Tour suffit ; un Tour sans aucune de ces activités remet votre Série à zéro. La Suspension ou le Retrait la fige.',
+    CONSISTENT_LEARNER: 'Atteignez une Série de trois Tours. Un Match terminé ou une réponse à un Sujet de réflexion pendant un Tour suffit ; un Tour sans aucune de ces activités remet votre Série à zéro. La Suspension ou l’Exclusion la fige.',
   },
   rules: {
     title: 'XP, Niveaux et Badges', nav: 'Règles', link: 'Comment gagner des XP et des Badges', xpHeading: 'Gagner des XP',

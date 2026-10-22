@@ -101,7 +101,7 @@ function StudentPosts({ studentId }: { studentId: string }): React.JSX.Element {
 // this page's not-found state; any other failure shows the generic sentence
 // (§3.8.2, §6.15). Never an email.
 export function StudentPage(): React.JSX.Element {
-  const { t, personNameText, formatNumber } = useI18n();
+  const { t, personNameText } = useI18n();
   const copy = t.profile.student;
   const session = useQuery(sessionQueryOptions()).data;
   const { studentId } = useParams({ from: '/students/$studentId' });

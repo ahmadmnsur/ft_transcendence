@@ -175,9 +175,6 @@ const matchDetailRoute = createRoute({
   path: '/matches/$matchId',
   beforeLoad: requireSession,
   component: MatchDetailPage,
-  validateSearch: (search: Record<string, unknown>): { reviewed?: true } => ({
-    reviewed: search.reviewed === true ? true : undefined,
-  }),
 });
 
 // §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,

@@ -135,8 +135,6 @@ export default {
     cleared: 'تم مسح هدف التعلم.',
   },
   stats: {
-    xp: 'XP',
-    level: 'المستوى',
     streak: 'المواظبة',
   },
   student: {

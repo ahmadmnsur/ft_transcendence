@@ -126,8 +126,6 @@ export default {
     cleared: 'Your Learning Goal was cleared.',
   },
   stats: {
-    xp: 'XP',
-    level: 'Level',
     streak: 'Streak',
   },
   student: {
