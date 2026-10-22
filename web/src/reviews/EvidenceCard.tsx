@@ -43,9 +43,10 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
   // The upload in flight, so a new pick or a removal can stop it: two
   // uploads at once would leave whichever commits last.
   const controllerRef = useRef<AbortController | null>(null);
-  // The delete still waiting for its answer. An upload picked meanwhile waits
-  // for it, so the delete's answer cannot land after the upload's and clear
-  // the new Evidence from the page (§9.7).
+  // The delete still waiting for its answer, at most one: a second confirmed
+  // delete joins it. An upload picked meanwhile waits for it, so the delete's
+  // answer cannot land after the upload's and clear the new Evidence from the
+  // page (§9.7).
   const removalRef = useRef<Promise<void> | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +106,8 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
   }
 
   async function remove(): Promise<void> {
+    // FileDrop still shows the saved file, and its Delete, until the answer.
+    if (removalRef.current !== null) return removalRef.current;
     setStatus(undefined);
     const removal = (async () => {
       try {
@@ -117,7 +120,7 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
     })();
     removalRef.current = removal;
     await removal;
-    if (removalRef.current === removal) removalRef.current = null;
+    removalRef.current = null;
   }
 
   // FileDrop hands a file that passed its checks, or null. Null on a picked
