@@ -1,8 +1,8 @@
 import { crc32, inflateSync } from 'node:zlib';
 import { decode as decodeJpeg } from 'jpeg-js';
-import { PDFDocument } from 'pdf-lib';
 import { PNG } from 'pngjs';
 import { LIMITS } from '../shared/limits';
+import { pdfPageCount } from './pdf-check';
 import { fileInvalid, fileTooLarge, fileTypeNotAllowed } from './refusals';
 
 // §9.5: the file acceptance contract, a pure function of the bytes and of
@@ -244,17 +244,11 @@ function checkJpeg(bytes: Buffer): void {
 
 // Step 4 for a PDF: `%%EOF` within its last 1024 bytes, then a full pdf-lib
 // load that refuses an invalid object and writes nothing back, with at least
-// one page. An encrypted PDF fails the load, which reads no password.
+// one page, run in a worker thread within `pdf-check.ts`'s limits. An
+// encrypted PDF fails the load, which reads no password.
 async function checkPdf(bytes: Buffer): Promise<void> {
   if (!bytes.subarray(Math.max(0, bytes.length - PDF_END_WINDOW)).includes(PDF_END)) throw fileInvalid();
-  let pages: number;
-  try {
-    const document = await PDFDocument.load(bytes, { throwOnInvalidObject: true, updateMetadata: false });
-    pages = document.getPageCount();
-  } catch {
-    throw fileInvalid();
-  }
-  if (pages < 1) throw fileInvalid();
+  if ((await pdfPageCount(bytes)) < 1) throw fileInvalid();
 }
 
 // Step 5: a supplied extension and a part type other than
