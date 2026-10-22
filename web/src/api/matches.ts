@@ -71,6 +71,9 @@ export interface OpenRoundResult {
 export interface CloseRoundResult {
   roundId: string;
   lapsed: number;
+  streaksIncremented: number;
+  streaksReset: number;
+  consistentLearnerAwarded: number;
 }
 
 export interface AdminRoundSummary {
