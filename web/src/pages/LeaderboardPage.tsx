@@ -12,10 +12,10 @@ function PositionRow({ position, student }: { position: LeaderboardPosition; stu
   const { formatNumber } = useI18n();
   return (
     <tr className="border-t border-line">
-      <td className="p-2 text-end tabular-nums sm:p-3"><bdi>{formatNumber(position.rank)}</bdi></td>
+      <td className="p-2 text-end whitespace-nowrap tabular-nums sm:p-3"><bdi>{formatNumber(position.rank)}</bdi></td>
       <th scope="row" className="p-2 text-start font-medium wrap-anywhere sm:p-3">{student}</th>
-      <td className="p-2 text-end tabular-nums sm:p-3"><bdi>{formatNumber(position.xp)}</bdi></td>
-      <td className="p-2 text-end tabular-nums sm:p-3"><bdi>{formatNumber(position.level)}</bdi></td>
+      <td className="p-2 text-end whitespace-nowrap tabular-nums sm:p-3"><bdi>{formatNumber(position.xp)}</bdi></td>
+      <td className="p-2 text-end whitespace-nowrap tabular-nums sm:p-3"><bdi>{formatNumber(position.level)}</bdi></td>
     </tr>
   );
 }
@@ -44,16 +44,15 @@ export function LeaderboardPage(): React.JSX.Element {
       ) : leaderboard.data.top.length === 0 ? (
         <EmptyState icon={<TrophyIcon size={24} />} title={copy.emptyTitle} description={copy.emptyDescription} />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-line bg-surface">
-          <table className="w-full table-fixed border-collapse text-sm">
+        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+          <table className="w-full table-auto border-collapse text-sm">
             <caption className="sr-only">{copy.caption}</caption>
-            <colgroup><col className="w-14 sm:w-16" /><col /><col className="w-20 sm:w-24" /><col className="w-16 sm:w-20" /></colgroup>
             <thead className="bg-canvas">
               <tr>
-                <th scope="col" className="p-2 text-end font-semibold sm:p-3">{copy.rank}</th>
-                <th scope="col" className="p-2 text-start font-semibold sm:p-3">{copy.student}</th>
-                <th scope="col" className="p-2 text-end font-semibold sm:p-3">{copy.xp}</th>
-                <th scope="col" className="p-2 text-end font-semibold sm:p-3">{copy.level}</th>
+                <th scope="col" className="w-px p-2 text-end font-semibold whitespace-nowrap sm:p-3">{copy.rank}</th>
+                <th scope="col" className="p-2 text-start font-semibold whitespace-nowrap sm:p-3">{copy.student}</th>
+                <th scope="col" className="w-px p-2 text-end font-semibold whitespace-nowrap sm:p-3">{copy.xp}</th>
+                <th scope="col" className="w-px p-2 text-end font-semibold whitespace-nowrap sm:p-3">{copy.level}</th>
               </tr>
             </thead>
             <tbody>

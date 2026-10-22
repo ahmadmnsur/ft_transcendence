@@ -11,7 +11,7 @@ export default {
   level: 'المستوى',
   yourPosition: 'ترتيبك',
   loading: 'جار تحميل لوحة الصدارة…',
-  retry: 'المحاولة مجددا',
+  retry: 'إعادة المحاولة',
   emptyTitle: 'لا يوجد طلاب لترتيبهم بعد',
   emptyDescription: 'ستظهر لوحة الصدارة عند انضمام طالب نشط.',
 } as const satisfies Catalogue<'ar', typeof en>;
