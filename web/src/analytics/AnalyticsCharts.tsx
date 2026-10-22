@@ -125,9 +125,11 @@ export function CompletionChart({ rounds }: { rounds: Analytics['completion']['p
             <XAxis dataKey="roundNumber" reversed={rtl} interval={0} height={48} tickLine={false} stroke={INK}
               padding={{ left: 32, right: 32 }} tick={{ fontSize: 12, fill: INK }}
               tickFormatter={(value: number) => isolate(formatNumber(value))} />
+            {/* CSS isolation avoids embedded bidi controls splitting Arabic digits around the percent sign. */}
             <YAxis orientation={rtl ? 'right' : 'left'} width={64} domain={[0, 1]} ticks={[0, 0.25, 0.5, 0.75, 1]}
-              tickFormatter={(value: number) => isolate(formatNumber(value, { style: 'percent', maximumFractionDigits: 0 }))}
-              tick={{ fill: INK, fontSize: 12 }} tickLine={false} axisLine={false} />
+              tickFormatter={(value: number) => formatNumber(value, { style: 'percent', maximumFractionDigits: 0 })}
+              tick={{ fill: INK, fontSize: 12, direction: rtl ? 'rtl' : 'ltr', unicodeBidi: 'isolate', textAnchor: 'end' }}
+              tickLine={false} axisLine={false} />
             <Tooltip content={<ChartTooltip percent />} filterNull={false} reverseDirection={{ x: rtl }} isAnimationActive={false} />
             <Line dataKey="value" name={copy.rate} type="linear" stroke={PRIMARY} strokeWidth={2}
               dot={{ r: 4, fill: PRIMARY }} connectNulls={false} isAnimationActive={false} />
