@@ -40,7 +40,7 @@ export class AdminRoundsController {
     return this.matching.openRound(requestActor(request));
   }
 
-  // `POST /api/admin/rounds/current/close` (§8.7): `{}` → `{ roundId, lapsed }`.
+  // `POST /api/admin/rounds/current/close` (§8.7): Round, lapse and progress counts.
   @Post('rounds/current/close')
   @HttpCode(200)
   closeRound(@Req() request: Request): Promise<CloseRoundResult> {

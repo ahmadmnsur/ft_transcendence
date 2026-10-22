@@ -3,6 +3,7 @@ import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
+import { evaluateStreaksAtClose } from '../gamification/streaks';
 import { readReview } from '../reviews/read-review';
 import { MISSIONS, STANDING_STATUSES, isInProgress } from '../shared/matches';
 import { readActiveActor, readActiveAdmin } from '../students/profile-writes';
@@ -198,30 +199,42 @@ export class MatchingService {
     );
   }
 
-  // §8.7 steps 1–2. Reads the actor, the open Round and every Match in it, then
-  // sets `closed_at` — irreversible — and lapses every Match still in
-  // progress, which pays nothing. The Streak and its Badge are the Streak
-  // ticket's (#58). A hand-made Match or a Review racing the close lands in one
-  // serial order with it (§3.6.3).
+  // §8.7: close, lapse, whole-Round Streak evaluation and Consistent Learner
+  // commit together. Reviews, Prompt answers and eligibility changes racing
+  // this close land in one serial order with it (§3.6.3).
   async closeRound(actor: Actor): Promise<CloseRoundResult> {
     return this.uow.run('round-close', async (tx, ctx) => {
       await readActiveAdmin(tx, actor.studentId);
       const round = await tx.round.findFirst({ where: { closedAt: null }, select: { id: true } });
       if (round === null) throw noOpenRound();
-      const matches = await tx.match.findMany({ where: { roundId: round.id }, select: { id: true, status: true } });
+      const matches = await tx.match.findMany({
+        where: { roundId: round.id }, select: { id: true, status: true, mentorId: true, menteeId: true },
+      });
       const toLapse = matches.filter((match) => isInProgress(match.status)).map((match) => match.id);
-      // Establish the answer predicate before closing: an overlapping answer
-      // reads this Round and inserts into this set, so SSI retries whichever
-      // operation follows the other. Streak calculation joins in the progress slice.
-      await tx.post.count({ where: { answerRoundId: round.id } });
+      const students = await tx.student.findMany({
+        select: { id: true, role: true, suspendedAt: true, removedAt: true, streak: true },
+      });
+      // Removed answers still qualify. Reading this predicate before closing
+      // also orders an overlapping answer against the close under SSI.
+      const answers = await tx.post.findMany({
+        where: { answerRoundId: round.id, promptId: { not: null } }, select: { authorId: true },
+      });
+      const qualifying = new Set(answers.map((answer) => answer.authorId));
+      for (const match of matches) {
+        if (match.status === 'COMPLETED') {
+          qualifying.add(match.mentorId);
+          qualifying.add(match.menteeId);
+        }
+      }
       await ctx.checkpoint('round.close');
 
       await tx.round.update({ where: { id: round.id }, data: { closedAt: ctx.now } });
       if (toLapse.length > 0) {
         await tx.match.updateMany({ where: { id: { in: toLapse } }, data: { status: 'LAPSED' } });
       }
+      const streaks = await evaluateStreaksAtClose(tx, students, qualifying, ctx.now);
       ctx.afterCommit(() => this.publisher.roundClosed());
-      return { roundId: round.id, lapsed: toLapse.length };
+      return { roundId: round.id, lapsed: toLapse.length, ...streaks };
     });
   }
 

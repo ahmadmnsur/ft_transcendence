@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 21 October 2026
+**42 PeerConnect** · Last updated: 22 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -103,6 +103,14 @@ your confirmed words, attributed to you, without a field naming your Mentor.
 Your XP, your Streak, and each Badge you have earned, with the date you earned it. Your Level is
 worked out from your XP rather than stored. Your profile shows your XP, Level progress, Streak and
 earned Badges with their dates to every signed-in Student.
+
+Your Streak changes only when a Round closes: it increases by one if you completed a Match as
+Mentor or Mentee, or answered a Reflection Prompt during that Round, even if that answer's Post was
+later removed. Without either activity it resets to zero. An answer accepted while no Round is open
+does not count towards a Streak. Suspension or Removal freezes your Streak and prevents a new
+Consistent Learner award at close; a skipped Round is never replayed. A Streak reaching three earns
+Consistent Learner once, and the Badge stays even if your Streak later resets. Becoming an Admin
+does not freeze your Streak: a completed Match from before promotion still counts.
 
 **Reports you file**
 

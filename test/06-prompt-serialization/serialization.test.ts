@@ -121,7 +121,7 @@ it.each(['answer', 'publication'] as const)('overlapping publication and answer,
   expect(later.body).toMatchObject({ ok: false, error: { code: 'prompt_not_live' } });
 });
 
-it.each(['answer', 'close'] as const)('%s commits first: the stored answer Round agrees and answering leaves Streak unchanged', async (first) => {
+it.each(['answer', 'close'] as const)('%s commits first: answer attribution and the close Streak agree', async (first) => {
   const admin = await createTestStaff(harness.app, 'ADMIN');
   const student = await createTestAccount(harness.app);
   const prisma = harness.app.get(PrismaService);
@@ -138,14 +138,20 @@ it.each(['answer', 'close'] as const)('%s commits first: the stored answer Round
   harness.barriers.disarm('round.close');
   harness.barriers.release(first === 'answer' ? 'prompt.answer' : 'round.close');
   expect((await (first === 'answer' ? answer : close)).body.ok).toBe(true);
+  expect((await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).streak).toBe(first === 'answer' ? 7 : 0);
   harness.barriers.release(first === 'answer' ? 'round.close' : 'prompt.answer');
   expect((await answer).body.ok).toBe(true);
-  expect((await close).body.ok).toBe(true);
+  expect((await close).body.data).toEqual({
+    roundId: opened.body.data.round.id, lapsed: 0,
+    streaksIncremented: first === 'answer' ? 1 : 0, streaksReset: first === 'answer' ? 0 : 1,
+    consistentLearnerAwarded: first === 'answer' ? 1 : 0,
+  });
   // The Round attribution has no public read; inspect this persistence invariant directly.
   const posts = await prisma.post.findMany({ where: { authorId: student.id } });
   expect(posts).toHaveLength(1);
   expect(posts[0].answerRoundId).toBe(first === 'answer' ? opened.body.data.round.id : null);
-  expect((await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).streak).toBe(7);
+  expect((await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).streak).toBe(first === 'answer' ? 8 : 0);
+  expect(await prisma.badgeAward.count({ where: { studentId: student.id, badge: 'CONSISTENT_LEARNER' } })).toBe(first === 'answer' ? 1 : 0);
 });
 
 it('equal publication timestamps still leave exactly one live Prompt in durable order', async () => {

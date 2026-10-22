@@ -64,8 +64,14 @@ export type OpenRoundResult = {
   unmatched: StudentRef[];
 };
 
-// §8.7's result. Its Streak fields arrive with the Streak ticket (#58).
-export type CloseRoundResult = { roundId: string; lapsed: number };
+// §8.7's result: only changed Streaks and newly inserted Badges are counted.
+export type CloseRoundResult = {
+  roundId: string;
+  lapsed: number;
+  streaksIncremented: number;
+  streaksReset: number;
+  consistentLearnerAwarded: number;
+};
 
 // How many of a Round's Matches are in each status, every status present.
 export type StatusCounts = Record<MatchStatus, number>;
