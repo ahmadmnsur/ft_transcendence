@@ -36,10 +36,6 @@ export class FileCleanup {
       // the hour keeps, however long this run then takes or sleeps.
       const cutoff = this.clock.now().getTime() - CLEANUP_MIN_AGE_MS;
       const named = await this.namedTokens(kind);
-      if (named === null) {
-        results.push({ bucket, listed: files.length, deleted: 0 });
-        continue;
-      }
       const stale = files
         .filter((file) => !named.has(file.name) && file.createdAt.getTime() < cutoff)
         .map((file) => file.name);
@@ -49,15 +45,12 @@ export class FileCleanup {
     return results;
   }
 
-  // The tokens the rows of one kind name, or null for a kind with no table
-  // in this build: its bucket is listed, and nothing in it is deleted. A
-  // stack still running this build once Evidence (#54) is on `main` cannot
-  // tell an Evidence file a newer build saved from one no row names, and
-  // deleting it would leave a row whose file is missing, which §9.8 rules
-  // out. #54 reads `Evidence.token` here, which turns its bucket on.
-  private async namedTokens(kind: FileKind): Promise<Set<string> | null> {
-    if (kind === 'evidence') return null;
-    const rows = await this.prisma.avatar.findMany({ select: { token: true } });
+  // The tokens the rows of one kind name: `Avatar.token` or `Evidence.token`.
+  private async namedTokens(kind: FileKind): Promise<Set<string>> {
+    const rows =
+      kind === 'avatars'
+        ? await this.prisma.avatar.findMany({ select: { token: true } })
+        : await this.prisma.evidence.findMany({ select: { token: true } });
     return new Set(rows.map((row) => row.token));
   }
 }

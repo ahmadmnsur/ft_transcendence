@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
+import type { RequestAuth } from '../core/session.guard';
 import { ApiError } from '../core/errors';
 import { PrismaService } from '../core/prisma.service';
 import { SupabaseStorageClient } from '../core/supabase-storage';
@@ -28,5 +29,34 @@ export class FilesService {
     if (row === null) throw new ApiError('not_found');
     const bytes = await this.storage.download(this.buckets.avatars, row.token);
     return { bytes, mime: row.mime };
+  }
+
+  // §6.3, §9.4 Read, §9.8 Reading: Evidence by its token, for the Mentor and
+  // Mentee of the one Match reached through its Review, whatever their role,
+  // or anyone whose current role is ADMIN, as the session guard read it for
+  // this request (§3.4); anyone else is 403, a Peer Moderator outside that
+  // pair included (ADR-0009 d4). An unknown token is 404. Then the whole file
+  // from the `evidence` bucket, as for an avatar.
+  async readEvidence(
+    actor: Actor,
+    role: RequestAuth['role'],
+    token: string,
+  ): Promise<{ bytes: Buffer; mime: string; filename: string }> {
+    const row = await this.prisma.evidence.findUnique({
+      where: { token },
+      select: {
+        token: true,
+        mime: true,
+        filename: true,
+        review: { select: { match: { select: { mentorId: true, menteeId: true } } } },
+      },
+    });
+    if (row === null) throw new ApiError('not_found');
+    const { mentorId, menteeId } = row.review.match;
+    if (actor.studentId !== mentorId && actor.studentId !== menteeId && role !== 'ADMIN') {
+      throw new ApiError('forbidden');
+    }
+    const bytes = await this.storage.download(this.buckets.evidence, row.token);
+    return { bytes, mime: row.mime, filename: row.filename };
   }
 }

@@ -2843,6 +2843,22 @@ Evidence is the one mutable attachment.
    > show them, and they are now refused, as this step asks. What the walk does not catch is a JPEG
    > built so that `jpeg-js` reads a segment's fields past or short of its length: it can still
    > decode with no scan, as a blank image, served like any avatar.
+
+   > **Updated 2026-10-22** (#54, from a security check of PR #206 and its review): `pdf-lib`
+   > 1.17.1 inflates every object stream and cross-reference stream whole while it loads, with no
+   > cap and without yielding, and a chain of filters on one stream holds a buffer for each filter.
+   > So a PDF of a few megabytes could ask for gigabytes, hold the thread every request waits on
+   > meanwhile, then take the process out of memory. The load therefore runs in a worker thread,
+   > one PDF at a time (`src/files/pdf-check.ts`), and the PDF is refused `file_invalid` when its
+   > decoders together would allocate more than 32 MiB over the whole load, counted before each
+   > allocation; when the worker's heap passes 256 MiB; or when the load is still running
+   > 5 seconds after its worker started. The wait for an earlier PDF does not count toward the
+   > 5 seconds. The 32 MiB counts both each decoder's output buffer and the four fixed dictionary
+   > arrays (24,576 bytes) an `LZWDecode` decoder allocates in its constructor, so a chain of
+   > `LZWDecode` filters is refused at construction as well. Measured: the most any of 122 real
+   > PDFs under 5 MiB needed is 3.55 MiB, and a generated PDF of 20,500 pages and about 4.8 MB with
+   > every object in one object stream needs 16.5 MiB; the slowest real PDF loads in about 1.3
+   > seconds.
 5. **Claims must agree**: a supplied filename extension must be `.png`, `.jpg`/`.jpeg` or `.pdf`
    matching the detected format (case-insensitive); a part `Content-Type` other than
    `application/octet-stream` must equal the detected canonical type. Disagreement →

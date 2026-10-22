@@ -14,6 +14,7 @@ export async function readReview(tx: PrismaTx, matchId: string): Promise<ReviewD
       privateFeedback: {
         select: { answerUsefulness: true, answerExplanation: true, rating: true, createdAt: true },
       },
+      evidence: { select: { token: true, mime: true, size: true, filename: true } },
     },
   });
   if (row === null) return { review: null, privateFeedback: null };
@@ -24,6 +25,7 @@ export async function readReview(tx: PrismaTx, matchId: string): Promise<ReviewD
       learned: row.learned,
       canNowDo: row.canNowDo,
       createdAt: row.createdAt.toISOString(),
+      evidence: row.evidence,
     },
     privateFeedback: feedback === null ? null : { ...feedback, createdAt: feedback.createdAt.toISOString() },
   };

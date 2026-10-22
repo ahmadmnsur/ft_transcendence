@@ -296,6 +296,7 @@ model Review {
   match     Match    @relation(fields: [matchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   post      Post?
   privateFeedback PrivateFeedback?
+  evidence  Evidence?
 }
 
 // §4.3.15: a Reflection Prompt, with no status column (ADR-0007 d1). The live
@@ -373,4 +374,22 @@ model BadgeAward {
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@id([studentId, badge])
+}
+
+// §4.3.14: 0..1 per Review, the one mutable attachment of an immutable Review
+// (ADR-0009 d5). No bytes: the file is in the private `evidence` bucket, named
+// by `token`, with no path column (§9.8). `token` has no default: the upload
+// makes it with `randomUUID()`, uploads the file under it, then writes this
+// row with that same token (§4.1). `mime` and `size` come from the validated
+// bytes, `filename` is the sanitised original name (§9.5). Written and
+// deleted only by the Review's Mentee; a Removal keeps it (ADR-0009 d6).
+model Evidence {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  reviewId   String   @unique @map("review_id") @db.Uuid
+  token      String   @unique @db.Uuid
+  mime       String
+  size       Int
+  filename   String
+  uploadedAt DateTime @map("uploaded_at") @db.Timestamptz(3)
+  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }

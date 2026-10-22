@@ -36,6 +36,17 @@ export default {
   submitted: 'Your Review was submitted.',
   unavailable: 'Only the Mentee can review an accepted Match.',
   back: 'View Match',
+  // §9.4, §9.7: the Evidence card under the Learning Outcome. FileDrop
+  // writes its own hint, checks, progress, preview and download link.
+  evidence: {
+    title: 'Evidence',
+    menteeSubtitle: 'Optional. You can replace or delete it at any time. Only the two Students in this Match and Admins can see it.',
+    readerSubtitle: 'Only the two Students in this Match and Admins can see it.',
+    fileLabel: 'Evidence file',
+    none: 'No Evidence is attached.',
+    saved: 'Your Evidence was saved.',
+    removed: 'Your Evidence was deleted.',
+  },
   receivedTitle: 'Private Feedback received',
   receivedEmpty: 'You have not received any Private Feedback yet.',
   loading: 'Loading…',

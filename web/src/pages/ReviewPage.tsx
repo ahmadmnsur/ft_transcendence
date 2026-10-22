@@ -42,7 +42,12 @@ export function ReviewPage(): React.JSX.Element {
       <h1 className="text-2xl font-semibold text-ink">{t.reviews.title}</h1>
       {earned?.matchId === matchId ? <EarnPanel earned={earned.result} title={t.reviews.submitted} /> : null}
       {data.review !== null ? (
-        <ReviewRecord {...data} />
+        <ReviewRecord
+          review={data.review}
+          privateFeedback={data.privateFeedback}
+          matchId={data.id}
+          evidenceEditable={data.myRole === 'MENTEE'}
+        />
       ) : data.myRole === 'MENTEE' && data.status === 'ACCEPTED' ? (
         <ReviewForm key={matchId} matchId={matchId} onSubmitted={(result) => setEarned({ matchId, result })} />
       ) : (
