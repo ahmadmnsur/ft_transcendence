@@ -27,5 +27,5 @@ export default {
   submitting: 'جار الإرسال…',
   cancel: 'إلغاء',
   close: 'إغلاق',
-  received: 'تم استلام بلاغك. لن يتم إبلاغك بما يحدث بعد ذلك.',
+  received: 'تم استلام بلاغك. لن يتم إعلامك بما يحدث بعد ذلك.',
 } as const satisfies Catalogue<'ar', typeof en>;
