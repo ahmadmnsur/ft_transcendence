@@ -1,0 +1,66 @@
+import type en from '../en/analytics';
+import type { Catalogue } from '../types';
+
+export default {
+  title: 'Analytique des apprentissages',
+  description: 'Ce que la communauté souhaite apprendre et peut enseigner, l’état actuel des Matchs et l’issue des Matchs passés.',
+  freshness: 'Les chiffres reflètent le dernier chargement de la page. Rechargez pour les actualiser.',
+  loading: 'Chargement de l’Analytique des apprentissages…',
+  retry: 'Réessayer',
+  insights: 'Compétences nécessitant une attention',
+  noInsights: 'Aucun manque d’offre ni Compétence non couverte à ce chargement.',
+  unoffered: {
+    one: '{count} Étudiant souhaite apprendre {skill} ; personne ne la propose comme Compétence à enseigner.',
+    many: '{count} Étudiants souhaitent apprendre {skill} ; personne ne la propose comme Compétence à enseigner.',
+    other: '{count} Étudiants souhaitent apprendre {skill} ; personne ne la propose comme Compétence à enseigner.',
+  },
+  undersupplied: {
+    text: '{demand} {skill} ; {supply}.',
+    parts: {
+      demand: { one: '{count} Étudiant souhaite apprendre', many: '{count} Étudiants souhaitent apprendre', other: '{count} Étudiants souhaitent apprendre' },
+      supply: { one: 'seul {count} peut l’enseigner', many: 'seuls {count} peuvent l’enseigner', other: 'seuls {count} peuvent l’enseigner' },
+    },
+  },
+  uncovered: {
+    text: '{skill} est demandée par {demand} et proposée par {supply}, mais aucun Match ne l’a jamais couverte.',
+    parts: {
+      demand: { one: '{count} Étudiant', many: '{count} Étudiants', other: '{count} Étudiants' },
+      supply: { one: '{count} Étudiant', many: '{count} Étudiants', other: '{count} Étudiants' },
+    },
+  },
+  requested: 'Compétences les plus demandées',
+  available: 'Compétences les plus proposées',
+  gap: 'Écart entre demande et offre',
+  gapDescription: 'La demande moins l’offre. Les barres négatives indiquent plus d’Étudiants proposant la Compétence que souhaitant l’apprendre.',
+  pool: 'Étudiants et Modérateurs étudiants actifs ayant au moins une Compétence, évalués à ce chargement.',
+  skill: 'Compétence',
+  students: 'Étudiants',
+  demand: 'Demande',
+  supply: 'Offre',
+  difference: 'Écart',
+  noSkills: 'Aucune Compétence à afficher à ce chargement.',
+  completion: 'Achèvement des Matchs',
+  closedOnly: 'Tours fermés uniquement. Les Matchs déclinés et ceux terminés par un Admin sont inclus.',
+  overall: 'Taux d’achèvement global',
+  completionCounts: {
+    text: '{completed} sur {total}.',
+    parts: {
+      completed: { one: '{count} Match terminé', many: '{count} Matchs terminés', other: '{count} Matchs terminés' },
+      total: { one: '{count} Match dans les Tours fermés', many: '{count} Matchs dans les Tours fermés', other: '{count} Matchs dans les Tours fermés' },
+    },
+  },
+  noRate: 'Aucun taux pour le moment : aucun Match dans les Tours fermés.',
+  perRound: 'Achèvement par Tour',
+  rate: 'Taux d’achèvement',
+  round: 'Tour',
+  roundNumber: 'Tour {number}',
+  noClosedRounds: 'Aucun Tour fermé pour le moment.',
+  emptyRound: 'Aucun Match dans ce Tour ; aucun taux d’achèvement.',
+  openState: 'État actuel des Matchs',
+  openDescription: 'Uniquement les Matchs proposés et acceptés du Tour ouvert.',
+  noOpenRound: 'Aucun Tour ouvert.',
+  closedOutcomes: 'Issue des Matchs',
+  outcomesDescription: 'Issues finales de tous les Matchs des Tours fermés.',
+  status: 'État du Match',
+  matches: 'Matchs',
+} as const satisfies Catalogue<'fr', typeof en>;

@@ -148,6 +148,9 @@ function SiteHeader(): React.JSX.Element {
                   {t.shell.header.usersLink}
                 </Link>
               ) : null}
+              {session.student.role === 'ADMIN' ? <Link to="/admin/analytics" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+                {t.analytics.title}
+              </Link> : null}
               <Link
                 to="/me"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
