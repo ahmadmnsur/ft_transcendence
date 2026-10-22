@@ -11,7 +11,7 @@ import { failureCode } from '../profile/failure';
 // so it follows a language switch: a Block, its lifting, or a failure's code.
 type Status = { kind: 'blocked' } | { kind: 'unblocked' } | { kind: 'failed'; code: unknown };
 
-// §6.4, §11.2, §11.3: Block and Unblock on another Student's profile. It
+// §6.4, §11.2–§11.3, ADR-0011 d13: Block and Unblock on profiles and in the report dialog. It
 // shows once the viewer's own Blocks have loaded, never on the viewer's own
 // profile, and a Removed Student offers only the lifting of a Block set
 // before the Removal. Blocking asks first, since it ends any Friendship;

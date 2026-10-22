@@ -20,6 +20,7 @@ import {
 import { PostList } from '../feed/PostList';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
+import { ReportControl } from '../moderation/ReportControl';
 import { BlockControl } from '../social/BlockControl';
 import { FriendControl } from '../social/FriendControl';
 import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
@@ -173,6 +174,7 @@ export function StudentPage(): React.JSX.Element {
         open dialog never carries over to the next profile. */}
         <FriendControl key={`friend-${student.id}`} student={student} />
         <BlockControl key={student.id} student={student} />
+        <ReportControl key={`report-${student.id}`} target={{ studentId: student.id }} student={student} />
         <DirectMessageControl student={student} />
         {removed || profile === null ? (
           <p className="text-sm text-ink-muted">{copy.removedNote}</p>
