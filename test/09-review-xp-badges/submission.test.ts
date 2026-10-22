@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import { insertCatalogue } from '../../prisma/seed/catalogue';
 import { PrismaService } from '../../src/core/prisma.service';
 import { UnitOfWork } from '../../src/core/uow';
+import { AdminUsersService } from '../../src/admin/admin-users.service';
 import { MatchingService } from '../../src/matching/matching.service';
 import { ReviewsService } from '../../src/reviews/reviews.service';
 import { StudentsService } from '../../src/students/students.service';
@@ -184,11 +185,11 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   expect((await post(adminCookie)).status).toBe(404);
   expect((await harness.get(`/api/matches/${id}`).set('Cookie', adminCookie)).status).toBe(404);
   expect((await harness.get(`/api/admin/matches/${id}`).set('Cookie', moderator.cookie)).status).toBe(403);
-  // Fixture promotion: the role-management paths join in their own ticket.
-  await harness.app.get(UnitOfWork).run('fixture-promotion', async (tx) => {
-    await tx.student.update({ where: { id: mentee.studentId }, data: { role: 'ADMIN' } });
-    await tx.student.update({ where: { id: mentor.studentId }, data: { role: 'ADMIN' } });
-  });
+  // Both are promoted through the Users table while their Match is in
+  // progress; it still completes through its ordinary path (§10.8, §12.7).
+  const users = harness.app.get(AdminUsersService);
+  await users.changeRole(admin, mentee.studentId, 'ADMIN');
+  await users.changeRole(admin, mentor.studentId, 'ADMIN');
   expect((await post(menteeAccount.cookie)).status).toBe(201);
   expect((await harness.get('/api/me').set('Cookie', mentorAccount.cookie)).body.data).toMatchObject({
     role: 'ADMIN', xp: 80, level: 1, badges: [{ badge: 'FIRST_MENTOR' }],
@@ -196,6 +197,22 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   expect((await harness.get('/api/me').set('Cookie', menteeAccount.cookie)).body.data).toMatchObject({
     role: 'ADMIN', xp: 120, level: 1, badges: [],
   });
+  // The Level and the Badge stay on the profile, the public one and the
+  // Users table's, and only the Leaderboard and its pin leave the new
+  // Admins out (§10.8).
+  expect((await harness.get(`/api/students/${mentor.studentId}`).set('Cookie', outsider.cookie)).body.data).toMatchObject({
+    student: { id: mentor.studentId, isAdmin: true },
+    profile: { xp: 80, level: 1, badges: [{ badge: 'FIRST_MENTOR' }] },
+  });
+  expect(await users.getUser(admin, mentor.studentId)).toMatchObject({
+    role: 'ADMIN', xp: 80, level: 1, badges: [{ badge: 'FIRST_MENTOR' }],
+  });
+  const board = await harness.get('/api/leaderboard').set('Cookie', outsider.cookie);
+  // Zero XP each, so ties break by id: the outsider was made first.
+  expect(board.body.data.top.map((row: { student: { id: string } }) => row.student.id)).toEqual([outsider.id, moderator.id]);
+  for (const cookie of [mentorAccount.cookie, menteeAccount.cookie]) {
+    expect((await harness.get('/api/leaderboard').set('Cookie', cookie)).body.data.me).toBeNull();
+  }
   for (const cookie of [menteeAccount.cookie, mentorAccount.cookie]) {
     const detail = await harness.get(`/api/matches/${id}`).set('Cookie', cookie);
     expect(detail.status).toBe(200);

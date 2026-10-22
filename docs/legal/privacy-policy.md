@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 22 October 2026
+**42 PeerConnect** · Last updated: 23 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -180,7 +180,7 @@ your email address is used only to sign in.
 | Your Blocks | you only. The other Student is not told, though they may notice they can no longer message you, send you a friend request or be matched with you |
 | A Report you file | Admins, who can see that you filed it. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |
 | Learning Analytics | Admins only, and only community-wide figures |
-| Your role | Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
+| Your role, and whether your account is suspended or removed | you, and Admins in their list of every account. Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
 
 Someone who is not signed in can see nothing but the sign-in and sign-up pages and these two policy
 pages.

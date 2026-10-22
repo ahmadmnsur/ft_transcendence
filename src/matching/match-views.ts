@@ -5,6 +5,7 @@ import { STUDENT_REF_SELECT, toStudentRef, type StudentRef } from '../students/s
 import type {
   AdminMatchView,
   AdminRoundMatch,
+  AdminStudentMatch,
   CoverageView,
   MatchView,
   StatusCounts,
@@ -147,6 +148,20 @@ export function toAdminRoundMatch(row: RoundMatchRow): AdminRoundMatch {
     handMade: row.compatibilityScore === null,
     mission: row.mission,
   };
+}
+
+// §6.12: every Match a Student was in, on either side and in every status,
+// for the Users table's detail; newest first, as the Student's own history
+// orders them (§6.6). Only Admins reach it (§4.6).
+export async function readStudentMatches(tx: PrismaTx, studentId: string): Promise<AdminStudentMatch[]> {
+  const rows = await tx.match.findMany({
+    where: { OR: [{ mentorId: studentId }, { menteeId: studentId }] },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: { ...ROUND_MATCH_SELECT, roundId: true },
+  });
+  if (rows.length === 0) return [];
+  const numbers = await roundNumbers(tx);
+  return rows.map((row) => ({ ...toAdminRoundMatch(row), roundNumber: numbers.get(row.roundId) ?? 0 }));
 }
 
 // Every status at zero, so a count a Round lacks still reads 0.

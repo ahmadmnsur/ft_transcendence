@@ -11,6 +11,7 @@ export default {
     messagesLink: 'الرسائل المباشرة',
     matchLink: 'المطابقة',
     roundsLink: 'الجولات',
+    usersLink: 'المستخدمون',
     profileLink: 'ملفي الشخصي',
     signOut: 'تسجيل الخروج',
     signingOut: 'جار تسجيل الخروج…',

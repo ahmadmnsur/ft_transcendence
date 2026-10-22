@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { CoreModule } from './core/core.module';
 import { FeedModule } from './feed/feed.module';
@@ -20,7 +21,7 @@ import { GamificationModule } from './gamification/gamification.module';
   imports: [
     CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule,
     MessagingModule, MatchingModule, PromptsModule, ReviewsModule, FeedModule, GamificationModule,
-    ModerationModule,
+    ModerationModule, AdminModule,
   ],
   controllers: [HealthController],
   providers: [FileCleanupSchedule],

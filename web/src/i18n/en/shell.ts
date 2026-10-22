@@ -11,6 +11,8 @@ export default {
     matchLink: 'Match',
     // Shown to Admins only: their Round pages (§3.5.1).
     roundsLink: 'Rounds',
+    // Shown to Admins only: the Users table (§3.5.1).
+    usersLink: 'Users',
     profileLink: 'My profile',
     signOut: 'Sign out',
     signingOut: 'Signing out…',

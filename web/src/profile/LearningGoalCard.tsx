@@ -1,20 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidLearningGoalText, LIMITS } from '@shared/limits';
 import { ApiRefusalError } from '../api/client';
-import {
-  ME_QUERY_KEY,
-  clearLearningGoal,
-  meQueryOptions,
-  setLearningGoal,
-  studentQueryKey,
-  type LearningGoalView,
-  type OwnProfile,
-} from '../api/profile';
+import type { LearningGoalView } from '../api/profile';
 import { Banner, Button, Card, Select, SkillName, TextArea, skillNameText } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
+import type { ProfileTarget } from './target';
 
 // What the status Banner says, kept as what happened rather than as a text,
 // so it follows a language switch: a save, a clear, or a failure's code.
@@ -25,11 +17,10 @@ type Status = { kind: 'saved' } | { kind: 'cleared' } | { kind: 'failed'; code: 
 // Edit button; the form appears for an edit, or whenever no Goal is saved, and
 // only while the learn list has a Skill to name. Saving writes both fields at
 // once, clearing removes both.
-export function LearningGoalCard(): React.JSX.Element {
+export function LearningGoalCard({ target }: { target: ProfileTarget }): React.JSX.Element {
   const { t, format, errorText } = useI18n();
-  const copy = t.profile.goal;
-  const queryClient = useQueryClient();
-  const { data: me, isError } = useQuery(meQueryOptions());
+  const copy = target.voice === 'own' ? t.profile.goal : { ...t.profile.goal, ...t.admin.cards.goal };
+  const profile = target.profile;
   // Null while nothing is edited: the fields follow the server then, so a
   // refetch never overwrites what the Student is typing.
   const [draft, setDraft] = useState<{ skillId: string; text: string } | null>(null);
@@ -50,8 +41,8 @@ export function LearningGoalCard(): React.JSX.Element {
   const editRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  const learn = me?.skills.learn ?? [];
-  const goal = me?.learningGoal ?? null;
+  const learn = profile?.skills.learn ?? [];
+  const goal = profile?.learningGoal ?? null;
 
   // The status slot renders only while there is a message; once it renders,
   // focus moves to it, as with the field errors below.
@@ -78,10 +69,10 @@ export function LearningGoalCard(): React.JSX.Element {
   // §6.2: the card shell shows at once. While the profile read is pending the
   // body says so and reserves the loaded height; a failed read leaves the body
   // empty, since `/me` shows the failure once above the cards.
-  if (me === undefined) {
+  if (profile === undefined) {
     return (
       <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
-        <PendingCardBody failed={isError} reserveClassName="min-h-48" />
+        <PendingCardBody failed={target.failed} reserveClassName="min-h-48" />
       </Card>
     );
   }
@@ -90,9 +81,6 @@ export function LearningGoalCard(): React.JSX.Element {
   const text = draft?.text ?? goal?.text ?? '';
   // A saved Goal shows as plain content unless the Student is editing it.
   const viewed = goal !== null && !editing ? goal : null;
-  // Read outside the handlers: the narrowing of `me` does not reach a function
-  // declaration.
-  const meId = me.id;
 
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
@@ -112,18 +100,10 @@ export function LearningGoalCard(): React.JSX.Element {
     }
     setPending(true);
     try {
-      const saved = await setLearningGoal({ skillId, text: text.trim() });
-      // A `GET /api/me` still in flight read the profile before this write;
-      // cancelling it keeps its older answer from landing over this one.
-      await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
+      const saved = await target.api.setLearningGoal({ skillId, text: text.trim() });
       // The answer is the stored Goal (§6.2), so the cached read takes it
-      // without a refetch. The own public profile is dropped, not just
-      // invalidated: an inactive query would render the old Goal until its
-      // background refetch returns, so the next visit must load afresh.
-      queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (previous) =>
-        previous === undefined ? previous : { ...previous, learningGoal: saved },
-      );
-      queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
+      // without a refetch.
+      await target.apply({ learningGoal: saved });
       setDraft(null);
       setEditing(false);
       setStatus({ kind: 'saved' });
@@ -147,16 +127,8 @@ export function LearningGoalCard(): React.JSX.Element {
     setStatus(undefined);
     setClearing(true);
     try {
-      await clearLearningGoal();
-      // A `GET /api/me` still in flight read the profile before this write;
-      // cancelling it keeps its older answer from landing over this one.
-      await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
-      queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (previous) =>
-        previous === undefined ? previous : { ...previous, learningGoal: null },
-      );
-      // The own public profile shows the Goal too; drop it so the next visit
-      // loads afresh instead of rendering the old Goal while it refetches.
-      queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
+      await target.api.clearLearningGoal();
+      await target.apply({ learningGoal: null });
       setDraft(null);
       setEditing(false);
       setStatus({ kind: 'cleared' });

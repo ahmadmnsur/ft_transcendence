@@ -11,6 +11,7 @@ export default {
     messagesLink: 'Messages directs',
     matchLink: 'Match',
     roundsLink: 'Tours',
+    usersLink: 'Utilisateurs',
     profileLink: 'Mon profil',
     signOut: 'Se déconnecter',
     signingOut: 'Déconnexion…',

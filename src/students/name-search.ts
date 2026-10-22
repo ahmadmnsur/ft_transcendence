@@ -4,8 +4,9 @@ import { foldName } from '../shared/fold-name';
 // Prisma's `contains` puts its text into a LIKE pattern as it is: on Prisma
 // 7.10, `contains: '%'` matched every name, and `contains: '\%'` matched only
 // a name holding `%`. So `\`, `%` and `_` are escaped here, the backslash
-// first, and each then matches only itself (#95's refinement).
-function escapeLikePattern(text: string): string {
+// first, and each then matches only itself (#95's refinement). §6.12's Users
+// table escapes its email match with it too.
+export function escapeLikePattern(text: string): string {
   return text.replace(/[\\%_]/g, '\\$&');
 }
 

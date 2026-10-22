@@ -1,34 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LIMITS } from '@shared/limits';
-import { deleteAvatar, uploadAvatar } from '../api/avatar';
-import {
-  ME_QUERY_KEY,
-  STUDENT_SEARCH_QUERY_KEY,
-  meQueryOptions,
-  studentQueryKey,
-  type OwnProfile,
-} from '../api/profile';
-import { SESSION_QUERY_KEY } from '../api/session';
 import { Avatar, Banner, Button, Card, FileDrop, Modal } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
+import type { ProfileTarget } from './target';
 
 // What the status Banner says, kept as what happened rather than as a text,
 // so it follows a language switch.
 type Status = { kind: 'saved' } | { kind: 'removed' } | { kind: 'failed'; code: unknown };
 
-// §6.3, §9.6, §9.7: the avatar on `/me`. A picked file is uploaded at once
+// §6.3, §9.6, §9.7: the avatar on `/me`, and on the Users table's detail
+// (§6.12). A picked file is uploaded at once
 // through XMLHttpRequest, with FileDrop's preview and progress bar. FileDrop
 // has already checked the size, extension and declared type against the
 // shared limits (§9.5); the server still decides, and a refusal shows on the
 // field. The saved avatar shows beside it, and removing it asks first.
-export function AvatarCard(): React.JSX.Element {
+export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Element {
   const { t, errorText } = useI18n();
-  const copy = t.profile.avatar;
-  const queryClient = useQueryClient();
-  const { data: me, isError } = useQuery(meQueryOptions());
+  const copy = target.voice === 'own' ? t.profile.avatar : { ...t.profile.avatar, ...t.admin.cards.avatar };
+  const profile = target.profile;
   // The file being uploaded and how much of it is sent.
   const [upload, setUpload] = useState<{ file: File; progress: number } | null>(null);
   // A file the server refused, kept in the field beside the refusal's sentence.
@@ -48,30 +39,15 @@ export function AvatarCard(): React.JSX.Element {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
-  if (me === undefined) {
+  if (profile === undefined) {
     return (
       <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
-        <PendingCardBody failed={isError} reserveClassName="min-h-40" />
+        <PendingCardBody failed={target.failed} reserveClassName="min-h-40" />
       </Card>
     );
   }
 
-  const meId = me.id;
-  const avatarUrl = me.avatarUrl;
-
-  // The own-profile query takes the new URL at once. The header's session
-  // and the own public profile carry the avatar too: the session is read
-  // again, the profile dropped so the next visit loads afresh, and the
-  // search pages, which show it beside the name, are read again.
-  async function applyAvatar(next: string | null): Promise<void> {
-    await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
-    queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (current) =>
-      current === undefined ? current : { ...current, avatarUrl: next },
-    );
-    void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
-    queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
-    void queryClient.invalidateQueries({ queryKey: STUDENT_SEARCH_QUERY_KEY });
-  }
+  const avatarUrl = profile.avatarUrl;
 
   async function start(file: File): Promise<void> {
     controllerRef.current?.abort();
@@ -81,20 +57,22 @@ export function AvatarCard(): React.JSX.Element {
     setStatus(undefined);
     setUpload({ file, progress: 0 });
     try {
-      const saved = await uploadAvatar(file, {
+      const saved = await target.api.uploadAvatar(file, {
         signal: controller.signal,
         onProgress: (progress) => {
           if (controllerRef.current === controller) setUpload({ file, progress });
         },
       });
       if (controllerRef.current !== controller) return;
-      await applyAvatar(saved.avatarUrl);
+      // The cached profile takes the new URL at once; the target refreshes
+      // the header, the public profile and the search pages, which show it.
+      await target.apply({ avatarUrl: saved.avatarUrl });
       setStatus({ kind: 'saved' });
     } catch (error) {
       // A stopped upload may still have been saved once its body was sent,
       // so the profile is read again rather than guessed.
       if (controller.signal.aborted) {
-        void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+        target.reread();
         return;
       }
       if (controllerRef.current === controller) setRefused({ file, code: failureCode(error) });
@@ -124,8 +102,8 @@ export function AvatarCard(): React.JSX.Element {
     if (removing) return;
     setRemoving(true);
     try {
-      await deleteAvatar();
-      await applyAvatar(null);
+      await target.api.deleteAvatar();
+      await target.apply({ avatarUrl: null });
       setStatus({ kind: 'removed' });
     } catch (error) {
       setStatus({ kind: 'failed', code: failureCode(error) });

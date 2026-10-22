@@ -1,4 +1,5 @@
 import type { Role } from '../shared/roles';
+import type { StudentStatus } from '../shared/student-status';
 import type { StudentRef } from './student-ref';
 import type { BadgeView } from '../gamification/views';
 
@@ -11,9 +12,8 @@ export type LearningGoalView = { skill: SkillView; text: string };
 // Each list is sorted by Skill name (§6.2).
 export type SkillsView = { teach: SkillView[]; learn: SkillView[] };
 
-// §4.3.1: status is derived — removedAt → REMOVED, else suspendedAt →
-// SUSPENDED, else ACTIVE.
-export type StudentStatus = 'ACTIVE' | 'SUSPENDED' | 'REMOVED';
+// §4.3.1's derived status, shared with the SPA.
+export type { StudentStatus };
 
 export type OwnProfile = {
   id: string;

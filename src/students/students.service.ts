@@ -10,6 +10,7 @@ import { badgeViews } from '../gamification/views';
 import { normalizeEmail } from '../shared/limits';
 import type { SearchOrder, SearchSort } from './dto';
 import { nameSearchWhere } from './name-search';
+import { PROFILE_SELECT, deriveStatus, goalOf, skillsOf, type ProfileRow } from './profile-reads';
 import {
   applyLearningGoal,
   applySkills,
@@ -23,34 +24,13 @@ import type {
   OwnProfile,
   PublicProfile,
   SkillView,
-  SkillsView,
   StudentSearchItem,
   StudentSearchPage,
-  StudentStatus,
 } from './views';
 
 // §3.4's `students` module: `Student` profile fields, `StudentSkill` and the
 // Learning Goal. A write method takes an Actor and runs in exactly one
 // `uow.run`; a read method runs outside the Unit of Work.
-
-// The public profile's StudentRef fields come from the shared select
-// (§6.0.1); the Goal and Progress fields are read beside them.
-const PROFILE_SELECT = {
-  ...STUDENT_REF_SELECT,
-  xp: true,
-  streak: true,
-  badgeAwards: {
-    select: { badge: true, awardedAt: true },
-    orderBy: [{ awardedAt: 'asc' }, { badge: 'asc' }],
-  },
-  suspendedAt: true,
-  learningGoalStudentSkillId: true,
-  learningGoalText: true,
-  studentSkills: {
-    orderBy: { skill: { name: 'asc' } },
-    select: { id: true, kind: true, skill: { select: { id: true, name: true } } },
-  },
-} as const satisfies Prisma.StudentSelect;
 
 // §6.2: the own profile adds the email (never another Student's, §4.6) and
 // whether a 42 account is connected — the boolean `fortyTwoConnected`, never
@@ -71,10 +51,8 @@ const SEARCH_SELECT = {
 
 // The row shapes come from the selects, so they cannot drift from what the
 // query reads.
-type ProfileRow = Prisma.StudentGetPayload<{ select: typeof PROFILE_SELECT }>;
 type OwnProfileRow = Prisma.StudentGetPayload<{ select: typeof OWN_PROFILE_SELECT }>;
 type SearchRow = Prisma.StudentGetPayload<{ select: typeof SEARCH_SELECT }>;
-type SkillRow = ProfileRow['studentSkills'][number];
 
 // What `search` filters, sorts and pages by; the DTO fills the defaults.
 export type StudentSearchQuery = {
@@ -87,34 +65,6 @@ export type StudentSearchQuery = {
   page: number;
   pageSize: number;
 };
-
-// §4.3.1: status is derived — removedAt → REMOVED, else suspendedAt →
-// SUSPENDED, else ACTIVE.
-function deriveStatus(row: Pick<ProfileRow, 'removedAt' | 'suspendedAt'>): StudentStatus {
-  if (row.removedAt !== null) return 'REMOVED';
-  if (row.suspendedAt !== null) return 'SUSPENDED';
-  return 'ACTIVE';
-}
-
-// Each list sorted by Skill name (§6.2): the select orders by `skill.name`.
-function skillsOf(rows: SkillRow[]): SkillsView {
-  const teach: SkillView[] = [];
-  const learn: SkillView[] = [];
-  for (const row of rows) {
-    if (row.kind === 'TEACH') teach.push(row.skill);
-    else learn.push(row.skill);
-  }
-  return { teach, learn };
-}
-
-// The Goal's Skill is one of this Student's own rows (M5), so it is among the
-// rows already read; the text lives on the Student (§4.3.1).
-function goalOf(row: ProfileRow): LearningGoalView | null {
-  if (row.learningGoalStudentSkillId === null || row.learningGoalText === null) return null;
-  const goalRow = row.studentSkills.find((r) => r.id === row.learningGoalStudentSkillId);
-  if (goalRow === undefined) return null;
-  return { skill: goalRow.skill, text: row.learningGoalText };
-}
 
 function toOwnProfile(row: OwnProfileRow): OwnProfile {
   return {

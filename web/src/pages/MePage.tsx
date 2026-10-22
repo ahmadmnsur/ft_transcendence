@@ -16,6 +16,7 @@ import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
 import { SkillsCard } from '../profile/SkillsCard';
 import { ME_QUERY_KEY, meQueryOptions } from '../api/profile';
 import { ConfirmWith42Card } from '../profile/ConfirmWith42Card';
+import { useOwnProfileTarget } from '../profile/target';
 import { OwnProgressCard } from '../progress/ProgressCard';
 
 const meSearch = getRouteApi('/me');
@@ -35,6 +36,7 @@ export function MePage(): React.JSX.Element {
   // §6.2: the three profile cards share the own-profile read; its failure is
   // shown once here, above them, not three times inside them.
   const { data: me, isError: meError, refetch: refetchMe } = useQuery(meQueryOptions());
+  const profile = useOwnProfileTarget();
   // §5.6 B: the 42 card appears only when the config says 42 is enabled; the
   // callback's outcomes arrive as the `oauth` search param.
   const { data: config } = useQuery(configQueryOptions());
@@ -192,11 +194,11 @@ export function MePage(): React.JSX.Element {
               </Button>
             </div>
           ) : null}
-          <AvatarCard />
-          <ProfileDetailsCard />
+          <AvatarCard target={profile} />
+          <ProfileDetailsCard target={profile} />
           <OwnProgressCard />
-          <SkillsCard />
-          <LearningGoalCard />
+          <SkillsCard target={profile} />
+          <LearningGoalCard target={profile} />
           {config?.oauth42Enabled === true ? (
             <FortyTwoCard onAction={() => setOauthNotice(undefined)} />
           ) : null}

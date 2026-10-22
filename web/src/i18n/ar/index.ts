@@ -1,5 +1,6 @@
 import type en from '../en';
 import type { Checked } from '../types';
+import admin from './admin';
 import auth from './auth';
 import design from './design';
 import errors from './errors';
@@ -17,7 +18,7 @@ import progress from './progress';
 import leaderboard from './leaderboard';
 import reports from './reports';
 
-const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard, reports };
+const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard, reports, admin };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, no empty text and no vowel mark in its own Arabic.

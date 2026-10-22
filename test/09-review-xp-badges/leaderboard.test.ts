@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { AdminUsersService } from '../../src/admin/admin-users.service';
 import { UnitOfWork } from '../../src/core/uow';
 import { createTestAccount, createTestStaff, type TestAccount } from '../harness/accounts';
 import { useHarness } from '../harness/app';
@@ -68,14 +69,13 @@ it('never reintroduces an Admin through the pin, and demotion restores the retai
   await setXp(viewer, 120);
   const read = () => leaderboard(viewer.cookie);
   expect((await read()).body.data.me).toEqual({ rank: 11, xp: 120, level: 1 });
-  await harness.app.get(UnitOfWork).run('fixture-promotion', async (tx) => {
-    await tx.student.update({ where: { id: viewer.id }, data: { role: 'ADMIN' } });
-  });
+  // Promotion and demotion through the Users table's role change (§12.7).
+  const admin = { studentId: (await createTestStaff(harness.app, 'ADMIN')).id, sessionHash: null };
+  const users = harness.app.get(AdminUsersService);
+  await users.changeRole(admin, viewer.id, 'ADMIN');
   expect((await read()).body.data.me).toBeNull();
   expect((await harness.get('/api/me/progress').set('Cookie', viewer.cookie)).body.data.xp).toBe(120);
-  await harness.app.get(UnitOfWork).run('fixture-demotion', async (tx) => {
-    await tx.student.update({ where: { id: viewer.id }, data: { role: 'PEER_MODERATOR' } });
-  });
+  await users.changeRole(admin, viewer.id, 'PEER_MODERATOR');
   expect((await read()).body.data.me).toEqual({ rank: 11, xp: 120, level: 1 });
 });
 
