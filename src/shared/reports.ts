@@ -7,3 +7,6 @@ export const REPORT_REASONS = [
 ] as const;
 
 export type ReportReason = (typeof REPORT_REASONS)[number];
+
+// §12.2: the only two report targets, shared by both ends.
+export type ReportTarget = { postId: string } | { studentId: string };

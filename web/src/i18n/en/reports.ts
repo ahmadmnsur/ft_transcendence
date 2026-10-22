@@ -29,5 +29,4 @@ export default {
   cancel: 'Cancel',
   close: 'Close',
   received: "Your Report was received. You won't be told what happens next.",
-  block: 'Block {name}',
 } as const satisfies EnGroup;

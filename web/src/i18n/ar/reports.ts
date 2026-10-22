@@ -28,5 +28,4 @@ export default {
   cancel: 'إلغاء',
   close: 'إغلاق',
   received: 'تم استلام بلاغك. لن يتم إبلاغك بما يحدث بعد ذلك.',
-  block: 'حظر {name}',
 } as const satisfies Catalogue<'ar', typeof en>;

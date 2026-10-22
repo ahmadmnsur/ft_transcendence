@@ -1,9 +1,9 @@
-import type { ReportReason } from '@shared/reports';
+import type { ReportReason, ReportTarget } from '@shared/reports';
 import { apiFetch } from './client';
 
 // §12.2: a receipt only; the reporter never reads a Report's outcome.
 export async function fileReport(
-  target: { postId: string } | { studentId: string },
+  target: ReportTarget,
   reason: ReportReason,
   text: string | undefined,
 ): Promise<{ received: true }> {

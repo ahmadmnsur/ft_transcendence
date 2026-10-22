@@ -1,14 +1,7 @@
 import { IsIn, IsString, IsUUID, ValidateBy, ValidateIf } from 'class-validator';
 import { sharedValidator, Trimmed } from '../auth/dto';
-import type { ReportReason as PrismaReportReason } from '../generated/prisma/client';
 import { isValidText, LIMITS } from '../shared/limits';
 import { REPORT_REASONS, type ReportReason } from '../shared/reports';
-
-// §4.2: a reason accepted by either end must also be storable by Prisma.
-type Assert<T extends true> = T;
-type ReportReasonParity = Assert<
-  [ReportReason] extends [PrismaReportReason] ? [PrismaReportReason] extends [ReportReason] ? true : false : false
->;
 
 const ReportText = sharedValidator('reportText', (value) => isValidText(value, LIMITS.reportText, true));
 

@@ -28,5 +28,4 @@ export default {
   cancel: 'Annuler',
   close: 'Fermer',
   received: 'Votre Signalement a été reçu. Vous ne serez pas informé de la suite.',
-  block: 'Bloquer {name}',
 } as const satisfies Catalogue<'fr', typeof en>;
