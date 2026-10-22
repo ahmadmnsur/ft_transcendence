@@ -10,6 +10,7 @@ import { AdminRoundsPage } from './pages/AdminRoundsPage';
 import { FeedbackPage } from './pages/FeedbackPage';
 import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 import { MatchDetailPage } from './pages/MatchDetailPage';
 import { MatchPage } from './pages/MatchPage';
 import { MatchesPage } from './pages/MatchesPage';
@@ -256,6 +257,13 @@ const rulesRoute = createRoute({
   component: RulesPage,
 });
 
+const leaderboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/leaderboard',
+  beforeLoad: requireSession,
+  component: LeaderboardPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
@@ -280,6 +288,7 @@ const routeTree = rootRoute.addChildren([
   privacyRoute,
   termsRoute,
   rulesRoute,
+  leaderboardRoute,
 ]);
 
 export const router = createRouter({

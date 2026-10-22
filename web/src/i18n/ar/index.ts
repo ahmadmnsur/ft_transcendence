@@ -14,8 +14,9 @@ import social from './social';
 import messages from './messages';
 import prompts from './prompts';
 import progress from './progress';
+import leaderboard from './leaderboard';
 
-const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress };
+const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, no empty text and no vowel mark in its own Arabic.

@@ -12,7 +12,8 @@ and what you can change. It describes the platform exactly as it works — inclu
   your Matches and Reviews, your Posts and Likes, your Friends, Blocks and Direct Messages, and your
   XP and Badges.
 - Your Learning Outcomes, Evidence, Private Feedback and Direct Messages are never public. Your
-  profile, your Posts and your place on the Leaderboard are visible to every signed-in Student.
+  profile, your Posts and the Leaderboard's top ten are visible to every signed-in Student.
+  Your own Leaderboard position outside the top ten is visible only to you.
 - The team's copy of PeerConnect is stored by **Supabase**, an online database service, in
   Frankfurt, Germany. Your browser never contacts Supabase.
 - PeerConnect sets one cookie, to keep you signed in. It has no analytics or advertising, and your
@@ -112,6 +113,11 @@ Consistent Learner award at close; a skipped Round is never replayed. A Streak r
 Consistent Learner once, and the Badge stays even if your Streak later resets. Becoming an Admin
 does not freeze your Streak: a completed Match from before promotion still counts.
 
+The Leaderboard shows the ten active Students with the most XP, including Peer Moderators, with
+their display names, avatars, ranks, XP and Levels. Admins, Suspended Students and Removed Students
+are excluded, without changing their stored XP. If you are eligible and outside the top ten, only
+you see your own additional rank, XP and Level on that page.
+
 **Reports you file**
 
 Who or what you reported, the reason you chose, anything you wrote, and how staff resolved it.
@@ -161,7 +167,8 @@ your email address is used only to sign in.
 | --- | --- |
 | Your profile: display name, avatar, Skills, Learning Goal and its sentence, XP, Level, Streak, Badges and your Posts | every signed-in Student |
 | Posts, and who liked each one | every signed-in Student |
-| The Leaderboard: the top ten Students by XP, plus your own position | every signed-in Student |
+| The Leaderboard: the top ten eligible Students by XP | every signed-in Student |
+| Your own position outside the top ten, when eligible | you alone |
 | Whether you are online now | your Friends only |
 | Your email address | you and Admins — never shown on your profile or in search |
 | Your list of Friends | you only |

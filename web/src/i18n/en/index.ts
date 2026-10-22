@@ -13,8 +13,9 @@ import social from './social';
 import messages from './messages';
 import prompts from './prompts';
 import progress from './progress';
+import leaderboard from './leaderboard';
 
-const en = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress } satisfies EnGroup;
+const en = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard } satisfies EnGroup;
 
 // English checked against itself: no empty text, camelCase placeholders,
 // every form of a plural holding the same ones, no reserved key.
