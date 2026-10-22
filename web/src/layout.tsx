@@ -113,6 +113,9 @@ function SiteHeader(): React.JSX.Element {
               <Link to="/rules" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
                 {t.progress.rules.nav}
               </Link>
+              <Link to="/leaderboard" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+                {t.leaderboard.title}
+              </Link>
               <Link
                 to="/match"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
