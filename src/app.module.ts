@@ -7,6 +7,7 @@ import { FilesModule } from './files/files.module';
 import { HealthController } from './health.controller';
 import { MatchingModule } from './matching/matching.module';
 import { MessagingModule } from './messaging/messaging.module';
+import { ModerationModule } from './moderation/moderation.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { SocialModule } from './social/social.module';
 import { StudentsModule } from './students/students.module';
@@ -19,6 +20,7 @@ import { GamificationModule } from './gamification/gamification.module';
   imports: [
     CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule,
     MessagingModule, MatchingModule, PromptsModule, ReviewsModule, FeedModule, GamificationModule,
+    ModerationModule,
   ],
   controllers: [HealthController],
   providers: [FileCleanupSchedule],

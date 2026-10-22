@@ -6,6 +6,7 @@ import { likersQueryOptions, setLike, type PostView } from '../api/feed';
 import type { StudentRef } from '../api/profile';
 import { Button, HeartIcon, Modal } from '../design';
 import { useI18n } from '../i18n/context';
+import { ReportControl } from '../moderation/ReportControl';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 
@@ -162,7 +163,10 @@ export function PostCard({ post, showPrompt = true }: { post: PostView; showProm
       <p dir="auto" className="whitespace-pre-wrap text-ink wrap-anywhere">
         {post.body}
       </p>
-      <LikeControls post={post} />
+      <div className="flex items-start justify-between gap-2">
+        <LikeControls post={post} />
+        <ReportControl target={{ postId: post.id }} student={post.author} />
+      </div>
     </article>
   );
 }

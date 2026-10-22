@@ -15,8 +15,9 @@ import messages from './messages';
 import prompts from './prompts';
 import progress from './progress';
 import leaderboard from './leaderboard';
+import reports from './reports';
 
-const fr = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard };
+const fr = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard, reports };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, and no empty text, whether or not an area file has its `satisfies`.

@@ -60,6 +60,22 @@ enum CoverageDirection {
   REVERSE
 }
 
+// §4.2: coupled to the Terms (ADR-0011 d4, ADR-0018 d9): adding, removing or
+// renaming a reason changes docs/legal/terms-of-service.md in the same PR.
+enum ReportReason {
+  HARASSMENT
+  SPAM
+  INAPPROPRIATE_CONTENT
+  OTHER
+}
+
+// §4.2: a Report is open until its one resolution.
+enum ReportState {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
 enum Badge {
   FIRST_MENTOR
   KNOWLEDGE_SHARER
@@ -102,6 +118,9 @@ model Student {
   posts                      Post[]
   likes                      Like[]
   badgeAwards                BadgeAward[]
+  reportsFiled               Report[]        @relation("ReportsFiled")
+  reportsReceived            Report[]        @relation("ReportsReceived")
+  reportsResolved            Report[]        @relation("ReportsResolved")
   // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
   // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
   learningGoal               StudentSkill?   @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
@@ -334,6 +353,7 @@ model Post {
   review        Review?           @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   answerRound   Round?            @relation(fields: [answerRoundId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   likes         Like[]
+  reports       Report[]
 
   @@unique([promptId, authorId])
   @@index([createdAt(sort: Desc), id(sort: Desc)])
@@ -364,6 +384,33 @@ model PrivateFeedback {
   rating            Int?     @db.SmallInt
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   review            Review   @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+// §4.3.18: immutable testimony about exactly one Post or Student. The raw
+// CHECKs (§4.4 steps 2–4) hold the target and attribution rules. The partial
+// uniques reserve each reporter's slot for the target's lifetime, through
+// resolution (ADR-0011 d5–d6). Only state and attribution change, once.
+model Report {
+  id                String       @id @default(uuid(7)) @db.Uuid
+  reporterId        String       @map("reporter_id") @db.Uuid
+  postId            String?      @map("post_id") @db.Uuid
+  reportedStudentId String?      @map("reported_student_id") @db.Uuid
+  reason            ReportReason
+  text              String?
+  state             ReportState  @default(OPEN)
+  resolvedById      String?      @map("resolved_by_id") @db.Uuid
+  resolvedAt        DateTime?    @map("resolved_at") @db.Timestamptz(3)
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  reporter          Student      @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  post              Post?        @relation(fields: [postId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reportedStudent   Student?     @relation("ReportsReceived", fields: [reportedStudentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  resolvedBy        Student?     @relation("ReportsResolved", fields: [resolvedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([reporterId, postId], where: { postId: { not: null } }, map: "report_one_per_reporter_post")
+  @@unique([reporterId, reportedStudentId], where: { reportedStudentId: { not: null } }, map: "report_one_per_reporter_student")
+  @@index([postId, state])
+  @@index([reportedStudentId, state])
+  @@index([state, resolvedAt])
 }
 
 // §4.3.19: a permanent threshold award, inserted at most once per Student.
