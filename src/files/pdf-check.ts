@@ -9,7 +9,8 @@ import { Worker } from 'node:worker_threads';
 // - its decoders together would allocate more than `maxDecodedBytes` over
 //   the whole load, memory the worker shares with the API, counted before
 //   pdf-lib allocates it: a chain of filters on one stream holds a buffer
-//   for each filter, and every one counts;
+//   for each filter, and an LZW filter also holds four fixed dictionary
+//   arrays its constructor allocates, and every one counts;
 // - the worker's heap passes `maxHeapMb`;
 // - the load is still running `timeoutMs` after its worker started; the
 //   wait for an earlier load does not count.
@@ -25,32 +26,49 @@ export const PDF_CHECK_LIMITS: PdfCheckLimits = {
 };
 
 // The worker, as source rather than a file of its own, so it runs the same
-// from `src/` under Vitest and from `dist/` in the image. Every pdf-lib
-// decoder grows its buffer through `DecodeStream.prototype.ensureBuffer`, so
-// the budget sits there, in the worker's own copy of pdf-lib: each new
-// buffer is sized as pdf-lib sizes it, doubling from its minimum until the
-// request fits, and counted before pdf-lib allocates it. The load's options
-// are §9.5's; `Fastest` stops pdf-lib yielding, since the worker has nothing
-// else to answer. A load that throws, or one pdf-lib recovers after the
-// budget ran out, posts 0 pages.
+// from `src/` under Vitest and from `dist/` in the image. Two allocations in
+// pdf-lib's own copy are charged to one budget, each before it is made:
+// - every decoder grows its output buffer through
+//   `DecodeStream.prototype.ensureBuffer`, doubling from its minimum until
+//   the request fits;
+// - an LZW decoder allocates four fixed dictionary arrays in its
+//   constructor, outside that method (4096 entries of 1, 2, 2 and 1 bytes).
+//   `LZWDecode` is wrapped so each decoder's dictionary is charged before it
+//   is built, so a chain of them is refused at construction, before the
+//   memory is taken (§9.5's note of 2026-10-22, from PR #206's review).
+// The load's options are §9.5's; `Fastest` stops pdf-lib yielding, since the
+// worker has nothing else to answer. A load that throws, or one pdf-lib
+// recovers after the budget ran out, posts 0 pages.
 const PDF_WORKER = `
 const { parentPort, workerData } = require('node:worker_threads');
 const { PDFDocument, ParseSpeeds } = require(workerData.pdfLib);
 const DecodeStream = require(workerData.decodeStream).default;
-const ensureBuffer = DecodeStream.prototype.ensureBuffer;
+const lzwModule = require(workerData.lzwStream);
 let allocated = 0;
 let overBudget = false;
+function charge(size) {
+  allocated += size;
+  if (allocated > workerData.maxDecodedBytes) {
+    overBudget = true;
+    throw new Error('The decoders pass their budget.');
+  }
+}
+const ensureBuffer = DecodeStream.prototype.ensureBuffer;
 DecodeStream.prototype.ensureBuffer = function (requested) {
   if (requested > this.buffer.byteLength) {
     let size = this.minBufferLength;
     while (size < requested) size *= 2;
-    allocated += size;
-    if (allocated > workerData.maxDecodedBytes) {
-      overBudget = true;
-      throw new Error('The decoders pass their budget.');
-    }
+    charge(size);
   }
   return ensureBuffer.call(this, requested);
+};
+// The four dictionary arrays an LZW constructor allocates: 4096 entries of
+// 1, 2, 2 and 1 bytes. decode.js reads \`.default\` late, so the wrap takes.
+const OriginalLzw = lzwModule.default;
+const LZW_DICTIONARY_BYTES = 4096 * (1 + 2 + 2 + 1);
+lzwModule.default = function (stream, maybeLength, earlyChange) {
+  charge(LZW_DICTIONARY_BYTES);
+  return new OriginalLzw(stream, maybeLength, earlyChange);
 };
 (async () => {
   let pages = 0;
@@ -118,6 +136,7 @@ export async function pdfPageCount(bytes: Buffer, limits: PdfCheckLimits = PDF_C
       bytes,
       pdfLib: require.resolve('pdf-lib'),
       decodeStream: require.resolve('pdf-lib/cjs/core/streams/DecodeStream'),
+      lzwStream: require.resolve('pdf-lib/cjs/core/streams/LZWStream'),
       maxDecodedBytes: limits.maxDecodedBytes,
     },
     limits,

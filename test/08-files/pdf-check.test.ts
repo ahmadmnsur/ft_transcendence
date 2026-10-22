@@ -59,6 +59,16 @@ describe('the PDF check in its worker', () => {
     expect(await pdfPageCount(await pdfWithObjectStream(1), limits)).toBe(1);
     expect(await pdfPageCount(await pdfWithObjectStream(8), limits)).toBe(0);
   });
+
+  it('counts an LZW decoder dictionary, which it allocates outside its buffer', async () => {
+    // One LZW decoder's four dictionary arrays are 4096 entries of 1, 2, 2
+    // and 1 bytes: 24,576. Under a budget below that the PDF is refused at
+    // the decoder's construction, though its one small stream decodes to a
+    // few hundred bytes; under the real budget it loads.
+    const pdf = await pdfWithLzwObjectStream();
+    expect(await pdfPageCount(pdf, { ...PDF_CHECK_LIMITS, maxDecodedBytes: 20_000 })).toBe(0);
+    expect(await pdfPageCount(pdf)).toBe(1);
+  });
 });
 
 // A one-page PDF with one more object, a note of about 3.6 KB, in an object
@@ -78,4 +88,37 @@ async function pdfWithObjectStream(layers: number): Promise<Buffer> {
   });
   document.context.register(PDFRawStream.of(dict, contents));
   return Buffer.from(await document.save({ useObjectStreams: false }));
+}
+
+// A one-page PDF with one more object in an object stream filtered through
+// one `LZWDecode`. The body is short, so the codes stay 9 bits wide and the
+// stream is a run of literal codes, which `LZWStream` reads back byte for
+// byte (code < 256 is its own byte, 257 ends it); the decoder still builds
+// its full dictionary, which is the allocation under test.
+async function pdfWithLzwObjectStream(): Promise<Buffer> {
+  const document = await PDFDocument.create();
+  document.addPage([200, 200]);
+  const note = document.context.nextRef();
+  const header = `${note.objectNumber} 0 `;
+  const body = Buffer.from(`${header}<< /Note (evidence) >>`, 'latin1');
+  const dict = document.context.obj({ Type: 'ObjStm', N: 1, First: header.length, Filter: PDFName.of('LZWDecode') });
+  document.context.register(PDFRawStream.of(dict, lzwLiterals(body)));
+  return Buffer.from(await document.save({ useObjectStreams: false }));
+}
+
+// `bytes` as a PDF `LZWDecode` stream of 9-bit literal codes then the 257
+// end code, packed most-significant-bit first. Fewer than ~250 bytes keeps
+// every code 9 bits wide (the decoder widens only at code 511).
+function lzwLiterals(bytes: Buffer): Buffer {
+  const bits: number[] = [];
+  const emit = (code: number): void => {
+    for (let bit = 8; bit >= 0; bit -= 1) bits.push((code >> bit) & 1);
+  };
+  for (const byte of bytes) emit(byte);
+  emit(257);
+  const out = Buffer.alloc(Math.ceil(bits.length / 8));
+  bits.forEach((bit, index) => {
+    if (bit) out[index >> 3] |= 1 << (7 - (index & 7));
+  });
+  return out;
 }
