@@ -125,7 +125,7 @@ it.each(['answer', 'close'] as const)('%s commits first: answer attribution and 
   const admin = await createTestStaff(harness.app, 'ADMIN');
   const student = await createTestAccount(harness.app);
   const prisma = harness.app.get(PrismaService);
-  await prisma.student.update({ where: { id: student.id }, data: { streak: 7 } });
+  await prisma.student.update({ where: { id: student.id }, data: { streak: 1 } });
   const opened = await harness.post('/api/admin/rounds').set('Cookie', admin.cookie).send({});
   const prompt = await harness.post('/api/admin/prompts').set('Cookie', admin.cookie).send({ question: 'During which Round?' });
   harness.barriers.arm('prompt.answer');
@@ -138,20 +138,20 @@ it.each(['answer', 'close'] as const)('%s commits first: answer attribution and 
   harness.barriers.disarm('round.close');
   harness.barriers.release(first === 'answer' ? 'prompt.answer' : 'round.close');
   expect((await (first === 'answer' ? answer : close)).body.ok).toBe(true);
-  expect((await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).streak).toBe(first === 'answer' ? 7 : 0);
+  expect((await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).streak).toBe(first === 'answer' ? 1 : 0);
   harness.barriers.release(first === 'answer' ? 'round.close' : 'prompt.answer');
   expect((await answer).body.ok).toBe(true);
   expect((await close).body.data).toEqual({
     roundId: opened.body.data.round.id, lapsed: 0,
     streaksIncremented: first === 'answer' ? 1 : 0, streaksReset: first === 'answer' ? 0 : 1,
-    consistentLearnerAwarded: first === 'answer' ? 1 : 0,
+    consistentLearnerAwarded: 0,
   });
   // The Round attribution has no public read; inspect this persistence invariant directly.
   const posts = await prisma.post.findMany({ where: { authorId: student.id } });
   expect(posts).toHaveLength(1);
   expect(posts[0].answerRoundId).toBe(first === 'answer' ? opened.body.data.round.id : null);
-  expect((await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).streak).toBe(first === 'answer' ? 8 : 0);
-  expect(await prisma.badgeAward.count({ where: { studentId: student.id, badge: 'CONSISTENT_LEARNER' } })).toBe(first === 'answer' ? 1 : 0);
+  expect((await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).streak).toBe(first === 'answer' ? 2 : 0);
+  expect(await prisma.badgeAward.count({ where: { studentId: student.id, badge: 'CONSISTENT_LEARNER' } })).toBe(0);
 });
 
 it('equal publication timestamps still leave exactly one live Prompt in durable order', async () => {

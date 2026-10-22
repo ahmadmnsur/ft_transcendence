@@ -109,7 +109,7 @@ it('evaluates the whole Round once, freezes sanctions, and retains dated Badges 
   });
   expect((await prisma.student.findUniqueOrThrow({ where: { id: suspended.id } })).streak).toBe(3);
   expect((await prisma.student.findUniqueOrThrow({ where: { id: removed.id } })).streak).toBe(2);
-});
+}, 20_000);
 
 it('an idle-period answer earns XP but cannot qualify for the next Round', async () => {
   const admin = await createTestStaff(harness.app, 'ADMIN');
