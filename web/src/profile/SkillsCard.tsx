@@ -1,19 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { LIMITS } from '@shared/limits';
-import {
-  ME_QUERY_KEY,
-  meQueryOptions,
-  setSkills,
-  skillsQueryOptions,
-  studentQueryKey,
-  type OwnProfile,
-  type SkillView,
-} from '../api/profile';
+import { skillsQueryOptions, type SkillView } from '../api/profile';
 import { Banner, Button, Card, Select, SkillChip, skillNameText } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
+import type { ProfileTarget } from './target';
 
 type Kind = 'teach' | 'learn';
 
@@ -43,12 +36,12 @@ function inCatalogueOrder(list: SkillView[], catalogue: SkillView[] | undefined)
 // §6.2: the two Skill lists, each 0–15 catalogue Skills, a Skill possibly on
 // both. Only what is on screen is kept in the draft; a save replaces both
 // lists in one call, whose answer tells whether the Learning Goal lost its
-// Skill and was cleared, and the cached `GET /api/me` takes the saved lists.
-export function SkillsCard(): React.JSX.Element {
+// Skill and was cleared, and the target's cached profile takes the saved
+// lists.
+export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Element {
   const { t, format, errorText } = useI18n();
-  const copy = t.profile.skills;
-  const queryClient = useQueryClient();
-  const { data: me, isError: meError } = useQuery(meQueryOptions());
+  const copy = target.voice === 'own' ? t.profile.skills : { ...t.profile.skills, ...t.admin.cards.skills };
+  const profile = target.profile;
   const {
     data: catalogue,
     isError: catalogueError,
@@ -104,26 +97,23 @@ export function SkillsCard(): React.JSX.Element {
   // §6.2: the card shell shows at once. While the profile read is pending the
   // body says so and reserves the loaded height; a failed read leaves the body
   // empty, since `/me` shows the failure once above the cards.
-  if (me === undefined) {
+  if (profile === undefined) {
     return (
       <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
-        <PendingCardBody failed={meError} reserveClassName="min-h-[30rem]" />
+        <PendingCardBody failed={target.failed} reserveClassName="min-h-[30rem]" />
       </Card>
     );
   }
 
-  const teach = draft?.teach ?? me.skills.teach;
-  const learn = draft?.learn ?? me.skills.learn;
+  const teach = draft?.teach ?? profile.skills.teach;
+  const learn = draft?.learn ?? profile.skills.learn;
 
   // The Save button speaks up while the draft and the stored lists differ by
   // set, and warns once the draft's learn list drops the saved Goal's Skill,
   // because saving then clears the Goal (§6.2).
-  const dirty = !(sameIds(teach, me.skills.teach) && sameIds(learn, me.skills.learn));
-  const goalSkillId = me.learningGoal?.skill.id;
+  const dirty = !(sameIds(teach, profile.skills.teach) && sameIds(learn, profile.skills.learn));
+  const goalSkillId = profile.learningGoal?.skill.id;
   const goalWillClear = goalSkillId !== undefined && !learn.some((skill) => skill.id === goalSkillId);
-  // Read outside the handler: the narrowing of `me` does not reach a function
-  // declaration.
-  const meId = me.id;
 
   function listFor(kind: Kind): SkillView[] {
     return kind === 'teach' ? teach : learn;
@@ -174,34 +164,20 @@ export function SkillsCard(): React.JSX.Element {
     setStatus(undefined);
     setPending(true);
     try {
-      const result = await setSkills({ teach: teach.map((skill) => skill.id), learn: learn.map((skill) => skill.id) });
-      // A `GET /api/me` still in flight read the profile before this write;
-      // cancelling it keeps its older answer from landing over this one.
-      await queryClient.cancelQueries({ queryKey: ME_QUERY_KEY });
+      const result = await target.api.setSkills({
+        teach: teach.map((skill) => skill.id),
+        learn: learn.map((skill) => skill.id),
+      });
       // A 200 means the server now holds exactly these lists, and no Goal
       // when the answer says it was cleared. The cache takes them before the
       // draft is dropped, so the render without the draft already shows them:
       // the card never falls back to the lists from before the save, however
       // slow the re-read below is, or if it fails. That re-read runs in the
       // background, unawaited, and only confirms what the cache holds.
-      queryClient.setQueryData<OwnProfile>(ME_QUERY_KEY, (previous) =>
-        previous === undefined
-          ? previous
-          : {
-              ...previous,
-              skills: {
-                teach: inCatalogueOrder(teach, catalogue?.items),
-                learn: inCatalogueOrder(learn, catalogue?.items),
-              },
-              learningGoal: result.goalCleared ? null : previous.learningGoal,
-            },
-      );
+      const skills = { teach: inCatalogueOrder(teach, catalogue?.items), learn: inCatalogueOrder(learn, catalogue?.items) };
+      await target.apply(result.goalCleared ? { skills, learningGoal: null } : { skills });
       setDraft(null);
-      void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
-      // The own public profile shows the lists too. It is dropped, not just
-      // invalidated: an inactive query would render the old lists until its
-      // background refetch returns, so the next visit must load afresh.
-      queryClient.removeQueries({ queryKey: studentQueryKey(meId) });
+      target.reread();
       setStatus({ kind: 'saved', goalCleared: result.goalCleared });
     } catch (error) {
       setStatus({ kind: 'failed', code: failureCode(error) });

@@ -218,6 +218,21 @@ export function putAvatar(baseUrl: string, cookie: string, bytes: Buffer, option
   });
 }
 
+// `PUT /api/admin/students/:id/avatar`: an Admin's upload for another
+// Student (§6.12).
+export function putStudentAvatar(
+  baseUrl: string,
+  cookie: string,
+  studentId: string,
+  bytes: Buffer,
+  options: UploadOptions = {},
+) {
+  return putFile(baseUrl, `/api/admin/students/${studentId}/avatar`, cookie, bytes, options, {
+    filename: 'avatar.png',
+    contentType: 'image/png',
+  });
+}
+
 // `PUT /api/reviews/:reviewId/evidence`.
 export function putEvidence(
   baseUrl: string,

@@ -97,6 +97,10 @@ export type AdminRoundMatch = {
   mission: Mission;
 };
 
+// One Match on §6.12's `GET /api/admin/students/:id`: a Round's row with the
+// Round's number, since the list spans every Round the Student was in.
+export type AdminStudentMatch = AdminRoundMatch & { roundNumber: number };
+
 // §6.13's `GET /api/admin/rounds/:id`. `unmatched` (§8.9) is derived for the
 // open Round only, and null for a closed one.
 export type AdminRoundDetail = {

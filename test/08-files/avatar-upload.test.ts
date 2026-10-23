@@ -3,7 +3,7 @@ import { PrismaService } from '../../src/core/prisma.service';
 import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { TEST_BUCKETS } from '../../src/files/buckets';
 import { useHarness } from '../harness/app';
-import { createTestAccount } from '../harness/accounts';
+import { createTestAccount, createTestStaff } from '../harness/accounts';
 import {
   makeJpeg,
   makeJpegWithEmptyScan,
@@ -18,6 +18,7 @@ import {
   makePngWithoutChecksum,
   makePngWithSecondHeader,
   putAvatar,
+  putStudentAvatar,
   tokenOf,
 } from '../harness/files';
 import { startNginx, type NginxHarness } from '../harness/nginx';
@@ -153,5 +154,46 @@ describe('avatar acceptance through nginx', () => {
     expect(upload.status).toBe(403);
     expect(upload.body).toEqual(CSRF_REJECTED);
     expect(await avatarRow(account.id)).toBeNull();
+  });
+
+  it.each(badGates)("refuses an Admin's upload for another Student with %s, 403 before any parsing", async (_name, gate) => {
+    const admin = await createTestStaff(harness.app, 'ADMIN');
+    const target = await createTestAccount(harness.app);
+    const upload = await putStudentAvatar(nginx.baseUrl, admin.cookie, target.id, makePng({ size: 3 * 1024 * 1024 }), gate);
+    expect(upload.status).toBe(403);
+    expect(upload.body).toEqual(CSRF_REJECTED);
+    expect(await avatarRow(target.id)).toBeNull();
+  });
+});
+
+// §6.12: an Admin's avatar routes run the owner's checks on the target
+// Student's row, and only an Admin reaches them.
+describe("an Admin's avatar edit through nginx", () => {
+  it("stores the upload on the target's row, refuses an oversized file, and deletes the row", async () => {
+    const admin = await createTestStaff(harness.app, 'ADMIN');
+    const target = await createTestAccount(harness.app);
+    const bytes = makePng();
+
+    const upload = await putStudentAvatar(nginx.baseUrl, admin.cookie, target.id, bytes);
+    expect(upload.status).toBe(200);
+    const token = tokenOf(upload.body.data.avatarUrl);
+    expect(await avatarRow(target.id)).toEqual({ token, mime: 'image/png', size: bytes.length });
+    expect(await avatarRow(admin.id)).toBeNull();
+
+    const tooLarge = await putStudentAvatar(nginx.baseUrl, admin.cookie, target.id, makePng({ size: CAP + 1 }));
+    expect(tooLarge.body).toEqual(TOO_LARGE);
+    expect((await avatarRow(target.id))?.token).toBe(token);
+
+    const removed = await harness.delete(`/api/admin/students/${target.id}/avatar`).set('Cookie', admin.cookie).send({});
+    expect(removed.body).toEqual({ ok: true, data: {} });
+    expect(await avatarRow(target.id)).toBeNull();
+  });
+
+  it('answers 403 to a Student who is not an Admin', async () => {
+    const student = await createTestAccount(harness.app);
+    const target = await createTestAccount(harness.app);
+    const upload = await putStudentAvatar(nginx.baseUrl, student.cookie, target.id, makePng());
+    expect(upload.status).toBe(403);
+    expect(await avatarRow(target.id)).toBeNull();
   });
 });

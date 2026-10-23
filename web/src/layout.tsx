@@ -139,6 +139,15 @@ function SiteHeader(): React.JSX.Element {
               {session.student.role === 'ADMIN' ? <Link to="/admin/prompts" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
                 {t.prompts.adminTitle}
               </Link> : null}
+              {/* §3.5.1: the Users table, an Admin's alone like the Round pages. */}
+              {session.student.role === 'ADMIN' ? (
+                <Link
+                  to="/admin/users"
+                  className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
+                >
+                  {t.shell.header.usersLink}
+                </Link>
+              ) : null}
               <Link
                 to="/me"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}

@@ -5,7 +5,7 @@ import { studentPostsQueryOptions } from '../api/feed';
 import { friendRequestsQueryOptions, friendsQueryOptions } from '../api/friends';
 import { ApiProtocolError } from '../api/client';
 import { sessionQueryOptions } from '../api/session';
-import { studentQueryOptions, type SkillView, type StudentRef } from '../api/profile';
+import { studentQueryOptions, type StudentRef } from '../api/profile';
 import {
   AlertIcon,
   Avatar,
@@ -13,14 +13,13 @@ import {
   EmptyState,
   PersonName,
   RoleLabel,
-  SkillChip,
-  SkillName,
   buttonClasses,
 } from '../design';
 import { PostList } from '../feed/PostList';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { ReportControl } from '../moderation/ReportControl';
+import { GoalSection, SkillSection } from '../profile/ProfileSections';
 import { BlockControl } from '../social/BlockControl';
 import { FriendControl } from '../social/FriendControl';
 import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
@@ -48,37 +47,6 @@ function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.E
         {t.messages.profile.messageLink}
       </Link>
     </div>
-  );
-}
-
-// One of a Student's two Skill lists, read-only: a chip without a remove
-// button, or the sentence saying the list is empty.
-function SkillSection({
-  title,
-  empty,
-  variant,
-  skills,
-}: {
-  title: string;
-  empty: string;
-  variant: 'teach' | 'learn';
-  skills: SkillView[];
-}): React.JSX.Element {
-  return (
-    <section className="min-w-0">
-      <h2 className="text-base font-semibold text-ink">{title}</h2>
-      {skills.length === 0 ? (
-        <p className="mt-2 text-sm text-ink-muted">{empty}</p>
-      ) : (
-        <ul className="mt-2 flex flex-wrap gap-2">
-          {skills.map((skill) => (
-            <li key={skill.id}>
-              <SkillChip name={skill.name} variant={variant} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }
 
@@ -192,21 +160,7 @@ export function StudentPage(): React.JSX.Element {
               variant="learn"
               skills={profile.skills.learn}
             />
-            <section className="min-w-0">
-              <h2 className="text-base font-semibold text-ink">{copy.goalHeading}</h2>
-              {profile.learningGoal === null ? (
-                <p className="mt-2 text-sm text-ink-muted">{copy.goalNone}</p>
-              ) : (
-                <>
-                  <p className="mt-2 text-sm font-semibold text-ink">
-                    <SkillName name={profile.learningGoal.skill.name} />
-                  </p>
-                  <p dir="auto" className="text-sm text-ink wrap-anywhere">
-                    {profile.learningGoal.text}
-                  </p>
-                </>
-              )}
-            </section>
+            <GoalSection title={copy.goalHeading} empty={copy.goalNone} goal={profile.learningGoal} />
             {session?.authenticated && session.student.id === student.id ? <OwnProgressCard /> : <ProgressCard progress={profile} />}
             <StudentPosts key={student.id} studentId={student.id} />
           </>

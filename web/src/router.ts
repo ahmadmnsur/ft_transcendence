@@ -7,6 +7,8 @@ import { requireRole, requireSession, requireSignedOut } from './guards';
 import { AdminMatchPage } from './pages/AdminMatchPage';
 import { AdminRoundPage } from './pages/AdminRoundPage';
 import { AdminRoundsPage } from './pages/AdminRoundsPage';
+import { AdminUserPage } from './pages/AdminUserPage';
+import { AdminUsersPage, parseAdminUsersSearch } from './pages/AdminUsersPage';
 import { FeedbackPage } from './pages/FeedbackPage';
 import { FriendsPage } from './pages/FriendsPage';
 import { HomePage } from './pages/HomePage';
@@ -201,6 +203,23 @@ const adminMatchRoute = createRoute({
   component: AdminMatchPage,
 });
 
+// §3.5.1, §6.12: the Users table and one account. Its filters, sort and page
+// are search params, checked before any request is sent.
+const adminUsersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/users',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  validateSearch: parseAdminUsersSearch,
+  component: AdminUsersPage,
+});
+
+const adminUserRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/users/$studentId',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  component: AdminUserPage,
+});
+
 const promptsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/prompts',
@@ -282,6 +301,8 @@ const routeTree = rootRoute.addChildren([
   adminRoundsRoute,
   adminRoundRoute,
   adminMatchRoute,
+  adminUsersRoute,
+  adminUserRoute,
   promptsRoute,
   promptDetailRoute,
   adminPromptsRoute,

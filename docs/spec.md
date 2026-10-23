@@ -2354,6 +2354,13 @@ nothing — no insert, no delete.
 > name match, and escapes `\`, `%` and `_` the same way, with the escape `nameSearchWhere` uses in
 > `src/students/name-search.ts`. Unescaped, `_` matches any one character and `%` any run, so
 > `q=john_doe` would also find `john.doe@…`, and `q=%` or `q=_` would return every row.
+>
+> **Refined 2026-10-23** (#65; [the question left open](https://github.com/ahmadmnsur/ft_transcendence/issues/65#issuecomment-6252982885)
+> after #185): the email match ignores letter case. It takes `q` trimmed and lower-cased, as every
+> email is stored (§4.3.1), never folded, and then escapes `\`, `%` and `_` with that same escape,
+> which `src/students/name-search.ts` now exports. So `q=Karim.01@peerconnect.test` finds
+> `karim.01@peerconnect.test`. Taken as typed, `q` would reach Prisma's `contains`, a case-sensitive
+> `LIKE` on PostgreSQL, and a capital letter would find no email.
 
 No endpoint sets a password, XP, Level, Streak, Badge or `forty_two_id`, or edits any Review,
 Private Feedback, Post, Report or Direct Message (ADR-0008 d8 and its notes, ADR-0018 d8). Supabase's

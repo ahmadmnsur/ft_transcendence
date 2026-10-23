@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PrismaService } from '../../src/core/prisma.service';
 import { useHarness } from '../harness/app';
-import { createTestAccount } from '../harness/accounts';
+import { createTestAccount, createTestStaff } from '../harness/accounts';
 import {
   FIXED_EMAIL,
   FIXED_ID,
@@ -18,10 +18,8 @@ const harness = useHarness(fixedFortyTwo());
 // A connects the fixed 42 account through the real boundary, then another
 // Student takes the email the fixed answer returns; a signed-out 42 login
 // with that account must reach the Student who connected it, never the one
-// whose email matches and never the sign-up draft. The Admin edit of the row
-// belongs to Users table and roles (#65), whose PR switches this step to it;
-// until then the check edits the email with the Student's own email edit,
-// which #40's page builds (§6.2).
+// whose email matches and never the sign-up draft. The email is set by an
+// Admin's edit of the other Student's row (§6.12), as §16.3 row 12 has it.
 describe('a 42 login finds its Student only by forty_two_id', () => {
   it('reaches the connected Student after another Student takes the 42 email', async () => {
     const A = await createTestAccount(harness.app);
@@ -37,9 +35,11 @@ describe('a 42 login finds its Student only by forty_two_id', () => {
       fortyTwoId: FIXED_ID,
     });
 
-    // The other Student takes the email the fixed answer returns.
+    // An Admin sets the other Student's email to the one the fixed answer
+    // returns.
     const B = await createTestAccount(harness.app);
-    const taken = await harness.patch('/api/me').set('Cookie', B.cookie).send({ email: FIXED_EMAIL });
+    const admin = await createTestStaff(harness.app, 'ADMIN');
+    const taken = await harness.patch(`/api/admin/students/${B.id}`).set('Cookie', admin.cookie).send({ email: FIXED_EMAIL });
     expect(taken.body).toMatchObject({ ok: true });
 
     // A signed-out 42 login: start without any cookie, callback with the

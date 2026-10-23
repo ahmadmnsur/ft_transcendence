@@ -1,5 +1,6 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import type { Role } from '@shared/roles';
+import type { StudentStatus } from '@shared/student-status';
 import type { Badge } from './progress';
 import { apiFetch } from './client';
 
@@ -31,7 +32,7 @@ export interface StudentRef {
   removed: boolean;
 }
 
-export type StudentStatus = 'ACTIVE' | 'SUSPENDED' | 'REMOVED';
+export type { StudentStatus };
 
 // `GET /api/me` and `PATCH /api/me`'s result: the only shape with the email
 // (§4.6). `avatarUrl` is the avatar's file route, or null for the bundled
