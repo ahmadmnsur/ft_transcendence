@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { createRootRouteWithContext, createRoute, createRouter } from '@tanstack/react-router';
+import { createRootRouteWithContext, createRoute, createRouter, lazyRouteComponent } from '@tanstack/react-router';
 import { setUnauthorizedHandler } from './api/client';
 import { fetchSession, setSignedOut } from './api/session';
 import { ErrorContent, NotFoundPage, RootErrorPage, RootLayout } from './layout';
@@ -189,6 +189,13 @@ const adminRoundsRoute = createRoute({
   component: AdminRoundsPage,
 });
 
+const adminAnalyticsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/analytics',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  component: lazyRouteComponent(() => import('./pages/AdminAnalyticsPage'), 'AdminAnalyticsPage'),
+});
+
 const adminRoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/rounds/$roundId',
@@ -299,6 +306,7 @@ const routeTree = rootRoute.addChildren([
   reviewRoute,
   feedbackRoute,
   adminRoundsRoute,
+  adminAnalyticsRoute,
   adminRoundRoute,
   adminMatchRoute,
   adminUsersRoute,

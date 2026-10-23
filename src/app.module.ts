@@ -14,6 +14,7 @@ import { SocialModule } from './social/social.module';
 import { StudentsModule } from './students/students.module';
 import { PromptsModule } from './prompts/prompts.module';
 import { GamificationModule } from './gamification/gamification.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 // The schedule is provided here, not in FilesModule, so only the `api` runs
 // the cleanup: the seed imports StudentsModule, and with it FilesModule.
@@ -21,7 +22,7 @@ import { GamificationModule } from './gamification/gamification.module';
   imports: [
     CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule,
     MessagingModule, MatchingModule, PromptsModule, ReviewsModule, FeedModule, GamificationModule,
-    ModerationModule, AdminModule,
+    ModerationModule, AdminModule, AnalyticsModule,
   ],
   controllers: [HealthController],
   providers: [FileCleanupSchedule],
