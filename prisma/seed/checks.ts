@@ -1,12 +1,13 @@
 import type { EnvRecord } from '../../src/core/env';
 import type { PrismaService } from '../../src/core/prisma.service';
-import type { Prisma } from '../../src/generated/prisma/client';
+import { Badge, type Prisma } from '../../src/generated/prisma/client';
 import { foldName } from '../../src/shared/fold-name';
 import { normalizeEmail } from '../../src/shared/limits';
 import { RARE_SKILLS } from '../fixtures/cohort';
 import { bootstrapStaff } from './bootstrap';
-import { cohortEmails, GAP_SKILL, X_POSITION, Y_POSITION } from './cohort';
+import { cohortEmails, GAP_SKILL, RESERVED_POSITIONS, X_POSITION, Y_POSITION } from './cohort';
 import { SeedFailure } from './failure';
+import { PROMPT_QUESTIONS } from './prompts';
 
 // Every email the seed makes at this fixture version: the two bootstrap
 // accounts and the thirty of §14.3.
@@ -38,14 +39,62 @@ const CANDIDATE_POOL: Prisma.StudentWhereInput = {
   removedAt: null,
 };
 
+// §14.8 check 3: the demo Student D is the first Student by position,
+// outside the reserved ones, that meets every condition of the check.
+async function findDemoStudent(
+  prisma: PrismaService,
+  cohortIds: readonly string[],
+): Promise<{ position: number; email: string }> {
+  const candidateIds = cohortIds.filter((_, position) => !RESERVED_POSITIONS.includes(position));
+  const rows = await prisma.student.findMany({
+    where: {
+      id: { in: candidateIds },
+      role: 'STUDENT',
+      suspendedAt: null,
+      removedAt: null,
+      streak: { gte: 3 },
+      badgeAwards: { some: {} },
+      matchesAsMentee: { some: { status: 'COMPLETED', review: { isNot: null } } },
+      matchesAsMentor: { some: { review: { privateFeedback: { rating: { not: null } } } } },
+    },
+    select: { id: true, email: true },
+  });
+  const emails = new Map(rows.map((row) => [row.id, row.email]));
+  for (const [position, id] of cohortIds.entries()) {
+    const email = emails.get(id);
+    if (email !== undefined) return { position, email };
+  }
+  throw new SeedFailure(
+    'check 3: no Active STUDENT outside the reserved positions has Streak >= 3, a BadgeAward, ' +
+      'a COMPLETED Match as Mentee with its Review, and Private Feedback received as Mentor with a non-null rating',
+  );
+}
+
 // §14.8, the end-state assertions this fixture version implements.
-export async function assertEndState(prisma: PrismaService): Promise<void> {
-  // Check 1, Round half: the Prompt half joins with its seed increment.
+export async function assertEndState(
+  prisma: PrismaService,
+  cohortIds: readonly string[],
+): Promise<{ demoStudent: { position: number; email: string } }> {
+  // Check 1: four closed Rounds and four Prompts in publication order,
+  // making Prompt 4 the live one (§8.12).
   const openRounds = await prisma.round.count({ where: { closedAt: null } });
   const closedRounds = await prisma.round.count({ where: { closedAt: { not: null } } });
   if (openRounds !== 0 || closedRounds !== 4) {
     throw new SeedFailure(`check 1: ${openRounds} open and ${closedRounds} closed Rounds; expected 0 and 4`);
   }
+  const prompts = await prisma.reflectionPrompt.findMany({
+    orderBy: { publicationOrder: 'asc' },
+    select: { question: true },
+  });
+  if (prompts.length !== PROMPT_QUESTIONS.length ||
+      !prompts.every((prompt, index) => prompt.question === PROMPT_QUESTIONS[index])) {
+    throw new SeedFailure(
+      `check 1: ${prompts.length} Prompts; expected §14.4's four, in publication order, the fourth live`,
+    );
+  }
+
+  // Check 3: the demo Student D exists. The seed logs their email (§3.9).
+  const { position, email } = await findDemoStudent(prisma, cohortIds);
 
   // Check 4: the seeded Private Feedback carries at least three distinct
   // ratings, unrated rows aside.
@@ -90,6 +139,18 @@ export async function assertEndState(prisma: PrismaService): Promise<void> {
     throw new SeedFailure('check 8: G must have Demand > 0, Supply > 0, no coverage and no Match joining X and Y');
   }
 
+  // Check 9: every Badge has an Active holder, including any added to the enum.
+  const awards = await prisma.badgeAward.findMany({
+    where: { student: { suspendedAt: null, removedAt: null } },
+    distinct: ['badge'],
+    select: { badge: true },
+  });
+  const held = new Set(awards.map((award) => award.badge));
+  const missing = Object.values(Badge).filter((badge) => !held.has(badge));
+  if (missing.length > 0) {
+    throw new SeedFailure(`check 9: no Active Student holds ${missing.join(', ')}`);
+  }
+
   // Check 10: every Student's search column is the fold of its name. It
   // covers the two bootstrap accounts, which the suite never reaches.
   const students = await prisma.student.findMany({
@@ -103,4 +164,5 @@ export async function assertEndState(prisma: PrismaService): Promise<void> {
       `check 10: ${wrong} of ${students.length} Students have a display_name_search other than foldName(display_name)`,
     );
   }
+  return { demoStudent: { position, email } };
 }

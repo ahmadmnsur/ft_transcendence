@@ -11,6 +11,7 @@ import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { UnitOfWork } from '../../src/core/uow';
 import { BucketStepError, ensureBuckets, PRODUCTION_BUCKETS, type BucketStepResult } from '../../src/files/buckets';
 import { MatchingService } from '../../src/matching/matching.service';
+import { PromptsService } from '../../src/prompts/prompts.service';
 import { ReviewsService } from '../../src/reviews/reviews.service';
 import { SocialService } from '../../src/social/social.service';
 import { StudentsService } from '../../src/students/students.service';
@@ -29,6 +30,7 @@ import {
 import { anyDomainRows, emptyEverything } from './empty';
 import { SeedFailure } from './failure';
 import { openLockConnection, takeSeedLock, type LockConnection } from './lock';
+import { promptScript } from './prompts';
 import { FIXTURE_VERSION, clearRecord, readRecord, writeRecord } from './record';
 import { submitReviewsInOrder } from './reviews';
 import { ROUND_TARGETS, seedRound } from './rounds';
@@ -134,6 +136,7 @@ async function run(): Promise<number> {
     const social = app.get(SocialService);
     const matching = app.get(MatchingService);
     const reviews = app.get(ReviewsService);
+    const prompts = app.get(PromptsService);
 
     // §9.8: the seed's first step, on every run, before the record is read,
     // so a run that skips the fixture still sets the buckets. A failure stops
@@ -213,16 +216,27 @@ async function run(): Promise<number> {
     ));
     log('seed: X Blocks Y');
     const admin = { studentId: staffIds.adminId, sessionHash: null };
+    // §14.4 steps 3 and 4: Prompt 1 precedes the Rounds; their opens drive
+    // the remaining publications and answers in §14.5.
+    const promptSteps = promptScript(prompts, prisma, admin, studentIds, staffIds.peerModeratorId);
+    await step('Prompt 1', () => promptSteps.publish(1));
+    log('seed: Prompt published', { prompt: 1 });
     const submitReview = submitReviewsInOrder(reviews);
     for (let number = 1; number <= 4; number += 1) {
-      const distribution = await step(`Round ${number}`, () => seedRound(matching, submitReview, admin, number));
+      const distribution = await step(`Round ${number}`, () =>
+        seedRound(matching, submitReview, promptSteps.afterOpen, admin, number),
+      );
       log('seed: Round closed', {
         ...distribution,
         fullFixtureTarget: ROUND_TARGETS[number - 1],
       });
     }
 
-    await step('end-state assertions', () => assertEndState(prisma));
+    // §14.4 step 6: Prompt 4 stays live and unanswered at completion.
+    await step('Prompt 4', () => promptSteps.publish(4));
+    log('seed: Prompt published', { prompt: 4 });
+    const { demoStudent } = await step('end-state assertions', () => assertEndState(prisma, studentIds));
+    log('seed: demo Student', demoStudent);
     await step('completion record', () => writeRecord(db, FIXTURE_VERSION));
     log(`seed complete (fixture-v${FIXTURE_VERSION})`, elapsed());
     return 0;

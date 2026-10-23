@@ -19,6 +19,10 @@ export const GAP_SKILL = 'Valgrind';
 export const X_POSITION = 1;
 export const Y_POSITION = 2;
 
+// §14.3's reserved positions: 0, the unmatchable Student, then X and Y.
+// They stay Active candidates, so none of them is the demo Student.
+export const RESERVED_POSITIONS: readonly number[] = [0, X_POSITION, Y_POSITION];
+
 // The Student at position p, as the seed will make it: Skills by name, the
 // Goal as its Skill's name. The generator's XP is dropped, so everyone starts
 // at 0 XP.
