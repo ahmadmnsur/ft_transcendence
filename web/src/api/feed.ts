@@ -127,7 +127,8 @@ async function readAgain(client: QueryClient, queryKey: readonly string[]): Prom
   await client.invalidateQueries({ queryKey });
 }
 
-// Waits for the query's read to settle, giving up if the query leaves the cache.
+// Waits for the read to settle, then places outside the cache's notification
+// so queued Posts never nest. Gives up if the query leaves the cache.
 function afterRead(client: QueryClient, query: Query<InfiniteData<PostPage>>, then: () => void): void {
   const unsubscribe = client.getQueryCache().subscribe((event) => {
     if (event.query !== query) return;
@@ -137,7 +138,7 @@ function afterRead(client: QueryClient, query: Query<InfiniteData<PostPage>>, th
     }
     if (query.state.fetchStatus === 'idle') {
       unsubscribe();
-      then();
+      queueMicrotask(then);
     }
   });
 }
@@ -183,7 +184,9 @@ export function applyPostCreated(client: QueryClient, post: PostView): void {
         : [...page.items.slice(0, index), post, ...page.items.slice(index)];
     return { ...page, items };
   });
-  client.setQueryData<InfiniteData<PostPage>>(FEED_QUERY_KEY, { pages, pageParams: data.pageParams });
+  // Only the data changes, so a failed More page keeps its error and Try again;
+  // setQueryData would mark the whole feed a success.
+  query.setState({ data: { pages, pageParams: data.pageParams } });
 }
 
 // `POST` or `DELETE /api/posts/:id/like` (§6.9). `likedByMe` belongs to the
