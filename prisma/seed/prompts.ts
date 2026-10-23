@@ -29,7 +29,7 @@ const STUDENT_ANSWERS = [
     'I rewrote a whole module without tests and broke three things I only noticed during the evaluation. ' +
       'Now I write the test first for anything I touch.',
     'I committed a password to a public repository. Rotating it took minutes; ' +
-      'keeping secrets out of git since then took one embarrassing lesson.',
+      'the habit of keeping secrets out of git has stuck ever since.',
     "I assumed every input would be valid. A peer's first test sent an empty line and my program crashed, " +
       'so now I start from the edge cases.',
   ],
