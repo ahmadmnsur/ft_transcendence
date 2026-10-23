@@ -41,7 +41,7 @@ export default {
   noSkills: 'Aucune Compétence à afficher à ce chargement.',
   completion: 'Achèvement des Matchs',
   closedOnly: 'Tours fermés uniquement. Les Matchs déclinés et ceux terminés par un Admin sont inclus.',
-  overall: 'Taux d’achèvement global',
+  overall: 'Taux d’achèvement global · {rate}',
   completionCounts: {
     text: '{completed} sur {total}.',
     parts: {
@@ -57,7 +57,7 @@ export default {
   noClosedRounds: 'Aucun Tour fermé pour le moment.',
   emptyRound: 'Aucun Match dans ce Tour ; aucun taux d’achèvement.',
   openState: 'État actuel des Matchs',
-  openDescription: 'Uniquement les Matchs proposés et acceptés du Tour ouvert.',
+  openDescription: 'Tour {number} · Uniquement les Matchs proposés et acceptés du Tour ouvert.',
   noOpenRound: 'Aucun Tour ouvert.',
   closedOutcomes: 'Issue des Matchs',
   outcomesDescription: 'Issues finales de tous les Matchs des Tours fermés.',

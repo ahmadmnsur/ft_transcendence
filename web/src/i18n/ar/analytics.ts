@@ -50,7 +50,7 @@ export default {
   noSkills: 'لا توجد مهارات لعرضها عند هذا التحميل.',
   completion: 'اكتمال المطابقات',
   closedOnly: 'الجولات المغلقة فقط. تشمل المطابقات المرفوضة والمنتهية بقرار مسؤول.',
-  overall: 'نسبة الاكتمال الإجمالية',
+  overall: 'نسبة الاكتمال الإجمالية · {rate}',
   completionCounts: {
     text: '{completed} من أصل {total}.',
     parts: {
@@ -66,7 +66,7 @@ export default {
   noClosedRounds: 'لا توجد جولات مغلقة بعد.',
   emptyRound: 'لا مطابقات في هذه الجولة؛ لا توجد نسبة اكتمال.',
   openState: 'الوضع الحالي للمطابقات',
-  openDescription: 'المطابقات المقترحة والمقبولة فقط في الجولة المفتوحة.',
+  openDescription: 'الجولة {number} · المطابقات المقترحة والمقبولة فقط في الجولة المفتوحة.',
   noOpenRound: 'لا توجد جولة مفتوحة.',
   closedOutcomes: 'كيف انتهت المطابقات',
   outcomesDescription: 'النتائج النهائية لجميع المطابقات في الجولات المغلقة.',

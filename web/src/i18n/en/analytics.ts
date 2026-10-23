@@ -39,7 +39,7 @@ export default {
   noSkills: 'No Skills to show at this load.',
   completion: 'Match completion',
   closedOnly: 'Closed Rounds only. Declined Matches and Matches ended by an Admin are included.',
-  overall: 'Overall completion rate',
+  overall: 'Overall completion rate · {rate}',
   completionCounts: {
     text: '{completed} out of {total}.',
     parts: {
@@ -55,7 +55,7 @@ export default {
   noClosedRounds: 'No closed Rounds yet.',
   emptyRound: 'No Matches in this Round; no completion rate.',
   openState: 'Where Matches stand now',
-  openDescription: 'Only Matched and Accepted Matches in the open Round.',
+  openDescription: 'Round {number} · Only Matched and Accepted Matches in the open Round.',
   noOpenRound: 'No Round is open.',
   closedOutcomes: 'How Matches ended',
   outcomesDescription: 'Final outcomes of all Matches in closed Rounds.',

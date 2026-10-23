@@ -52,10 +52,10 @@ export function AdminAnalyticsPage(): React.JSX.Element {
             <h2 className="text-xl font-semibold text-ink">{copy.completion}</h2>
             <p className="max-w-prose text-sm text-ink-muted">{copy.closedOnly}</p>
             {data.completion.overall.rate === null ? <p className="text-sm text-ink-muted">{copy.noRate}</p> : <>
-              <p className="text-lg font-semibold text-ink">{copy.overall}{' · '}
-                <bdi className="tabular-nums">{formatNumber(data.completion.overall.rate / 100,
-                  { style: 'percent', maximumFractionDigits: 0 })}</bdi>
-              </p>
+              <p className="text-lg font-semibold text-ink">{format(copy.overall, {
+                rate: <bdi className="tabular-nums">{formatNumber(data.completion.overall.rate / 100,
+                  { style: 'percent', maximumFractionDigits: 0 })}</bdi>,
+              })}</p>
               <p className="text-sm text-ink-muted">{format(copy.completionCounts, data.completion.overall)}</p>
             </>}
           </div>
@@ -66,7 +66,7 @@ export function AdminAnalyticsPage(): React.JSX.Element {
             <h2 className="text-base font-semibold text-ink">{copy.openState}</h2>
             <p className="mt-2 text-sm text-ink-muted">{copy.noOpenRound}</p>
           </section> : <AnalyticsBars title={copy.openState} xTitle={copy.status} name={copy.matches} unit={copy.matches}
-            description={<>{format(copy.roundNumber, { number: data.outcomes.open.roundNumber })}{' · '}{copy.openDescription}</>}
+            description={format(copy.openDescription, { number: data.outcomes.open.roundNumber })}
             rows={(['MATCHED', 'ACCEPTED'] as const).map((status) => ({ label: t.matching.statuses[status], value: data.outcomes.open![status] }))} />}
           <AnalyticsBars title={copy.closedOutcomes} description={copy.outcomesDescription} xTitle={copy.status} name={copy.matches} unit={copy.matches}
             rows={(['COMPLETED', 'LAPSED', 'DECLINED', 'TERMINATED_BY_ADMIN'] as const).map((status) => ({
