@@ -4,6 +4,7 @@ import type { MatchingService } from '../../src/matching/matching.service';
 import type { AdminRoundMatch, MatchDetailView } from '../../src/matching/views';
 import type { MatchRole } from '../../src/shared/matches';
 import { SeedFailure } from './failure';
+import type { PromptScript } from './prompts';
 import type { SubmitReview } from './reviews';
 
 // §14.5 step c, in Round order. Each entry acts on M[0], then M[1]
@@ -73,18 +74,20 @@ async function repair(
   throw new SeedFailure('no hand-made repair accepted any of the four pairs');
 }
 
-// §14.5 steps a, c, d, g, h and i. The application's Round detail is in
+// §14.5 steps a, b, c, d, g, h and i. The application's Round detail is in
 // creation order: the matcher's selection order before repairs. No seed
 // write sets a Match status or fabricates coverage.
 export async function seedRound(
   matching: MatchingService,
   submitReview: SubmitReview,
+  afterOpen: PromptScript['afterOpen'],
   admin: Actor,
   number: number,
 ) {
   const declines = DECLINES[number - 1];
   if (declines === undefined) throw new SeedFailure('the per-Round script only covers Rounds 1–4');
   const opened = await matching.openRound(admin);
+  const prompts = await afterOpen(number);
   const { matches } = await matching.getRound(admin, opened.round.id);
   // The two lapse indices must be separate from the declines. Fewer
   // Matches cannot run this script; adding pairs to fill it is forbidden.
@@ -111,5 +114,5 @@ export async function seedRound(
   const { items } = await matching.listRounds(admin);
   const closed = items.find((round) => round.id === opened.round.id);
   if (closed === undefined) throw new SeedFailure(`Round ${number} is missing after close`);
-  return { number, matcherMatches: matches.length, repairs: hasRepair ? 1 : 0, counts: closed.counts };
+  return { number, matcherMatches: matches.length, repairs: hasRepair ? 1 : 0, counts: closed.counts, prompts };
 }

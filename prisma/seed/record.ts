@@ -9,8 +9,9 @@ import { quoteIdentifier } from './sql';
 // Block of Y, four closed Rounds with declines, repairs and acceptances,
 // and §14.8's checks 1 (Rounds), 2 and 8. v4: the Mentee's Review of both
 // repairs and every step-h Match, with §14.5's sentences and ratings, and
-// §14.8's check 4.
-export const FIXTURE_VERSION = 4;
+// §14.8's check 4. v5: the four Prompts, published in §14.4's order, with
+// §14.5 step b's answers, and §14.8's checks 1 (Prompts), 3 and 9.
+export const FIXTURE_VERSION = 5;
 
 // Only this text is a record. Both databases start with Postgres's own
 // comment, "default administrative connection database", which is none.
