@@ -185,6 +185,11 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   expect((await post(adminCookie)).status).toBe(404);
   expect((await harness.get(`/api/matches/${id}`).set('Cookie', adminCookie)).status).toBe(404);
   expect((await harness.get(`/api/admin/matches/${id}`).set('Cookie', moderator.cookie)).status).toBe(403);
+  // The Mentor already holds 200 XP, so the 80 the Review pays crosses into
+  // Level 2: a Level computed from anything but the stored XP shows 1 (ADR-0016).
+  await harness.app.get(UnitOfWork).run('fixture-xp', async (tx) => {
+    await tx.student.update({ where: { id: mentor.studentId }, data: { xp: 200 } });
+  });
   // Both are promoted through the Users table while their Match is in
   // progress; it still completes through its ordinary path (§10.8, §12.7).
   const users = harness.app.get(AdminUsersService);
@@ -192,7 +197,7 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   await users.changeRole(admin, mentor.studentId, 'ADMIN');
   expect((await post(menteeAccount.cookie)).status).toBe(201);
   expect((await harness.get('/api/me').set('Cookie', mentorAccount.cookie)).body.data).toMatchObject({
-    role: 'ADMIN', xp: 80, level: 1, badges: [{ badge: 'FIRST_MENTOR' }],
+    role: 'ADMIN', xp: 280, level: 2, badges: [{ badge: 'FIRST_MENTOR' }],
   });
   expect((await harness.get('/api/me').set('Cookie', menteeAccount.cookie)).body.data).toMatchObject({
     role: 'ADMIN', xp: 120, level: 1, badges: [],
@@ -202,10 +207,10 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   // Admins out (§10.8).
   expect((await harness.get(`/api/students/${mentor.studentId}`).set('Cookie', outsider.cookie)).body.data).toMatchObject({
     student: { id: mentor.studentId, isAdmin: true },
-    profile: { xp: 80, level: 1, badges: [{ badge: 'FIRST_MENTOR' }] },
+    profile: { xp: 280, level: 2, badges: [{ badge: 'FIRST_MENTOR' }] },
   });
   expect(await users.getUser(admin, mentor.studentId)).toMatchObject({
-    role: 'ADMIN', xp: 80, level: 1, badges: [{ badge: 'FIRST_MENTOR' }],
+    role: 'ADMIN', xp: 280, level: 2, badges: [{ badge: 'FIRST_MENTOR' }],
   });
   const board = await harness.get('/api/leaderboard').set('Cookie', outsider.cookie);
   // Zero XP each, so ties break by id: the outsider was made first.

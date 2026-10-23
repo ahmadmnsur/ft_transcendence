@@ -268,7 +268,13 @@ describe('the Users-table refusals', () => {
   it('writes the role alone: the target keeps every session and signs in as the new role on the next request', async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const student = await createTestAccount(harness.app);
+    // Nonzero XP and Streak, so a role change that also reset either would
+    // show in the row below.
+    await harness.app.get(UnitOfWork).run('fixture-progress', async (tx) => {
+      await tx.student.update({ where: { id: student.id }, data: { xp: 200, streak: 3 } });
+    });
     const prisma = harness.app.get(PrismaService);
+    const before = await prisma.student.findUniqueOrThrow({ where: { id: student.id } });
     const sessions = await prisma.session.count({ where: { studentId: student.id } });
     harness.recorder.clear();
 
@@ -280,6 +286,8 @@ describe('the Users-table refusals', () => {
     expect(changed.status).toBe(200);
     expect(changed.body).toEqual({ ok: true, data: { role: 'ADMIN' } });
 
+    // The Student row has no `updatedAt`: only `role` may differ.
+    expect(await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).toEqual({ ...before, role: 'ADMIN' });
     expect(await prisma.session.count({ where: { studentId: student.id } })).toBe(sessions);
     expect(harness.recorder.events).toEqual([]);
     expect((await harness.get('/api/admin/students').set('Cookie', student.cookie)).status).toBe(200);

@@ -63,12 +63,14 @@ function RoleCard({ student, self }: { student: AdminStudentDetail; self: boolea
 
   // §10.8: promotion closes participation and keeps what was earned;
   // demotion restores participation; between the two participating roles,
-  // only the report queue differs.
+  // only the report queue differs. A demotion to Peer Moderator says both.
   const consequence =
     choice === 'ADMIN'
       ? copy.confirm.toAdmin
       : student.role === 'ADMIN'
-        ? copy.confirm.fromAdmin
+        ? choice === 'PEER_MODERATOR'
+          ? `${copy.confirm.fromAdmin} ${copy.confirm.toModerator}`
+          : copy.confirm.fromAdmin
         : choice === 'PEER_MODERATOR'
           ? copy.confirm.toModerator
           : copy.confirm.toStudent;
@@ -370,5 +372,11 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
 export function AdminUserPage(): React.JSX.Element {
   const { studentId } = useParams({ from: '/admin/users/$studentId' });
   if (!isUuid(studentId)) return <NotFoundPage />;
-  return <AdminUser key={studentId} studentId={studentId} />;
+  // Every id the server issues is lower case, and §6.0.1's pipe passes an
+  // upper-case spelling through, as on `ThreadPage`. The page keys, reads and
+  // writes in lower case, so an upper-case URL still matches the session's id
+  // for the Admin's own row, and an avatar upload still reaches the proxy's
+  // upload location.
+  const lowerStudentId = studentId.toLowerCase();
+  return <AdminUser key={lowerStudentId} studentId={lowerStudentId} />;
 }
