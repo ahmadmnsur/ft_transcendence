@@ -4,7 +4,7 @@ import type { Catalogue } from '../types';
 export default {
   title: 'Analytique des apprentissages',
   description: 'Ce que la communauté souhaite apprendre et peut enseigner, l’état actuel des Matchs et l’issue des Matchs passés.',
-  freshness: 'Les chiffres reflètent le dernier chargement de la page. Rechargez pour les actualiser.',
+  freshness: 'Les chiffres reflètent le dernier chargement et se rechargent à chaque ouverture ou fermeture d’un Tour. Rechargez la page pour les actualiser entre-temps.',
   loading: 'Chargement de l’Analytique des apprentissages…',
   retry: 'Réessayer',
   insights: 'Compétences nécessitant une attention',

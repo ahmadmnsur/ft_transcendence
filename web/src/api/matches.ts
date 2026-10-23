@@ -151,10 +151,10 @@ export async function fetchAdminMatch(id: string): Promise<AdminMatchDetailView>
   return apiFetch<AdminMatchDetailView>(`/admin/matches/${encodeURIComponent(id)}`);
 }
 
-// No event tells a Student that their partner accepted or declined (§7.4), so
-// these are read again whenever a screen opens or regains focus: the
-// default stale time of zero. The live reactions to `round:opened`,
-// `round:closed` and `match:ready` arrive with their own ticket (#61).
+// §7.4: `round:opened`, `round:closed` and `match:ready` read the Round and
+// Match views again (`matching/RoundUpdates.tsx`). A partner's accept or
+// decline still sends no event, so these are also read again whenever a
+// screen opens or regains focus: the default stale time of zero.
 export function currentRoundQueryOptions() {
   return queryOptions({ queryKey: CURRENT_ROUND_QUERY_KEY, queryFn: fetchCurrentRound });
 }
@@ -212,6 +212,20 @@ async function readAgain(queryClient: QueryClient, queryKey: readonly string[]):
   await queryClient.invalidateQueries({ queryKey });
 }
 
+// Every Admin view (Round pages, Match pages and a Student's admin page,
+// which lists their Matches and Streak), the current Round, and every view
+// of the signed-in Student's Matches.
+export function readRoundViewsAgain(queryClient: QueryClient): void {
+  void readAgain(queryClient, ADMIN_PREFIX);
+  void readAgain(queryClient, CURRENT_ROUND_QUERY_KEY);
+  void readAgain(queryClient, MATCHES_PREFIX);
+}
+
+// The signed-in Student's current Match, history and detail.
+export function readMatchesAgain(queryClient: QueryClient): void {
+  void readAgain(queryClient, MATCHES_PREFIX);
+}
+
 // The Match as the write left it is shown at once — a declined one leaves the
 // current Match, which holds only a standing one (§6.6) — then every view of
 // the Student's Matches is read again: the current Match, the history and the
@@ -254,19 +268,14 @@ export function declineMatch(queryClient: QueryClient, id: string): Promise<Matc
 // refused (another Admin may have changed the Round or its Matches first).
 function roundWrite<T>(queryClient: QueryClient, send: () => Promise<T>): Promise<T | undefined> {
   let result: T | undefined;
-  const reread = (): void => {
-    void readAgain(queryClient, ADMIN_PREFIX);
-    void readAgain(queryClient, CURRENT_ROUND_QUERY_KEY);
-    void readAgain(queryClient, MATCHES_PREFIX);
-  };
   return writeAsSignedIn(
     queryClient,
     send,
     async (value) => {
       result = value;
-      reread();
+      readRoundViewsAgain(queryClient);
     },
-    reread,
+    () => readRoundViewsAgain(queryClient),
   ).then(() => result);
 }
 

@@ -15,6 +15,24 @@ export type PostView = {
   likedByMe: boolean;
 } & ({ origin: 'TAKEAWAY' } | { origin: 'PROMPT_ANSWER'; prompt: { id: string; question: string } });
 
+export function isPostView(value: unknown): value is PostView {
+  if (typeof value !== 'object' || value === null) return false;
+  const post = value as Record<string, unknown>;
+  if (typeof post.id !== 'string' || typeof post.body !== 'string') return false;
+  if (typeof post.createdAt !== 'string' || Number.isNaN(Date.parse(post.createdAt))) return false;
+  if (typeof post.likeCount !== 'number' || !Number.isFinite(post.likeCount)) return false;
+  if (typeof post.likedByMe !== 'boolean') return false;
+  if (typeof post.author !== 'object' || post.author === null) return false;
+  const author = post.author as Record<string, unknown>;
+  if (typeof author.id !== 'string' || typeof author.displayName !== 'string') return false;
+  if (typeof author.avatarUrl !== 'string' && author.avatarUrl !== null) return false;
+  if (typeof author.isAdmin !== 'boolean' || typeof author.removed !== 'boolean') return false;
+  if (post.origin === 'TAKEAWAY') return true;
+  if (post.origin !== 'PROMPT_ANSWER' || typeof post.prompt !== 'object' || post.prompt === null) return false;
+  const prompt = post.prompt as Record<string, unknown>;
+  return typeof prompt.id === 'string' && typeof prompt.question === 'string';
+}
+
 // §6.0.1's stream page: newest first, and the cursor for the next page.
 export interface PostPage {
   items: PostView[];
@@ -101,6 +119,46 @@ async function cacheLikeState(client: QueryClient, postId: string, state: LikeSt
 async function readAgain(client: QueryClient, queryKey: readonly string[]): Promise<void> {
   await client.cancelQueries({ queryKey });
   await client.invalidateQueries({ queryKey });
+}
+
+// §7.4's client reaction to `post:created`: a loaded feed takes the Post in
+// newest-first order (createdAt, then id). Two Posts may commit in the other
+// order than their createdAt, so an older arrival stays in its sort position
+// or is left to its cursor page by reading again. An in-flight read may
+// have answered before the commit and would drop the Post, so it is redone.
+export function applyPostCreated(client: QueryClient, post: PostView): void {
+  const data = client.getQueryData<InfiniteData<PostPage>>(FEED_QUERY_KEY);
+  if (data === undefined) {
+    if (client.isFetching({ queryKey: FEED_QUERY_KEY }) > 0) void readAgain(client, FEED_QUERY_KEY);
+    return;
+  }
+  for (const page of data.pages) {
+    if (page.items.some((item) => item.id === post.id)) return;
+  }
+  if (data.pages.length === 0) {
+    void readAgain(client, FEED_QUERY_KEY);
+    return;
+  }
+  const first = data.pages[0];
+  const createdAt = Date.parse(post.createdAt);
+  const index = first.items.findIndex((item) => {
+    const itemCreatedAt = Date.parse(item.createdAt);
+    return createdAt > itemCreatedAt || (createdAt === itemCreatedAt && post.id > item.id);
+  });
+  if (index === -1 && first.nextCursor !== null) {
+    void readAgain(client, FEED_QUERY_KEY);
+    return;
+  }
+  const pages = data.pages.map((page, pageIndex) => {
+    if (pageIndex !== 0) return page;
+    const items =
+      index === -1
+        ? [...page.items, post]
+        : [...page.items.slice(0, index), post, ...page.items.slice(index)];
+    return { ...page, items };
+  });
+  client.setQueryData<InfiniteData<PostPage>>(FEED_QUERY_KEY, { pages, pageParams: data.pageParams });
+  if (client.isFetching({ queryKey: FEED_QUERY_KEY }) > 0) void readAgain(client, FEED_QUERY_KEY);
 }
 
 // `POST` or `DELETE /api/posts/:id/like` (§6.9). `likedByMe` belongs to the
