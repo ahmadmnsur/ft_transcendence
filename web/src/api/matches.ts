@@ -212,16 +212,18 @@ async function readAgain(queryClient: QueryClient, queryKey: readonly string[]):
   await queryClient.invalidateQueries({ queryKey });
 }
 
-// Every Admin view (Round pages, Match pages and a Student's admin page,
-// which lists their Matches and Streak), the current Round, and every view
-// of the signed-in Student's Matches.
+// Reads again every Admin view (the Round and Match pages, and a Student's
+// admin page, which lists their Matches and Streak), the current Round and
+// every view of the signed-in Student's Matches: what a Round's opening or
+// closing changes.
 export function readRoundViewsAgain(queryClient: QueryClient): void {
   void readAgain(queryClient, ADMIN_PREFIX);
   void readAgain(queryClient, CURRENT_ROUND_QUERY_KEY);
   void readAgain(queryClient, MATCHES_PREFIX);
 }
 
-// The signed-in Student's current Match, history and detail.
+// Reads again every view of the signed-in Student's Matches: the current
+// Match, the history and the detail.
 export function readMatchesAgain(queryClient: QueryClient): void {
   void readAgain(queryClient, MATCHES_PREFIX);
 }

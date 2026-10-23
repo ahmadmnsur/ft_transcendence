@@ -1,4 +1,10 @@
-import { infiniteQueryOptions, queryOptions, type InfiniteData, type QueryClient } from '@tanstack/react-query';
+import {
+  infiniteQueryOptions,
+  queryOptions,
+  type InfiniteData,
+  type Query,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { ApiRefusalError, apiFetch } from './client';
 import type { StudentRef } from './profile';
 import { PROMPT_ANSWERS_QUERY_KEY } from './prompts';
@@ -121,17 +127,37 @@ async function readAgain(client: QueryClient, queryKey: readonly string[]): Prom
   await client.invalidateQueries({ queryKey });
 }
 
+// Waits for the query's read to settle, giving up if the query leaves the cache.
+function afterRead(client: QueryClient, query: Query<InfiniteData<PostPage>>, then: () => void): void {
+  const unsubscribe = client.getQueryCache().subscribe((event) => {
+    if (event.query !== query) return;
+    if (event.type === 'removed') {
+      unsubscribe();
+      return;
+    }
+    if (query.state.fetchStatus === 'idle') {
+      unsubscribe();
+      then();
+    }
+  });
+}
+
 // §7.4's client reaction to `post:created`: a loaded feed takes the Post in
-// newest-first order (createdAt, then id). Two Posts may commit in the other
-// order than their createdAt, so an older arrival stays in its sort position
-// or is left to its cursor page by reading again. An in-flight read may
-// have answered before the commit and would drop the Post, so it is redone.
+// its place, newest first (createdAt, then id), which is the top unless two
+// Posts committed in the other order than their createdAt. A read in flight
+// is left to finish and the Post placed after it, never cancelled: cancelling
+// would drop a More page the reader asked for, and a read that started before
+// the commit answers without the Post. One that started after it already
+// holds the Post, so the id check keeps it once.
 export function applyPostCreated(client: QueryClient, post: PostView): void {
-  const data = client.getQueryData<InfiniteData<PostPage>>(FEED_QUERY_KEY);
-  if (data === undefined) {
-    if (client.isFetching({ queryKey: FEED_QUERY_KEY }) > 0) void readAgain(client, FEED_QUERY_KEY);
+  const query = client.getQueryCache().find<InfiniteData<PostPage>>({ queryKey: FEED_QUERY_KEY, exact: true });
+  if (query === undefined) return;
+  if (query.state.fetchStatus !== 'idle') {
+    afterRead(client, query, () => applyPostCreated(client, post));
     return;
   }
+  const data = query.state.data;
+  if (data === undefined) return;
   for (const page of data.pages) {
     if (page.items.some((item) => item.id === post.id)) return;
   }
@@ -158,7 +184,6 @@ export function applyPostCreated(client: QueryClient, post: PostView): void {
     return { ...page, items };
   });
   client.setQueryData<InfiniteData<PostPage>>(FEED_QUERY_KEY, { pages, pageParams: data.pageParams });
-  if (client.isFetching({ queryKey: FEED_QUERY_KEY }) > 0) void readAgain(client, FEED_QUERY_KEY);
 }
 
 // `POST` or `DELETE /api/posts/:id/like` (§6.9). `likedByMe` belongs to the

@@ -30,9 +30,7 @@ export const analyticsQueryOptions = () => queryOptions({
 
 // §13.4: a Round signal reads Analytics again. Cancel first, since a read
 // still in flight may have answered before the change committed.
-export function readAnalyticsAgain(client: QueryClient): void {
-  void (async () => {
-    await client.cancelQueries({ queryKey: ANALYTICS_QUERY_KEY });
-    await client.invalidateQueries({ queryKey: ANALYTICS_QUERY_KEY });
-  })();
+export async function readAnalyticsAgain(client: QueryClient): Promise<void> {
+  await client.cancelQueries({ queryKey: ANALYTICS_QUERY_KEY });
+  await client.invalidateQueries({ queryKey: ANALYTICS_QUERY_KEY });
 }

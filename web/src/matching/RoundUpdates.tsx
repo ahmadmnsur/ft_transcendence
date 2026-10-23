@@ -13,7 +13,7 @@ export function RoundUpdates(): null {
   useEffect(() => {
     const roundChanged = (): void => {
       readRoundViewsAgain(queryClient);
-      readAnalyticsAgain(queryClient);
+      void readAnalyticsAgain(queryClient);
     };
     const opened = subscribe('round:opened', roundChanged);
     const closed = subscribe('round:closed', roundChanged);
