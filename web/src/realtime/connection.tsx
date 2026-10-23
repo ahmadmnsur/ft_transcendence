@@ -17,9 +17,7 @@ const BACKOFF_CAP_MS = 10_000;
 // layout: it connects the client of `socket.ts` once GET /api/session reports
 // a session, tells the three terminal outcomes from an outage, and shows the
 // origin banner. Events themselves belong to the surfaces that own them
-// (`social/PresenceUpdates.tsx`, `messages/MessageUpdates.tsx`,
-// `matching/RoundUpdates.tsx`, `feed/FeedUpdates.tsx` and
-// `progress/ProgressCard.tsx`); this component only keeps the connection honest.
+// (listed in `socket.ts`); this component only keeps the connection honest.
 export function RealtimeConnection({ brand }: { brand: string }): React.JSX.Element | null {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
