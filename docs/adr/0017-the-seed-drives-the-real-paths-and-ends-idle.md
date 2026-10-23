@@ -220,6 +220,19 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > Review's rating. This version's completion record certifies these steps and checks, not the
    > complete end state (decision 10; `docs/ticket-plan.md` T25).
 
+   > **Fixture v5, 2026-10-23 ([#62](https://github.com/ahmadmnsur/ft_transcendence/issues/62)).**
+   > This increment publishes the four Reflection Prompts through the real publish path: Prompt 1
+   > before Round 1, Prompts 2 and 3 right after Rounds 2 and 3 open, and Prompt 4 after Round 4's
+   > close, so Prompt 4 is the live one at the end. Each Round's answers go through the real answer
+   > path by `docs/spec.md` §14.5 step b, in position order and then the Peer Moderator, with fixed
+   > sentences chosen by position; anyone Suspended or Removed at that moment is skipped. It checks
+   > exactly four Prompts with the fourth live, finds decision 6's demo Student and logs their
+   > email, and checks that each of the three Badges has an active holder (§14.8 checks 1, 3 and 9).
+   > **The Matches and Reviews stay those of v4**: the answers' XP keeps every Level between 1 and
+   > 3, so the matcher's Level term never fires (`docs/spec.md` §14.10). This version's completion
+   > record certifies these steps and checks, not the complete end state (decision 10;
+   > `docs/ticket-plan.md` T34).
+
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
    Both are one flag, and between them they make six settled rules visible that a clean cohort
