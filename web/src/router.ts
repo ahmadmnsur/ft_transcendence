@@ -30,6 +30,8 @@ import { ThreadPage } from './pages/ThreadPage';
 import { PromptsPage } from './pages/PromptsPage';
 import { PromptDetailPage } from './pages/PromptDetailPage';
 import { AdminPromptsPage } from './pages/AdminPromptsPage';
+import { AdminReportsPage, parseAdminReportsSearch } from './pages/AdminReportsPage';
+import { ModerationPage } from './pages/ModerationPage';
 import { queryClient } from './queryClient';
 import { parsePageSearch } from './search';
 
@@ -250,6 +252,24 @@ const adminPromptsRoute = createRoute({
   component: AdminPromptsPage,
 });
 
+// §3.5.1: a Peer Moderator's queue. An Admin works the same groups, with
+// reporters, at `/admin/reports`, with the resolved audit beside them; the
+// API refuses a Student both with 403 (§5.3).
+const moderationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/moderation',
+  beforeLoad: (args) => requireRole(args, 'PEER_MODERATOR'),
+  component: ModerationPage,
+});
+
+const adminReportsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/reports',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  validateSearch: parseAdminReportsSearch,
+  component: AdminReportsPage,
+});
+
 const reviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/matches/$matchId/review',
@@ -314,6 +334,8 @@ const routeTree = rootRoute.addChildren([
   promptsRoute,
   promptDetailRoute,
   adminPromptsRoute,
+  moderationRoute,
+  adminReportsRoute,
   privacyRoute,
   termsRoute,
   rulesRoute,

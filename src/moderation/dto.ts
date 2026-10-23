@@ -1,7 +1,14 @@
 import { IsIn, IsString, IsUUID, ValidateBy, ValidateIf } from 'class-validator';
 import { sharedValidator, Trimmed } from '../auth/dto';
 import { isValidText, LIMITS } from '../shared/limits';
-import { REPORT_REASONS, type ReportReason } from '../shared/reports';
+import {
+  POST_GROUP_ACTIONS,
+  REPORT_REASONS,
+  STUDENT_GROUP_ACTIONS,
+  type PostGroupAction,
+  type ReportReason,
+  type StudentGroupAction,
+} from '../shared/reports';
 
 const ReportText = sharedValidator('reportText', (value) => isValidText(value, LIMITS.reportText, true));
 
@@ -36,4 +43,15 @@ export class FileReportDto {
   @Trimmed()
   @ReportText()
   text?: string;
+}
+
+// §12.5's bodies: each group kind takes its own two actions.
+export class ResolvePostGroupDto {
+  @IsIn(POST_GROUP_ACTIONS)
+  action!: PostGroupAction;
+}
+
+export class ResolveStudentGroupDto {
+  @IsIn(STUDENT_GROUP_ACTIONS)
+  action!: StudentGroupAction;
 }

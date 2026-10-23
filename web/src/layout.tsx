@@ -151,6 +151,18 @@ function SiteHeader(): React.JSX.Element {
               {session.student.role === 'ADMIN' ? <Link to="/admin/analytics" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
                 {t.analytics.title}
               </Link> : null}
+              {/* §3.5.1: each moderation role has its own page; the route guards
+              and the API check the role again. */}
+              {session.student.role === 'PEER_MODERATOR' ? (
+                <Link to="/moderation" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+                  {t.shell.header.moderationLink}
+                </Link>
+              ) : null}
+              {session.student.role === 'ADMIN' ? (
+                <Link to="/admin/reports" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+                  {t.shell.header.reportsLink}
+                </Link>
+              ) : null}
               <Link
                 to="/me"
                 className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}

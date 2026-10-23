@@ -12,6 +12,8 @@ export default {
     matchLink: 'المطابقة',
     roundsLink: 'الجولات',
     usersLink: 'المستخدمون',
+    moderationLink: 'الإشراف',
+    reportsLink: 'البلاغات',
     profileLink: 'ملفي الشخصي',
     signOut: 'تسجيل الخروج',
     signingOut: 'جار تسجيل الخروج…',
