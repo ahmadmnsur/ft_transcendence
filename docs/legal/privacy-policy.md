@@ -77,7 +77,7 @@ Mission, when each of you accepted, who declined if either of you did, and how t
 When you submit a Review as a Mentee, its three parts are stored separately:
 
 - your **Learning Outcome** — what you learned — with one optional **Evidence** file (PDF, PNG or
-  JPEG) and its original file name;
+  JPEG) and its file name;
 - your **Private Feedback** on your Mentor: two written answers and an optional rating from 1 to 5;
 - your **Public Takeaway**, which becomes a Post.
 
@@ -148,7 +148,7 @@ account*), and its logs keep each check of it (see *Logs*).
   blocked, and never automatically with a Student you have been matched with before. You are included
   in every Round while you list at least one Skill and your account is active; Admins are never
   matched. An Admin can also pair two Students by hand: a Match made by hand shows no Compatibility
-  Score, and never crosses a Block. You can decline any Match.
+  Score, and never crosses a Block. You can decline any Match while it is in progress.
 - **To record what was learned.** The three parts of your Review go to three different audiences (see
   below), and your Public Takeaway joins the community feed.
 - **To run the community**: the feed, Likes, Friends, online status and Direct Messages.
@@ -164,7 +164,7 @@ account*), and its logs keep each check of it (see *Logs*).
 PeerConnect uses your data for nothing else. It shows no advertising, sells nothing, and does not use
 your data to train AI models. It shares nothing with anyone outside PeerConnect, except **Supabase**,
 which stores the team's copy for the team and uses it for nothing else. It never sends you email:
-your email address is used only to sign in.
+your email address is used to sign in.
 
 ## Who can see what
 
@@ -178,13 +178,13 @@ your email address is used only to sign in.
 | Your email address | you and Admins — never shown on your profile or in search |
 | Your list of Friends | you only |
 | A friend request you sent or received, while it waits for an answer | you and the other Student only |
-| Your Matches: who you were paired with, their status, the Compatibility Score and its explanation, the suggested Mission, which of you has accepted and, for Admins, which of you declined | the two of you, and Admins. No profile lists anyone's Matches, and a Public Takeaway never names the Mentor |
+| Your Matches: who you were paired with, their status, the Compatibility Score and its explanation, the suggested Mission, which of you has accepted and, for Admins, which of you declined | the two of you, and Admins. No profile lists anyone's Matches, and a Public Takeaway has no field naming the Mentor |
 | Your Learning Outcome and Evidence | the two Students in that Match, and Admins |
 | Private Feedback, including its rating | the Mentor it is about, Admins, and you, its author. It is **not anonymous**: the Mentor sees that it came from you |
 | Direct Messages | only the two Students in the conversation — not Admins, not Peer Moderators. The sender is never shown whether you have read a message |
 | Your Blocks | you only. The other Student is not told, though they may notice they can no longer message you, send you a friend request or be matched with you |
-| A Report you file | Admins, who can see that you filed it. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |
-| A Report you resolve, as a Peer Moderator or an Admin | Admins, who see who closed each Report, how and when. Not the Student it was about, and not the Student who filed it |
+| A Report you file | Admins, who can see that you filed it, unless the group of Reports is about them or their Post, or contains a Report they filed. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |
+| A Report you resolve, as a Peer Moderator or an Admin | Admins, who see who closed each Report, how and when, unless the group of resolved Reports is about them or their Post, or contains a Report they filed. Not the Student it was about, and not the Student who filed it |
 | Learning Analytics | Admins only, and only community-wide figures |
 | Your role, and whether your account is suspended or removed | you, and Admins in their list of every account. Other Students see a removed account only as a former student (see *Leaving PeerConnect*). Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
 
@@ -192,7 +192,7 @@ Someone who is not signed in can see nothing but the sign-in and sign-up pages a
 pages.
 
 **Admins can edit your display name, email address, avatar, Skills and Learning Goal** — for example
-to remove an offensive name — but never your password, your XP or Badges, or anything you wrote.
+to remove an offensive name — but never your password, your XP or Badges, or your Posts, Reviews, Reports or Direct Messages.
 
 ## Cookies and your browser
 
@@ -205,7 +205,8 @@ attempt succeeds or fails.
 
 PeerConnect shows no cookie banner because of how it is built: its single cookie is needed for
 signing in, and it sets no other cookie. If PeerConnect stores anything else in your browser, it is
-an interface preference, never information about you.
+an interface preference, never information about you. Your browser may also keep copies of the
+avatars and Evidence files you open, as it does with any page's images and files.
 
 ## Other websites and services
 
@@ -250,10 +251,10 @@ email address. Those counts live only in the server's memory and are never saved
 ## How long your data is kept
 
 Everything PeerConnect records is kept for as long as the copy's database exists. Nothing is deleted
-automatically, except a file that no record uses any more, such as the file of an upload that could
-not be saved: PeerConnect deletes it within two hours, as long as it is running and can reach its
-file storage. Whoever runs a copy can empty it, which erases everything in it; for the team's copy,
-that is the team.
+automatically, except an expired session (see *Sessions* below) and a file that no record uses any
+more, such as the file of an upload that could not be saved: PeerConnect deletes it within two
+hours, as long as it is running and can reach its database and its file storage. Whoever runs a copy
+can empty it, which erases everything in it; for the team's copy, that is the team.
 
 PeerConnect keeps no backups. The team has none it can restore the team's copy from, but Supabase may
 keep its own backup copies of that copy's database, under its own terms, so something deleted in
@@ -262,13 +263,15 @@ PeerConnect can remain in them until Supabase deletes them. A local copy has no 
 Some things end sooner:
 
 - **Sessions.** Signing out ends that session. Changing your password, a Suspension or a Removal ends
-  all of them. An unused session stops working after 30 days.
+  all of them. If the last step of a password change fails, a session signed in with your old
+  password while the change was being saved can stay open until it expires. An unused session stops
+  working after 30 days, and is deleted the next time you sign in.
 - **Your avatar** is deleted when you replace or remove it, and when your account is removed, or
-  within two hours if that deletion fails, as long as PeerConnect is running and can reach its file
-  storage.
+  within two hours if that deletion fails, as long as PeerConnect is running and can reach its
+  database and its file storage.
 - **Evidence** is deleted when its Mentee deletes or replaces it, or within two hours if that deletion
-  fails, as long as PeerConnect is running and can reach its file storage. It is not deleted when an
-  account is removed.
+  fails, as long as PeerConnect is running and can reach its database and its file storage. It is not
+  deleted when an account is removed.
 - **A Skill** leaves your profile when you remove it. Past Matches keep the Skills they were made on,
   because a Match's explanation never changes.
 - **Your Learning Goal** and its sentence are deleted when you clear them, or when its Skill leaves
@@ -298,7 +301,8 @@ Some things are permanent:
   serves plain HTTP and only to the same computer, so its traffic never crosses a network.
 - For the team's copy, PeerConnect's server reaches Supabase only over encrypted connections whose
   certificates it checks.
-- Page scripts cannot read your session cookie, and changing your password signs you out everywhere.
+- Page scripts cannot read your session cookie, and changing your password signs you out everywhere,
+  except in the rare case described under *Sessions* in *How long your data is kept*.
 - Files are never public: each request for an avatar or an Evidence file is checked against who is
   allowed to see it.
 - Inside PeerConnect, only the two Students in a conversation can read its Direct Messages.
@@ -326,7 +330,7 @@ In PeerConnect you can:
 - change your password, and sign out;
 - connect 42 to your account, or disconnect it;
 - stop being matched, by removing all your Skills;
-- decline any Match;
+- decline any Match while it is in progress;
 - Block another Student, and lift a Block you set;
 - cancel a friend request you sent, decline one you received, end a Friendship, or take back a Like;
 - delete or replace your Evidence, and remove or replace your avatar;
