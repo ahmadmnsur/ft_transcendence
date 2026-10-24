@@ -1,6 +1,6 @@
 # Terms of Service
 
-**42 PeerConnect** · Last updated: 12 October 2026
+**42 PeerConnect** · Last updated: 24 October 2026
 
 These Terms are the rules for using 42 PeerConnect: what you agree to when you create an account, how
 the community is moderated, and what PeerConnect does and does not promise. The *Privacy Policy*
@@ -97,7 +97,8 @@ meetings and takes no part in them.
 - **There are three sanctions:**
   - **Removing a Post** takes it off the feed. Peer Moderators and Admins can do it.
   - **Suspension** signs you out and stops you signing in, being matched or appearing on the
-    Leaderboard until an Admin lifts it. Your Posts stay, and your XP and Streak are frozen. Only
+    Leaderboard until an Admin lifts it. A Match you are in the middle of ends, and lifting the
+    Suspension does not bring it back. Your Posts stay, and your XP and Streak are frozen. Only
     Admins can suspend.
   - **Removal** is final. See *Leaving PeerConnect* in the Privacy Policy for what it keeps and what
     it deletes.

@@ -83,6 +83,29 @@ export default {
         confirm: 'Changer le rôle',
       },
     },
+    sanctions: {
+      title: 'Suspension et Exclusion',
+      subtitle: 'Une Suspension peut être levée. Une Exclusion est définitive.',
+      self: 'Vous ne pouvez pas suspendre ni exclure votre propre compte. Un autre Admin le peut.',
+      suspend: 'Suspendre',
+      reinstate: 'Réintégrer',
+      remove: 'Exclure',
+      working: 'Enregistrement…',
+      suspended: 'Cet Étudiant est suspendu et déconnecté partout.',
+      reinstated: 'Cet Étudiant est réintégré et peut se reconnecter.',
+      confirm: {
+        suspendTitle: 'Suspendre {name} ?',
+        suspendBody:
+          "Cet Étudiant est déconnecté partout et ne peut plus se connecter tant qu'un Admin ne l'a pas réintégré. Son Match en cours prend fin, et il sort de l'appariement et du Classement. Ses Publications, son avatar, ses Justificatifs, son XP et sa Série restent, et les Signalements le visant restent ouverts.",
+        reinstateTitle: 'Réintégrer {name} ?',
+        reinstateBody:
+          "Cet Étudiant peut se reconnecter et sera associé dès le prochain Tour. Rien de ce que la Suspension a arrêté ne revient : un Match arrêté le reste.",
+        removeTitle: 'Exclure {name} ?',
+        removeBody:
+          "C'est définitif : personne ne peut l'annuler. Cet Étudiant est déconnecté partout et ne pourra plus jamais se connecter, et son e-mail ne pourra plus jamais être utilisé. Son Match en cours prend fin, son avatar est supprimé, et chaque Signalement ouvert le visant est clos comme traité, avec vous enregistré comme la personne qui l'a résolu. Tout ce qu'il a écrit reste, affiché sous le nom « {tombstone} ».",
+        cancel: 'Annuler',
+      },
+    },
     matches: {
       title: 'Matchs',
       caption: 'Ses Matchs',

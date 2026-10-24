@@ -357,7 +357,8 @@ PeerConnect has no "delete my account" button. To leave, ask an Admin to **remov
 - everywhere else you appear as a former student. Your Posts stay on the feed. Your Matches stay in
   the other Students' histories. Your Learning Outcomes, Evidence and Private Feedback stay readable
   by the same people as before. Your Direct Messages stay visible to the other Student;
-- you leave matching and the Leaderboard, and any Reports about you that are still open are closed.
+- you leave matching and the Leaderboard, a Match you are in the middle of ends, and any Reports
+  about you that are still open are closed.
 
 This is because what you contributed is also part of other Students' records: a Mentor's feedback, a
 conversation, a Match two people shared.

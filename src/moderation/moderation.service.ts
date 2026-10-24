@@ -2,11 +2,12 @@ import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
 import { blockPair } from '../core/block-pair';
 import { ApiError } from '../core/errors';
-import { UnitOfWork, type PrismaTx, type TxContext } from '../core/uow';
+import { UnitOfWork } from '../core/uow';
 import { Prisma } from '../generated/prisma/client';
 import type { PostGroupAction, ResolvedState, StudentGroupAction } from '../shared/reports';
 import type { Role } from '../shared/roles';
 import { readActiveActor, readActiveAdmin, readActiveRole } from '../students/profile-writes';
+import { closeGroup, openRows } from './group-writes';
 import {
   REPORT_ROW_SELECT,
   readRefs,
@@ -31,26 +32,6 @@ import type {
 // §12.5: an action re-reads the actor's role and flags in its own
 // transaction, so a stale queue grants nothing.
 const MODERATION_ROLES = ['PEER_MODERATOR', 'ADMIN'] as const;
-
-// §12.3: the group's OPEN rows at this transaction's serialization point.
-function openRows(tx: PrismaTx, target: Prisma.ReportWhereInput): Promise<Array<{ id: string; reporterId: string }>> {
-  return tx.report.findMany({ where: { ...target, state: 'OPEN' }, select: { id: true, reporterId: true } });
-}
-
-// §12.5: every row of the group gets one state, one resolver and one time.
-async function closeGroup(
-  tx: PrismaTx,
-  ctx: TxContext,
-  resolverId: string,
-  rows: ReadonlyArray<{ id: string }>,
-  state: ResolvedState,
-): Promise<Resolution> {
-  const { count } = await tx.report.updateMany({
-    where: { id: { in: rows.map((row) => row.id) }, state: 'OPEN' },
-    data: { state, resolvedById: resolverId, resolvedAt: ctx.now },
-  });
-  return { state, count };
-}
 
 // One batch's key as `GROUP BY` returns it (§12.6). The pg adapter maps a
 // uuid to a string and a timestamptz to a Date.

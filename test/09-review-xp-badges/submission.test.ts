@@ -125,11 +125,34 @@ it('commits one immutable Review, Private Feedback and public Takeaway under dup
   expect(JSON.stringify(harness.recorder.events)).not.toContain(mentor.studentId);
 });
 
-for (const competing of ['close', 'decline'] as const) {
+// §3.6.3 *Review vs terminal transitions* (ADR-0002 d5; ADR-0008 d5's note of
+// 2026-09-22): the sanctions are held on the Mentor, so the Mentee's Review
+// still reads an Active actor and only the Match decides.
+type Accepted = Awaited<ReturnType<typeof acceptedMatch>>;
+
+// Each terminal transition: its checkpoint, the run, and the status it leaves.
+const TERMINAL = {
+  close: { checkpoint: 'round.close', status: 'LAPSED', run: (m: Accepted) => m.matching.closeRound(m.admin) },
+  decline: { checkpoint: 'match.decline', status: 'DECLINED', run: (m: Accepted) => m.matching.decline(m.mentor, m.id) },
+  suspend: {
+    checkpoint: 'student.suspend',
+    status: 'TERMINATED_BY_ADMIN',
+    run: (m: Accepted) => harness.app.get(AdminUsersService).suspend(m.admin, m.mentor.studentId),
+  },
+  remove: {
+    checkpoint: 'student.remove',
+    status: 'TERMINATED_BY_ADMIN',
+    run: (m: Accepted) => harness.app.get(AdminUsersService).remove(m.admin, m.mentor.studentId),
+  },
+} as const;
+
+for (const competing of ['close', 'decline', 'suspend', 'remove'] as const) {
   for (const first of ['review', 'terminal'] as const) {
     it(`Review versus ${competing}, ${first} first: one serial ending and no partial Review`, async () => {
-      const { reviews, matching, admin, mentor, mentee, id } = await acceptedMatch();
-      const terminalCheckpoint = competing === 'close' ? 'round.close' : 'match.decline';
+      const accepted = await acceptedMatch();
+      const { reviews, matching, admin, mentor, mentee, id } = accepted;
+      const terminalCheckpoint = TERMINAL[competing].checkpoint;
+      const users = harness.app.get(AdminUsersService);
       harness.barriers.arm('review.submit');
       harness.barriers.arm(terminalCheckpoint);
       const settle = (work: Promise<unknown>) =>
@@ -138,9 +161,7 @@ for (const competing of ['close', 'decline'] as const) {
           (e) => e.code,
         );
       const review = settle(reviews.submitReview(mentee, id, input));
-      const terminal = settle(
-        competing === 'close' ? matching.closeRound(admin) : matching.decline(mentor, id),
-      );
+      const terminal = settle(TERMINAL[competing].run(accepted));
       await harness.barriers.waitFor('review.submit', 1);
       await harness.barriers.waitFor(terminalCheckpoint, 1);
       harness.barriers.disarm('review.submit');
@@ -153,15 +174,15 @@ for (const competing of ['close', 'decline'] as const) {
         first === 'review' && competing === 'decline' ? 'match_not_in_progress' : 'ok',
       );
       const detail = await matching.getMatch(mentee, id);
-      expect(detail.status).toBe(
-        first === 'review' ? 'COMPLETED' : competing === 'close' ? 'LAPSED' : 'DECLINED',
-      );
+      expect(detail.status).toBe(first === 'review' ? 'COMPLETED' : TERMINAL[competing].status);
       expect(detail.review === null).toBe(first !== 'review');
       expect(detail.privateFeedback === null).toBe(first !== 'review');
       const count = first === 'review' ? 1 : 0;
       expect(await storedCounts(id)).toEqual({ reviews: count, feedback: count, posts: count });
+      // A Review first pays both, and a later sanction keeps what it paid.
+      // The Users table reads a sanctioned Mentor, who has no session.
+      expect(await users.getUser(admin, mentor.studentId)).toMatchObject({ xp: count * 80, badges: count ? [{ badge: 'FIRST_MENTOR' }] : [] });
       const progress = async (studentId: string) => harness.get('/api/me/progress').set('Cookie', await openTestSession(harness.app, { id: studentId }));
-      expect((await progress(mentor.studentId)).body.data).toMatchObject({ xp: count * 80, badges: count ? [{ badge: 'FIRST_MENTOR' }] : [] });
       expect((await progress(mentee.studentId)).body.data).toMatchObject({ xp: count * 120, badges: [] });
       const received = await reviews.listFeedbackReceived(mentor, 1, 20);
       expect(received.total).toBe(first === 'review' ? 1 : 0);

@@ -3,7 +3,7 @@ import { PrismaService } from '../../src/core/prisma.service';
 import { MatchingService } from '../../src/matching/matching.service';
 import { StudentsService } from '../../src/students/students.service';
 import { useHarness } from '../harness/app';
-import { createTestAccount } from '../harness/accounts';
+import { createTestAccount, openTestSession } from '../harness/accounts';
 import {
   makeValidPdf,
   makeJpeg,
@@ -239,7 +239,9 @@ describe('Evidence acceptance through nginx', () => {
 
   it('keeps the path for a Mentee promoted to Admin after the Review', async () => {
     const pair = await reviewedMatch(harness.app);
-    await harness.app.get(PrismaService).student.update({ where: { id: pair.mentee.id }, data: { role: 'ADMIN' } });
+    // Through the Users table's role change (§12.7), which keeps sessions.
+    const promoted = await harness.post(`/api/admin/students/${pair.mentee.id}/role`).set('Cookie', pair.admin.cookie).send({ role: 'ADMIN' });
+    expect(promoted.body).toEqual({ ok: true, data: { role: 'ADMIN' } });
     const saved = await upload(pair, pair.mentee.cookie, makePng(), { filename: 'board.png', contentType: 'image/png' });
     expect(saved.status).toBe(200);
     expect(saved.body.ok).toBe(true);
@@ -260,8 +262,8 @@ describe('Evidence acceptance through nginx', () => {
     }
   });
 
+  // Through the Users table's own routes (§12.7), as an Admin uses them.
   it('pauses the path under Suspension and ends it at Removal, keeping the Evidence both times', async () => {
-    const prisma = harness.app.get(PrismaService);
     const pair = await reviewedMatch(harness.app);
     const pdf = await makeValidPdf();
     const saved = await upload(pair, pair.mentee.cookie, pdf);
@@ -270,26 +272,32 @@ describe('Evidence acceptance through nginx', () => {
       const read = await readEvidence(token, pair.mentor.cookie);
       expect(read.status).toBe(200);
       expect(Buffer.compare(read.body as Buffer, pdf)).toBe(0);
+      // The row stays on the Match, as its Mentor reads it (§9.3).
+      const detail = await harness.get(`/api/matches/${pair.matchId}`).set('Cookie', pair.mentor.cookie);
+      expect(detail.body.data.review.evidence).toMatchObject({ token });
     };
+    const sanction = (action: 'suspend' | 'reinstate' | 'remove') =>
+      harness.post(`/api/admin/students/${pair.mentee.id}/${action}`).set('Cookie', pair.admin.cookie).send({});
 
-    await prisma.student.update({ where: { id: pair.mentee.id }, data: { suspendedAt: new Date() } });
+    expect((await sanction('suspend')).body).toEqual({ ok: true, data: { status: 'SUSPENDED' } });
     const suspendedPut = await upload(pair, pair.mentee.cookie, makePng(), { filename: 'b.png', contentType: 'image/png' });
     expect(suspendedPut.status).toBe(401);
     expect(suspendedPut.body).toEqual(UNAUTHENTICATED);
     expect((await remove(pair, pair.mentee.cookie)).status).toBe(401);
     await kept();
 
-    // Reinstatement restores the path: a refused session writes nothing, so
-    // the same session works again.
-    await prisma.student.update({ where: { id: pair.mentee.id }, data: { suspendedAt: null } });
-    const reinstated = await upload(pair, pair.mentee.cookie, pdf);
+    // Reinstatement restores the path. The Suspension deleted every session,
+    // so the Mentee signs in again.
+    expect((await sanction('reinstate')).body).toEqual({ ok: true, data: { status: 'ACTIVE' } });
+    const cookie = await openTestSession(harness.app, pair.mentee);
+    const reinstated = await upload(pair, cookie, pdf);
     expect(reinstated.status).toBe(200);
     expect(reinstated.body.ok).toBe(true);
     token = reinstated.body.data.token;
 
-    await prisma.student.update({ where: { id: pair.mentee.id }, data: { removedAt: new Date() } });
-    expect((await upload(pair, pair.mentee.cookie, pdf)).status).toBe(401);
-    expect((await remove(pair, pair.mentee.cookie)).status).toBe(401);
+    expect((await sanction('remove')).body).toEqual({ ok: true, data: { status: 'REMOVED' } });
+    expect((await upload(pair, cookie, pdf)).status).toBe(401);
+    expect((await remove(pair, cookie)).status).toBe(401);
     await kept();
     expect((await readEvidence(token, pair.admin.cookie)).status).toBe(200);
   });

@@ -99,6 +99,34 @@ export default {
         confirm: 'Change role',
       },
     },
+    // §12.7: Suspend, Reinstate and Remove, as the account's status allows
+    // (ADR-0008 d11's note). Each asks first, saying what it ends and what it
+    // keeps.
+    sanctions: {
+      title: 'Suspension and Removal',
+      subtitle: 'A Suspension can be lifted. A Removal is final.',
+      // ADR-0008 d9: an Admin never suspends or removes themselves.
+      self: 'You cannot suspend or remove your own account. Another Admin can.',
+      suspend: 'Suspend',
+      reinstate: 'Reinstate',
+      remove: 'Remove',
+      working: 'Saving…',
+      suspended: 'They are suspended and signed out everywhere.',
+      reinstated: 'They are reinstated and can sign in again.',
+      confirm: {
+        suspendTitle: 'Suspend {name}?',
+        // §12.7, ADR-0008 d5: what a Suspension ends and what it keeps.
+        suspendBody: "They are signed out everywhere and can't sign in until an Admin reinstates them. Their Match in progress ends, and they leave matching and the Leaderboard. Their Posts, avatar, Evidence, XP and Streak stay, and Reports about them stay open.",
+        reinstateTitle: 'Reinstate {name}?',
+        // §8.8: reinstatement revives nothing.
+        reinstateBody: 'They can sign in again and are matched from the next Round. Nothing the Suspension ended comes back: an ended Match stays ended.',
+        removeTitle: 'Remove {name}?',
+        // §12.7, ADR-0008 d7, ADR-0011 d10: final, and what stays. {tombstone}
+        // is the name a Removed Student shows under (`people.tombstone`).
+        removeBody: "This is final: nobody can undo it. They are signed out everywhere and can never sign in again, and their email can never be used again. Their Match in progress ends, their avatar is deleted, and every open Report about them is closed as actioned, with you recorded as the one who resolved it. Everything they wrote stays, shown under the name {tombstone}.",
+        cancel: 'Cancel',
+      },
+    },
     // §6.12: the Student's Matches, which no profile lists (§4.6).
     matches: {
       title: 'Matches',
