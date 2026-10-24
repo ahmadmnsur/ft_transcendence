@@ -3,7 +3,7 @@ import type { EnGroup } from '../types';
 export default {
   title: 'Learning Analytics',
   description: 'What the community wants to learn and can teach, where Matches stand now, and how past Matches ended.',
-  freshness: 'Figures reflect the last page load. Reload to refresh them.',
+  freshness: 'Figures reflect the last load, and load again whenever a Round opens or closes. Reload to refresh them in between.',
   loading: 'Loading Learning Analytics…',
   retry: 'Try again',
   insights: 'Skills needing attention',

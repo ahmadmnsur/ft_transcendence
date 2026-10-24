@@ -10,6 +10,8 @@ import { languageNames, languages } from './i18n/language';
 import { AlertIcon, Button, EmptyState, PersonName, SearchIcon, Select, buttonClasses } from './design';
 import { RealtimeConnection } from './realtime/connection';
 import { MessageUpdates } from './messages/MessageUpdates';
+import { RoundUpdates } from './matching/RoundUpdates';
+import { FeedUpdates } from './feed/FeedUpdates';
 import { PresenceUpdates } from './social/PresenceUpdates';
 
 // The product name is never translated.
@@ -323,6 +325,8 @@ export function RootLayout(): React.JSX.Element {
           <RealtimeConnection brand={BRAND} />
           <PresenceUpdates />
           <MessageUpdates />
+          <RoundUpdates />
+          <FeedUpdates />
           {/* §7.5, §4.6: the key remounts the page when one signed-in Student
           replaces another, so no local state of the previous Student (an
           unsaved draft, typed passwords) survives it. A Fragment, so the

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { progressQueryOptions, type Progress } from '../api/progress';
+import { progressQueryOptions, readProgressAgain, type Progress } from '../api/progress';
 import { Banner, Button, Card } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
@@ -37,7 +37,7 @@ export function OwnProgressCard(): React.JSX.Element {
   const client = useQueryClient();
   const progress = useQuery(progressQueryOptions());
   useEffect(() => subscribe('round:closed', () => {
-    void client.invalidateQueries({ queryKey: ['progress'] });
+    void readProgressAgain(client);
   }), [client]);
   if (progress.data !== undefined) return <ProgressCard progress={progress.data} />;
   return <Card title={t.progress.title} headingLevel={2}>

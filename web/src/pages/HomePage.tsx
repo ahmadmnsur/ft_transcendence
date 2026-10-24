@@ -6,8 +6,8 @@ import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 
 // §3.5.1, §6.9: `/`, the feed. Every non-removed Post, newest first, with its
-// Likes. A new Post joins when the page is read again; the live insert of
-// `post:created` lands with the live client reactions (#61).
+// Likes. A new Post joins the loaded feed, at the top, when
+// `post:created` arrives (`feed/FeedUpdates.tsx`).
 export function HomePage(): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.feed;

@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import type { SkillView } from './profile';
 
@@ -18,10 +18,19 @@ export type Analytics = {
   };
 };
 
+export const ANALYTICS_QUERY_KEY = ['analytics'] as const;
+
 export const analyticsQueryOptions = () => queryOptions({
-  queryKey: ['analytics'],
+  queryKey: ANALYTICS_QUERY_KEY,
   queryFn: () => apiFetch<Analytics>('/admin/analytics'),
   refetchOnMount: 'always',
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
 });
+
+// §13.4: a Round signal reads Analytics again. Cancel first, since a read
+// still in flight may have answered before the change committed.
+export async function readAnalyticsAgain(client: QueryClient): Promise<void> {
+  await client.cancelQueries({ queryKey: ANALYTICS_QUERY_KEY });
+  await client.invalidateQueries({ queryKey: ANALYTICS_QUERY_KEY });
+}
