@@ -3531,6 +3531,14 @@ about the Admin.
    **Peer Moderator dismisses** it through §12.5, so the Admin's resolved audit shows a moderator's
    dismissal, attributed (ADR-0011 d8).
 
+   > **Refined 2026-10-24** by [Seed v6: the social graph, Likes, Direct Messages and the report fixtures](https://github.com/ahmadmnsur/ft_transcendence/issues/67):
+   > item 3 decides fixture 3's author. The party-slot rule above, alone, would take fixture 1's
+   > author again, who still has an unused Prompt-answer Post; *another eligible author's* rules
+   > them out. So fixture 3's author is the first eligible Student, in position order, other than
+   > fixture 1's author and with a Prompt-answer Post no earlier fixture used. Which of an author's
+   > Posts a fixture reports is not said elsewhere: in items 1 and 3 it is their oldest unused
+   > Prompt-answer Post, in creation order.
+
 ### 14.8 End-state assertions (all, or the seed fails)
 
 1. No open Round; exactly four closed Rounds; exactly four Prompts; the live one is Prompt 4.

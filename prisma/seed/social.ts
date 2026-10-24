@@ -42,8 +42,15 @@ export function eligibleStudents(active: readonly ActiveMember[], demoId: string
     .map((member) => member.id);
 }
 
-// The graph and the threads take this many eligible Students, each once.
-const GRAPH_AND_THREAD_PARTIES = 23;
+// §14.6's count: 30 − 3 reserved − D, S, R. The graph and the threads take
+// 23 of them, each once, and leave one for the report fixtures.
+const ELIGIBLE_STUDENTS = 24;
+
+// §14.6's result, X's Block of Y included.
+const GRAPH_COUNTS = { acceptedFriendships: 12, pendingRequests: 2, blocks: 2 } as const;
+
+// Thread B's two messages to D, which D never reads.
+const UNREAD_FOR_DEMO = 2;
 
 // Request, then accept (§14.6).
 async function befriend(social: SocialService, requesterId: string, addresseeId: string): Promise<void> {
@@ -60,17 +67,16 @@ export type SocialGraph = {
 
 // §14.6's graph, in its order over the eligible Students: D with the next
 // six; six pairs among the next twelve; P requests, Q accepts, then P blocks
-// Q; two pending requests into D's inbox. The graph's counts are read back.
+// Q; two pending requests into D's inbox. The graph's counts are read back
+// and must be §14.6's.
 export async function seedSocialGraph(
   social: SocialService,
   prisma: PrismaService,
   demoId: string,
   eligible: readonly string[],
 ): Promise<SocialGraph> {
-  if (eligible.length < GRAPH_AND_THREAD_PARTIES) {
-    throw new SeedFailure(
-      `§14.6 needs ${GRAPH_AND_THREAD_PARTIES} eligible Students for the graph and the threads; there are ${eligible.length}`,
-    );
+  if (eligible.length !== ELIGIBLE_STUDENTS) {
+    throw new SeedFailure(`§14.6 counts ${ELIGIBLE_STUDENTS} eligible Students; there are ${eligible.length}`);
   }
   let taken = 0;
   const take = (count: number): string[] => {
@@ -90,13 +96,19 @@ export async function seedSocialGraph(
     await social.requestFriend({ studentId: requesterId, sessionHash: null }, demoId);
   }
 
-  // §14.6's result, X's Block of Y included: twelve accepted, two pending,
-  // two Blocks.
   const counts = {
     acceptedFriendships: await prisma.friendship.count({ where: { status: 'ACCEPTED' } }),
     pendingRequests: await prisma.friendship.count({ where: { status: 'PENDING' } }),
     blocks: await prisma.block.count(),
   };
+  if (counts.acceptedFriendships !== GRAPH_COUNTS.acceptedFriendships ||
+      counts.pendingRequests !== GRAPH_COUNTS.pendingRequests || counts.blocks !== GRAPH_COUNTS.blocks) {
+    throw new SeedFailure(
+      `§14.6's graph: ${counts.acceptedFriendships} accepted Friendships, ${counts.pendingRequests} pending ` +
+      `requests and ${counts.blocks} Blocks; expected ${GRAPH_COUNTS.acceptedFriendships}, ` +
+      `${GRAPH_COUNTS.pendingRequests} and ${GRAPH_COUNTS.blocks}`,
+    );
+  }
   return { firstFriendId: demoFriends[0], remaining: eligible.slice(taken), counts };
 }
 
@@ -171,8 +183,8 @@ async function threadBPeer(prisma: PrismaService, demoId: string, remaining: rea
 // §14.6's two threads. A: D and D's first Friend, four alternating
 // messages, both marked read. B: D and the next eligible Student who is
 // neither D's Friend nor in a Block with D; one from D, two to D, and only
-// the other side marks read. `remaining` is the graph's own. Returns D's
-// unread count, read back.
+// the other side marks read. `remaining` is the graph's own. D's unread
+// count is read back and must be thread B's two.
 export async function seedDirectMessages(
   messaging: MessagingService,
   prisma: PrismaService,
@@ -192,8 +204,9 @@ export async function seedDirectMessages(
   for (const body of THREAD_B_TO_DEMO) await send(messaging, peerId, demoId, body);
   await messaging.markThreadRead({ studentId: peerId, sessionHash: null }, demoId);
 
-  return {
-    messages: THREAD_A.length + 1 + THREAD_B_TO_DEMO.length,
-    unreadForDemo: await prisma.directMessage.count({ where: { recipientId: demoId, readAt: null } }),
-  };
+  const unreadForDemo = await prisma.directMessage.count({ where: { recipientId: demoId, readAt: null } });
+  if (unreadForDemo !== UNREAD_FOR_DEMO) {
+    throw new SeedFailure(`§14.6's threads leave D ${unreadForDemo} unread messages; expected ${UNREAD_FOR_DEMO}`);
+  }
+  return { messages: THREAD_A.length + 1 + THREAD_B_TO_DEMO.length, unreadForDemo };
 }

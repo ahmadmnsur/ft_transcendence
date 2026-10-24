@@ -88,17 +88,27 @@ export type ModerationReads = {
   fixtures: ReportFixtures;
 };
 
+// A Peer Moderator's row shows its reason, text and time, never who filed it
+// (§12.4).
+const MODERATOR_ROW_KEYS = ['createdAt', 'reason', 'text'];
+
+function isModeratorRow(report: object): boolean {
+  return Object.keys(report).sort().join() === MODERATOR_ROW_KEYS.join();
+}
+
 // Check 6, through the moderation service's own reads (ADR-0017 d7's note of
 // 2026-09-23): the Peer Moderator's queue shows the two-report Post group
 // without who filed it; the Admin's open queue shows the Student report; the
-// Admin's resolved audit shows the Peer Moderator's dismissal.
+// Admin's resolved audit shows the Peer Moderator's dismissal of the one
+// OTHER report.
 async function assertModerationViews(reads: ModerationReads): Promise<void> {
   const { moderation, admin, peerModerator, fixtures } = reads;
   const moderatorQueue = await moderation.queue(peerModerator, 'PEER_MODERATOR');
   const grouped = moderatorQueue.items.find(
     (group) => group.target.kind === 'POST' && group.target.post.id === fixtures.groupedPostId,
   );
-  if (grouped === undefined || grouped.count !== 2 || grouped.reports.some((report) => 'reporter' in report)) {
+  if (grouped === undefined || grouped.count !== 2 || grouped.reports.length !== 2 ||
+      !grouped.reports.every(isModeratorRow)) {
     throw new SeedFailure("check 6: the Peer Moderator's queue does not show the two-report Post group without its reporters");
   }
   const adminQueue = await moderation.queue(admin, 'ADMIN');
@@ -113,7 +123,8 @@ async function assertModerationViews(reads: ModerationReads): Promise<void> {
     (batch) => batch.target.kind === 'POST' && batch.target.post.id === fixtures.dismissedPostId,
   );
   if (dismissed === undefined || dismissed.state !== 'DISMISSED' ||
-      dismissed.resolvedBy.id !== peerModerator.studentId) {
+      dismissed.resolvedBy.id !== peerModerator.studentId || dismissed.reports.length !== 1 ||
+      dismissed.reports[0].reason !== 'OTHER' || dismissed.reports[0].reporter.id !== fixtures.dismissedReporterId) {
     throw new SeedFailure("check 6: the Admin's resolved audit does not show the Peer Moderator's dismissal");
   }
 }

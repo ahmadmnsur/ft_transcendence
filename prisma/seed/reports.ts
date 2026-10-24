@@ -9,7 +9,12 @@ import { SeedFailure } from './failure';
 // reporter, and the third dismissed by the Peer Moderator through §12.5.
 
 // What §14.8 check 6 looks for in the moderation service's own reads.
-export type ReportFixtures = { groupedPostId: string; reportedStudentId: string; dismissedPostId: string };
+export type ReportFixtures = {
+  groupedPostId: string;
+  reportedStudentId: string;
+  dismissedPostId: string;
+  dismissedReporterId: string;
+};
 
 const TEXTS = {
   SPAM: 'The same answer is pasted under several Prompts.',
@@ -83,5 +88,10 @@ export async function seedReports(
   await file(moderation, otherReporter, { postId: dismissed.postId }, 'OTHER');
   await moderation.resolvePostGroup({ studentId: peerModeratorId, sessionHash: null }, dismissed.postId, 'DISMISS');
 
-  return { groupedPostId: grouped.postId, reportedStudentId, dismissedPostId: dismissed.postId };
+  return {
+    groupedPostId: grouped.postId,
+    reportedStudentId,
+    dismissedPostId: dismissed.postId,
+    dismissedReporterId: otherReporter,
+  };
 }

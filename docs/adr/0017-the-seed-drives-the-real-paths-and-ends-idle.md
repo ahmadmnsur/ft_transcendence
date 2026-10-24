@@ -242,12 +242,20 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > applied. Wherever §14.6 says *Active*, the seed counts both out all the same, as the complete
    > script will have them by step 5, so neither is decision 6's demo Student, an eligible Student
    > or a Liker. The demo Student is chosen before step 5, which touches nothing check 3 reads, and
-   > check 3 must find the same Student at the end. **The Matches, Reviews and answers stay those
-   > of v5.** Until the sanctions join, *S*'s Match completes and *S* stays in Round 4's pool and
-   > answers there, so the version that adds them also changes Round 4's Matches and the Posts, and
-   > with them possibly *R*, the demo Student, every Like and every party chosen here. This
-   > version's completion record certifies these steps and checks, not the complete end state
-   > (decision 10; `docs/ticket-plan.md` T39).
+   > check 3 must find the same Student at the end. Where §14.6 and §14.7 leave the order open, the
+   > demo Student sends the six friend requests and the first of each pair sends theirs, thread A
+   > starts with the demo Student, a Post fixture fills its author before its reporters, and the
+   > Student fixture fills its target before its reporter. The `OTHER` report carries a text too,
+   > which §12.2 leaves optional. The resolved fixture's author is another Student than the grouped
+   > one's, and each reported Post is its author's oldest unused answer (`docs/spec.md` §14.7's
+   > note of 2026-10-24). The seed also stops unless §14.6's counts hold: 24 eligible Students,
+   > twelve accepted Friendships, two pending requests, two Blocks and two unread messages for the
+   > demo Student. **The Matches, Reviews and answers stay those of v5.** Until the sanctions
+   > join, *S*'s Match completes and *S* stays in Round 4's pool and answers there, so the version
+   > that adds them also changes Round 4's Matches and the Posts, and with them possibly *R*, the
+   > demo Student, every Like and every party chosen here. This version's completion record
+   > certifies these steps and checks, not the complete end state (decision 10;
+   > `docs/ticket-plan.md` T39).
 
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
