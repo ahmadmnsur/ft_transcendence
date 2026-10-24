@@ -20,3 +20,13 @@ export function selfActionForbidden(): Refusal {
 export function lastActiveAdmin(): Refusal {
   return new Refusal('last_active_admin', 'There must always be at least one active Admin.');
 }
+
+// Suspend on a Student already Suspended (§12.7).
+export function alreadySuspended(): Refusal {
+  return new Refusal('already_suspended', 'This Student is already suspended.');
+}
+
+// Reinstate on a Student who is not Suspended (§12.7).
+export function notSuspended(): Refusal {
+  return new Refusal('not_suspended', 'This Student is not suspended.');
+}

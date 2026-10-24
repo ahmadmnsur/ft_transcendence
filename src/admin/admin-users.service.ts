@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { EMAIL_TAKEN } from '../auth/account-create';
+import { deleteEverySession } from '../auth/sign-out';
 import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
+import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
 import { FileWriter } from '../files/file-writer';
 import { validateAvatar, type UploadedPart } from '../files/validate';
@@ -9,6 +11,8 @@ import type { Prisma } from '../generated/prisma/client';
 import { levelProgress } from '../gamification/level';
 import { badgeViews } from '../gamification/views';
 import { readStudentMatches } from '../matching/match-views';
+import { readInProgressMatchIds, terminateMatches } from '../matching/terminations';
+import { closeGroup, openRows } from '../moderation/group-writes';
 import { normalizeEmail } from '../shared/limits';
 import type { Role } from '../shared/roles';
 import type { StudentStatus } from '../shared/student-status';
@@ -25,14 +29,17 @@ import {
 import { avatarUrlFor } from '../students/student-ref';
 import type { LearningGoalView } from '../students/views';
 import type { UserSort } from './dto';
+import { alreadySuspended, notSuspended } from './refusals';
 import { keepAnActiveAdmin, readTarget } from './target';
 import type { AdminStudentDetail, AdminStudentPage, AdminStudentRow } from './views';
 
-// §3.4's `admin` module: the Users table and role changes (§6.12, §12.7). It
-// owns no table of its own: an edit runs the `students` module's own `tx`
-// writes on the target, inside one transaction this module opens, after
-// §12.7's common reads. A read runs outside the Unit of Work and relies on
-// the role guard's fresh per-request read (§3.4, §5.3).
+// §3.4's `admin` module: the Users table, role changes and the sanctions
+// (§6.12, §12.7). It owns no table of its own: after §12.7's common reads,
+// inside one transaction this module opens, it sets the target's role or
+// sanction flag itself and runs the owning modules' `tx` writes for the
+// rest: profile fields, Matches, Sessions, the Avatar row and Reports. A
+// read runs outside the Unit of Work and relies on the role guard's fresh
+// per-request read (§3.4, §5.3).
 
 // What `listUsers` filters, sorts and pages by; the DTO fills the defaults.
 export type UsersQuery = {
@@ -123,6 +130,7 @@ export class AdminUsersService {
   constructor(
     private readonly uow: UnitOfWork,
     private readonly files: FileWriter,
+    private readonly publisher: RealtimePublisher,
   ) {}
 
   // §6.12's Users table, Removed rows included. The count and the page are
@@ -239,6 +247,66 @@ export class AdminUsersService {
       await ctx.checkpoint('role-change');
       if (target.role !== role) await tx.student.update({ where: { id: target.id }, data: { role } });
       return { role };
+    });
+  }
+
+  // `POST /api/admin/students/:id/suspend` (§12.7, §5.8): not already
+  // Suspended, and never the last active Admin. One transaction flags the
+  // target, ends their in-progress Matches as `TERMINATED_BY_ADMIN` and
+  // deletes every Session; their sockets drop after commit. No Report is
+  // resolved (ADR-0011 d10), and Supabase Auth is not touched (ADR-0008 d5's
+  // note of 2026-10-02).
+  async suspend(actor: Actor, id: string): Promise<{ status: StudentStatus }> {
+    return this.uow.run('student-suspend', async (tx, ctx) => {
+      const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
+      if (target.suspendedAt !== null) throw alreadySuspended();
+      await keepAnActiveAdmin(tx, target);
+      const matches = await readInProgressMatchIds(tx, target.id);
+      await ctx.checkpoint('student.suspend');
+      await tx.student.update({ where: { id: target.id }, data: { suspendedAt: ctx.now } });
+      await terminateMatches(tx, matches);
+      await deleteEverySession(tx, ctx, this.publisher, target.id);
+      return { status: 'SUSPENDED' };
+    });
+  }
+
+  // `POST /api/admin/students/:id/reinstate` (§12.7): Suspended, else
+  // `not_suspended`. It clears the flag and revives nothing: a terminated
+  // Match stays terminated and no session comes back.
+  async reinstate(actor: Actor, id: string): Promise<{ status: StudentStatus }> {
+    return this.uow.run('student-reinstate', async (tx, ctx) => {
+      const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
+      if (target.suspendedAt === null) throw notSuspended();
+      await ctx.checkpoint('student.reinstate');
+      await tx.student.update({ where: { id: target.id }, data: { suspendedAt: null } });
+      return { status: 'ACTIVE' };
+    });
+  }
+
+  // `POST /api/admin/students/:id/remove` (§12.7, §12.5, §9.8): final, and
+  // never the last active Admin. One transaction flags the target, ends their
+  // in-progress Matches as `TERMINATED_BY_ADMIN`, deletes every Session and
+  // the `Avatar` row, and actions every open Report on them, one this Admin
+  // filed included, with one resolver and one time (ADR-0011 d10). After
+  // commit their sockets drop and the avatar's file is deleted; a failed
+  // delete is left to the cleanup (§3.7). Everything else they made stays,
+  // rendered as the tombstone, and Supabase Auth is not touched (ADR-0008
+  // d7's notes).
+  async remove(actor: Actor, id: string): Promise<{ status: StudentStatus }> {
+    return this.uow.run('student-remove', async (tx, ctx) => {
+      const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
+      await keepAnActiveAdmin(tx, target);
+      const matches = await readInProgressMatchIds(tx, target.id);
+      const reports = await openRows(tx, { reportedStudentId: target.id });
+      // The Avatar is the last read: the helper makes the one checkpoint
+      // after it, then deletes the row, the first write.
+      const avatar = await deleteAvatarRow(tx, target.id, () => ctx.checkpoint('student.remove'));
+      await tx.student.update({ where: { id: target.id }, data: { removedAt: ctx.now } });
+      await terminateMatches(tx, matches);
+      await deleteEverySession(tx, ctx, this.publisher, target.id);
+      if (reports.length > 0) await closeGroup(tx, ctx, actor.studentId, reports, 'ACTIONED');
+      if (avatar !== null) this.files.removeAfterCommit(ctx, 'avatars', avatar);
+      return { status: 'REMOVED' };
     });
   }
 }

@@ -19,6 +19,7 @@ import { FileUpload } from '../files/upload.interceptor';
 import type { UploadedPart } from '../files/validate';
 import { LIMITS } from '../shared/limits';
 import type { Role } from '../shared/roles';
+import type { StudentStatus } from '../shared/student-status';
 import { LearningGoalDto, SkillsDto, UpdateProfileDto } from '../students/dto';
 import type { LearningGoalView } from '../students/views';
 import { AdminUsersService } from './admin-users.service';
@@ -110,5 +111,26 @@ export class AdminUsersController {
     @Req() request: Request,
   ): Promise<{ role: Role }> {
     return this.users.changeRole(requestActor(request), id, dto.role);
+  }
+
+  // `POST /api/admin/students/:id/suspend` (§12.7): `{}` → the new status.
+  @Post(':id/suspend')
+  @HttpCode(200)
+  suspend(@UuidParam('id') id: string, @Req() request: Request): Promise<{ status: StudentStatus }> {
+    return this.users.suspend(requestActor(request), id);
+  }
+
+  // `POST /api/admin/students/:id/reinstate` (§12.7): `{}` → the new status.
+  @Post(':id/reinstate')
+  @HttpCode(200)
+  reinstate(@UuidParam('id') id: string, @Req() request: Request): Promise<{ status: StudentStatus }> {
+    return this.users.reinstate(requestActor(request), id);
+  }
+
+  // `POST /api/admin/students/:id/remove` (§12.7): `{}` → the new status.
+  @Post(':id/remove')
+  @HttpCode(200)
+  remove(@UuidParam('id') id: string, @Req() request: Request): Promise<{ status: StudentStatus }> {
+    return this.users.remove(requestActor(request), id);
   }
 }

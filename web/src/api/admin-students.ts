@@ -1,4 +1,4 @@
-import { keepPreviousData, queryOptions, type QueryClient } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions, type Query, type QueryClient } from '@tanstack/react-query';
 import type { Role } from '@shared/roles';
 import type { StudentStatus } from '@shared/student-status';
 import { apiFetch } from './client';
@@ -11,7 +11,7 @@ import {
   type SkillsView,
 } from './profile';
 import type { Badge } from './progress';
-import { writeAsSignedIn } from './session';
+import { SESSION_QUERY_KEY, writeAsSignedIn } from './session';
 import { uploadFile, type UploadOptions } from './upload';
 
 // §6.12's Users-table routes, with the exact wire shapes the API returns.
@@ -166,5 +166,39 @@ export function changeStudentRole(queryClient: QueryClient, id: string, role: Ro
       reread();
     },
     reread,
+  );
+}
+
+// §12.7's three sanctions, each `POST /api/admin/students/:id/<action>` with
+// `{}`, answering the new status.
+export type Sanction = 'suspend' | 'reinstate' | 'remove';
+
+// The detail takes the new status at once, and a Removal's default avatar
+// with it (§9.6). A sanction changes what other surfaces show of the
+// Student: a Suspension or a reinstatement moves them out of or back into
+// matching and the Leaderboard and ends their Match, and a Removal turns them
+// into the tombstone wherever they appear and closes the Reports about them
+// (§4.6). So every query but the session that no screen shows now is dropped,
+// to load afresh when next shown rather than render the old person from the
+// cache meanwhile, and the ones on screen are read again. A refusal reads the
+// Users table again, since another Admin may have changed the account first.
+// An answer that arrives after another Student signed in reaches none of the
+// cache (`writeAsSignedIn`).
+export function sanctionStudent(queryClient: QueryClient, id: string, action: Sanction): Promise<void> {
+  return writeAsSignedIn(
+    queryClient,
+    () => apiFetch<{ status: StudentStatus }>(studentPath(id, `/${action}`), { method: 'POST', body: {} }),
+    async (result) => {
+      await queryClient.cancelQueries({ queryKey: adminStudentQueryKey(id) });
+      queryClient.setQueryData<AdminStudentDetail>(adminStudentQueryKey(id), (previous) =>
+        previous === undefined
+          ? previous
+          : { ...previous, status: result.status, ...(result.status === 'REMOVED' ? { avatarUrl: null } : {}) },
+      );
+      const notSession = (query: Query): boolean => query.queryKey[0] !== SESSION_QUERY_KEY[0];
+      queryClient.removeQueries({ type: 'inactive', predicate: notSession });
+      void queryClient.invalidateQueries({ predicate: notSession });
+    },
+    () => void queryClient.invalidateQueries({ queryKey: ADMIN_STUDENTS_QUERY_KEY }),
   );
 }

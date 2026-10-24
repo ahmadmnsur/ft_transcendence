@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { insertCatalogue } from '../../prisma/seed/catalogue';
+import { AdminUsersService } from '../../src/admin/admin-users.service';
 import { PrismaService } from '../../src/core/prisma.service';
 import { UnitOfWork } from '../../src/core/uow';
 import { MatchingService } from '../../src/matching/matching.service';
@@ -52,8 +53,10 @@ it('evaluates the whole Round once, freezes sanctions, and retains dated Badges 
     await prompts.answer(actor(account.id), prompt.id, 'A lesson from the Round.');
   }
   await prisma.post.updateMany({ where: { authorId: moderator.id }, data: { removedAt: new Date() } });
-  await prisma.student.update({ where: { id: suspended.id }, data: { suspendedAt: new Date() } });
-  await prisma.student.update({ where: { id: removed.id }, data: { removedAt: new Date() } });
+  // The real sanctions, through the Users table (§12.7).
+  const users = harness.app.get(AdminUsersService);
+  await users.suspend(actor(admin.id), suspended.id);
+  await users.remove(actor(admin.id), removed.id);
   const closedAt = new Date();
   harness.clock.stopAt(closedAt);
   harness.recorder.clear();
@@ -100,7 +103,7 @@ it('evaluates the whole Round once, freezes sanctions, and retains dated Badges 
     ]);
   }
   // Reinstatement does not replay the skipped Rounds; only fresh activity counts.
-  await prisma.student.update({ where: { id: suspended.id }, data: { suspendedAt: null } });
+  await users.reinstate(actor(admin.id), suspended.id);
   expect((await prisma.student.findUniqueOrThrow({ where: { id: suspended.id } })).streak).toBe(2);
   await matching.openRound(actor(admin.id));
   await prompts.answer(actor(suspended.id), nextPrompt.id, 'A fresh Round after reinstatement.');

@@ -17,7 +17,7 @@ export default {
     description: 'Tout ce qu’un Admin gère, au même endroit.',
     rounds: 'Ouvrez et fermez les Tours, suivez leurs Matchs et créez un Match à la main.',
     prompts: 'Publiez le prochain Sujet de réflexion et consultez les précédents.',
-    users: 'Trouvez un compte par nom, e-mail, rôle ou statut, changez son rôle ou modifiez son profil.',
+    users: 'Trouvez un compte par nom, e-mail, rôle ou statut, changez son rôle, modifiez son profil, ou suspendez-le, réintégrez-le ou excluez-le.',
     analytics: 'Ce que les Étudiants souhaitent apprendre et peuvent enseigner, et où en sont leurs Matchs.',
     reports: 'Traitez les Signalements ouverts visant des Publications et des Étudiants, et consultez ceux déjà résolus.',
   },
@@ -81,6 +81,32 @@ export default {
         toStudent: 'Cet Étudiant continue de participer, sans examiner les Publications signalées.',
         cancel: 'Annuler',
         confirm: 'Changer le rôle',
+      },
+    },
+    sanctions: {
+      title: 'Suspension et Exclusion',
+      subtitle: 'Une Suspension peut être levée. Une Exclusion est définitive.',
+      self: 'Vous ne pouvez pas suspendre ni exclure votre propre compte. Un autre Admin le peut.',
+      suspend: 'Suspendre',
+      reinstate: 'Réintégrer',
+      remove: 'Exclure',
+      working: 'Enregistrement…',
+      suspended: 'Cet Étudiant est suspendu et déconnecté partout.',
+      reinstated: 'Cet Étudiant est réintégré et peut se reconnecter.',
+      confirm: {
+        suspendTitle: 'Suspendre {name} ?',
+        suspendBody:
+          "Cet Étudiant est déconnecté partout et ne peut plus se connecter tant qu'un Admin ne l'a pas réintégré. Son Match en cours prend fin, et il sort de l'appariement et du Classement. Ses Publications, son avatar, ses Justificatifs, son XP et sa Série restent, et les Signalements le visant restent ouverts.",
+        suspendAdminBody:
+          "Cet Admin est déconnecté partout et ne peut plus se connecter tant qu'un autre Admin ne l'a pas réintégré. Son Match en cours prend fin. Ses Publications, son avatar, ses Justificatifs, son XP et sa Série restent, et les Signalements le visant restent ouverts.",
+        reinstateTitle: 'Réintégrer {name} ?',
+        reinstateBody:
+          "Cet Étudiant peut se reconnecter et retrouve son rang au Classement. S'il indique une Compétence, le prochain Tour peut l'associer, et dans un Tour ouvert où il n'a aucun Match en vigueur, un Admin peut l'associer à la main dès maintenant. Rien de ce que la Suspension a arrêté ne revient : un Match arrêté le reste.",
+        reinstateAdminBody: "Cet Admin peut se reconnecter. Rien de ce que la Suspension a arrêté ne revient : un Match arrêté le reste.",
+        removeTitle: 'Exclure {name} ?',
+        removeBody:
+          "C'est définitif : personne ne peut l'annuler. Cet Étudiant est déconnecté partout et ne pourra plus jamais se connecter, et son e-mail ne pourra plus jamais être utilisé. Son Match en cours prend fin, son avatar est supprimé, et chaque Signalement ouvert le visant est clos comme traité, avec vous enregistré comme la personne qui l'a résolu. Tout ce qu'il a écrit reste, affiché sous le nom « {tombstone} ».",
+        cancel: 'Annuler',
       },
     },
     matches: {

@@ -7,8 +7,10 @@ import { isUuid } from '@shared/uuid';
 import {
   adminStudentQueryOptions,
   changeStudentRole,
+  sanctionStudent,
   type AdminStudentDetail,
   type AdminStudentMatch,
+  type Sanction,
 } from '../api/admin-students';
 import { ApiProtocolError } from '../api/client';
 import { sessionQueryOptions } from '../api/session';
@@ -34,7 +36,15 @@ type RoleStatus = { kind: 'changed'; role: Role } | { kind: 'failed'; code: unkn
 // saying what the new role keeps and closes, then writes the role alone; the
 // Student's next request reads it (§5.8). An Admin never changes their own
 // role (ADR-0008 d9), so their own row says so instead.
-function RoleCard({ student, self }: { student: AdminStudentDetail; self: boolean }): React.JSX.Element {
+function RoleCard({
+  student,
+  self,
+  onRemoved,
+}: {
+  student: AdminStudentDetail;
+  self: boolean;
+  onRemoved: () => void;
+}): React.JSX.Element {
   const { t, formatText, personNameValue, errorText } = useI18n();
   const copy = t.admin.user.role;
   const queryClient = useQueryClient();
@@ -94,7 +104,9 @@ function RoleCard({ student, self }: { student: AdminStudentDetail; self: boolea
       await changeStudentRole(queryClient, student.id, choice);
       setStatus({ kind: 'changed', role: choice });
     } catch (error) {
-      setStatus({ kind: 'failed', code: failureCode(error) });
+      const code = failureCode(error);
+      setStatus({ kind: 'failed', code });
+      if (code === 'student_removed') onRemoved();
     } finally {
       setPending(false);
       setConfirming(false);
@@ -158,6 +170,152 @@ function RoleCard({ student, self }: { student: AdminStudentDetail; self: boolea
             </Button>
             <Button loading={pending} onClick={() => void onConfirm()}>
               {pending ? copy.submitting : copy.confirm.confirm}
+            </Button>
+          </>
+        }
+      />
+    </Card>
+  );
+}
+
+// What the sanctions card's status Banner says, kept as what happened rather
+// than as a text, so it follows a language switch. A Removal has none: the
+// page turns view-only and its note says so.
+type SanctionStatus = { kind: 'done'; action: Exclude<Sanction, 'remove'> } | { kind: 'failed'; code: unknown };
+
+// §12.7: the account's sanctions, as its status allows (ADR-0008 d11's note):
+// Suspend or Remove an Active account, Reinstate or Remove a Suspended one.
+// Each asks first, saying what it ends and what it keeps. An Admin never
+// suspends or removes themselves (ADR-0008 d9), so their own row says so.
+function SanctionsCard({
+  student,
+  self,
+  onRemoved,
+}: {
+  student: AdminStudentDetail;
+  self: boolean;
+  onRemoved: () => void;
+}): React.JSX.Element {
+  const { t, formatText, personNameValue, errorText } = useI18n();
+  const copy = t.admin.user.sanctions;
+  const queryClient = useQueryClient();
+  // The action the dialog asks about, kept while it closes, and whether it
+  // is open.
+  const [action, setAction] = useState<Sanction>('suspend');
+  const [confirming, setConfirming] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [status, setStatus] = useState<SanctionStatus | undefined>(undefined);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+
+  // The status slot renders only while there is a message; once it renders,
+  // focus moves to it, as on the role card.
+  useEffect(() => {
+    if (status !== undefined) statusRef.current?.focus();
+  }, [status]);
+
+  if (self) {
+    return (
+      <Card title={copy.title} headingLevel={2}>
+        <p className="text-sm text-ink-muted">{copy.self}</p>
+      </Card>
+    );
+  }
+
+  const name = personNameValue(student.displayName, false);
+  const admin = student.role === 'ADMIN';
+  const dialog = {
+    suspend: {
+      title: copy.confirm.suspendTitle,
+      body: admin ? copy.confirm.suspendAdminBody : copy.confirm.suspendBody,
+      confirm: copy.suspend,
+    },
+    reinstate: {
+      title: copy.confirm.reinstateTitle,
+      body: admin ? copy.confirm.reinstateAdminBody : copy.confirm.reinstateBody,
+      confirm: copy.reinstate,
+    },
+    remove: {
+      title: copy.confirm.removeTitle,
+      body: formatText(copy.confirm.removeBody, { tombstone: t.people.tombstone }),
+      confirm: copy.remove,
+    },
+  };
+  const asked = dialog[action];
+
+  function ask(next: Sanction): void {
+    if (pending) return;
+    setStatus(undefined);
+    setAction(next);
+    setConfirming(true);
+  }
+
+  async function onConfirm(): Promise<void> {
+    if (pending) return;
+    setPending(true);
+    try {
+      await sanctionStudent(queryClient, student.id, action);
+      if (action === 'remove') onRemoved();
+      else setStatus({ kind: 'done', action });
+    } catch (error) {
+      const code = failureCode(error);
+      setStatus({ kind: 'failed', code });
+      if (code === 'student_removed') onRemoved();
+    } finally {
+      setPending(false);
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
+      <div className="flex min-w-0 flex-col gap-4">
+        {status !== undefined ? (
+          <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
+            {status.kind === 'done' ? (
+              <Banner tone="success" title={status.action === 'suspend' ? copy.suspended : copy.reinstated} />
+            ) : (
+              <Banner tone="danger" title={errorText(status.code)} />
+            )}
+          </div>
+        ) : null}
+        <div className="flex flex-wrap gap-3">
+          {student.status === 'SUSPENDED' ? (
+            <Button variant="secondary" onClick={() => ask('reinstate')}>
+              {copy.reinstate}
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => ask('suspend')}>
+              {copy.suspend}
+            </Button>
+          )}
+          <Button variant="danger" onClick={() => ask('remove')}>
+            {copy.remove}
+          </Button>
+        </div>
+      </div>
+      <Modal
+        open={confirming}
+        size="sm"
+        title={formatText(asked.title, { name })}
+        description={asked.body}
+        onClose={() => {
+          if (!pending) setConfirming(false);
+        }}
+        initialFocusRef={cancelRef}
+        footer={
+          <>
+            <Button
+              ref={cancelRef}
+              variant="secondary"
+              onClick={() => {
+                if (!pending) setConfirming(false);
+              }}
+            >
+              {copy.confirm.cancel}
+            </Button>
+            <Button variant={action === 'reinstate' ? 'primary' : 'danger'} loading={pending} onClick={() => void onConfirm()}>
+              {pending ? copy.working : asked.confirm}
             </Button>
           </>
         }
@@ -262,6 +420,16 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
   const detail = useQuery(adminStudentQueryOptions(studentId));
   const target = useStudentProfileTarget(studentId);
   const session = useQuery(sessionQueryOptions());
+  // After a Removal from this page, or a write refused because another Admin
+  // removed the account first, focus moves to the note that says the account
+  // is now view-only, since the card that had focus is gone.
+  const [justRemoved, setJustRemoved] = useState(false);
+  const removedRef = useRef<HTMLDivElement>(null);
+  const removed = detail.data?.status === 'REMOVED';
+
+  useEffect(() => {
+    if (justRemoved && removed) removedRef.current?.focus();
+  }, [justRemoved, removed]);
 
   const data = detail.data;
   if (data === undefined) {
@@ -293,7 +461,6 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
     );
   }
 
-  const removed = data.status === 'REMOVED';
   const self = session.data?.authenticated === true && session.data.student.id === data.id;
   const profileCopy = t.profile.student;
 
@@ -320,7 +487,9 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
           <dd className="text-ink">{t.admin.statuses[data.status]}</dd>
         </dl>
         {removed ? (
-          <Banner tone="info" title={copy.removedNote} />
+          <div ref={removedRef} tabIndex={-1} className="rounded-lg focus-ring">
+            <Banner tone="info" title={copy.removedNote} />
+          </div>
         ) : (
           <>
             {data.status === 'SUSPENDED' ? <Banner tone="warning" title={copy.suspendedNote} /> : null}
@@ -333,7 +502,8 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
             </Link>
             {/* Keyed by the Student, so a choice or a status never carries
             over to the next account. */}
-            <RoleCard key={data.id} student={data} self={self} />
+            <RoleCard key={data.id} student={data} self={self} onRemoved={() => setJustRemoved(true)} />
+            <SanctionsCard key={`${data.id}-sanctions`} student={data} self={self} onRemoved={() => setJustRemoved(true)} />
             <AvatarCard target={target} />
             <ProfileDetailsCard target={target} />
             <SkillsCard target={target} />

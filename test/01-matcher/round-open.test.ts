@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateCohort } from '../../prisma/fixtures/cohort';
 import { insertCatalogue } from '../../prisma/seed/catalogue';
+import { AdminUsersService } from '../../src/admin/admin-users.service';
 import type { Actor } from '../../src/core/actor';
 import { UnitOfWork } from '../../src/core/uow';
 import { MatchingService } from '../../src/matching/matching.service';
@@ -110,6 +111,39 @@ describe('Round open through the services', () => {
     const opened = await matching.openRound(actor(admin.id));
     expect(opened.matchCount).toBe(0);
     expect(sorted(opened.unmatched.map((student) => student.id))).toEqual(sorted([mentor.id, mentee.id]));
+  });
+
+  // §16.3 row 1, ADR-0008 d5: an administrative termination is a Match row
+  // like any other, so the matcher never proposes the pair again, while a
+  // hand-made Match may pair it (§8.6).
+  it('never proposes a pair again once a Suspension ended their Match, while a hand-made Match may pair it', async () => {
+    const skills = await insertCatalogue(harness.app.get(UnitOfWork));
+    const docker = skills.get('Docker') as string;
+    const students = harness.app.get(StudentsService);
+    const matching = harness.app.get(MatchingService);
+    const users = harness.app.get(AdminUsersService);
+    const admin = await createTestStaff(harness.app, 'ADMIN');
+    const mentor = await createTestAccount(harness.app);
+    const mentee = await createTestAccount(harness.app);
+    await students.setSkills(actor(mentor.id), [docker], []);
+    await students.setSkills(actor(mentee.id), [], [docker]);
+
+    // Round 1 pairs them; the Mentor's Suspension ends the Match, and the
+    // reinstatement revives nothing.
+    expect((await matching.openRound(actor(admin.id))).matchCount).toBe(1);
+    await users.suspend(actor(admin.id), mentor.id);
+    await users.reinstate(actor(admin.id), mentor.id);
+    const history = await matching.history(actor(mentee.id), 1, 20);
+    expect(history.items.map((item) => item.status)).toEqual(['TERMINATED_BY_ADMIN']);
+    await matching.closeRound(actor(admin.id));
+
+    // Round 2: the same lists, but the pair has a Match row, so no Match.
+    const opened = await matching.openRound(actor(admin.id));
+    expect(opened.matchCount).toBe(0);
+    expect(sorted(opened.unmatched.map((student) => student.id))).toEqual(sorted([mentor.id, mentee.id]));
+    // An Admin may still pair them by hand.
+    const made = await matching.createHandMadeMatch(actor(admin.id), [mentor.id, mentee.id]);
+    expect([made.mentor.id, made.mentee.id, made.status]).toEqual([mentor.id, mentee.id, 'MATCHED']);
   });
 
   for (const blocker of ['mentor', 'mentee'] as const) {

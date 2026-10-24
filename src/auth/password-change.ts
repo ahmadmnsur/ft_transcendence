@@ -6,6 +6,7 @@ import { RealtimePublisher } from '../core/realtime-publisher';
 import { SupabaseAuthClient, type PasswordCheckOutcome } from '../core/supabase-auth';
 import { CheckpointHook, UnitOfWork, type PrismaTx } from '../core/uow';
 import { movedPasswordVersion, tooManyAttempts, wrongPassword } from './refusals';
+import { deleteEverySession } from './sign-out';
 
 // The shared password check's shape (§5.1's step 3): check the current
 // password, or throw.
@@ -183,8 +184,7 @@ async function changePasswordSteps(
     await input.recheckInStep4?.(tx);
     await ctx.checkpoint('password-change:first-sign-out');
     await tx.student.update({ where: { id: studentId }, data: { passwordVersion: { increment: 1 } } });
-    await tx.session.deleteMany({ where: { studentId } });
-    ctx.afterCommit(() => publisher.revokeSessions({ studentId }));
+    await deleteEverySession(tx, ctx, publisher, studentId);
   });
   // From here on the Student is signed out, so a step-5 failure clears the
   // cookie at the boundary; a step-6 failure is logged and answered as
@@ -218,8 +218,7 @@ async function changePasswordSteps(
       if (current !== null && current.removedAt === null) {
         await tx.student.update({ where: { id: studentId }, data: { passwordVersion: { increment: 1 } } });
       }
-      await tx.session.deleteMany({ where: { studentId } });
-      ctx.afterCommit(() => publisher.revokeSessions({ studentId }));
+      await deleteEverySession(tx, ctx, publisher, studentId);
     });
   } catch (err) {
     logger.entry('error', { operation: 'password-change:second-sign-out', ...errorFields(err) });

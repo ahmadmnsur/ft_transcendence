@@ -1,10 +1,12 @@
 import { expect, it } from 'vitest';
 import { AdminUsersService } from '../../src/admin/admin-users.service';
 import { UnitOfWork } from '../../src/core/uow';
+import { GamificationService } from '../../src/gamification/gamification.service';
 import { createTestAccount, createTestStaff, type TestAccount } from '../harness/accounts';
 import { useHarness } from '../harness/app';
 
 const harness = useHarness();
+const actor = (studentId: string) => ({ studentId, sessionHash: null });
 const leaderboard = (cookie: string) => harness.get('/api/leaderboard').set('Cookie', cookie);
 
 async function setXp(student: TestAccount, xp: number): Promise<void> {
@@ -90,4 +92,27 @@ it('returns an empty board for an Admin alone and includes zero-XP Students on a
     }],
     me: null,
   });
+});
+
+it('never reintroduces a Suspended or Removed viewer through the pin, and reinstatement restores the rank', async () => {
+  const students: TestAccount[] = [];
+  for (let i = 0; i < 10; i++) students.push(await createTestAccount(harness.app));
+  for (const student of students) await setXp(student, 250);
+  const viewer = await createTestAccount(harness.app);
+  await setXp(viewer, 120);
+  const me = actor(viewer.id);
+  const board = harness.app.get(GamificationService);
+  expect((await board.leaderboard(me)).me).toEqual({ rank: 11, xp: 120, level: 1 });
+  // The real sanctions, through the Users table (§12.7). A sanctioned viewer
+  // has no session, so the read is the service's, for a constructed actor.
+  const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
+  const users = harness.app.get(AdminUsersService);
+  await users.suspend(admin, viewer.id);
+  expect((await leaderboard(viewer.cookie)).status).toBe(401);
+  expect((await board.leaderboard(me)).me).toBeNull();
+  await users.reinstate(admin, viewer.id);
+  expect((await board.leaderboard(me)).me).toEqual({ rank: 11, xp: 120, level: 1 });
+  await users.remove(admin, viewer.id);
+  expect((await board.leaderboard(me)).me).toBeNull();
+  expect((await board.leaderboard(actor(students[0].id))).top.map((row) => row.student.id)).not.toContain(viewer.id);
 });
