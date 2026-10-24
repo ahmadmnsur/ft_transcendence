@@ -11,6 +11,7 @@ export { FileIcon } from './FileIcon';
 export { FlagIcon } from './FlagIcon';
 export { HeartIcon } from './HeartIcon';
 export { InfoIcon } from './InfoIcon';
+export { MenuIcon } from './MenuIcon';
 export { MessageIcon } from './MessageIcon';
 export { SearchIcon } from './SearchIcon';
 export { SortAscIcon } from './SortAscIcon';

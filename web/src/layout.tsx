@@ -7,12 +7,13 @@ import { logout } from './api/auth';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from './api/session';
 import { useI18n } from './i18n/context';
 import { languageNames, languages } from './i18n/language';
-import { AlertIcon, Button, EmptyState, PersonName, SearchIcon, Select, buttonClasses } from './design';
+import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, PersonName, SearchIcon, Select, buttonClasses } from './design';
 import { RealtimeConnection } from './realtime/connection';
 import { MessageUpdates } from './messages/MessageUpdates';
 import { RoundUpdates } from './matching/RoundUpdates';
 import { FeedUpdates } from './feed/FeedUpdates';
 import { PresenceUpdates } from './social/PresenceUpdates';
+import { useDisclosure } from './shell/useDisclosure';
 
 // The product name is never translated.
 export const BRAND = '42 PeerConnect';
@@ -27,13 +28,55 @@ export function PageTitle({ name }: { name?: string }): React.JSX.Element {
   return <title>{name === undefined ? BRAND : formatText(t.shell.pageTitle, { page: name, brand: BRAND })}</title>;
 }
 
+// The header's links, each a route every role below may open. The bar holds
+// a week's work: the feed, the Match, the Prompt, then the people. The
+// account menu holds the Student's own pages. A Peer Moderator gets one more
+// link, their queue; an Admin gets `/admin`, which lists every Admin page
+// (§3.5.1).
+type BarPath = '/' | '/match' | '/prompts' | '/messages' | '/students' | '/friends' | '/moderation' | '/admin';
+type AccountPath = '/me' | '/feedback' | '/leaderboard' | '/rules';
+
+// The link matches its page and every page under it (`/admin` stays marked on
+// `/admin/users`), whatever the search params; the feed matches `/` alone.
+function activeOptions(to: string): { exact: boolean; includeSearch: false } {
+  return { exact: to === '/', includeSearch: false };
+}
+
+// The current page's link is marked by the `aria-current` the router sets.
+const barLinkClass =
+  'inline-flex items-center whitespace-nowrap rounded-t-lg border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors duration-150 hover:text-ink focus-ring aria-[current=page]:border-primary-600 aria-[current=page]:text-primary-700';
+const panelItemClass =
+  'block w-full rounded-lg px-3 py-2 text-start text-sm text-ink transition-colors duration-150 hover:bg-surface-muted focus-ring pointer-coarse:py-3 aria-[current=page]:bg-primary-50 aria-[current=page]:font-medium aria-[current=page]:text-primary-700';
+// Tailwind's `md`: from here the bar and the account menu show, below it the
+// phone Menu.
+const MD_QUERY = '(width >= 48rem)';
+
 function SiteHeader(): React.JSX.Element {
   const { t, language, setLanguage } = useI18n();
+  const copy = t.shell.header;
   const { data: session } = useQuery(sessionQueryOptions());
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
+  // Below `md` one button shows every link under the header's line; from
+  // `md` the bar shows them and the account menu sits beside the switcher.
+  const phoneMenu = useDisclosure<HTMLElement>();
+  const accountMenu = useDisclosure<HTMLDivElement>();
+  const closePhoneMenu = phoneMenu.close;
+  const closeAccountMenu = accountMenu.close;
+
+  // Each menu shows on one side of `md` only, so crossing it closes both: a
+  // panel hidden open would show again when the window crosses back.
+  useEffect(() => {
+    const md = window.matchMedia(MD_QUERY);
+    function onChange(): void {
+      closePhoneMenu();
+      closeAccountMenu();
+    }
+    md.addEventListener('change', onChange);
+    return () => md.removeEventListener('change', onChange);
+  }, [closePhoneMenu, closeAccountMenu]);
 
   function signOutLocally(): void {
     queryClient.clear();
@@ -66,6 +109,11 @@ function SiteHeader(): React.JSX.Element {
         if (!signedOut) {
           setSignOutFailed(true);
           setSigningOut(false);
+          // The error shows inside the panel, which may have closed while
+          // the sign-out ran: open the one this width shows. Focus stays
+          // where it is.
+          if (window.matchMedia(MD_QUERY).matches) accountMenu.show();
+          else phoneMenu.show();
           return;
         }
       }
@@ -79,138 +127,173 @@ function SiteHeader(): React.JSX.Element {
     if (next !== undefined) setLanguage(next);
   }
 
+  const student = session?.authenticated === true ? session.student : null;
+  const barLinks: Array<{ to: BarPath; label: string }> = [
+    { to: '/', label: t.feed.title },
+    { to: '/match', label: copy.matchLink },
+    { to: '/prompts', label: t.prompts.title },
+    { to: '/messages', label: copy.messagesLink },
+    { to: '/students', label: copy.studentsLink },
+    { to: '/friends', label: copy.friendsLink },
+  ];
+  // §3.5.1: the moderation queue is a Peer Moderator's alone and the Admin
+  // pages an Admin's; the session read here only decides whether the link
+  // shows, and the route guards and the API both check the role again.
+  if (student?.role === 'PEER_MODERATOR') barLinks.push({ to: '/moderation', label: copy.moderationLink });
+  if (student?.role === 'ADMIN') barLinks.push({ to: '/admin', label: copy.adminLink });
+  const accountLinks: Array<{ to: AccountPath; label: string }> = [
+    { to: '/me', label: copy.profileLink },
+    { to: '/feedback', label: t.reviews.feedback },
+    { to: '/leaderboard', label: t.leaderboard.title },
+    { to: '/rules', label: t.progress.rules.nav },
+  ];
+
+  const languageSwitcher = (
+    <Select
+      hideLabel
+      label={t.shell.language.label}
+      value={language}
+      onChange={onLanguageChange}
+      className={student !== null ? 'w-32 shrink-0' : 'w-32 shrink-0 max-sm:order-1 max-sm:ms-auto'}
+    >
+      {languages.map((l) => (
+        <option key={l} value={l} lang={l}>
+          {languageNames[l]}
+        </option>
+      ))}
+    </Select>
+  );
+
+  if (student === null) {
+    return (
+      <header className="border-b border-line bg-surface">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
+          <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
+            <bdi>{BRAND}</bdi>
+          </Link>
+          <nav aria-label={copy.navLabel} className="ms-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
+            <Link to="/sign-in" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
+              {copy.signInLink}
+            </Link>
+            <Link to="/sign-up" className={`shrink-0 ${buttonClasses({ variant: 'primary', size: 'sm' })}`}>
+              {copy.signUpLink}
+            </Link>
+          </nav>
+          {/* Below `sm` the switcher ends the brand's line and the nav takes the next line. A button
+          never shrinks its label onto two lines: one that does not fit moves to a further line, as
+          French does at 360 px. The DOM keeps the desktop order: brand, nav, switcher. */}
+          {languageSwitcher}
+        </div>
+      </header>
+    );
+  }
+
+  // A failed sign-out shows its error under the button, in the open panel,
+  // where the panel cannot cover it. While it runs the button stays
+  // focusable, as `Button` does when loading, so a keyboard user keeps their
+  // place and Enter tries again after a failure; `onSignOut` ignores a second
+  // press meanwhile.
+  const signOut = (
+    <>
+      <button
+        type="button"
+        aria-disabled={signingOut || undefined}
+        aria-busy={signingOut || undefined}
+        onClick={() => void onSignOut()}
+        className={`${panelItemClass} aria-disabled:cursor-wait aria-disabled:opacity-60`}
+      >
+        {signingOut ? copy.signingOut : copy.signOut}
+      </button>
+      {signOutFailed ? (
+        <p role="alert" className="px-3 py-1 text-xs text-ink-danger">
+          {copy.signOutFailed}
+        </p>
+      ) : null}
+    </>
+  );
+
   return (
-    <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-        <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
+    <header className="relative border-b border-line bg-surface">
+      <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 pt-3 max-md:pb-3 sm:gap-3">
+        <Link to="/" className="min-w-0 rounded-lg text-lg font-semibold text-ink focus-ring">
           <bdi>{BRAND}</bdi>
         </Link>
-        <nav aria-label={t.shell.header.navLabel} className="ms-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
-          {session?.authenticated === true ? (
-            <>
-              <span className="hidden max-w-40 truncate text-sm text-ink-muted sm:inline">
-                <PersonName name={session.student.displayName} removed={false} />
-              </span>
-              <Link
-                to="/students"
-                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-              >
-                {t.shell.header.studentsLink}
-              </Link>
-              <Link
-                to="/friends"
-                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-              >
-                {t.shell.header.friendsLink}
-              </Link>
-              <Link
-                to="/messages"
-                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-              >
-                {t.shell.header.messagesLink}
-              </Link>
-              <Link to="/feedback" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                {t.reviews.feedback}
-              </Link>
-              <Link to="/rules" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                {t.progress.rules.nav}
-              </Link>
-              <Link to="/leaderboard" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                {t.leaderboard.title}
-              </Link>
-              <Link
-                to="/match"
-                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-              >
-                {t.shell.header.matchLink}
-              </Link>
-              {/* §3.5.1: the Round pages are an Admin's alone; the session read
-              here only decides whether the link shows, and the route guard and
-              the API both check the role again. */}
-              {session.student.role === 'ADMIN' ? (
-                <Link
-                  to="/admin/rounds"
-                  className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-                >
-                  {t.shell.header.roundsLink}
-                </Link>
-              ) : null}
-              <Link to="/prompts" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                {t.prompts.title}
-              </Link>
-              {session.student.role === 'ADMIN' ? <Link to="/admin/prompts" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                {t.prompts.adminTitle}
-              </Link> : null}
-              {/* §3.5.1: the Users table, an Admin's alone like the Round pages. */}
-              {session.student.role === 'ADMIN' ? (
-                <Link
-                  to="/admin/users"
-                  className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-                >
-                  {t.shell.header.usersLink}
-                </Link>
-              ) : null}
-              {session.student.role === 'ADMIN' ? <Link to="/admin/analytics" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                {t.analytics.title}
-              </Link> : null}
-              {/* §3.5.1: each moderation role has its own page; the route guards
-              and the API check the role again. */}
-              {session.student.role === 'PEER_MODERATOR' ? (
-                <Link to="/moderation" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                  {t.shell.header.moderationLink}
-                </Link>
-              ) : null}
-              {session.student.role === 'ADMIN' ? (
-                <Link to="/admin/reports" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
-                  {t.shell.header.reportsLink}
-                </Link>
-              ) : null}
-              <Link
-                to="/me"
-                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-              >
-                {t.shell.header.profileLink}
-              </Link>
-              <Button variant="secondary" size="sm" loading={signingOut} onClick={() => void onSignOut()} className="shrink-0">
-                {signingOut ? t.shell.header.signingOut : t.shell.header.signOut}
-              </Button>
-              {signOutFailed ? (
-                <span role="alert" className="max-w-48 text-xs text-ink-danger">
-                  {t.shell.header.signOutFailed}
-                </span>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <Link
-                to="/sign-in"
-                className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-              >
-                {t.shell.header.signInLink}
-              </Link>
-              <Link to="/sign-up" className={`shrink-0 ${buttonClasses({ variant: 'primary', size: 'sm' })}`}>
-                {t.shell.header.signUpLink}
-              </Link>
-            </>
-          )}
-        </nav>
-        {/* Below `sm` the switcher ends the brand's line and the nav takes the next line. A button
-        never shrinks its label onto two lines: one that does not fit moves to a further line, as
-        French does at 360 px. The DOM keeps the desktop order: brand, nav, switcher. */}
-        <Select
-          hideLabel
-          label={t.shell.language.label}
-          value={language}
-          onChange={onLanguageChange}
-          className="w-32 shrink-0 max-sm:order-1 max-sm:ms-auto"
+        <div className="relative ms-auto hidden md:block">
+          <button type="button" {...accountMenu.buttonProps} className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
+            <span className="sr-only">{copy.accountMenu}</span>
+            <span className="max-w-40 truncate">
+              <PersonName name={student.displayName} removed={false} />
+            </span>
+            <ChevronDownIcon size={16} className="shrink-0" />
+          </button>
+          <div
+            {...accountMenu.panelProps}
+            className="absolute end-0 top-full z-30 mt-2 w-60 rounded-xl border border-line bg-surface p-1 shadow-lg"
+          >
+            <ul>
+              {accountLinks.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="my-1 border-t border-line" />
+            {signOut}
+          </div>
+        </div>
+        <IconButton {...phoneMenu.buttonProps} label={copy.menu} className="ms-auto md:hidden">
+          <MenuIcon size={20} />
+        </IconButton>
+        {/* The panel follows its button in the DOM, so Tab reaches its links
+        before the switcher, and lies over the page under the header's line. */}
+        <nav
+          aria-label={copy.navLabel}
+          {...phoneMenu.panelProps}
+          className="absolute inset-x-0 top-full z-30 border-y border-line bg-surface shadow-lg md:hidden"
         >
-          {languages.map((l) => (
-            <option key={l} value={l} lang={l}>
-              {languageNames[l]}
-            </option>
-          ))}
-        </Select>
+          <div className="mx-auto w-full max-w-6xl px-4 py-2">
+            <ul>
+              {barLinks.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-2 border-t border-line pt-2">
+              <p className="truncate px-3 py-1 text-xs font-medium text-ink-muted">
+                <PersonName name={student.displayName} removed={false} />
+              </p>
+              <ul>
+                {accountLinks.map((link) => (
+                  <li key={link.to}>
+                    <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {signOut}
+            </div>
+          </div>
+        </nav>
+        {/* The switcher ends the header's line at every width (§3.5.5). */}
+        {languageSwitcher}
       </div>
+      <nav aria-label={copy.navLabel} className="mx-auto hidden w-full max-w-6xl px-4 pt-1 md:block">
+        <ul className="-mx-3 flex flex-wrap">
+          {barLinks.map((link) => (
+            <li key={link.to}>
+              <Link to={link.to} activeOptions={activeOptions(link.to)} className={barLinkClass}>
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </header>
   );
 }

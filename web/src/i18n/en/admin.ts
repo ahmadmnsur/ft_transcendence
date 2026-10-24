@@ -22,6 +22,17 @@ const statuses = {
 export default {
   roles,
   statuses,
+  // `/admin`: one link to each Admin page, so the header holds a single
+  // Admin link (§3.5.1). Each link's name is its page's own title.
+  home: {
+    title: 'Admin tools',
+    description: 'Everything an Admin runs, in one place.',
+    rounds: 'Open and close Rounds, follow their Matches and make a Match by hand.',
+    prompts: 'Publish the next Reflection Prompt and look back at the earlier ones.',
+    users: 'Find any account by name, email, role or status, change its role or edit its profile.',
+    analytics: 'What Students want to learn and can teach, and how their Matches are going.',
+    reports: 'Decide on the open Reports about Posts and Students, and look back at the resolved ones.',
+  },
   // `/admin/users`: every account, Removed ones included.
   users: {
     title: 'Users',
