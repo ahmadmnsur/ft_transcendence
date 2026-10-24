@@ -9,18 +9,22 @@ import { PrismaService } from '../../src/core/prisma.service';
 import { SupabaseAuthClient } from '../../src/core/supabase-auth';
 import { SupabaseStorageClient } from '../../src/core/supabase-storage';
 import { UnitOfWork } from '../../src/core/uow';
+import { FeedService } from '../../src/feed/feed.service';
 import { BucketStepError, ensureBuckets, PRODUCTION_BUCKETS, type BucketStepResult } from '../../src/files/buckets';
 import { MatchingService } from '../../src/matching/matching.service';
+import { MessagingService } from '../../src/messaging/messaging.service';
+import { ModerationService } from '../../src/moderation/moderation.service';
 import { PromptsService } from '../../src/prompts/prompts.service';
 import { ReviewsService } from '../../src/reviews/reviews.service';
 import { SocialService } from '../../src/social/social.service';
 import { StudentsService } from '../../src/students/students.service';
 import { bootstrapStaff, createStaffAccount } from './bootstrap';
 import { insertCatalogue } from './catalogue';
-import { assertEndState, assertOnlySeedAccounts } from './checks';
+import { assertEndState, assertOnlySeedAccounts, findDemoStudent } from './checks';
 import {
   assertIdOrder,
   cohortPlan,
+  RESERVED_POSITIONS,
   setCohortLists,
   setPeerModeratorLists,
   signUpCohort,
@@ -32,9 +36,12 @@ import { SeedFailure } from './failure';
 import { openLockConnection, takeSeedLock, type LockConnection } from './lock';
 import { promptScript } from './prompts';
 import { FIXTURE_VERSION, clearRecord, readRecord, writeRecord } from './record';
+import { seedReports } from './reports';
 import { submitReviewsInOrder } from './reviews';
-import { ROUND_TARGETS, seedRound } from './rounds';
+import { ROUND_TARGETS, seedRound, type SeededRound } from './rounds';
+import { completedMentees, selectRemoved, selectSuspended } from './sanctioned';
 import { SeedModule } from './seed.module';
+import { activeCohort, eligibleStudents, seedDirectMessages, seedLikes, seedSocialGraph } from './social';
 
 // §9.8's bucket step. Its failure names the bucket, and only a SeedFailure's
 // message reaches the log, so it is carried in one.
@@ -137,6 +144,9 @@ async function run(): Promise<number> {
     const matching = app.get(MatchingService);
     const reviews = app.get(ReviewsService);
     const prompts = app.get(PromptsService);
+    const feed = app.get(FeedService);
+    const messaging = app.get(MessagingService);
+    const moderation = app.get(ModerationService);
 
     // §9.8: the seed's first step, on every run, before the record is read,
     // so a run that skips the fixture still sets the buckets. A failure stops
@@ -222,20 +232,66 @@ async function run(): Promise<number> {
     await step('Prompt 1', () => promptSteps.publish(1));
     log('seed: Prompt published', { prompt: 1 });
     const submitReview = submitReviewsInOrder(reviews);
+    const rounds: SeededRound[] = [];
     for (let number = 1; number <= 4; number += 1) {
-      const distribution = await step(`Round ${number}`, () =>
+      const round = await step(`Round ${number}`, () =>
         seedRound(matching, submitReview, promptSteps.afterOpen, admin, number),
       );
       log('seed: Round closed', {
-        ...distribution,
+        ...round.distribution,
         fullFixtureTarget: ROUND_TARGETS[number - 1],
       });
+      rounds.push(round);
     }
+
+    // §14.5's S and R, by its selection rules over Rounds 3 and 4. This
+    // version applies neither sanction; §14.6 counts both out all the same.
+    const rules = {
+      peerModeratorId: staffIds.peerModeratorId,
+      reservedIds: RESERVED_POSITIONS.map((position) => studentIds[position]),
+    };
+    const [, , round3, round4] = rounds;
+    const sanctioned = await step('S and R', async () => {
+      const suspendedId = selectSuspended(round3.matches, rules);
+      const menteesInRounds1to3 = await completedMentees(prisma, rounds.slice(0, 3).map((round) => round.roundId));
+      const removedId = selectRemoved(round4.matches, { ...rules, suspendedId, completedMentees: menteesInRounds1to3 });
+      return { suspendedId, removedId };
+    });
+    log('seed: S and R');
+
+    // §14.4 step 5, after Round 4's close: the social graph, Likes, Direct
+    // Messages, then the report fixtures. D comes first; the eligible
+    // Students exclude D, S, R and the reserved positions.
+    const demo = await step('demo Student', () => findDemoStudent(prisma, studentIds, sanctioned));
+    const active = await step('eligible Students', () => activeCohort(prisma, studentIds, sanctioned));
+    const eligible = eligibleStudents(active, demo.id);
+    log('seed: eligible Students', { eligible: eligible.length });
+    const graph = await step('social graph', () => seedSocialGraph(social, prisma, demo.id, eligible));
+    log('seed: social graph', graph.counts);
+    const likes = await step('Likes', () => seedLikes(feed, prisma, active.map((member) => member.id)));
+    log('seed: Likes', likes);
+    const threads = await step('Direct Messages', () =>
+      seedDirectMessages(messaging, prisma, demo.id, graph.firstFriendId, graph.remaining),
+    );
+    log('seed: Direct Messages', threads);
+    const { reportFixtures, reports } = await step('report fixtures', async () => ({
+      reportFixtures: await seedReports(moderation, prisma, eligible, staffIds.peerModeratorId),
+      reports: await prisma.report.count(),
+    }));
+    log('seed: report fixtures', { reports });
 
     // §14.4 step 6: Prompt 4 stays live and unanswered at completion.
     await step('Prompt 4', () => promptSteps.publish(4));
     log('seed: Prompt published', { prompt: 4 });
-    const { demoStudent } = await step('end-state assertions', () => assertEndState(prisma, studentIds));
+    const moderationReads = {
+      moderation,
+      admin,
+      peerModerator: { studentId: staffIds.peerModeratorId, sessionHash: null },
+      fixtures: reportFixtures,
+    };
+    const { demoStudent } = await step('end-state assertions', () =>
+      assertEndState(prisma, studentIds, sanctioned, demo, moderationReads),
+    );
     log('seed: demo Student', demoStudent);
     await step('completion record', () => writeRecord(db, FIXTURE_VERSION));
     log(`seed complete (fixture-v${FIXTURE_VERSION})`, elapsed());

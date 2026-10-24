@@ -233,6 +233,22 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > record certifies these steps and checks, not the complete end state (decision 10;
    > `docs/ticket-plan.md` T34).
 
+   > **Fixture v6, 2026-10-24 ([#67](https://github.com/ahmadmnsur/ft_transcendence/issues/67)).**
+   > This increment adds `docs/spec.md` §14.4 step 5 after Round 4's close, through the real
+   > paths: decision 9's social graph, Likes and two Direct Message threads (§14.6), then decision
+   > 7's report fixtures (§14.7), the resolved one dismissed by the Peer Moderator. It checks
+   > decision 7's three outcomes through the moderation service's own reads (§14.8 check 6). *S*
+   > and *R* are chosen by §14.5's selection rules over Rounds 3 and 4, with neither sanction
+   > applied. Wherever §14.6 says *Active*, the seed counts both out all the same, as the complete
+   > script will have them by step 5, so neither is decision 6's demo Student, an eligible Student
+   > or a Liker. The demo Student is chosen before step 5, which touches nothing check 3 reads, and
+   > check 3 must find the same Student at the end. **The Matches, Reviews and answers stay those
+   > of v5.** Until the sanctions join, *S*'s Match completes and *S* stays in Round 4's pool and
+   > answers there, so the version that adds them also changes Round 4's Matches and the Posts, and
+   > with them possibly *R*, the demo Student, every Like and every party chosen here. This
+   > version's completion record certifies these steps and checks, not the complete end state
+   > (decision 10; `docs/ticket-plan.md` T39).
+
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
    Both are one flag, and between them they make six settled rules visible that a clean cohort
