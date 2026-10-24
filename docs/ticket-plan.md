@@ -1823,6 +1823,13 @@ behaviour-free ticket after Rounds.
   - a Block create or remove racing a Peer Moderator action, both orders.
 - **Records the PR moves:** none beyond T35's.
 
+  > **Corrected 2026-10-23 by #64, on #214 (spec §12.6):** one moves. The Privacy Policy
+  > (`docs/legal/privacy-policy.md`) gains *Reports you resolve*, and a row in its table of who
+  > sees what: Admins see who closed each Report, how and when, the resolved audit being a new
+  > surface showing a Peer Moderator's or an Admin's resolutions. Its sentence on a Post removed
+  > by moderation adds that Admins can still read the removed Post's text there (*the Post body
+  > even if removed*).
+
 ### Users table and sanctions — §18 item 9
 
 #### T37 — Users table and roles

@@ -15,13 +15,21 @@ function batchKey(batch: ResolvedBatch): string {
 // what it was about, who resolved it and when, and every Report it closed
 // with its reporter. A batch about the viewing Admin or holding their Report
 // is left out by the server. A page past the last one, such as an old address,
-// moves to the last one once the total is known.
+// moves to the last one once this page's own answer has been read.
 export function ResolvedAudit({ page, onPageChange }: { page: number; onPageChange: (page: number) => void }): React.JSX.Element {
   const { t, format, formatText, formatDateTime, errorText } = useI18n();
   const copy = t.moderation;
   const audit = useQuery(resolvedAuditQueryOptions(page));
   const lastPage = audit.data === undefined ? 1 : countPages({ total: audit.data.total, pageSize: RESOLVED_PAGE_SIZE });
-  const correctingPage = audit.isSuccess && page > lastPage;
+  const pastLast = page > lastPage;
+  // Neither the previous page's answer, shown while this one loads, nor a
+  // cached copy of this page being read again, or waiting to retry its read,
+  // moves the address: either may be older and count fewer pages than there
+  // are.
+  const correctingPage = audit.isSuccess && !audit.isPlaceholderData && audit.fetchStatus === 'idle' && pastLast;
+  // Until then no batch shows under this page's number, and the pager stays,
+  // keeping focus on the page chosen.
+  const loading = audit.isPlaceholderData || pastLast;
   const settlePage = useEffectEvent((next: number) => onPageChange(next));
   useEffect(() => {
     if (correctingPage) settlePage(lastPage);
@@ -51,46 +59,51 @@ export function ResolvedAudit({ page, onPageChange }: { page: number; onPageChan
       </div>
     );
   }
-  if (audit.data === undefined || correctingPage) {
-    return (
-      <p role="status" aria-busy="true" className="text-sm text-ink-muted">
-        {copy.loading}
-      </p>
-    );
-  }
-  if (audit.data.total === 0) {
+  const busy = (
+    <p role="status" aria-busy="true" className="text-sm text-ink-muted">
+      {copy.loading}
+    </p>
+  );
+  if (audit.data === undefined) return busy;
+  if (audit.data.total === 0 && !loading) {
     return <EmptyState icon={<FlagIcon />} title={copy.audit.emptyTitle} description={copy.audit.emptyDescription} />;
   }
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <ul className="flex min-w-0 flex-col gap-4">
-        {audit.data.items.map((batch) => (
-          <li key={batchKey(batch)} className="min-w-0">
-            <Card
-              headingLevel={2}
-              title={heading(batch)}
-              subtitle={
-                <span className="flex flex-wrap gap-x-3">
-                  <time dateTime={batch.resolvedAt}>{formatDateTime(new Date(batch.resolvedAt))}</time>
-                  <span>{formatText(copy.queue.reportCount, { count: batch.reports.length })}</span>
-                </span>
-              }
-            >
-              <div className="flex min-w-0 flex-col gap-4">
-                <ReportedTarget target={batch.target} admin />
-                <ReportRows reports={batch.reports} />
-              </div>
-            </Card>
-          </li>
-        ))}
-      </ul>
-      <Pagination
-        page={page}
-        pageSize={RESOLVED_PAGE_SIZE}
-        total={audit.data.total}
-        onPageChange={onPageChange}
-        label={copy.audit.paginationLabel}
-      />
+      {loading ? (
+        busy
+      ) : (
+        <ul className="flex min-w-0 flex-col gap-4">
+          {audit.data.items.map((batch) => (
+            <li key={batchKey(batch)} className="min-w-0">
+              <Card
+                headingLevel={2}
+                title={heading(batch)}
+                subtitle={
+                  <span className="flex flex-wrap gap-x-3">
+                    <time dateTime={batch.resolvedAt}>{formatDateTime(new Date(batch.resolvedAt))}</time>
+                    <span>{formatText(copy.queue.reportCount, { count: batch.reports.length })}</span>
+                  </span>
+                }
+              >
+                <div className="flex min-w-0 flex-col gap-4">
+                  <ReportedTarget target={batch.target} admin />
+                  <ReportRows reports={batch.reports} />
+                </div>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
+      {audit.data.total > 0 ? (
+        <Pagination
+          page={page}
+          pageSize={RESOLVED_PAGE_SIZE}
+          total={audit.data.total}
+          onPageChange={onPageChange}
+          label={copy.audit.paginationLabel}
+        />
+      ) : null}
     </div>
   );
 }

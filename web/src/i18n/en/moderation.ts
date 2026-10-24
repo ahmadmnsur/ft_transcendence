@@ -67,7 +67,7 @@ const studentResolvedBy = {
 // reports area's.
 export default {
   peerTitle: 'Moderation',
-  peerIntro: "Reported Posts waiting for a decision. You never see who filed a Report, and a Post that concerns you, or a Report from someone you've blocked or who has blocked you, goes to someone else.",
+  peerIntro: "Reported Posts waiting for a decision. You never see who filed a Report. A Post you wrote or reported goes to someone else, and so does a Post when you've blocked its author or one of its reporters, or one of them has blocked you.",
   adminTitle: 'Reports',
   adminIntro: "Reports about Posts and Students, with who filed each. A Report about you or your Post, or one you filed, goes to another Admin.",
   tabsLabel: 'Reports',

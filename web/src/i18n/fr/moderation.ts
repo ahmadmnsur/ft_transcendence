@@ -72,7 +72,7 @@ const studentResolvedBy = {
 
 export default {
   peerTitle: 'Modération',
-  peerIntro: "Les Publications signalées en attente d'une décision. Vous ne voyez jamais qui a déposé un Signalement, et une Publication qui vous concerne, ou un Signalement d'une personne que vous avez bloquée ou qui vous a bloqué, est confié à quelqu'un d'autre.",
+  peerIntro: "Les Publications signalées en attente d'une décision. Vous ne voyez jamais qui a déposé un Signalement. Une Publication que vous avez écrite ou signalée est confiée à quelqu'un d'autre, tout comme une Publication dont l'auteur, ou une personne qui l'a signalée, est quelqu'un que vous avez bloqué ou qui vous a bloqué.",
   adminTitle: 'Signalements',
   adminIntro: "Les Signalements visant des Publications et des Étudiants, avec la personne qui a déposé chacun. Un Signalement qui vous vise, vous ou votre Publication, ou que vous avez déposé, est confié à un autre Admin.",
   tabsLabel: 'Signalements',

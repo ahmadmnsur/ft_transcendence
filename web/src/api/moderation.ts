@@ -1,7 +1,7 @@
 import { keepPreviousData, queryOptions, type QueryClient } from '@tanstack/react-query';
 import { PAGING } from '@shared/limits';
 import type { PostGroupAction, ReportReason, ResolvedState, StudentGroupAction } from '@shared/reports';
-import { apiFetch } from './client';
+import { ApiProtocolError, apiFetch } from './client';
 import type { StudentRef } from './profile';
 import { writeAsSignedIn } from './session';
 
@@ -67,16 +67,28 @@ export const RESOLVED_PAGE_SIZE = PAGING.defaultPageSize;
 
 // The queue's answer depends on the reader's role (§12.4), so each role's
 // copy has its own key: an Admin demoted to Peer Moderator never sees their
-// cached Admin queue, reporters included, on `/moderation`.
+// cached Admin queue, reporters included, on `/moderation`. The other order is
+// a Peer Moderator promoted while `/moderation` is open: a read then answers
+// as to an Admin, and the peer copy refuses it rather than keep it, since it
+// could show after a demotion back, with reporters, Student groups and the
+// groups a Block hides. Only an Admin's answer names reporters (ADR-0011 d9),
+// and every group holds a Report, so an answer naming one is an Admin's.
 export function moderationQueueQueryOptions(admin: boolean) {
   return queryOptions({
     queryKey: [...MODERATION_QUERY_KEY, 'queue', admin ? 'admin' : 'peer'] as const,
-    queryFn: () => apiFetch<{ items: QueueGroup[] }>('/moderation/queue'),
+    queryFn: async () => {
+      const queue = await apiFetch<{ items: QueueGroup[] }>('/moderation/queue');
+      if (!admin && queue.items.some((group) => group.reports.some((report) => report.reporter !== undefined))) {
+        throw new ApiProtocolError(403, 'forbidden', 'The queue answered as to an Admin.');
+      }
+      return queue;
+    },
   });
 }
 
-// While the next page loads, the previous page stays, so the list keeps its
-// rows and total in between.
+// While the next page loads, the previous page's answer stays as placeholder
+// data, so the pager keeps its total in between; the audit shows no batch from
+// it (`ResolvedAudit`).
 export function resolvedAuditQueryOptions(page: number) {
   return queryOptions({
     queryKey: [...MODERATION_QUERY_KEY, 'resolved', page] as const,

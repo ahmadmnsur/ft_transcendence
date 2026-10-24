@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 23 October 2026
+**42 PeerConnect** · Last updated: 24 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does

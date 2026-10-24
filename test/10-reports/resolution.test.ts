@@ -304,7 +304,22 @@ describe('resolving a report group', () => {
     expect((await rowsOn(target)).every((row) => row.state === 'ACTIONED' && row.resolvedById === other.id)).toBe(true);
   });
 
+  // ADR-0008 d10: an Admin's guard is self-interest alone, so a Block either
+  // way with the author or a reporter refuses nothing.
+  it.each([
+    ['the Admin blocked a reporter', 'admin-blocks'],
+    ['the author blocked the Admin', 'author-blocks'],
+  ] as const)('lets an Admin resolve a group when %s', async (_name, kind) => {
+    const moderation = harness.app.get(ModerationService);
+    const admin = await createTestStaff(harness.app, 'ADMIN');
+    const { postId, author, reporters } = await reportedPost();
+    if (kind === 'admin-blocks') await harness.app.get(SocialService).block(actor(admin.id), reporters[0].id);
+    else await harness.app.get(SocialService).block(actor(author.id), admin.id);
+    expect(await moderation.resolvePostGroup(actor(admin.id), postId, 'DISMISS')).toEqual({ state: 'DISMISSED', count: 2 });
+  });
+
   it('answers the routes by role, re-reading it on every action', async () => {
+    const moderation = harness.app.get(ModerationService);
     const moderator = await createTestStaff(harness.app, 'PEER_MODERATOR');
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const student = await createTestAccount(harness.app);
@@ -318,10 +333,14 @@ describe('resolving a report group', () => {
     await harness.post(postGroup).set('Cookie', moderator.cookie).send({ action: 'ACTION' }).expect(400);
     await harness.post(studentGroup).set('Cookie', admin.cookie).send({ action: 'REMOVE_POST' }).expect(400);
 
-    // §16.3 row 10: a stale queue read, then a demotion, grants nothing.
+    // §16.3 row 10: a stale queue read, then a demotion, grants nothing. The
+    // request stops at the route guard, and a demotion can also commit after
+    // the guard's read, so the direct call checks the role the action
+    // re-reads in its own transaction (§12.5).
     await harness.get('/api/moderation/queue').set('Cookie', moderator.cookie).expect(200);
     await harness.app.get(AdminUsersService).changeRole(actor(admin.id), moderator.id, 'STUDENT');
     await harness.post(postGroup).set('Cookie', moderator.cookie).send({ action: 'REMOVE_POST' }).expect(403);
+    expect(await outcome(moderation.resolvePostGroup(actor(moderator.id), postId, 'REMOVE_POST'))).toBe('forbidden');
     expect(await removedAt(postId)).toBeNull();
 
     const removed = await harness.post(postGroup).set('Cookie', admin.cookie).send({ action: 'REMOVE_POST' }).expect(200);
