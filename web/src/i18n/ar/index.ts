@@ -18,8 +18,9 @@ import progress from './progress';
 import leaderboard from './leaderboard';
 import reports from './reports';
 import analytics from './analytics';
+import moderation from './moderation';
 
-const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard, reports, admin, analytics };
+const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard, reports, admin, analytics, moderation };
 
 // Every key, plural form and placeholder English has, nothing English does
 // not, no empty text and no vowel mark in its own Arabic.

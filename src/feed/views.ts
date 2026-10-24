@@ -13,7 +13,17 @@ export type PostView = {
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
-} & ({ origin: 'TAKEAWAY' } | { origin: 'PROMPT_ANSWER'; prompt: { id: string; question: string } });
+} & PostOrigin;
+
+// Where a Post came from, as every Post view names it.
+export type PostOrigin = { origin: 'TAKEAWAY' } | { origin: 'PROMPT_ANSWER'; prompt: { id: string; question: string } };
+
+// A Post has exactly one origin (§4.4 step 1): no Prompt means a Takeaway.
+export function postOrigin(prompt: { id: string; question: string } | null): PostOrigin {
+  return prompt === null
+    ? { origin: 'TAKEAWAY' }
+    : { origin: 'PROMPT_ANSWER', prompt: { id: prompt.id, question: prompt.question } };
+}
 
 // §6.0.1's stream page: 50 items, newest first, and the cursor of the last.
 export type PostPage = { items: PostView[]; nextCursor: string | null };
@@ -38,13 +48,9 @@ export function postViewSelect(viewerId: string) {
 type PostViewRow = Prisma.PostGetPayload<{ select: ReturnType<typeof postViewSelect> }>;
 
 export function toPostView(row: PostViewRow): PostView {
-  // A Post has exactly one origin (§4.4 step 1): no Prompt means a Takeaway.
-  const origin = row.prompt === null
-    ? { origin: 'TAKEAWAY' as const }
-    : { origin: 'PROMPT_ANSWER' as const, prompt: { id: row.prompt.id, question: row.prompt.question } };
   return {
     id: row.id,
-    ...origin,
+    ...postOrigin(row.prompt),
     author: toStudentRef(row.author),
     body: row.body,
     createdAt: row.createdAt.toISOString(),

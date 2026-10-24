@@ -4,7 +4,7 @@ import { ApiError } from './errors';
 
 // §5.3: the coarse role check, global, after SessionGuard. `/api/admin/*`
 // needs ADMIN, `/api/moderation/*` needs PEER_MODERATOR or ADMIN; otherwise
-// 403 forbidden. No such route exists yet; it is still built and wired.
+// 403 forbidden.
 //
 // The check reads the matched route pattern, not the URL: Express routing is
 // case-insensitive by default, so `/api/ADMIN/users` would reach an admin

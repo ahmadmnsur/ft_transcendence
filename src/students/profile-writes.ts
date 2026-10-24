@@ -4,6 +4,7 @@ import type { PrismaTx } from '../core/uow';
 import type { Prisma, SkillKind } from '../generated/prisma/client';
 import { nameFields } from '../shared/fold-name';
 import { LIMITS } from '../shared/limits';
+import type { Role } from '../shared/roles';
 import { goalSkillNotListed } from './refusals';
 import type { LearningGoalView } from './views';
 
@@ -29,11 +30,11 @@ export async function readActiveActor(
   return { email: actor.email, learningGoalStudentSkillId: actor.learningGoalStudentSkillId };
 }
 
-// §3.4, §5.3: an Admin's write re-reads the role as well as the flags. The
-// sanction flags refuse as `readActiveActor` does; a Student no longer an
-// Admin is refused `forbidden`, as the role guard would refuse them now
-// (§6.15). The guard's read is only the fast pre-check.
-export async function readActiveAdmin(tx: PrismaTx, actorId: string): Promise<void> {
+// §3.4, §5.3: a role-gated write re-reads the role as well as the flags. The
+// sanction flags refuse as `readActiveActor` does; a Student who no longer
+// holds one of `roles` is refused `forbidden`, as the role guard would refuse
+// them now (§6.15). The guard's read is only the fast pre-check.
+export async function readActiveRole<R extends Role>(tx: PrismaTx, actorId: string, roles: readonly R[]): Promise<R> {
   const actor = await tx.student.findUnique({
     where: { id: actorId },
     select: { role: true, suspendedAt: true, removedAt: true },
@@ -41,7 +42,14 @@ export async function readActiveAdmin(tx: PrismaTx, actorId: string): Promise<vo
   if (actor === null || actor.suspendedAt !== null || actor.removedAt !== null) {
     throw new ApiError('unauthenticated');
   }
-  if (actor.role !== 'ADMIN') throw new ApiError('forbidden');
+  const role = roles.find((allowed) => allowed === actor.role);
+  if (role === undefined) throw new ApiError('forbidden');
+  return role;
+}
+
+// An Admin's write: `readActiveRole` for ADMIN alone.
+export async function readActiveAdmin(tx: PrismaTx, actorId: string): Promise<void> {
+  await readActiveRole(tx, actorId, ['ADMIN']);
 }
 
 // §6.2's `PATCH /api/me`: a new display name writes `display_name` and

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 23 October 2026
+**42 PeerConnect** · Last updated: 24 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -122,6 +122,11 @@ you see your own additional rank, XP and Level on that page.
 
 Who or what you reported, the reason you chose, anything you wrote, and how staff resolved it.
 
+**Reports you resolve**
+
+If you are a Peer Moderator or an Admin: which Reports you closed, whether you removed the Post,
+dismissed them or marked them as actioned, and when.
+
 **Sign-in sessions**
 
 One record for each browser you are signed in on: whose it is, and when it expires.
@@ -179,6 +184,7 @@ your email address is used only to sign in.
 | Direct Messages | only the two Students in the conversation — not Admins, not Peer Moderators. The sender is never shown whether you have read a message |
 | Your Blocks | you only. The other Student is not told, though they may notice they can no longer message you, send you a friend request or be matched with you |
 | A Report you file | Admins, who can see that you filed it. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |
+| A Report you resolve, as a Peer Moderator or an Admin | Admins, who see who closed each Report, how and when. Not the Student it was about, and not the Student who filed it |
 | Learning Analytics | Admins only, and only community-wide figures |
 | Your role, and whether your account is suspended or removed | you, and Admins in their list of every account. Other Students see a removed account only as a former student (see *Leaving PeerConnect*). Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
 
@@ -279,8 +285,9 @@ Some things are permanent:
 
 - **Direct Messages** can't be deleted, even after either Student's account is removed.
 - **Posts, Reviews, Private Feedback, answers to Reflection Prompts and Reports** can't be edited or
-  deleted once submitted. A Post removed by moderation leaves the feed, but its text is kept, and so
-  are its Likes: once a Post is removed, a Like on it can't be taken back.
+  deleted once submitted. A Post removed by moderation leaves the feed, but its text is kept, and
+  Admins can still read it in their record of resolved Reports. Its Likes are kept too: once a Post
+  is removed, a Like on it can't be taken back.
 - **Badges** are never taken away.
 - **The email address of a removed account** can never be used again.
 

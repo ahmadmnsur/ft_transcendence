@@ -13,6 +13,10 @@ export default {
     roundsLink: 'Rounds',
     // Shown to Admins only: the Users table (§3.5.1).
     usersLink: 'Users',
+    // Shown to Peer Moderators only: their queue (§3.5.1).
+    moderationLink: 'Moderation',
+    // Shown to Admins only: the open queue and the resolved audit (§3.5.1).
+    reportsLink: 'Reports',
     profileLink: 'My profile',
     signOut: 'Sign out',
     signingOut: 'Signing out…',

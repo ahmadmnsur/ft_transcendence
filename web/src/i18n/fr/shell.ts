@@ -12,6 +12,8 @@ export default {
     matchLink: 'Match',
     roundsLink: 'Tours',
     usersLink: 'Utilisateurs',
+    moderationLink: 'Modération',
+    reportsLink: 'Signalements',
     profileLink: 'Mon profil',
     signOut: 'Se déconnecter',
     signingOut: 'Déconnexion…',
