@@ -668,9 +668,9 @@ included (ADR-0020 d6, §3.5.5).
 > **An account menu**, a button named by the Student, holding My profile, Private Feedback,
 > Leaderboard, Rules and Sign out. **The language switcher**, still at the end of the line. Below
 > `md` one Menu button shows the bar's links and the account menu's under the header's line. Each
-> panel closes on Escape, on a press outside it, and when a page opens. A new Admin page adds a
-> link on `/admin`, not in the header. The session read only decides which links show; the route
-> guards and the API check the role again.
+> panel closes on Escape, on a press outside it, when a page opens and when the window crosses
+> `md`. A new Admin page adds a link on `/admin`, not in the header. The session read only decides
+> which links show; the route guards and the API check the role again.
 
 #### 3.5.2 Data, validation and state
 

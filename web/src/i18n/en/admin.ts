@@ -29,7 +29,7 @@ export default {
     description: 'Everything an Admin runs, in one place.',
     rounds: 'Open and close Rounds, follow their Matches and make a Match by hand.',
     prompts: 'Publish the next Reflection Prompt and look back at the earlier ones.',
-    users: 'Find any account to change its role, or to suspend, reinstate or remove it.',
+    users: 'Find any account by name, email, role or status, change its role or edit its profile.',
     analytics: 'What Students want to learn and can teach, and how their Matches are going.',
     reports: 'Decide on the open Reports about Posts and Students, and look back at the resolved ones.',
   },

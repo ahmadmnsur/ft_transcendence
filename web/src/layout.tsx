@@ -60,6 +60,20 @@ function SiteHeader(): React.JSX.Element {
   // `md` the bar shows them and the account menu sits beside the switcher.
   const phoneMenu = useDisclosure<HTMLElement>();
   const accountMenu = useDisclosure<HTMLDivElement>();
+  const closePhoneMenu = phoneMenu.close;
+  const closeAccountMenu = accountMenu.close;
+
+  // Each menu shows on one side of `md` only, so crossing it closes both: a
+  // panel hidden open would show again when the window crosses back.
+  useEffect(() => {
+    const md = window.matchMedia('(width >= 48rem)');
+    function onChange(): void {
+      closePhoneMenu();
+      closeAccountMenu();
+    }
+    md.addEventListener('change', onChange);
+    return () => md.removeEventListener('change', onChange);
+  }, [closePhoneMenu, closeAccountMenu]);
 
   function signOutLocally(): void {
     queryClient.clear();
@@ -166,24 +180,33 @@ function SiteHeader(): React.JSX.Element {
     );
   }
 
-  const signOutButton = (
-    <button
-      type="button"
-      disabled={signingOut}
-      onClick={() => void onSignOut()}
-      className={`${panelItemClass} disabled:cursor-wait disabled:opacity-60`}
-    >
-      {signingOut ? copy.signingOut : copy.signOut}
-    </button>
+  // A failed sign-out leaves its panel open, so the error shows under the
+  // button, where the panel cannot cover it.
+  const signOut = (
+    <>
+      <button
+        type="button"
+        disabled={signingOut}
+        onClick={() => void onSignOut()}
+        className={`${panelItemClass} disabled:cursor-wait disabled:opacity-60`}
+      >
+        {signingOut ? copy.signingOut : copy.signOut}
+      </button>
+      {signOutFailed ? (
+        <p role="alert" className="px-3 py-1 text-xs text-ink-danger">
+          {copy.signOutFailed}
+        </p>
+      ) : null}
+    </>
   );
 
   return (
-    <header {...phoneMenu.rootProps} className="border-b border-line bg-surface">
+    <header className="relative border-b border-line bg-surface">
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 pt-3 max-md:pb-3 sm:gap-3">
         <Link to="/" className="min-w-0 rounded-lg text-lg font-semibold text-ink focus-ring">
           <bdi>{BRAND}</bdi>
         </Link>
-        <div {...accountMenu.rootProps} className="relative ms-auto hidden md:block">
+        <div className="relative ms-auto hidden md:block">
           <button type="button" {...accountMenu.buttonProps} className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
             <span className="sr-only">{copy.accountMenu}</span>
             <span className="max-w-40 truncate">
@@ -205,12 +228,46 @@ function SiteHeader(): React.JSX.Element {
               ))}
             </ul>
             <div className="my-1 border-t border-line" />
-            {signOutButton}
+            {signOut}
           </div>
         </div>
         <IconButton {...phoneMenu.buttonProps} label={copy.menu} className="ms-auto md:hidden">
           <MenuIcon size={20} />
         </IconButton>
+        {/* The panel follows its button in the DOM, so Tab reaches its links
+        before the switcher, and lies over the page under the header's line. */}
+        <nav
+          aria-label={copy.navLabel}
+          {...phoneMenu.panelProps}
+          className="absolute inset-x-0 top-full z-30 border-y border-line bg-surface shadow-lg md:hidden"
+        >
+          <div className="mx-auto w-full max-w-6xl px-4 py-2">
+            <ul>
+              {barLinks.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-2 border-t border-line pt-2">
+              <p className="truncate px-3 py-1 text-xs font-medium text-ink-muted">
+                <PersonName name={student.displayName} removed={false} />
+              </p>
+              <ul>
+                {accountLinks.map((link) => (
+                  <li key={link.to}>
+                    <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {signOut}
+            </div>
+          </div>
+        </nav>
         {/* The switcher ends the header's line at every width (§3.5.5). */}
         {languageSwitcher}
       </div>
@@ -225,39 +282,6 @@ function SiteHeader(): React.JSX.Element {
           ))}
         </ul>
       </nav>
-      <nav aria-label={copy.navLabel} {...phoneMenu.panelProps} className="border-t border-line md:hidden">
-        <div className="mx-auto w-full max-w-6xl px-4 py-2">
-          <ul>
-            {barLinks.map((link) => (
-              <li key={link.to}>
-                <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-2 border-t border-line pt-2">
-            <p className="truncate px-3 py-1 text-xs font-medium text-ink-muted">
-              <PersonName name={student.displayName} removed={false} />
-            </p>
-            <ul>
-              {accountLinks.map((link) => (
-                <li key={link.to}>
-                  <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            {signOutButton}
-          </div>
-        </div>
-      </nav>
-      {signOutFailed ? (
-        <p role="alert" className="mx-auto w-full max-w-6xl px-4 pb-2 text-end text-xs text-ink-danger">
-          {copy.signOutFailed}
-        </p>
-      ) : null}
     </header>
   );
 }
