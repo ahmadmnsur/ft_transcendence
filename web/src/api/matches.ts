@@ -151,10 +151,11 @@ export async function fetchAdminMatch(id: string): Promise<AdminMatchDetailView>
   return apiFetch<AdminMatchDetailView>(`/admin/matches/${encodeURIComponent(id)}`);
 }
 
-// §7.4: `round:opened`, `round:closed` and `match:ready` read the Round and
-// Match views again (`matching/RoundUpdates.tsx`). A partner's accept or
-// decline still sends no event, so these are also read again whenever a
-// screen opens or regains focus: the default stale time of zero.
+// §7.4: `round:opened` and `round:closed` read the Round and Match views
+// again, and `match:ready` the Match views (`matching/RoundUpdates.tsx`). A
+// partner's accept or decline still sends no event, so these are also read
+// again whenever a screen opens or regains focus: the default stale time of
+// zero.
 export function currentRoundQueryOptions() {
   return queryOptions({ queryKey: CURRENT_ROUND_QUERY_KEY, queryFn: fetchCurrentRound });
 }
