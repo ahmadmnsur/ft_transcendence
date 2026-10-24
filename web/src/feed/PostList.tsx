@@ -34,7 +34,11 @@ export function PostList({
   const { t, errorText } = useI18n();
   const copy = t.feed;
   const pages = Math.max(1, Math.ceil((query.data?.total ?? 0) / POSTS_PAGE_SIZE));
-  const settled = query.data !== undefined && !query.isPlaceholderData;
+  // Only a finished, successful read of this very page may correct it: a
+  // cached copy being read again still holds its old `total`, which may have
+  // grown since (a live Post adds to page 1's), and the previous page shown
+  // while this one loads is not this page at all.
+  const settled = query.isSuccess && !query.isPlaceholderData && query.fetchStatus === 'idle';
   useEffect(() => {
     if (settled && page > pages) onPageChange(pages, true);
   }, [settled, page, pages, onPageChange]);

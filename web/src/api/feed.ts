@@ -125,7 +125,7 @@ async function cacheLikeState(client: QueryClient, postId: string, state: LikeSt
 // Reads one list again from now. A read still in flight may have answered
 // before a change, so it is cancelled first: a refetch of a list that has no
 // data yet would otherwise be handed that same read.
-async function readAgain(client: QueryClient, queryKey: readonly string[]): Promise<void> {
+async function readAgain(client: QueryClient, queryKey: readonly unknown[]): Promise<void> {
   await client.cancelQueries({ queryKey });
   await client.invalidateQueries({ queryKey });
 }
@@ -181,9 +181,10 @@ function placePost(client: QueryClient, post: PostView, readsAtArrival: number):
     return createdAt > itemCreatedAt || (createdAt === itemCreatedAt && post.id > item.id);
   });
   // Older than every Post on page 1 while more pages follow: its place is on
-  // a later page, so the feed is read again.
+  // a later page, so page 1 alone is read again, and that read counts the
+  // Post in its `total`. Another page takes nothing (§7.4's note).
   if (index === -1 && data.total > data.items.length) {
-    void readAgain(client, FEED_QUERY_KEY);
+    void readAgain(client, FIRST_FEED_PAGE_KEY);
     return;
   }
   const items =
