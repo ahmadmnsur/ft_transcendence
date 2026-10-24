@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
-import type { Cursor } from '../core/cursor';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
 import { awardPromptXp } from '../gamification/awards';
@@ -48,7 +47,7 @@ export class PromptsService {
     });
   }
 
-  answers(actor: Actor, promptId: string, cursor: Cursor | null): Promise<AnswerPage> {
+  answers(actor: Actor, promptId: string, page: number, pageSize: number): Promise<AnswerPage> {
     return this.uow.readOnly(async (tx) => {
       const prompt = await tx.reflectionPrompt.findUnique({ where: { id: promptId } });
       if (prompt === null) throw new ApiError('not_found');
@@ -56,7 +55,7 @@ export class PromptsService {
       const existing = await tx.post.findUnique({ where: { promptId_authorId: { promptId: prompt.id, authorId: actor.studentId } }, select: { id: true } });
       return {
         prompt: toPromptView(prompt), live: prompt.publicationOrder === maximum._max.publicationOrder, answeredByMe: existing !== null,
-        ...await readPostPage(tx, actor.studentId, { promptId: prompt.id }, cursor),
+        ...await readPostPage(tx, actor.studentId, { promptId: prompt.id }, page, pageSize),
       };
     });
   }

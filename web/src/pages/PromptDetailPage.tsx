@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Link, useParams } from '@tanstack/react-router';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidText, LIMITS } from '@shared/limits';
 import { isUuid } from '@shared/uuid';
 import { ApiProtocolError } from '../api/client';
 import { FEED_QUERY_KEY } from '../api/feed';
-import { answerPrompt, PROMPT_ANSWERS_QUERY_KEY, readPromptAnswers } from '../api/prompts';
+import { answerPrompt, promptAnswersQueryOptions } from '../api/prompts';
 import { sessionQueryOptions } from '../api/session';
 import { Banner, Button, Card, TextArea } from '../design';
-import { PostCard } from '../feed/PostCard';
+import { PostList } from '../feed/PostList';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
@@ -25,14 +25,12 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const client = useQueryClient();
   const session = useQuery(sessionQueryOptions()).data;
   const wellFormedId = isUuid(promptId);
-  const answers = useInfiniteQuery({
-    queryKey: [...PROMPT_ANSWERS_QUERY_KEY, promptId],
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => readPromptAnswers(promptId, pageParam),
-    getNextPageParam: (last) => last.nextCursor ?? undefined,
-    enabled: wellFormedId,
-  });
-  const detail = answers.data?.pages[0];
+  const { page: requestedPage } = useSearch({ from: '/prompts/$promptId' });
+  const navigate = useNavigate({ from: '/prompts/$promptId' });
+  const page = requestedPage ?? 1;
+  // One page of 20 answers (§6.0.1), with the Prompt itself on every page.
+  const answers = useQuery({ ...promptAnswersQueryOptions(promptId, page), enabled: wellFormedId });
+  const detail = answers.data;
   const [body, setBody] = useState('');
   const [invalid, setInvalid] = useState(false);
   const answer = useMutation({
@@ -70,12 +68,14 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
         </form>
       </Card> : null}
       <Card title={copy.answers} headingLevel={2}>
-        {detail.items.length === 0 ? <p>{copy.noAnswers}</p> : <ul className="flex flex-col divide-y divide-line">
-          {answers.data?.pages.flatMap((page) => page.items).map((post) => <li key={post.id} className="min-w-0 py-4">
-            <PostCard post={post} showPrompt={false} />
-          </li>)}
-        </ul>}
-        {answers.hasNextPage ? <Button variant="secondary" loading={answers.isFetchingNextPage} onClick={() => void answers.fetchNextPage()}>{copy.more}</Button> : null}
+        <PostList
+          query={answers}
+          page={page}
+          onPageChange={(next, replace) => void navigate({ search: { page: next > 1 ? next : undefined }, replace })}
+          label={copy.answerPages}
+          empty={<p>{copy.noAnswers}</p>}
+          showPrompt={false}
+        />
       </Card>
     </>}
   </div>;

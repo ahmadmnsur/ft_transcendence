@@ -1,5 +1,5 @@
-import { Link, useParams } from '@tanstack/react-router';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { blocksQueryOptions } from '../api/blocks';
 import { studentPostsQueryOptions } from '../api/feed';
 import { friendRequestsQueryOptions, friendsQueryOptions } from '../api/friends';
@@ -50,15 +50,25 @@ function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.E
   );
 }
 
-// §6.2: the Student's non-removed Posts, newest first, with their Likes.
+// §6.2: the Student's non-removed Posts, newest first, with their Likes, 20
+// a page (§6.0.1).
 function StudentPosts({ studentId }: { studentId: string }): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.feed.profile;
-  const posts = useInfiniteQuery(studentPostsQueryOptions(studentId));
+  const { page: requestedPage } = useSearch({ from: '/students/$studentId' });
+  const navigate = useNavigate({ from: '/students/$studentId' });
+  const page = requestedPage ?? 1;
+  const posts = useQuery(studentPostsQueryOptions(studentId, page));
   return (
     <section className="min-w-0">
       <h2 className="mb-3 text-base font-semibold text-ink">{copy.heading}</h2>
-      <PostList query={posts} empty={<p className="text-sm text-ink-muted">{copy.empty}</p>} />
+      <PostList
+        query={posts}
+        page={page}
+        onPageChange={(next, replace) => void navigate({ search: { page: next > 1 ? next : undefined }, replace })}
+        label={copy.pages}
+        empty={<p className="text-sm text-ink-muted">{copy.empty}</p>}
+      />
     </section>
   );
 }

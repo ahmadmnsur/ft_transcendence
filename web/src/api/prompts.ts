@@ -1,4 +1,5 @@
-import { queryOptions } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions } from '@tanstack/react-query';
+import { PAGING } from '@shared/limits';
 import { apiFetch } from './client';
 import type { StudentRef } from './profile';
 import type { EarnResult } from './progress';
@@ -10,9 +11,9 @@ export type AnswerView = {
   id: string; origin: 'PROMPT_ANSWER'; prompt: { id: string; question: string };
   author: StudentRef; body: string; createdAt: string; likeCount: number; likedByMe: boolean;
 };
-export type AnswerPage = { prompt: PromptView; live: boolean; answeredByMe: boolean; items: AnswerView[]; nextCursor: string | null };
+export type AnswerPage = { prompt: PromptView; live: boolean; answeredByMe: boolean; items: AnswerView[]; total: number };
 
-// A Prompt's answer lists, one per Prompt id. A Like writes into them too.
+// A Prompt's answer pages, per Prompt id and page. A Like writes into them too.
 export const PROMPT_ANSWERS_QUERY_KEY = ['prompts', 'answers'] as const;
 
 export const livePromptQueryOptions = () => queryOptions({
@@ -21,6 +22,10 @@ export const livePromptQueryOptions = () => queryOptions({
 export const promptHistoryQueryOptions = (page: number, admin: boolean) => queryOptions({
   queryKey: ['prompts', 'history', { page, admin }], queryFn: () => apiFetch<PromptPage>(`${admin ? '/admin' : ''}/prompts?page=${page}`),
 });
-export const readPromptAnswers = (id: string, cursor?: string) => apiFetch<AnswerPage>(`/prompts/${id}/answers${cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`}`);
+export const promptAnswersQueryOptions = (id: string, page: number) => queryOptions({
+  queryKey: [...PROMPT_ANSWERS_QUERY_KEY, id, page],
+  queryFn: () => apiFetch<AnswerPage>(`/prompts/${id}/answers?page=${page}&pageSize=${PAGING.defaultPageSize}`),
+  placeholderData: keepPreviousData,
+});
 export const publishPrompt = (question: string) => apiFetch<PromptView>('/admin/prompts', { method: 'POST', body: { question } });
 export const answerPrompt = (id: string, body: string) => apiFetch<EarnResult>(`/prompts/${id}/answers`, { method: 'POST', body: { body } });

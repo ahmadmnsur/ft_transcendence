@@ -25,8 +25,8 @@ export function postOrigin(prompt: { id: string; question: string } | null): Pos
     : { origin: 'PROMPT_ANSWER', prompt: { id: prompt.id, question: prompt.question } };
 }
 
-// §6.0.1's stream page: 50 items, newest first, and the cursor of the last.
-export type PostPage = { items: PostView[]; nextCursor: string | null };
+// §6.0.1's numbered page of Posts, newest first, and how many there are.
+export type PostPage = { items: PostView[]; total: number };
 
 // What both Like writes answer (§6.9).
 export type LikeState = { likeCount: number; likedByMe: boolean };

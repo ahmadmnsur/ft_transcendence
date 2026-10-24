@@ -1,10 +1,9 @@
 import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { requestActor } from '../core/session.guard';
-import { decodeCursor } from '../core/cursor';
 import { UuidParam } from '../core/uuid-param';
 import { PageQueryDto } from '../core/paging';
-import { AnswerPromptDto, AnswersQueryDto, PublishPromptDto } from './dto';
+import { AnswerPromptDto, PublishPromptDto } from './dto';
 import { PromptsService } from './prompts.service';
 
 @Controller()
@@ -17,8 +16,8 @@ export class PromptsController {
   }
 
   @Get('prompts/:id/answers')
-  answers(@UuidParam('id') id: string, @Query() query: AnswersQueryDto, @Req() request: Request) {
-    return this.prompts.answers(requestActor(request), id, decodeCursor(query.cursor));
+  answers(@UuidParam('id') id: string, @Query() query: PageQueryDto, @Req() request: Request) {
+    return this.prompts.answers(requestActor(request), id, query.page, query.pageSize);
   }
 
   @Post('admin/prompts')

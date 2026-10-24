@@ -7,7 +7,8 @@ export default {
   loading: 'Loading Posts…',
   emptyTitle: 'No Posts yet.',
   emptyDescription: 'Public Takeaways and answers to Reflection Prompts appear here.',
-  more: 'Load more Posts',
+  // Names the feed's page navigation for screen readers.
+  pages: 'Feed pages',
   retry: 'Try again',
   post: {
     takeaway: 'Public Takeaway',
@@ -25,5 +26,6 @@ export default {
   profile: {
     heading: 'Posts',
     empty: 'No Posts yet.',
+    pages: 'Post pages',
   },
 } as const satisfies EnGroup;

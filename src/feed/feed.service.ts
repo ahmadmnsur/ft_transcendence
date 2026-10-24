@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
-import type { Cursor } from '../core/cursor';
 import { ApiError } from '../core/errors';
 import { UnitOfWork } from '../core/uow';
 import { readActiveActor } from '../students/profile-writes';
@@ -26,20 +25,20 @@ export class FeedService {
   constructor(private readonly uow: UnitOfWork) {}
 
   // `GET /api/feed` (§6.9).
-  feed(actor: Actor, cursor: Cursor | null): Promise<PostPage> {
-    return this.uow.readOnly((tx) => readPostPage(tx, actor.studentId, {}, cursor));
+  feed(actor: Actor, page: number, pageSize: number): Promise<PostPage> {
+    return this.uow.readOnly((tx) => readPostPage(tx, actor.studentId, {}, page, pageSize));
   }
 
   // `GET /api/students/:id/posts` (§6.2): the Posts on a profile. A Removed
   // Student has no profile (§4.6), as `GET /api/students/:id` answers with
   // `profile: null`, so the page is empty; the feed keeps their Posts under
   // the tombstone. An unknown Student is 404.
-  postsBy(actor: Actor, studentId: string, cursor: Cursor | null): Promise<PostPage> {
+  postsBy(actor: Actor, studentId: string, page: number, pageSize: number): Promise<PostPage> {
     return this.uow.readOnly(async (tx) => {
       const student = await tx.student.findUnique({ where: { id: studentId }, select: { removedAt: true } });
       if (student === null) throw new ApiError('not_found');
-      if (student.removedAt !== null) return { items: [], nextCursor: null };
-      return readPostPage(tx, actor.studentId, { authorId: studentId }, cursor);
+      if (student.removedAt !== null) return { items: [], total: 0 };
+      return readPostPage(tx, actor.studentId, { authorId: studentId }, page, pageSize);
     });
   }
 

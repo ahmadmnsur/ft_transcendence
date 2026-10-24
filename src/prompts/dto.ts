@@ -1,4 +1,4 @@
-import { IsString, ValidateIf } from 'class-validator';
+import { IsString } from 'class-validator';
 import { sharedValidator, Trimmed } from '../auth/dto';
 import { isValidText, LIMITS } from '../shared/limits';
 
@@ -17,10 +17,4 @@ export class AnswerPromptDto {
   @Trimmed()
   @Answer()
   body!: string;
-}
-
-export class AnswersQueryDto {
-  @ValidateIf((_dto, value) => value !== undefined)
-  @IsString()
-  cursor?: string;
 }

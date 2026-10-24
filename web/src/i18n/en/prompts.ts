@@ -6,10 +6,11 @@ export default {
   answers: 'Answers',
   answerCount: { one: '{count} answer', other: '{count} answers' },
   noAnswers: 'No answers yet.',
+  answerPages: 'Answer pages',
   question: 'Reflection question', publish: 'Publish', publishing: 'Publishing…', published: 'Your Reflection Prompt is published.',
   publishHint: 'Publishing closes the previous Prompt. Questions and answers cannot be edited or deleted.',
   confirmTitle: 'Publish this Reflection Prompt?', cancel: 'Cancel',
   answerLabel: 'Your answer', answerHint: 'Your answer is visible immediately to every signed-in Student. You can answer once, and cannot edit or delete it.',
   submit: 'Publish answer', submitting: 'Publishing answer…', answered: 'You have answered this Reflection Prompt.',
-  saved: 'Your answer is published.', more: 'Load more answers', retry: 'Try again', back: 'All Reflection Prompts',
+  saved: 'Your answer is published.', retry: 'Try again', back: 'All Reflection Prompts',
 } as const satisfies EnGroup;
