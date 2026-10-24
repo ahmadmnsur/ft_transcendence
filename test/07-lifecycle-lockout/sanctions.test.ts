@@ -419,6 +419,27 @@ describe('a Removed row', () => {
     const login = await harness.post('/api/auth/login').send({ email: target.email, password: target.password });
     expect(login.body).toMatchObject({ ok: false, error: { code: 'account_removed' } });
   });
+
+  // §5.1 step 6: a password change writes the row at both sign-outs, so a
+  // Removal can land between them. The second sign-out then writes nothing to
+  // the row, and still deletes every session.
+  it('a password change held between its two sign-outs writes nothing on a row Removed meanwhile', async () => {
+    const admin = await createTestStaff(harness.app, 'ADMIN');
+    const target = await createTestAccount(harness.app);
+    harness.barriers.arm('password-change:admin-update');
+    const change = outcome(harness.app.get(AuthService).changePassword(actor(target.id), target.password, 'a-new-password-1'));
+    await harness.barriers.waitFor('password-change:admin-update', 1);
+    harness.barriers.disarm('password-change:admin-update');
+    await harness.app.get(AdminUsersService).remove(actor(admin.id), target.id);
+    const prisma = harness.app.get(PrismaService);
+    const before = await prisma.student.findUniqueOrThrow({ where: { id: target.id } });
+
+    harness.barriers.release('password-change:admin-update');
+
+    expect(await change).toBe('ok');
+    expect(await prisma.student.findUniqueOrThrow({ where: { id: target.id } })).toEqual(before);
+    expect(await prisma.session.count({ where: { studentId: target.id } })).toBe(0);
+  });
 });
 
 // §4.6's Removed-row surface rule (§3.8.2), over the surfaces built so far,

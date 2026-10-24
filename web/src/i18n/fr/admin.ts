@@ -97,9 +97,12 @@ export default {
         suspendTitle: 'Suspendre {name} ?',
         suspendBody:
           "Cet Étudiant est déconnecté partout et ne peut plus se connecter tant qu'un Admin ne l'a pas réintégré. Son Match en cours prend fin, et il sort de l'appariement et du Classement. Ses Publications, son avatar, ses Justificatifs, son XP et sa Série restent, et les Signalements le visant restent ouverts.",
+        suspendAdminBody:
+          "Cet Admin est déconnecté partout et ne peut plus se connecter tant qu'un autre Admin ne l'a pas réintégré. Son Match en cours prend fin. Ses Publications, son avatar, ses Justificatifs, son XP et sa Série restent, et les Signalements le visant restent ouverts.",
         reinstateTitle: 'Réintégrer {name} ?',
         reinstateBody:
-          "Cet Étudiant peut se reconnecter et sera associé dès le prochain Tour. Rien de ce que la Suspension a arrêté ne revient : un Match arrêté le reste.",
+          "Cet Étudiant peut se reconnecter et retrouve son rang au Classement. S'il indique une Compétence, le prochain Tour peut l'associer, et dans un Tour ouvert où il n'a aucun Match en vigueur, un Admin peut l'associer à la main dès maintenant. Rien de ce que la Suspension a arrêté ne revient : un Match arrêté le reste.",
+        reinstateAdminBody: "Cet Admin peut se reconnecter. Rien de ce que la Suspension a arrêté ne revient : un Match arrêté le reste.",
         removeTitle: 'Exclure {name} ?',
         removeBody:
           "C'est définitif : personne ne peut l'annuler. Cet Étudiant est déconnecté partout et ne pourra plus jamais se connecter, et son e-mail ne pourra plus jamais être utilisé. Son Match en cours prend fin, son avatar est supprimé, et chaque Signalement ouvert le visant est clos comme traité, avec vous enregistré comme la personne qui l'a résolu. Tout ce qu'il a écrit reste, affiché sous le nom « {tombstone} ».",

@@ -36,7 +36,15 @@ type RoleStatus = { kind: 'changed'; role: Role } | { kind: 'failed'; code: unkn
 // saying what the new role keeps and closes, then writes the role alone; the
 // Student's next request reads it (§5.8). An Admin never changes their own
 // role (ADR-0008 d9), so their own row says so instead.
-function RoleCard({ student, self }: { student: AdminStudentDetail; self: boolean }): React.JSX.Element {
+function RoleCard({
+  student,
+  self,
+  onRemoved,
+}: {
+  student: AdminStudentDetail;
+  self: boolean;
+  onRemoved: () => void;
+}): React.JSX.Element {
   const { t, formatText, personNameValue, errorText } = useI18n();
   const copy = t.admin.user.role;
   const queryClient = useQueryClient();
@@ -96,7 +104,9 @@ function RoleCard({ student, self }: { student: AdminStudentDetail; self: boolea
       await changeStudentRole(queryClient, student.id, choice);
       setStatus({ kind: 'changed', role: choice });
     } catch (error) {
-      setStatus({ kind: 'failed', code: failureCode(error) });
+      const code = failureCode(error);
+      setStatus({ kind: 'failed', code });
+      if (code === 'student_removed') onRemoved();
     } finally {
       setPending(false);
       setConfirming(false);
@@ -213,9 +223,18 @@ function SanctionsCard({
   }
 
   const name = personNameValue(student.displayName, false);
+  const admin = student.role === 'ADMIN';
   const dialog = {
-    suspend: { title: copy.confirm.suspendTitle, body: copy.confirm.suspendBody, confirm: copy.suspend },
-    reinstate: { title: copy.confirm.reinstateTitle, body: copy.confirm.reinstateBody, confirm: copy.reinstate },
+    suspend: {
+      title: copy.confirm.suspendTitle,
+      body: admin ? copy.confirm.suspendAdminBody : copy.confirm.suspendBody,
+      confirm: copy.suspend,
+    },
+    reinstate: {
+      title: copy.confirm.reinstateTitle,
+      body: admin ? copy.confirm.reinstateAdminBody : copy.confirm.reinstateBody,
+      confirm: copy.reinstate,
+    },
     remove: {
       title: copy.confirm.removeTitle,
       body: formatText(copy.confirm.removeBody, { tombstone: t.people.tombstone }),
@@ -239,7 +258,9 @@ function SanctionsCard({
       if (action === 'remove') onRemoved();
       else setStatus({ kind: 'done', action });
     } catch (error) {
-      setStatus({ kind: 'failed', code: failureCode(error) });
+      const code = failureCode(error);
+      setStatus({ kind: 'failed', code });
+      if (code === 'student_removed') onRemoved();
     } finally {
       setPending(false);
       setConfirming(false);
@@ -399,8 +420,9 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
   const detail = useQuery(adminStudentQueryOptions(studentId));
   const target = useStudentProfileTarget(studentId);
   const session = useQuery(sessionQueryOptions());
-  // After a Removal from this page, focus moves to the note that says the
-  // account is now view-only, since the card that had focus is gone.
+  // After a Removal from this page, or a write refused because another Admin
+  // removed the account first, focus moves to the note that says the account
+  // is now view-only, since the card that had focus is gone.
   const [justRemoved, setJustRemoved] = useState(false);
   const removedRef = useRef<HTMLDivElement>(null);
   const removed = detail.data?.status === 'REMOVED';
@@ -480,7 +502,7 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
             </Link>
             {/* Keyed by the Student, so a choice or a status never carries
             over to the next account. */}
-            <RoleCard key={data.id} student={data} self={self} />
+            <RoleCard key={data.id} student={data} self={self} onRemoved={() => setJustRemoved(true)} />
             <SanctionsCard key={`${data.id}-sanctions`} student={data} self={self} onRemoved={() => setJustRemoved(true)} />
             <AvatarCard target={target} />
             <ProfileDetailsCard target={target} />

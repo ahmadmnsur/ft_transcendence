@@ -117,9 +117,15 @@ export default {
         suspendTitle: 'Suspend {name}?',
         // §12.7, ADR-0008 d5: what a Suspension ends and what it keeps.
         suspendBody: "They are signed out everywhere and can't sign in until an Admin reinstates them. Their Match in progress ends, and they leave matching and the Leaderboard. Their Posts, avatar, Evidence, XP and Streak stay, and Reports about them stay open.",
+        // §8.1, §10.5: an Admin is never matched or ranked, so an Admin's page
+        // says neither.
+        suspendAdminBody: "They are signed out everywhere and can't sign in until another Admin reinstates them. Their Match in progress ends. Their Posts, avatar, Evidence, XP and Streak stay, and Reports about them stay open.",
         reinstateTitle: 'Reinstate {name}?',
-        // §8.8: reinstatement revives nothing.
-        reinstateBody: 'They can sign in again and are matched from the next Round. Nothing the Suspension ended comes back: an ended Match stays ended.',
+        // §8.1, §8.9: a candidate again at once, so an open Round where no Match
+        // of theirs stands can pair them by hand; §8.8: reinstatement revives
+        // nothing.
+        reinstateBody: 'They can sign in again and are ranked on the Leaderboard again. If they list a Skill, the next Round can match them, and in an open Round where they have no Match standing, an Admin can pair them by hand now. Nothing the Suspension ended comes back: an ended Match stays ended.',
+        reinstateAdminBody: 'They can sign in again. Nothing the Suspension ended comes back: an ended Match stays ended.',
         removeTitle: 'Remove {name}?',
         // §12.7, ADR-0008 d7, ADR-0011 d10: final, and what stays. {tombstone}
         // is the name a Removed Student shows under (`people.tombstone`).
