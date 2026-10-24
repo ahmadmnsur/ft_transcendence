@@ -10,8 +10,11 @@ import { quoteIdentifier } from './sql';
 // and §14.8's checks 1 (Rounds), 2 and 8. v4: the Mentee's Review of both
 // repairs and every step-h Match, with §14.5's sentences and ratings, and
 // §14.8's check 4. v5: the four Prompts, published in §14.4's order, with
-// §14.5 step b's answers, and §14.8's checks 1 (Prompts), 3 and 9.
-export const FIXTURE_VERSION = 5;
+// §14.5 step b's answers, and §14.8's checks 1 (Prompts), 3 and 9. v6: §14.4
+// step 5, the social graph, Likes and Direct Messages of §14.6 and the report
+// fixtures of §14.7, with S and R chosen but not sanctioned, and §14.8's
+// check 6.
+export const FIXTURE_VERSION = 6;
 
 // Only this text is a record. Both databases start with Postgres's own
 // comment, "default administrative connection database", which is none.

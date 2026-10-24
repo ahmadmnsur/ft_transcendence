@@ -74,9 +74,12 @@ async function repair(
   throw new SeedFailure('no hand-made repair accepted any of the four pairs');
 }
 
+export type SeededRound = Awaited<ReturnType<typeof seedRound>>;
+
 // §14.5 steps a, b, c, d, g, h and i. The application's Round detail is in
 // creation order: the matcher's selection order before repairs. No seed
-// write sets a Match status or fabricates coverage.
+// write sets a Match status or fabricates coverage. Returns the Round's id
+// and M, the snapshot its script ran on, beside what the seed logs.
 export async function seedRound(
   matching: MatchingService,
   submitReview: SubmitReview,
@@ -114,5 +117,9 @@ export async function seedRound(
   const { items } = await matching.listRounds(admin);
   const closed = items.find((round) => round.id === opened.round.id);
   if (closed === undefined) throw new SeedFailure(`Round ${number} is missing after close`);
-  return { number, matcherMatches: matches.length, repairs: hasRepair ? 1 : 0, counts: closed.counts, prompts };
+  return {
+    roundId: opened.round.id,
+    matches,
+    distribution: { number, matcherMatches: matches.length, repairs: hasRepair ? 1 : 0, counts: closed.counts, prompts },
+  };
 }

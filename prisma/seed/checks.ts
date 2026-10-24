@@ -1,13 +1,17 @@
+import type { Actor } from '../../src/core/actor';
 import type { EnvRecord } from '../../src/core/env';
 import type { PrismaService } from '../../src/core/prisma.service';
 import { Badge, type Prisma } from '../../src/generated/prisma/client';
+import type { ModerationService } from '../../src/moderation/moderation.service';
 import { foldName } from '../../src/shared/fold-name';
-import { normalizeEmail } from '../../src/shared/limits';
+import { normalizeEmail, PAGING } from '../../src/shared/limits';
 import { RARE_SKILLS } from '../fixtures/cohort';
 import { bootstrapStaff } from './bootstrap';
 import { cohortEmails, GAP_SKILL, RESERVED_POSITIONS, X_POSITION, Y_POSITION } from './cohort';
 import { SeedFailure } from './failure';
 import { PROMPT_QUESTIONS } from './prompts';
+import type { ReportFixtures } from './reports';
+import { isSanctioned, type Sanctioned } from './sanctioned';
 
 // Every email the seed makes at this fixture version: the two bootstrap
 // accounts and the thirty of §14.3.
@@ -39,13 +43,19 @@ const CANDIDATE_POOL: Prisma.StudentWhereInput = {
   removedAt: null,
 };
 
-// §14.8 check 3: the demo Student D is the first Student by position,
-// outside the reserved ones, that meets every condition of the check.
-async function findDemoStudent(
+export type DemoStudent = { id: string; position: number; email: string };
+
+// §14.6, §14.8 check 3: the demo Student D is the first Student by position,
+// outside the reserved ones, that meets every condition of the check. S and
+// R are not Active by §14.4 step 5, so neither is D. The seed chooses D before
+// step 5, which, like Prompt 4, touches nothing the check reads.
+export async function findDemoStudent(
   prisma: PrismaService,
   cohortIds: readonly string[],
-): Promise<{ position: number; email: string }> {
-  const candidateIds = cohortIds.filter((_, position) => !RESERVED_POSITIONS.includes(position));
+  sanctioned: Sanctioned,
+): Promise<DemoStudent> {
+  const candidateIds = cohortIds.filter((id, position) =>
+    !RESERVED_POSITIONS.includes(position) && !isSanctioned(sanctioned, id));
   const rows = await prisma.student.findMany({
     where: {
       id: { in: candidateIds },
@@ -62,7 +72,7 @@ async function findDemoStudent(
   const emails = new Map(rows.map((row) => [row.id, row.email]));
   for (const [position, id] of cohortIds.entries()) {
     const email = emails.get(id);
-    if (email !== undefined) return { position, email };
+    if (email !== undefined) return { id, position, email };
   }
   throw new SeedFailure(
     'check 3: no Active STUDENT outside the reserved positions has Streak >= 3, a BadgeAward, ' +
@@ -70,10 +80,64 @@ async function findDemoStudent(
   );
 }
 
-// §14.8, the end-state assertions this fixture version implements.
+// What check 6 reads through, and expects to find.
+export type ModerationReads = {
+  moderation: ModerationService;
+  admin: Actor;
+  peerModerator: Actor;
+  fixtures: ReportFixtures;
+};
+
+// A Peer Moderator's row shows its reason, text and time, never who filed it
+// (§12.4).
+const MODERATOR_ROW_KEYS = ['createdAt', 'reason', 'text'];
+
+function isModeratorRow(report: object): boolean {
+  return Object.keys(report).sort().join() === MODERATOR_ROW_KEYS.join();
+}
+
+// Check 6, through the moderation service's own reads (ADR-0017 d7's note of
+// 2026-09-23): the Peer Moderator's queue shows the two-report Post group
+// without who filed it; the Admin's open queue shows the Student report; the
+// Admin's resolved audit shows the Peer Moderator's dismissal of the one
+// OTHER report.
+async function assertModerationViews(reads: ModerationReads): Promise<void> {
+  const { moderation, admin, peerModerator, fixtures } = reads;
+  const moderatorQueue = await moderation.queue(peerModerator, 'PEER_MODERATOR');
+  const grouped = moderatorQueue.items.find(
+    (group) => group.target.kind === 'POST' && group.target.post.id === fixtures.groupedPostId,
+  );
+  if (grouped === undefined || grouped.count !== 2 || grouped.reports.length !== 2 ||
+      !grouped.reports.every(isModeratorRow)) {
+    throw new SeedFailure("check 6: the Peer Moderator's queue does not show the two-report Post group without its reporters");
+  }
+  const adminQueue = await moderation.queue(admin, 'ADMIN');
+  const reported = adminQueue.items.find(
+    (group) => group.target.kind === 'STUDENT' && group.target.student.id === fixtures.reportedStudentId,
+  );
+  if (reported === undefined || reported.count !== 1) {
+    throw new SeedFailure("check 6: the Admin's open queue does not show the Student report");
+  }
+  const audit = await moderation.resolvedAudit(admin, 1, PAGING.maxPageSize);
+  const dismissed = audit.items.find(
+    (batch) => batch.target.kind === 'POST' && batch.target.post.id === fixtures.dismissedPostId,
+  );
+  if (dismissed === undefined || dismissed.state !== 'DISMISSED' ||
+      dismissed.resolvedBy.id !== peerModerator.studentId || dismissed.reports.length !== 1 ||
+      dismissed.reports[0].reason !== 'OTHER' || dismissed.reports[0].reporter.id !== fixtures.dismissedReporterId) {
+    throw new SeedFailure("check 6: the Admin's resolved audit does not show the Peer Moderator's dismissal");
+  }
+}
+
+// §14.8, the end-state assertions this fixture version implements. D was
+// chosen before §14.4 step 5; check 3 chooses again and must find the same
+// Student.
 export async function assertEndState(
   prisma: PrismaService,
   cohortIds: readonly string[],
+  sanctioned: Sanctioned,
+  demo: DemoStudent,
+  moderationReads: ModerationReads,
 ): Promise<{ demoStudent: { position: number; email: string } }> {
   // Check 1: four closed Rounds and four Prompts in publication order,
   // making Prompt 4 the live one (§8.12).
@@ -94,7 +158,10 @@ export async function assertEndState(
   }
 
   // Check 3: the demo Student D exists. The seed logs their email (§3.9).
-  const { position, email } = await findDemoStudent(prisma, cohortIds);
+  const { id, position, email } = await findDemoStudent(prisma, cohortIds, sanctioned);
+  if (id !== demo.id) {
+    throw new SeedFailure(`check 3: the demo Student is at position ${position}, not ${demo.position} as before §14.4 step 5`);
+  }
 
   // Check 4: the seeded Private Feedback carries at least three distinct
   // ratings, unrated rows aside.
@@ -106,6 +173,8 @@ export async function assertEndState(
   if (ratings.length < 3) {
     throw new SeedFailure(`check 4: ${ratings.length} distinct non-null ratings among Private Feedback; expected at least 3`);
   }
+
+  await assertModerationViews(moderationReads);
 
   // Check 7, the plain gap: a RARE_SKILLS Skill the pool wants and no one in
   // it teaches.
