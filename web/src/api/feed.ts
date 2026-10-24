@@ -62,11 +62,23 @@ function withCursor(path: string, cursor: string | undefined): string {
   return cursor === undefined ? path : `${path}?cursor=${encodeURIComponent(cursor)}`;
 }
 
+// The feed's pages as cached: the first page also carries `readNumber`, the
+// number of the read that answered it, and every copy of the page keeps it.
+type FeedPage = PostPage & { readNumber?: number };
+
+// Numbers each read of the feed's first page as it starts, so a Post waiting
+// behind a read can tell a page read after it arrived (`applyPostCreated`).
+let firstPageReads = 0;
+
 // `GET /api/feed` (§6.9), one page per `cursor`.
 export function feedQueryOptions() {
   return infiniteQueryOptions({
     queryKey: FEED_QUERY_KEY,
-    queryFn: ({ pageParam }) => apiFetch<PostPage>(withCursor('/feed', pageParam)),
+    queryFn: async ({ pageParam }): Promise<FeedPage> => {
+      if (pageParam !== undefined) return apiFetch<PostPage>(withCursor('/feed', pageParam));
+      const readNumber = ++firstPageReads;
+      return { ...(await apiFetch<PostPage>('/feed')), readNumber };
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
@@ -129,7 +141,7 @@ async function readAgain(client: QueryClient, queryKey: readonly string[]): Prom
 
 // Waits for the read to settle, then places outside the cache's notification
 // so queued Posts never nest. Gives up if the query leaves the cache.
-function afterRead(client: QueryClient, query: Query<InfiniteData<PostPage>>, then: () => void): void {
+function afterRead(client: QueryClient, query: Query<InfiniteData<FeedPage>>, then: () => void): void {
   const unsubscribe = client.getQueryCache().subscribe((event) => {
     if (event.query !== query) return;
     if (event.type === 'removed') {
@@ -151,10 +163,18 @@ function afterRead(client: QueryClient, query: Query<InfiniteData<PostPage>>, th
 // the commit answers without the Post. One that started after it already
 // holds the Post, so the id check keeps it once.
 export function applyPostCreated(client: QueryClient, post: PostView): void {
-  const query = client.getQueryCache().find<InfiniteData<PostPage>>({ queryKey: FEED_QUERY_KEY, exact: true });
+  placePost(client, post, firstPageReads);
+}
+
+// `readsAtArrival` counts the first-page reads started when the Post arrived.
+// A first page from a later read (a reconnect's, §7.5, or a write's read
+// again) already holds the Post, or the Post was removed since, so the Post
+// is left out.
+function placePost(client: QueryClient, post: PostView, readsAtArrival: number): void {
+  const query = client.getQueryCache().find<InfiniteData<FeedPage>>({ queryKey: FEED_QUERY_KEY, exact: true });
   if (query === undefined) return;
   if (query.state.fetchStatus !== 'idle') {
-    afterRead(client, query, () => applyPostCreated(client, post));
+    afterRead(client, query, () => placePost(client, post, readsAtArrival));
     return;
   }
   const data = query.state.data;
@@ -167,6 +187,7 @@ export function applyPostCreated(client: QueryClient, post: PostView): void {
     return;
   }
   const first = data.pages[0];
+  if ((first.readNumber ?? 0) > readsAtArrival) return;
   const createdAt = Date.parse(post.createdAt);
   const index = first.items.findIndex((item) => {
     const itemCreatedAt = Date.parse(item.createdAt);
