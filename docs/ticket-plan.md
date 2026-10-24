@@ -1551,6 +1551,11 @@ behaviour-free ticket after Rounds.
      - `/api/prompts/:id/answers?cursor`, non-removed answers only.
 
      Closed Prompts stay readable forever, and answers are visible at once.
+
+     > **Updated 2026-10-24 by the review of #216 (spec §6.0.1, §6.8):**
+     > `/api/prompts/:id/answers` takes `?page&pageSize` in place of `?cursor` and returns
+     > `{ prompt, live, answeredByMe, items, total }`; `/prompts/:promptId` shows the answers 20
+     > a page, with page numbers.
   5. The screens: `/prompts` and `/prompts/:promptId` (the answer form hidden for `ADMIN`, the
      history, the answers), and `/admin/prompts` (publish, history) (§3.5.1).
 - **Tests / verification:** category 6 — Clean-clone: not triggered.
@@ -1576,6 +1581,10 @@ behaviour-free ticket after Rounds.
      author, body, createdAt, likeCount, likedByMe }`. A Takeaway never names the Mentor (§6.9).
   3. `GET /api/posts/:id`, `GET /api/posts/:id/likes` and `GET /api/students/:id/posts?cursor`
      (non-removed) (§6.9, §6.2).
+
+     > **Updated 2026-10-24 by the review of #216 (spec §6.0.1, §6.2, §6.9):** in criteria 2
+     > and 3, `GET /api/feed` and `GET /api/students/:id/posts` take `?page&pageSize` in place of
+     > `?cursor` and return `{ items, total }`, 20 Posts a page by default.
   4. Like is an insert `ON CONFLICT DO NOTHING` returning `{ likeCount, likedByMe: true }`.
      Un-Like deletes and returns `likedByMe: false`. A self-Like is allowed. No XP and no event
      (§6.9, §11.5).
@@ -1583,6 +1592,10 @@ behaviour-free ticket after Rounds.
      (200), and writes nothing (§6.9).
   6. The screens: `/` shows the feed; Like toggles and the likers list; Posts on profiles
      (§3.5.1). Inserting `post:created` at the top of a loaded feed lands in T33.
+
+     > **Updated 2026-10-24 by the review of #216 (spec §6.0.1, §7.4):** `/` and a profile show
+     > their Posts 20 a page, with page numbers, the page in the URL as `?page=`. "The top of a
+     > loaded feed" is the top of a loaded page 1.
 - **Tests / verification:** none — fails loudly (§16.1). Clean-clone: CC1–CC7.
 - **Records the PR moves:** **Privacy Policy** — check that Likes are attributed and visible to
   every signed-in Student.
@@ -1715,6 +1728,10 @@ behaviour-free ticket after Rounds.
   2. `match:ready` invalidates the current Match, so a Student sees their Match without reloading
      (§7.4). Story 27.
   3. `post:created` inserts the feed item at the top of a loaded feed (§7.4). Story 40.
+
+     > **Updated 2026-10-24 by the review of #216 (spec §7.4):** the feed shows one numbered page
+     > at a time, so the item goes to the top of a loaded page 1, which keeps 20 Posts, and page
+     > 1's `total` grows by one. Another page takes nothing; its reader sees the Post on page 1.
   4. An open profile refetches `/api/me/progress` on `round:closed`, so Consistent Learner appears
      as soon as the close commits (§10.7, §7.4). Story 42.
   5. `/admin/analytics` re-queries on `round:opened` and `round:closed`, reading nothing from their

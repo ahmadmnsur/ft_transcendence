@@ -6,7 +6,7 @@ export default {
   loading: 'جار تحميل المنشورات…',
   emptyTitle: 'لا توجد منشورات بعد.',
   emptyDescription: 'تظهر هنا الخلاصات العامة والإجابات على مواضيع التأمل.',
-  more: 'تحميل المزيد من المنشورات',
+  pages: 'صفحات آخر المنشورات',
   retry: 'إعادة المحاولة',
   post: {
     takeaway: 'خلاصة عامة',
@@ -26,5 +26,6 @@ export default {
   profile: {
     heading: 'المنشورات',
     empty: 'لا توجد منشورات بعد.',
+    pages: 'صفحات المنشورات',
   },
 } as const satisfies Catalogue<'ar', typeof en>;

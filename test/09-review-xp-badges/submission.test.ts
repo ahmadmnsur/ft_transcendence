@@ -281,7 +281,7 @@ for (const paid of ['mentor', 'mentee'] as const) {
     expect((await harness.get('/api/me').set('Cookie', student.cookie)).body.data).toMatchObject(progress);
     expect((await harness.get(`/api/students/${student.id}`).set('Cookie', menteeAccount.cookie)).body.data.profile).toMatchObject(progress);
     expect(await storedCounts(id)).toEqual({ reviews: 1, feedback: 1, posts: 1 });
-    expect((await prompts.answers(actor(student.id), prompt.id, null)).items).toHaveLength(1);
+    expect((await prompts.answers(actor(student.id), prompt.id, 1, 20)).items).toHaveLength(1);
   });
 }
 
@@ -310,8 +310,8 @@ it.each(['older', 'newer', 'together'] as const)('Knowledge Sharer with superses
   }
   expect((await older).body).toMatchObject({ ok: false, error: { code: 'prompt_not_live' } });
   expect((await newer).body.data).toEqual({ xpAwarded: 20, xp: 60, level: 1, xpIntoLevel: 60, xpForNextLevel: 250, badgesAwarded: ['KNOWLEDGE_SHARER'] });
-  expect((await prompts.answers(author, old.id, null)).items).toEqual([]);
-  expect((await prompts.answers(author, next.id, null)).items).toHaveLength(1);
+  expect((await prompts.answers(author, old.id, 1, 20)).items).toEqual([]);
+  expect((await prompts.answers(author, next.id, 1, 20)).items).toHaveLength(1);
   expect((await harness.get('/api/me/progress').set('Cookie', student.cookie)).body.data).toMatchObject({ xp: 60, badges: [{ badge: 'KNOWLEDGE_SHARER' }] });
 });
 

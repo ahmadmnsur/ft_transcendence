@@ -2086,6 +2086,21 @@ loudly, as 404s and redirects, and has no check of its own (ADR-0016 d7).
 - **List paging**: tables take `page` (≥ 1) and `pageSize` (1–50, default 20) and return `{ items,
   total }`; streams (feed, answers, threads, messages) take an opaque `cursor` over
   `(created_at, id)` descending and return `{ items, nextCursor }`.
+
+  > **Updated 2026-10-24:** a Post stream (the feed, a Student's Posts and a Prompt's answers)
+  > **pages like a table**: it takes `page` and `pageSize` (default 20) and returns `{ items,
+  > total }`, read with an offset in the feed index's `(created_at DESC, id DESC)` order beside a
+  > count of the same Posts, in one read-only transaction. A Prompt's answers keep `prompt`, `live`
+  > and `answeredByMe` beside them (§6.8). The SPA shows one page of 20 at a time with page
+  > numbers, the page in the URL as `?page=`, and replaces a page past the end with the last one.
+  > A Post stream took a `cursor`, returned 50 Posts a page and added each page under the last
+  > with "Load more", so a reader scrolled past 50 Posts, then 100. Threads and messages keep
+  > their `cursor` and their 50 a page (§6.5).
+  >
+  > Page numbers drift while Posts arrive or leave: a new Post pushes every later Post down one
+  > place, so the last Post of page 1 shows again at the top of page 2, and a Post a moderator
+  > removes pulls them up one place, so one Post is skipped. At this size that is accepted, and
+  > nothing prevents it. A live `post:created` goes to the top of a loaded page 1 (§7.4).
 - **`StudentRef`** (every place a person appears): `{ id, displayName, avatarUrl | null, isAdmin,
   removed }`. A Removed Student renders as `{ id, displayName: "Former student", avatarUrl: null,
   isAdmin: false, removed: true }`. `avatarUrl` is `/api/files/avatars/<token>`; null means the
@@ -2195,6 +2210,10 @@ two changes cannot both go through; a sign-in racing it is deleted or refused (�
 > `nameSearchWhere` (`src/students/name-search.ts`) escapes `\`, `%` and `_` itself, after the
 > fold, since NFKD turns `％` into `%`: `q=%` finds only a name holding `%`, and `q=_` only one
 > holding `_`. §6.12's Users table (#65) reuses `nameSearchWhere` for its name match.
+
+> **Updated 2026-10-24** (§6.0.1's note of the same day): `GET /api/students/:id/posts` takes
+> `?page&pageSize` in place of `?cursor` and returns `{ items, total }`; for a Removed Student it
+> is `{ items: [], total: 0 }`.
 
 **`PATCH /api/me`** — session · `{ displayName?, email? }` · Rule: actor Active; a new email is
 unused (Removed rows included) → else `email_unavailable` · Persist `Student`: a new display name
@@ -2321,6 +2340,10 @@ reads *"Matched by an Admin"* with no number (ADR-0006 d10, CONTEXT).
 | `GET /api/prompts?page` | every Prompt, greatest publication order first, `live` flag, answer count |
 | `GET /api/prompts/:id/answers?cursor` | its non-removed answer Posts |
 
+> **Updated 2026-10-24** (§6.0.1's note of the same day): `GET /api/prompts/:id/answers` takes
+> `?page&pageSize` in place of `?cursor` and returns `{ prompt, live, answeredByMe, items,
+> total }`.
+
 **`POST /api/prompts/:id/answers`** and **`POST /api/admin/prompts`** — §8.12.
 
 ### 6.9 Feed and Likes
@@ -2330,6 +2353,9 @@ reads *"Matched by an Admin"* with no number (ADR-0006 d10, CONTEXT).
 | `GET /api/feed?cursor` | non-removed Posts newest first: `{ id, origin: TAKEAWAY|PROMPT_ANSWER, prompt?: { id, question }, author: StudentRef, body, createdAt, likeCount, likedByMe }`. A Takeaway never names the Mentor (ADR-0018 d4) |
 | `GET /api/posts/:id` | one Post |
 | `GET /api/posts/:id/likes` | the likers' `StudentRef`s |
+
+> **Updated 2026-10-24** (§6.0.1's note of the same day): `GET /api/feed` takes `?page&pageSize`
+> in place of `?cursor` and returns `{ items, total }`.
 
 **`POST /api/posts/:id/like`** — session · `{}` · Post exists (unknown → 404) · insert `ON CONFLICT DO
 NOTHING` · `{ likeCount, likedByMe: true }`. **`DELETE /api/posts/:id/like`** — session · `{}` · delete if
@@ -2489,6 +2515,11 @@ privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Con
 | `match:ready` | `student:<id>`, each Student of the pair | `{}` | Round open (every matched Student); hand-made Match (both) | invalidate the current Match |
 | `dm:message` | `student:<recipient>`, `student:<sender>` | the `DirectMessage` | a DM send | append to the open thread; otherwise bump that thread's unread count |
 | `presence:update` | `student:<friendId>` for each accepted Friend | `{ studentId, online }` | not a DB commit — a registry transition (§7.6) | update the Friends list |
+
+> **Updated 2026-10-24** (§6.0.1's note of the same day): the feed shows one numbered page at a
+> time, so `post:created`'s "top of a loaded feed" is the top of a loaded page 1. The Post goes
+> there, page 1 keeps 20 Posts, and its `total` grows by one. Another page takes nothing; its
+> reader sees the Post on page 1, which is read again when opened.
 
 Round events are content-free invalidation signals (ADR-0010 d7, ADR-0015 d8); no event carries a
 Badge, a Report, a role or any Admin data. **No event is added** for Likes, declines, Reviews,

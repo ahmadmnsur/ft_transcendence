@@ -6,7 +6,7 @@ export default {
   loading: 'Chargement des Publications…',
   emptyTitle: 'Aucune Publication pour le moment.',
   emptyDescription: 'Les Points clés publics et les réponses aux Sujets de réflexion apparaissent ici.',
-  more: 'Charger plus de Publications',
+  pages: 'Pages du fil d’actualité',
   retry: 'Réessayer',
   post: {
     takeaway: 'Point clé public',
@@ -23,5 +23,6 @@ export default {
   profile: {
     heading: 'Publications',
     empty: 'Aucune Publication pour le moment.',
+    pages: 'Pages des Publications',
   },
 } as const satisfies Catalogue<'fr', typeof en>;

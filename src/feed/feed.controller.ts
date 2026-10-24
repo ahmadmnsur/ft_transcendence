@@ -1,14 +1,13 @@
 import { Controller, Delete, Get, HttpCode, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
-import { decodeCursor } from '../core/cursor';
+import { PageQueryDto } from '../core/paging';
 import { requestActor } from '../core/session.guard';
 import { UuidParam } from '../core/uuid-param';
 import type { StudentRef } from '../students/student-ref';
-import { PostsQueryDto } from './dto';
 import { FeedService } from './feed.service';
 import type { LikeState, PostPage, PostView } from './views';
 
-// §3.4: controllers are thin — decode `?cursor`, take the actor with
+// §3.4: controllers are thin — read `?page&pageSize`, take the actor with
 // `requestActor`, call ONE service method, and return its value. The global
 // interceptor wraps it in the §3.8 envelope. Every route needs a session: the
 // global SessionGuard already enforces it, so none is marked `@Public` (§5.3).
@@ -17,16 +16,17 @@ import type { LikeState, PostPage, PostView } from './views';
 export class FeedController {
   constructor(private readonly feed: FeedService) {}
 
-  // `GET /api/feed` (§6.9): non-removed Posts, newest first, 50 per page.
+  // `GET /api/feed` (§6.9): non-removed Posts, newest first, one numbered
+  // page (§6.0.1).
   @Get('feed')
-  listFeed(@Query() query: PostsQueryDto, @Req() request: Request): Promise<PostPage> {
-    return this.feed.feed(requestActor(request), decodeCursor(query.cursor));
+  listFeed(@Query() query: PageQueryDto, @Req() request: Request): Promise<PostPage> {
+    return this.feed.feed(requestActor(request), query.page, query.pageSize);
   }
 
   // `GET /api/students/:id/posts` (§6.2): that Student's non-removed Posts.
   @Get('students/:id/posts')
-  postsBy(@UuidParam('id') id: string, @Query() query: PostsQueryDto, @Req() request: Request): Promise<PostPage> {
-    return this.feed.postsBy(requestActor(request), id, decodeCursor(query.cursor));
+  postsBy(@UuidParam('id') id: string, @Query() query: PageQueryDto, @Req() request: Request): Promise<PostPage> {
+    return this.feed.postsBy(requestActor(request), id, query.page, query.pageSize);
   }
 
   // `GET /api/posts/:id` (§6.9).

@@ -46,10 +46,12 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   notFoundComponent: NotFoundPage,
 });
 
+// §3.5.1, §6.0.1: the feed, paged by `page`.
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   beforeLoad: requireSession,
+  validateSearch: parsePageSearch,
   component: HomePage,
 });
 
@@ -124,11 +126,12 @@ const studentsRoute = createRoute({
 });
 
 // §3.5.1: any signed-in Student reads another's profile; a Removed Student
-// renders as the tombstone there (§4.6).
+// renders as the tombstone there (§4.6). Its Posts are paged by `page`.
 const studentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/students/$studentId',
   beforeLoad: requireSession,
+  validateSearch: parsePageSearch,
   component: StudentPage,
 });
 
@@ -247,10 +250,12 @@ const promptsRoute = createRoute({
   component: PromptsPage,
 });
 
+// A Prompt and its answers, paged by `page`.
 const promptDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/prompts/$promptId',
   beforeLoad: requireSession,
+  validateSearch: parsePageSearch,
   component: PromptDetailPage,
 });
 
