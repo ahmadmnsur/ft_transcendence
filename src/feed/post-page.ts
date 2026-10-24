@@ -4,7 +4,9 @@ import type { Prisma } from '../generated/prisma/client';
 import { PAGING } from '../shared/limits';
 import { postViewSelect, toPostView, type PostPage } from './views';
 
-const POSTS_PER_PAGE = PAGING.maxPageSize;
+// §6.0.1: a Post stream returns the default page, 20 Posts, so the SPA's
+// "Load more" button is reached without scrolling past 50 of them.
+const POSTS_PER_PAGE = PAGING.defaultPageSize;
 
 // §6.0.1's keyset: the Posts after the last one the client already has, in
 // the feed index's `(created_at DESC, id DESC)` order.

@@ -2072,6 +2072,11 @@ loudly, as 404s and redirects, and has no check of its own (ADR-0016 d7).
 - **List paging**: tables take `page` (≥ 1) and `pageSize` (1–50, default 20) and return `{ items,
   total }`; streams (feed, answers, threads, messages) take an opaque `cursor` over
   `(created_at, id)` descending and return `{ items, nextCursor }`.
+
+  > **Updated 2026-10-24:** a Post stream (the feed, a Student's Posts and a Prompt's answers)
+  > returns **20 Posts a page**, the tables' default. It returned 50, the largest page, so a reader
+  > scrolled past 50 Posts before the SPA's "Load more" button. A conversation keeps its 50 a page
+  > (§6.5).
 - **`StudentRef`** (every place a person appears): `{ id, displayName, avatarUrl | null, isAdmin,
   removed }`. A Removed Student renders as `{ id, displayName: "Former student", avatarUrl: null,
   isAdmin: false, removed: true }`. `avatarUrl` is `/api/files/avatars/<token>`; null means the
