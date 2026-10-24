@@ -12,6 +12,15 @@ export default {
     SUSPENDED: 'Suspendu',
     REMOVED: 'Exclu',
   },
+  home: {
+    title: 'Outils d’Admin',
+    description: 'Tout ce qu’un Admin gère, au même endroit.',
+    rounds: 'Ouvrez et fermez les Tours, suivez leurs Matchs et créez un Match à la main.',
+    prompts: 'Publiez le prochain Sujet de réflexion et consultez les précédents.',
+    users: 'Trouvez un compte pour changer son rôle, le suspendre, le réintégrer ou l’exclure.',
+    analytics: 'Ce que les Étudiants souhaitent apprendre et peuvent enseigner, et où en sont leurs Matchs.',
+    reports: 'Traitez les Signalements ouverts visant des Publications et des Étudiants, et consultez ceux déjà résolus.',
+  },
   users: {
     title: 'Utilisateurs',
     filtersLabel: 'Rechercher des utilisateurs',

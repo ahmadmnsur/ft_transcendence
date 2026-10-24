@@ -647,6 +647,7 @@ routes redirect a Student without the role to `/`; the server enforces the same 
 | `/leaderboard` | signed-in | Top ten + own pin |
 | `/rules` | signed-in | Static XP table, Level bands, Badge conditions, Level-10 cap (ADR-0010 d7) |
 | `/moderation` | `PEER_MODERATOR` | Eligible open Post-report groups (ADR-0011 d7) |
+| `/admin` | `ADMIN` | Admin tools: one link to each Admin page below, named by that page's title |
 | `/admin/users`, `/admin/users/:studentId` | `ADMIN` | Users table and detail with state-specific actions |
 | `/admin/rounds`, `/admin/rounds/:roundId`, `/admin/matches/:matchId` | `ADMIN` | Open/close, Matches, unmatched list, hand-made Match, full Match detail |
 | `/admin/prompts` | `ADMIN` | Publish; history |
@@ -658,6 +659,18 @@ The **footer shows on every route**, signed in or out, with links to `/privacy` 
 wherever another Student sees them (ADR-0018 d4). **The language switcher sits at the end of the
 shared header, on every route**, signed in or out, the four signed-out routes and the error page
 included (ADR-0020 d6, §3.5.5).
+
+> **The signed-in header, 2026-10-24.** It showed one button for every page, ten for a Student and
+> fourteen for an Admin. It now holds three parts. **A bar of links** under the header's line: the
+> feed, Match, Reflection Prompts, Direct Messages, Students and Friends, plus *Moderation* for a
+> Peer Moderator and one *Admin tools* link to `/admin` for an Admin. The current page's link is
+> marked, `/admin` on every `/admin/…` page.
+> **An account menu**, a button named by the Student, holding My profile, Private Feedback,
+> Leaderboard, Rules and Sign out. **The language switcher**, still at the end of the line. Below
+> `md` one Menu button shows the bar's links and the account menu's under the header's line. Each
+> panel closes on Escape, on a press outside it, and when a page opens. A new Admin page adds a
+> link on `/admin`, not in the header. The session read only decides which links show; the route
+> guards and the API check the role again.
 
 #### 3.5.2 Data, validation and state
 
@@ -801,7 +814,8 @@ icon set of hand-authored inline SVG React components (no icon package, no CDN).
   as the `Pagination` chevrons, is marked where it is drawn as one that flips, for example by a prop
   on `IconBase` that adds `rtl:-scale-x-100`. The check mark, the search glass, the info, alert and
   close signs, the vertical sort and upload arrows, the star, trophy and user, the speech bubble,
-  the flag and the file stay as drawn, and the `Button` spinner keeps turning clockwise.
+  the flag and the file stay as drawn, and the `Button` spinner keeps turning clockwise. *(Added
+  2026-10-24:)* so do the header's menu lines.
 
 **At least these ≥ 10 reusable components**, each used by at least two screens: `Button`,
 `IconButton`, `TextField`, `TextArea`, `Select` (its label can be hidden visually while screen

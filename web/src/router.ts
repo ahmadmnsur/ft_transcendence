@@ -4,6 +4,7 @@ import { setUnauthorizedHandler } from './api/client';
 import { fetchSession, setSignedOut } from './api/session';
 import { ErrorContent, NotFoundPage, RootErrorPage, RootLayout } from './layout';
 import { requireRole, requireSession, requireSignedOut } from './guards';
+import { AdminHomePage } from './pages/AdminHomePage';
 import { AdminMatchPage } from './pages/AdminMatchPage';
 import { AdminRoundPage } from './pages/AdminRoundPage';
 import { AdminRoundsPage } from './pages/AdminRoundsPage';
@@ -182,6 +183,15 @@ const matchDetailRoute = createRoute({
   component: MatchDetailPage,
 });
 
+// §3.5.1: the header's one Admin link, a tile for each Admin page below. A
+// Student without the role returns to `/`.
+const adminHomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin',
+  beforeLoad: (args) => requireRole(args, 'ADMIN'),
+  component: AdminHomePage,
+});
+
 // §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,
 // and the API refuses the same reads with 403 (§5.3).
 const adminRoundsRoute = createRoute({
@@ -325,6 +335,7 @@ const routeTree = rootRoute.addChildren([
   matchDetailRoute,
   reviewRoute,
   feedbackRoute,
+  adminHomeRoute,
   adminRoundsRoute,
   adminAnalyticsRoute,
   adminRoundRoute,
