@@ -253,8 +253,8 @@ email address. Those counts live only in the server's memory and are never saved
 Everything PeerConnect records is kept for as long as the copy's database exists. Nothing is deleted
 automatically, except an expired session (see *Sessions* below) and a file that no record uses any
 more, such as the file of an upload that could not be saved: PeerConnect deletes it within two
-hours, as long as it is running and can reach its database and its file storage. Whoever runs a copy
-can empty it, which erases everything in it; for the team's copy, that is the team.
+hours, as long as it is running and its hourly cleanup succeeds. Whoever runs a copy can empty it,
+which erases everything in it; for the team's copy, that is the team.
 
 PeerConnect keeps no backups. The team has none it can restore the team's copy from, but Supabase may
 keep its own backup copies of that copy's database, under its own terms, so something deleted in
@@ -267,11 +267,11 @@ Some things end sooner:
   password while the change was being saved can stay open until it expires. An unused session stops
   working after 30 days, and is deleted the next time you sign in.
 - **Your avatar** is deleted when you replace or remove it, and when your account is removed, or
-  within two hours if that deletion fails, as long as PeerConnect is running and can reach its
-  database and its file storage.
+  within two hours if that deletion fails, as long as PeerConnect is running and its
+  hourly cleanup succeeds.
 - **Evidence** is deleted when its Mentee deletes or replaces it, or within two hours if that deletion
-  fails, as long as PeerConnect is running and can reach its database and its file storage. It is not
-  deleted when an account is removed.
+  fails, as long as PeerConnect is running and its hourly cleanup succeeds. It is not deleted when an
+  account is removed.
 - **A Skill** leaves your profile when you remove it. Past Matches keep the Skills they were made on,
   because a Match's explanation never changes.
 - **Your Learning Goal** and its sentence are deleted when you clear them, or when its Skill leaves
