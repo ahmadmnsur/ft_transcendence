@@ -10,6 +10,7 @@ import { useRouterState } from '@tanstack/react-router';
 // page changes some other way, such as the browser's Back.
 export function useDisclosure<Panel extends HTMLElement>(): {
   open: boolean;
+  show: () => void;
   close: () => void;
   buttonProps: {
     ref: React.RefObject<HTMLButtonElement | null>;
@@ -34,6 +35,7 @@ export function useDisclosure<Panel extends HTMLElement>(): {
     setShownOn(pathname);
     setOpen(false);
   }
+  const show = useCallback(() => setOpen(true), []);
   const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export function useDisclosure<Panel extends HTMLElement>(): {
 
   return {
     open,
+    show,
     close,
     buttonProps: {
       ref: buttonRef,
@@ -83,8 +86,11 @@ export function useDisclosure<Panel extends HTMLElement>(): {
       id: panelId,
       hidden: !open,
       onClick(event) {
+        // The router's `Link` prevents the default of a click it follows
+        // itself. Any other, such as a Ctrl-click for a new tab, leaves this
+        // page as it is, so the panel stays open with focus on the link.
         const link = event.target instanceof Element ? event.target.closest('a') : null;
-        if (link === null) return;
+        if (link === null || !event.defaultPrevented) return;
         setOpen(false);
         // The page it is on opens no new page to take focus, and the link
         // hides with the panel, so focus goes back to the button instead of

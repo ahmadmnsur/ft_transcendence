@@ -660,11 +660,11 @@ wherever another Student sees them (ADR-0018 d4). **The language switcher sits a
 shared header, on every route**, signed in or out, the four signed-out routes and the error page
 included (ADR-0020 d6, §3.5.5).
 
-> **The signed-in header, 2026-10-24.** It showed one button for every page, ten for a Student and
-> fourteen for an Admin. It now holds three parts. **A bar of links** under the header's line: the
-> feed, Match, Reflection Prompts, Direct Messages, Students and Friends, plus *Moderation* for a
-> Peer Moderator and one *Admin tools* link to `/admin` for an Admin. The current page's link is
-> marked, `/admin` on every `/admin/…` page.
+> **The signed-in header, 2026-10-24.** It showed one button for every page: ten for a Student,
+> eleven for a Peer Moderator and fifteen for an Admin. It now holds three parts. **A bar of links**
+> under the header's line: the feed, Match, Reflection Prompts, Direct Messages, Students and
+> Friends, plus *Moderation* for a Peer Moderator and one *Admin tools* link to `/admin` for an
+> Admin. The current page's link is marked, `/admin` on every `/admin/…` page.
 > **An account menu**, a button named by the Student, holding My profile, Private Feedback,
 > Leaderboard, Rules and Sign out. **The language switcher**, still at the end of the line. Below
 > `md` one Menu button shows the bar's links and the account menu's under the header's line. Each

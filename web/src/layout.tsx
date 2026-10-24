@@ -47,6 +47,9 @@ const barLinkClass =
   'inline-flex items-center whitespace-nowrap rounded-t-lg border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors duration-150 hover:text-ink focus-ring aria-[current=page]:border-primary-600 aria-[current=page]:text-primary-700';
 const panelItemClass =
   'block w-full rounded-lg px-3 py-2 text-start text-sm text-ink transition-colors duration-150 hover:bg-surface-muted focus-ring pointer-coarse:py-3 aria-[current=page]:bg-primary-50 aria-[current=page]:font-medium aria-[current=page]:text-primary-700';
+// Tailwind's `md`: from here the bar and the account menu show, below it the
+// phone Menu.
+const MD_QUERY = '(width >= 48rem)';
 
 function SiteHeader(): React.JSX.Element {
   const { t, language, setLanguage } = useI18n();
@@ -66,7 +69,7 @@ function SiteHeader(): React.JSX.Element {
   // Each menu shows on one side of `md` only, so crossing it closes both: a
   // panel hidden open would show again when the window crosses back.
   useEffect(() => {
-    const md = window.matchMedia('(width >= 48rem)');
+    const md = window.matchMedia(MD_QUERY);
     function onChange(): void {
       closePhoneMenu();
       closeAccountMenu();
@@ -106,6 +109,11 @@ function SiteHeader(): React.JSX.Element {
         if (!signedOut) {
           setSignOutFailed(true);
           setSigningOut(false);
+          // The error shows inside the panel, which may have closed while
+          // the sign-out ran: open the one this width shows. Focus stays
+          // where it is.
+          if (window.matchMedia(MD_QUERY).matches) accountMenu.show();
+          else phoneMenu.show();
           return;
         }
       }
@@ -180,15 +188,19 @@ function SiteHeader(): React.JSX.Element {
     );
   }
 
-  // A failed sign-out leaves its panel open, so the error shows under the
-  // button, where the panel cannot cover it.
+  // A failed sign-out shows its error under the button, in the open panel,
+  // where the panel cannot cover it. While it runs the button stays
+  // focusable, as `Button` does when loading, so a keyboard user keeps their
+  // place and Enter tries again after a failure; `onSignOut` ignores a second
+  // press meanwhile.
   const signOut = (
     <>
       <button
         type="button"
-        disabled={signingOut}
+        aria-disabled={signingOut || undefined}
+        aria-busy={signingOut || undefined}
         onClick={() => void onSignOut()}
-        className={`${panelItemClass} disabled:cursor-wait disabled:opacity-60`}
+        className={`${panelItemClass} aria-disabled:cursor-wait aria-disabled:opacity-60`}
       >
         {signingOut ? copy.signingOut : copy.signOut}
       </button>
