@@ -1,40 +1,40 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 25 October 2026
+**21 Beirut** · Last updated: 25 October 2026
 
-This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
+This page explains what 21 Beirut records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
 **not** offer, such as erasing your data.
 
 ## In short
 
-- PeerConnect records what you give it and what you do on it: your account and profile, your Skills,
+- 21 Beirut records what you give it and what you do on it: your account and profile, your Skills,
   your Matches and Reviews, your Posts and Likes, your Friends, Blocks and Direct Messages, and your
   XP and Badges.
 - Your Learning Outcomes, Evidence, Private Feedback and Direct Messages are never public. Your
   profile, your Posts and the Leaderboard's top ten are visible to every signed-in Student.
   Your own Leaderboard position outside the top ten is visible only to you.
-- The team's copy of PeerConnect is stored by **Supabase**, an online database service, in
+- The team's copy of 21 Beirut is stored by **Supabase**, an online database service, in
   Frankfurt, Germany. Your browser never contacts Supabase.
-- PeerConnect sets one cookie, to keep you signed in. It has no analytics or advertising, and your
+- 21 Beirut sets one cookie, to keep you signed in. It has no analytics or advertising, and your
   browser loads nothing from any other website, except when you choose **Sign in with 42**,
   **Connect 42** or **Confirm with 42**.
 - What you submit can't be edited or deleted afterwards, and Direct Messages can't be unsent.
 - To leave, you ask an Admin to remove your account. **Removal is final, and it is not erasure**:
   most of what you contributed stays.
 
-## Who runs PeerConnect
+## Who runs 21 Beirut
 
-42 PeerConnect is a student project, built for the ft_transcendence project of the 42 curriculum by
+21 Beirut is a student project, built for the ft_transcendence project of the 42 curriculum by
 Ahmad (`ahmmanso`), Kamel (`kabbas`) and Hussein (`hdakdouk`). It is not run or endorsed by 42.
 
-PeerConnect runs as separate **copies**, and each keeps its own data:
+21 Beirut runs as separate **copies**, and each keeps its own data:
 
 - **The team's copy** is run by its three authors. Its database, its files and the passwords that
   sign in to it are stored by **Supabase**, an online database service, in its Frankfurt, Germany
   region. A team member runs the program on their own computer; the data it reads and writes stays
   with Supabase.
-- **A local copy** is what PeerConnect makes when it is started without the team's settings. It keeps
+- **A local copy** is what 21 Beirut makes when it is started without the team's settings. It keeps
   everything this page describes on the computer that started it.
 
 Each copy has its own **Admins**: the staff accounts that run its Rounds, publish its Reflection
@@ -42,10 +42,10 @@ Prompts and moderate it. A newly started copy contains only demo accounts create
 including its first Admin and Peer Moderator, and no real person's data. The team's copy keeps what
 people add to it until the team empties it.
 
-Whoever runs a copy of PeerConnect is responsible for the data it holds and for any data-protection
+Whoever runs a copy of 21 Beirut is responsible for the data it holds and for any data-protection
 law that applies to them. That law may give you rights beyond what this page describes.
 
-## What PeerConnect records
+## What 21 Beirut records
 
 **Your account**
 
@@ -134,15 +134,15 @@ One record for each browser you are signed in on: whose it is, and when it expir
 Other records also carry the time they were made, and a Friendship also when it was accepted; a sign-in
 session records only when it expires.
 
-**What PeerConnect does not record: when you were last online.** Your Friends can see whether you are
+**What 21 Beirut does not record: when you were last online.** Your Friends can see whether you are
 online *now*. That status lives only in the running server's memory, is never saved, and resets
 whenever the server restarts. Supabase Auth keeps the time it last accepted your password (see *Your
 account*), and its logs keep each check of it (see *Logs*).
 
-## Why PeerConnect uses it
+## Why 21 Beirut uses it
 
 - **To sign you in** and keep you signed in.
-- **To match you.** When an Admin opens a Round, PeerConnect automatically pairs Students whose Skills
+- **To match you.** When an Admin opens a Round, 21 Beirut automatically pairs Students whose Skills
   fit: one who can teach what the other wants to learn. It uses your Skills, your Learning Goal, your
   Level, your Blocks and your past Matches. It never pairs you with someone either of you has
   blocked, and never automatically with a Student you have been matched with before. You are included
@@ -161,14 +161,14 @@ account*), and its logs keep each check of it (see *Logs*).
   they use Skills and Match statuses, never what anyone wrote.
 - **To troubleshoot** the platform, using the request logs described below.
 
-PeerConnect uses your data for nothing else. It shows no advertising, sells nothing, and does not use
-your data to train AI models. It shares nothing with anyone outside PeerConnect, except **Supabase**,
+21 Beirut uses your data for nothing else. It shows no advertising, sells nothing, and does not use
+your data to train AI models. It shares nothing with anyone outside 21 Beirut, except **Supabase**,
 which stores the team's copy for the team and uses it for nothing else. It never sends you email:
 your email address is used to sign in.
 
 ## Who can see what
 
-| What | Who can see it in PeerConnect |
+| What | Who can see it in 21 Beirut |
 | --- | --- |
 | Your profile: display name, avatar, Skills, Learning Goal and its sentence, XP, Level, Streak, Badges and your Posts | every signed-in Student |
 | Posts, and who liked each one | every signed-in Student |
@@ -186,7 +186,7 @@ your email address is used to sign in.
 | A Report you file | Admins, who can see that you filed it, unless the group of Reports is about them or their Post, or contains a Report they filed. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |
 | A Report you resolve, as a Peer Moderator or an Admin | Admins, who see who closed each Report, how and when, unless the group of resolved Reports is about them or their Post, or contains a Report they filed. Not the Student it was about, and not the Student who filed it |
 | Learning Analytics | Admins only, and only community-wide figures |
-| Your role, and whether your account is suspended or removed | you, and Admins in their list of every account. Other Students see a removed account only as a former student (see *Leaving PeerConnect*). Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
+| Your role, and whether your account is suspended or removed | you, and Admins in their list of every account. Other Students see a removed account only as a former student (see *Leaving 21 Beirut*). Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
 
 Someone who is not signed in can see nothing but the home page, which says what PeerConnect is, the
 sign-in and sign-up pages, and these two policy pages. None of them shows anything about a Student:
@@ -198,46 +198,47 @@ Reports or Direct Messages.
 
 ## Cookies and your browser
 
-PeerConnect sets **one cookie**: a random identifier for your sign-in session. It is sent only to
-PeerConnect and only over HTTPS — or, on a developer's local build, over a connection that never
+21 Beirut sets **one cookie**: a random identifier for your sign-in session. It is sent only to
+21 Beirut and only over HTTPS — or, on a developer's local build, over a connection that never
 leaves that computer — and page scripts cannot read it. It stops working after 30 days
 without use, or as soon as you sign out. While a **Sign in with 42** is in progress, the same cookie
 holds a random identifier for that sign-in attempt instead, for at most ten minutes, until the
 attempt succeeds or fails.
 
-PeerConnect shows no cookie banner because of how it is built: its single cookie is needed for
-signing in, and it sets no other cookie. If PeerConnect stores anything else in your browser, it is
+21 Beirut shows no cookie banner because of how it is built: its single cookie is needed for
+signing in, and it sets no other cookie. If 21 Beirut stores anything else in your browser, it is
 an interface preference, never information about you. Your browser may also keep copies of the
 avatars and Evidence files you open, as it does with any page's images and files.
 
 ## Other websites and services
 
-Your browser talks to PeerConnect alone. PeerConnect loads no fonts, scripts, images or other content
+Your browser talks to 21 Beirut alone. 21 Beirut loads no fonts, scripts, images or other content
 from other websites, shows no link previews, and contains no analytics, advertising or tracking
-tools. Your browser never contacts Supabase either: PeerConnect's server fetches every avatar and
+tools. Your browser never contacts Supabase either: 21 Beirut's server fetches every avatar and
 Evidence file from the copy's own file storage, and checks who may see it before sending it.
 
 The one exception is **42**, and only when you choose **Sign in with 42**, **Connect 42** (to link 42
 to your account) or **Confirm with 42** (to set a forgotten password). Your browser then goes to 42's
-own sign-in page, and PeerConnect asks 42 who you are. PeerConnect keeps your **42 account number**,
-to recognise you when you sign in with 42. When no account has that number yet, PeerConnect's sign-up
-form suggests your 42 login as your display name and your 42 email address; they are kept only if you
-keep them. You can disconnect 42 from your profile at any time, with your current password; that
-forgets the number. PeerConnect never keeps your 42 photo, grades, projects, level, campus or location,
-and it uses 42's access token once and then discards it.
+own sign-in page, and 21 Beirut asks 42 who you are. On 42's pages, 21 Beirut appears under its
+earlier name, *PeerConnect*. 21 Beirut keeps your **42 account number**, to recognise you when you
+sign in with 42. When no account has that number yet, 21 Beirut's sign-up form suggests your 42 login
+as your display name and your 42 email address; they are kept only if you keep them. You can
+disconnect 42 from your profile at any time, with your current password; that forgets the number.
+21 Beirut never keeps your 42 photo, grades, projects, level, campus or location, and it uses
+42's access token once and then discards it.
 
 The team's copy is stored by Supabase in its Frankfurt, Germany region. Supabase's backups and logs,
 and the companies it uses to run its service, may be in other places, under Supabase's own terms.
 
 ## Logs
 
-To help fix problems, PeerConnect's web server keeps a log of the requests it receives: the time, the
+To help fix problems, 21 Beirut's web server keeps a log of the requests it receives: the time, the
 network address each request came from, the method and path requested, the result, the size of the
 response, the page that linked to it, and your browser type. The log stays on the computer running
 the program, is capped in size, and its oldest entries are overwritten automatically.
 
-The services that store a copy's data keep their own logs of PeerConnect's requests to them: the time,
-what was asked for, and the address of PeerConnect's server, never your browser's. They include each
+The services that store a copy's data keep their own logs of 21 Beirut's requests to them: the time,
+what was asked for, and the address of 21 Beirut's server, never your browser's. They include each
 check of your password, the sign-out that follows an accepted one, and each password change on your
 account, under its internal code rather than your email address. For the team's copy, Supabase keeps these logs: the team can see
 them for up to a day, and Supabase keeps them for its own operations and security, for a period it
@@ -246,21 +247,21 @@ sets. For a local copy, they stay on that computer, capped and overwritten like 
 **No log ever contains a password, a cookie, the content of what you submit, message text or a
 file.**
 
-To slow down password guessing, PeerConnect counts recent sign-in and sign-up attempts, and the wrong
+To slow down password guessing, 21 Beirut counts recent sign-in and sign-up attempts, and the wrong
 passwords typed when you change your password or connect or disconnect 42, by network address and
 email address. Those counts live only in the server's memory and are never saved.
 
 ## How long your data is kept
 
-Everything PeerConnect records is kept for as long as the copy's database exists. Nothing is deleted
+Everything 21 Beirut records is kept for as long as the copy's database exists. Nothing is deleted
 automatically, except an expired session (see *Sessions* below) and a file that no record uses any
-more, such as the file of an upload that could not be saved: PeerConnect deletes it within two
+more, such as the file of an upload that could not be saved: 21 Beirut deletes it within two
 hours, as long as it is running and its hourly cleanup succeeds. Whoever runs a copy can empty it,
 which erases everything in it; for the team's copy, that is the team.
 
-PeerConnect keeps no backups. The team has none it can restore the team's copy from, but Supabase may
+21 Beirut keeps no backups. The team has none it can restore the team's copy from, but Supabase may
 keep its own backup copies of that copy's database, under its own terms, so something deleted in
-PeerConnect can remain in them until Supabase deletes them. A local copy has no backups at all.
+21 Beirut can remain in them until Supabase deletes them. A local copy has no backups at all.
 
 Some things end sooner:
 
@@ -269,10 +270,10 @@ Some things end sooner:
   being saved can stay open, and it renews itself while it is used. Changing your password again
   ends it. An unused session stops working after 30 days, and is deleted the next time you sign in.
 - **Your avatar** is deleted when you replace or remove it, and when your account is removed, or
-  within two hours if that deletion fails, as long as PeerConnect is running and its
+  within two hours if that deletion fails, as long as 21 Beirut is running and its
   hourly cleanup succeeds.
 - **Evidence** is deleted when its Mentee deletes or replaces it, or within two hours if that deletion
-  fails, as long as PeerConnect is running and its hourly cleanup succeeds. It is not deleted when an
+  fails, as long as 21 Beirut is running and its hourly cleanup succeeds. It is not deleted when an
   account is removed.
 - **A Skill** leaves your profile when you remove it. Past Matches keep the Skills they were made on,
   because a Match's explanation never changes.
@@ -299,15 +300,15 @@ Some things are permanent:
 ## How your data is protected
 
 - Your password is salted and hashed, so nobody can see it, Admins included.
-- Every connection to PeerConnect uses HTTPS. The one exception is a developer's local build, which
+- Every connection to 21 Beirut uses HTTPS. The one exception is a developer's local build, which
   serves plain HTTP and only to the same computer, so its traffic never crosses a network.
-- For the team's copy, PeerConnect's server reaches Supabase only over encrypted connections whose
+- For the team's copy, 21 Beirut's server reaches Supabase only over encrypted connections whose
   certificates it checks.
 - Page scripts cannot read your session cookie, and changing your password signs you out everywhere,
   except in the rare case described under *Sessions* in *How long your data is kept*.
 - Files are never public: each request for an avatar or an Evidence file is checked against who is
   allowed to see it.
-- Inside PeerConnect, only the two Students in a conversation can read its Direct Messages.
+- Inside 21 Beirut, only the two Students in a conversation can read its Direct Messages.
 
 And the limits:
 
@@ -316,17 +317,17 @@ And the limits:
   copy is not encrypted at all, and Direct Messages are not end-to-end encrypted. Only the team, and
   Supabase as its host, can open the team's copy directly: the team through Supabase's dashboard or
   with the copy's settings, which it gives to no one, an evaluator included. Whoever runs a local
-  copy can open it. That is access to the database itself, outside PeerConnect: inside PeerConnect, no
+  copy can open it. That is access to the database itself, outside 21 Beirut: inside 21 Beirut, no
   account, an Admin's included, can open another Student's Direct Messages.
 - **There are no backups to count on.** If a copy's database is lost, everything in it is lost.
 - **A forgotten password can be reset only through 42**, and only if you connected 42 to your
   account: sign in with 42, choose **Confirm with 42** on your profile, then set a new password within
-  ten minutes. Otherwise it can't be reset: PeerConnect sends no email, and no Admin can set your
+  ten minutes. Otherwise it can't be reset: 21 Beirut sends no email, and no Admin can set your
   password.
 
 ## Your choices
 
-In PeerConnect you can:
+In 21 Beirut you can:
 
 - view and edit your profile: display name, email address, avatar, Skills and Learning Goal;
 - change your password, and sign out;
@@ -338,7 +339,7 @@ In PeerConnect you can:
 - delete or replace your Evidence, and remove or replace your avatar;
 - ask an Admin to remove your account (see below).
 
-PeerConnect does **not** let you:
+21 Beirut does **not** let you:
 
 - download a copy of your data;
 - erase your data;
@@ -346,9 +347,9 @@ PeerConnect does **not** let you:
   submitted, or a Direct Message once sent;
 - see Reports filed about you, or look back at Reports you filed.
 
-## Leaving PeerConnect
+## Leaving 21 Beirut
 
-PeerConnect has no "delete my account" button. To leave, ask an Admin to **remove** your account.
+21 Beirut has no "delete my account" button. To leave, ask an Admin to **remove** your account.
 
 **Removal is final, and it is not erasure.** When your account is removed:
 
@@ -375,12 +376,12 @@ matched, and sign out.
 ## Contact
 
 For anything about your account — Removal, a correction, a Suspension — contact an **Admin** of your
-copy, in person or by Direct Message. Admins are labelled as Admins in PeerConnect.
+copy, in person or by Direct Message. Admins are labelled as Admins in 21 Beirut.
 
 For questions about this page, contact its authors on the 42 intranet: `ahmmanso`, `kabbas` and
 `hdakdouk`.
 
 ## Changes to this page
 
-The date at the top shows when this page last changed. PeerConnect sends no notice of changes, so
+The date at the top shows when this page last changed. 21 Beirut sends no notice of changes, so
 check back from time to time.

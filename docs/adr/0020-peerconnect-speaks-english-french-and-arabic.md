@@ -196,6 +196,10 @@ Unaffected:
    logins render as `<code dir="ltr">`, and numbers are Arabic-Indic except the name *42*.
    ADR-0018 decisions 14 and 15 carry its notes.
 
+   > **Noted 2026-10-25** (map #1's note of this date): the product is now named *21 Beirut*, and
+   > the Arabic writes that name as it is too, with Western digits. The reason is the one that keeps
+   > *42*: a name is never translated (decision 2).
+
 10. **Each slice ships its own text in all three languages, under one rule** ([Settle how each slice ships its text in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/145)).
     The rule is `CONTRIBUTING.md` → *Text ships in three languages*, with a sixth *Done* box, *Three
     languages*, which also asks for the SPA build, since CI stays advisory (ADR-0016 decision 6's

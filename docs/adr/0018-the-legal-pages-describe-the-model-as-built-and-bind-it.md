@@ -130,6 +130,13 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    >   one, an evaluator included. That changes ADR-0004 d9's note of 2026-10-03, which handed the
    >   `.env` to each evaluator (its note of 2026-10-11).
 
+   > **Renamed 2026-10-25** (map #1's note of this date): the product a visitor sees is named
+   > **21 Beirut**, and both pages use the name, *Last updated* on 25 October 2026 (decision 15).
+   > This section is now *Who runs 21 Beirut*, and *Leaving PeerConnect* is *Leaving 21 Beirut*:
+   > the quotes of the old headings in this ADR and in ADR-0008 name the same sections. *Other
+   > websites and services* says that 42's pages show 21 Beirut under its earlier name,
+   > *PeerConnect*, the name the 42 application is registered under.
+
 2. **No law is named and no compliance is claimed.** A GDPR-shaped policy — a controller, lawful
    bases, the eight rights — would name a controller that does not exist and promise what this model
    withholds by design: erasure (ADR-0008 d6-d7), export (never built; the GDPR Minor at `:915` was
