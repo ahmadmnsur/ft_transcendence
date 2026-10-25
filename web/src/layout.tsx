@@ -50,6 +50,36 @@ const panelItemClass =
 // Tailwind's `md`: from here the bar and the account menu show, below it the
 // phone Menu.
 const MD_QUERY = '(width >= 48rem)';
+// The header stays at the top of the window while the page scrolls under it
+// (§3.5.1), over the page's own positioned parts and under the skip link.
+const headerClass = 'sticky top-0 z-40 border-b border-line bg-surface';
+
+// A header panel lies over the page below the header and moves with it, so
+// the page's scroll never reaches the panel's end: taller than the window
+// below the header, it scrolls on its own.
+const panelFitClass = 'max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain';
+
+// The header's height as `--header-height` on the root element, measured once
+// as the header mounts, before the router scrolls a page opened at a `#` link,
+// then on each resize: it moves with the width, the language, a sign-in or a
+// sign-out, and the links a role adds. The page's scroll padding reads it
+// (`index.css`), so whatever the browser scrolls into view, a focused field, a
+// notice or the heading a `#` link opens, stops below the header, not behind
+// it; so does `panelFitClass`. React runs the cleanup when the header unmounts.
+function followHeaderHeight(header: HTMLElement | null): (() => void) | undefined {
+  if (header === null) return undefined;
+  const root = document.documentElement;
+  const measure = (): void => {
+    root.style.setProperty('--header-height', `${header.offsetHeight}px`);
+  };
+  measure();
+  const observer = new ResizeObserver(measure);
+  observer.observe(header, { box: 'border-box' });
+  return () => {
+    observer.disconnect();
+    root.style.removeProperty('--header-height');
+  };
+}
 
 function SiteHeader(): React.JSX.Element {
   const { t, language, setLanguage } = useI18n();
@@ -191,7 +221,7 @@ function SiteHeader(): React.JSX.Element {
 
   if (student === null) {
     return (
-      <header className="border-b border-line bg-surface">
+      <header ref={followHeaderHeight} className={headerClass}>
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
           {brandLink}
           <nav aria-label={copy.navLabel} className="ms-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
@@ -236,7 +266,7 @@ function SiteHeader(): React.JSX.Element {
   );
 
   return (
-    <header className="relative border-b border-line bg-surface">
+    <header ref={followHeaderHeight} className={headerClass}>
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 pt-3 max-md:pb-3 sm:gap-3">
         {brandLink}
         <div className="relative ms-auto hidden md:block">
@@ -249,7 +279,7 @@ function SiteHeader(): React.JSX.Element {
           </button>
           <div
             {...accountMenu.panelProps}
-            className="absolute end-0 top-full z-30 mt-2 w-60 rounded-xl border border-line bg-surface p-1 shadow-lg"
+            className={`absolute end-0 top-full z-30 mt-2 w-60 ${panelFitClass} rounded-xl border border-line bg-surface p-1 shadow-lg`}
           >
             <ul>
               {accountLinks.map((link) => (
@@ -272,7 +302,7 @@ function SiteHeader(): React.JSX.Element {
         <nav
           aria-label={copy.navLabel}
           {...phoneMenu.panelProps}
-          className="absolute inset-x-0 top-full z-30 border-y border-line bg-surface shadow-lg md:hidden"
+          className={`absolute inset-x-0 top-full z-30 ${panelFitClass} border-y border-line bg-surface shadow-lg md:hidden`}
         >
           <div className="mx-auto w-full max-w-6xl px-4 py-2">
             <ul>

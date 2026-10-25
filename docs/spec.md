@@ -692,6 +692,11 @@ included (ADR-0020 d6, §3.5.5).
 > `md`. A new Admin page adds a link on `/admin`, not in the header. The session read only decides
 > which links show; the route guards and the API check the role again.
 
+> **The header stays on screen, 2026-10-25.** Signed in or out, it stays at the top of the window
+> while the page scrolls under it. Whatever the browser scrolls into view, a focused field, a notice
+> or the heading a `#` link opens, stops below it, not behind it. The account menu and, below `md`,
+> the Menu's panel each scroll on their own when taller than the window under the header.
+
 #### 3.5.2 Data, validation and state
 
 - All server state through TanStack Query; the socket only invalidates or inserts (§7.4). No global
