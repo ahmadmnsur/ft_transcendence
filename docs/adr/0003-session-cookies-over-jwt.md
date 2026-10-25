@@ -308,6 +308,15 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
     > the admin API with the secret key, and the project's public sign-up is switched off, so no
     > account can be made except through PeerConnect.
 
+    > **A wrong email and a wrong password told alike, 2026-10-25, decided by Ahmad.** Items 1 and
+    > 2 of the note above now show one sentence on the sign-in page: "Wrong email or password."
+    > The API still answers `no_account` and `password_incorrect`, both counted by the throttle as
+    > before, and `no_account`'s sentence becomes "Wrong email or password." A password change
+    > still answers "Wrong password.", since its email is the signed-in Student's own. This changes
+    > the wording, not what a visitor can learn: sign-up's `email_unavailable` still tells whether
+    > an email has an account, so the dummy hash stays dropped. Items 3 and 4 stand: a sanction is
+    > told only after the right password.
+
     > **The callback's writes, 2026-10-08 by [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93)**, answering the note
     > on the callback exception's reach. The callback may write two things, both after the `state`
     > check:

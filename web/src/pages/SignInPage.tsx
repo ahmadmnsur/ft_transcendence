@@ -18,11 +18,19 @@ function failureCode(error: unknown): unknown {
   return undefined;
 }
 
+// ADR-0003 d10's note of 2026-10-25: a wrong email and a wrong password show
+// one sentence here, `no_account`'s. The API keeps both codes, and the
+// password change still shows `password_incorrect`'s own sentence.
+function signInFailureCode(code: unknown): unknown {
+  return code === 'password_incorrect' ? 'no_account' : code;
+}
+
 const signInSearch = getRouteApi('/sign-in');
 
 // §3.5.1: the signed-out sign-in page. On success it refreshes the session
-// query and goes to `/`. Each refusal shows its own sentence, picked by code;
-// the server's message is never displayed.
+// query and goes to `/`. Each refusal shows a sentence picked by code, a
+// wrong email and a wrong password the same one; the server's message is
+// never displayed.
 export function SignInPage(): React.JSX.Element {
   const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
@@ -110,7 +118,7 @@ export function SignInPage(): React.JSX.Element {
       queryClient.setQueryData(SESSION_QUERY_KEY, { authenticated: true, student });
       await navigate({ to: '/' });
     } catch (error) {
-      if (mountedRef.current) setStatus({ code: failureCode(error) });
+      if (mountedRef.current) setStatus({ code: signInFailureCode(failureCode(error)) });
     } finally {
       setPending(null);
     }
