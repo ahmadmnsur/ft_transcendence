@@ -41,7 +41,7 @@ export default {
     intro: 'A Review has three separate parts, and none of them is edited once submitted.',
     outcomeBody: 'What the Mentee learned and can now do. Read by the two of you and by Admins.',
     feedbackBody: 'Two written answers and an optional rating from {min} to {max}. Read by the Mentor, by Admins and by the Mentee who wrote it.',
-    takeawayBody: 'One line, posted on the feed for every signed-in Student. It never names the Mentor.',
+    takeawayBody: 'One line, posted on the feed for every signed-in Student. It has no field for the Mentor, and the form asks the Mentee not to name them.',
   },
   prompts: {
     heading: 'Between Matches, one question for everyone',

@@ -32,7 +32,7 @@ export default {
     intro: "Un Bilan a trois parties distinctes, et aucune n'est modifiée une fois soumise.",
     outcomeBody: 'Ce que le Mentoré a appris et sait maintenant faire. Lu par vous deux et par les Admins.',
     feedbackBody: "Deux réponses écrites et une note facultative de {min} à {max}. Lu par le Mentor, par les Admins et par le Mentoré qui l'a écrit.",
-    takeawayBody: "Une ligne, publiée sur le fil d'actualité pour tous les Étudiants connectés. Elle ne nomme jamais le Mentor.",
+    takeawayBody: "Une ligne, publiée sur le fil d'actualité pour tous les Étudiants connectés. Elle n'a pas de champ pour le Mentor, et le formulaire demande au Mentoré de ne pas le nommer.",
   },
   prompts: {
     heading: 'Entre deux Matchs, une question pour tous',
