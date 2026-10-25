@@ -130,7 +130,7 @@ MODERATOR_PASSWORD=<your own>
 SEED_STUDENT_PASSWORD=<your own>
 ```
 
-The seed writes these accounts only into an empty database, with the passwords of the command that boots it: `make up` reads your `.env`, while `make local` and `make dev` always use `.env.example`'s. So a fallback that has booted before keeps the passwords it was seeded with. Run `make wipe` once, which deletes everything on the fallback, then boot it with `make up` (step 4), not `make local` or `make dev`. Do the same after any later `make wipe` or `make reset-local`. Before you give anyone the address, sign in there as `admin@peerconnect.test` with `.env.example`'s `change-me-admin`: it must answer *Wrong password*. On the team project, skip this step: its `.env` already sets passwords of its own.
+The seed writes these accounts only into an empty database, with the passwords of the command that boots it: `make up` reads your `.env`, while `make local` and `make dev` always use `.env.example`'s. So a fallback that has booted before keeps the passwords it was seeded with. Run `make wipe` once, which deletes everything on the fallback, then boot it with `make up` (step 4), not `make local` or `make dev`. Do the same after any later `make wipe` or `make reset-local`. Before you give anyone the address, sign in there as `admin@peerconnect.test` with `.env.example`'s `change-me-admin`: it must answer *Wrong email or password.* On the team project, skip this step: its `.env` already sets passwords of its own.
 
 **4. Restart:** `make down`, then `make up`.
 
