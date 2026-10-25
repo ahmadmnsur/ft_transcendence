@@ -54,21 +54,30 @@ const MD_QUERY = '(width >= 48rem)';
 // (§3.5.1), over the page's own positioned parts and under the skip link.
 const headerClass = 'sticky top-0 z-40 border-b border-line bg-surface';
 
-// Whatever the browser scrolls into view, a focused field or a notice, must
-// stop below the header, not behind it: the page's scroll padding follows the
-// header's height, which moves with the width, the language and the links a
-// role adds. A ref callback, since the signed-out and the signed-in header are
-// two elements; React runs the cleanup it returns when one replaces the other.
+// A header panel lies over the page below the header and moves with it, so
+// the page's scroll never reaches the panel's end: taller than the window
+// below the header, it scrolls on its own.
+const panelFitClass = 'max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain';
+
+// The header's height as `--header-height` on the root element, measured once
+// as the header mounts, before the router scrolls a page opened at a `#` link,
+// then on each resize: it moves with the width, the language, a sign-in or a
+// sign-out, and the links a role adds. The page's scroll padding reads it
+// (`index.css`), so whatever the browser scrolls into view, a focused field, a
+// notice or the heading a `#` link opens, stops below the header, not behind
+// it; so does `panelFitClass`. React runs the cleanup when the header unmounts.
 function followHeaderHeight(header: HTMLElement | null): (() => void) | undefined {
   if (header === null) return undefined;
   const root = document.documentElement;
-  const observer = new ResizeObserver(() => {
-    root.style.scrollPaddingTop = `${header.offsetHeight}px`;
-  });
+  const measure = (): void => {
+    root.style.setProperty('--header-height', `${header.offsetHeight}px`);
+  };
+  measure();
+  const observer = new ResizeObserver(measure);
   observer.observe(header, { box: 'border-box' });
   return () => {
     observer.disconnect();
-    root.style.removeProperty('scroll-padding-top');
+    root.style.removeProperty('--header-height');
   };
 }
 
@@ -249,7 +258,7 @@ function SiteHeader(): React.JSX.Element {
           </button>
           <div
             {...accountMenu.panelProps}
-            className="absolute end-0 top-full z-30 mt-2 w-60 rounded-xl border border-line bg-surface p-1 shadow-lg"
+            className={`absolute end-0 top-full z-30 mt-2 w-60 ${panelFitClass} rounded-xl border border-line bg-surface p-1 shadow-lg`}
           >
             <ul>
               {accountLinks.map((link) => (
@@ -268,13 +277,11 @@ function SiteHeader(): React.JSX.Element {
           <MenuIcon size={20} />
         </IconButton>
         {/* The panel follows its button in the DOM, so Tab reaches its links
-        before the switcher, and lies over the page under the header's line.
-        It moves with the header, so the page's scroll never reaches its end:
-        taller than the window below the header, it scrolls on its own. */}
+        before the switcher, and lies over the page under the header's line. */}
         <nav
           aria-label={copy.navLabel}
           {...phoneMenu.panelProps}
-          className="absolute inset-x-0 top-full z-30 max-h-[calc(100dvh-100%)] overflow-y-auto overscroll-contain border-y border-line bg-surface shadow-lg md:hidden"
+          className={`absolute inset-x-0 top-full z-30 ${panelFitClass} border-y border-line bg-surface shadow-lg md:hidden`}
         >
           <div className="mx-auto w-full max-w-6xl px-4 py-2">
             <ul>
