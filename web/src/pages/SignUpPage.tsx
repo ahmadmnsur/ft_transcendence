@@ -13,7 +13,7 @@ import { signup, signup42, fetchSignUpDraft42, signUpDraft42QueryOptions, SIGN_U
 import { SESSION_QUERY_KEY } from '../api/session';
 import { Banner, Button, Card, Checkbox, PasswordField, TextField, buttonClasses } from '../design';
 import { useI18n } from '../i18n/context';
-import { PageTitle } from '../layout';
+import { BRAND, PageTitle } from '../layout';
 
 // Which message the confirmation shows, or undefined when it matches.
 function confirmationError(password: string, confirmation: string): 'empty' | 'mismatch' | undefined {
@@ -46,7 +46,7 @@ const signUpSearch = getRouteApi('/sign-up');
 // the Terms checkbox validation and not storing it, is the ordinary sign-up
 // it has always been.
 export function SignUpPage(): React.JSX.Element {
-  const { t, format, errorText } = useI18n();
+  const { t, format, formatText, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { from } = signUpSearch.useSearch();
@@ -100,7 +100,7 @@ export function SignUpPage(): React.JSX.Element {
           // their password and connects 42 there.
           <Banner
             tone="danger"
-            title={t.auth.signUp.emailTaken42}
+            title={formatText(t.auth.signUp.emailTaken42, { brand: BRAND })}
             body={format(t.auth.signUp.emailTaken42Action, {
               link: (
                 <Link

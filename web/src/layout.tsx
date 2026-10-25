@@ -149,10 +149,36 @@ function SiteHeader(): React.JSX.Element {
   ];
 
   // The logo is drawn, not set in a font, so it looks the same on every
-  // machine; its alt text is the brand, which names the link.
+  // machine; its label is the brand, which names the link. It is inline, not
+  // an <img>, so its strokes take the text color: a forced-colors theme
+  // repaints it like the links instead of leaving it dark on a dark page.
   const brandLink = (
     <Link to="/" className="inline-flex h-7 shrink-0 items-center rounded-lg focus-ring">
-      <img src="/logo.svg" width="94" height="20" alt={BRAND} className="h-5 w-auto" />
+      <svg
+        role="img"
+        aria-label={BRAND}
+        viewBox="0 16 170.03 36"
+        fill="none"
+        strokeWidth={4.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-5 w-auto"
+      >
+        <path
+          stroke="currentColor"
+          className="text-primary-700 forced-colors:text-[LinkText]"
+          d="M3.3 28.5A8.2 8.2 0 0 1 19.7 28.5A8.2 8.2 0 0 1 17.17 34.42L3.3 47.7H32.9V20.3L26.7 25.3"
+        />
+        <g stroke="currentColor" className="text-ink forced-colors:text-[LinkText]">
+          <path d="M52.5 47.7V20.3H58.9A6.37 6.37 0 0 1 58.9 33.04H52.5M52.5 33.04H59.8A7.33 7.33 0 0 1 59.8 47.7H52.5" />
+          <path d="M76.73 39H94.13A8.7 8.7 0 1 0 91.25 45.47" />
+          <path d="M103.73 30.3V47.7" />
+          <path d="M113.73 47.7V30.3M113.73 39.87C113.73 31.5 116.33 30.3 121.33 30.3" />
+          <path d="M130.33 30.3V39A8.7 8.7 0 0 0 147.73 39M147.73 30.3V47.7" />
+          <path d="M161.13 23.5V43.5C161.13 46.5 163.33 47.7 166.73 47.7M156.73 30.3H166.73" />
+          <circle cx="103.73" cy="21.16" r="2.76" fill="currentColor" stroke="none" />
+        </g>
+      </svg>
     </Link>
   );
 

@@ -76,7 +76,7 @@ export default {
     notePrefilled: 'Pre-filled from your 42 account. You can change both fields.',
     loading42: 'Loading your 42 details…',
     retry42: 'Try again',
-    emailTaken42: 'This email already belongs to a 21 Beirut account.',
+    emailTaken42: 'This email already belongs to a {brand} account.',
     emailTaken42Action: 'Sign in with your password, then connect 42 from your profile: {link}',
     no42Question: 'Prefer to sign up without 42? {link}',
     no42Link: 'Sign up without 42',

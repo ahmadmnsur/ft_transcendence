@@ -111,8 +111,7 @@ export default {
     notePrefilled: 'معبأ مسبقا من حساب 42. يمكنك تعديل الحقلين.',
     loading42: 'جار تحميل بيانات 42…',
     retry42: 'إعادة المحاولة',
-    // U+2068 … U+2069 keep the brand in its own order; unmarked, Arabic shows `Beirut 21`.
-    emailTaken42: 'هذا البريد الإلكتروني يخص حسابا على \u{2068}21 Beirut\u{2069} بالفعل.',
+    emailTaken42: 'هذا البريد الإلكتروني يخص حسابا على {brand} بالفعل.',
     emailTaken42Action: 'سجل الدخول بكلمة مرورك، ثم اربط 42 من ملفك الشخصي: {link}',
     no42Question: 'تفضل إنشاء حساب بدون 42؟ {link}',
     no42Link: 'إنشاء حساب بدون 42',
