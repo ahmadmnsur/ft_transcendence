@@ -101,7 +101,7 @@ The production proxy uses a self-signed certificate generated at image build tim
 
 By default `make up` answers on this computer only. Two lines in your own `.env` let anyone on the same Wi-Fi open the site from their laptop, for testing or a demo. Only `make up` and bare `docker compose up --build` read them: `make local`, `make dev` and `make test` stay on localhost whatever `.env` holds. Nothing else changes: the same code, and the same target, the team project or the fallback, that `.env` already names. `make dev` cannot be opened from the network: it serves plain HTTP, and browsers drop the `Secure` session cookie on any HTTP address but localhost, so nobody could stay signed in.
 
-The app trusts exactly one address, `PUBLIC_ORIGIN`: live updates, uploads, the port 8080 redirect and Sign in with 42 all compare against it. So while the site is open to the network, everyone opens it at this laptop's IP, you included. `https://localhost:8443` still loads, but its live updates stop under a banner, *This address can't reach …* and the site's name, its uploads fail and 42 cannot send you back to it.
+The app trusts exactly one address, `PUBLIC_ORIGIN`: live updates, uploads, the port 8080 redirect and Sign in with 42 all compare against it. So while the site is open to the network, everyone opens it at this laptop's IP, you included. `https://localhost:8443` still loads, but its live updates stop under a banner that starts *This address can't reach*, its uploads fail and 42 cannot send you back to it.
 
 Anyone on the same network can then reach the sign-in page and sign up. On the team project, their account lands in the team's database. On the fallback, the staff and seed passwords are `.env.example`'s public defaults until you change them (step 3), and anyone who has read this repository knows them. Turn it on at home or for a demo, and off on a shared network such as campus Wi-Fi.
 
@@ -130,7 +130,7 @@ MODERATOR_PASSWORD=<your own>
 SEED_STUDENT_PASSWORD=<your own>
 ```
 
-The seed writes these accounts only into an empty database, so a fallback that has already been seeded, whose `api` log says `seed already complete`, keeps the old passwords. Run `make wipe` once there, which deletes everything on the fallback, before restarting (step 4): the next boot seeds it afresh with your passwords. On the team project, skip this step: its `.env` already sets passwords of its own.
+The seed writes these accounts only into an empty database, with the passwords of the command that boots it: `make up` reads your `.env`, while `make local` and `make dev` always use `.env.example`'s. So a fallback that has booted before keeps the passwords it was seeded with. Run `make wipe` once, which deletes everything on the fallback, then boot it with `make up` (step 4), not `make local` or `make dev`. Do the same after any later `make wipe` or `make reset-local`. Before you give anyone the address, sign in there as `admin@peerconnect.test` with `.env.example`'s `change-me-admin`: it must answer *Wrong password*. On the team project, skip this step: its `.env` already sets passwords of its own.
 
 **4. Restart:** `make down`, then `make up`.
 

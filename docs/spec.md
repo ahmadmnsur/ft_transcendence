@@ -3879,8 +3879,9 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
   never a copy of it. **It sets all three passwords to values other than the defaults before the
   first boot on the team project**, which is shared use. So is the fallback opened to the local
   network: before opening it, that member's `.env` sets the three passwords too, and a fallback
-  already seeded takes one `make wipe` first, since the seed writes the accounts only into an empty
-  database (ADR-0004 d1's note of 2026-10-25). The team `.env` holds the `postgres` role's password and
+  already seeded takes one `make wipe`, then `make up`, since the seed writes the accounts only into
+  an empty database and `make local` and `make dev` seed `.env.example`'s passwords (ADR-0004 d1's
+  note of 2026-10-25). The team `.env` holds the `postgres` role's password and
   the secret key, so whoever has it can read and change every account and file on the team project:
   only the team holds it, it passes between members privately, it is never committed, and **it is
   never handed to an evaluator**. It is not rotated after a defense; rotating stays cheap if that

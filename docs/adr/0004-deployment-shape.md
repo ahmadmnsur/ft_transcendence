@@ -137,8 +137,8 @@ and why there is no `SESSION_SECRET`.
    > > `MODERATOR_PASSWORD` and `SEED_STUDENT_PASSWORD` to values other than the defaults before opening
    > > it. Shared use, which the paragraph below limits to the team project, now includes it. The seed
    > > writes those accounts only into an empty database, so a fallback already seeded takes one
-   > > `make wipe` before the boot that opens it. The README's *Open it from other laptops on the same
-   > > network* has the step.
+   > > `make wipe`, then `make up`, since `make local` and `make dev` seed `.env.example`'s passwords. The
+   > > README's *Open it from other laptops on the same network* has the step.
    >
    > **The fallback's credentials are fixed, and `.env` is for the team values.** Under `make up`
    > the `api` still reads `.env` over `.env.example`, so a `.env` that changes `POSTGRES_*` and
