@@ -64,13 +64,13 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
         </div>
       ),
       note: null,
-      action: null,
+      buttons: null,
       dialog: null,
     };
   }
 
-  // A Removed Student the viewer has not blocked offers no action, and an
-  // empty box would still take a gap in the page's column.
+  // A Removed Student the viewer has not blocked offers no action, so the
+  // control has no parts at all.
   if (!blocked && student.removed && status === undefined) return null;
 
   // A refusal such as `student_removed` means the profile on screen is out
@@ -127,7 +127,7 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
         </div>
       ),
     note: blocked ? <p className="text-sm text-ink-muted">{copy.blockedNote}</p> : null,
-    action: blocked ? (
+    buttons: blocked ? (
       <Button variant="secondary" size="sm" loading={pending} onClick={() => void onUnblock()}>
         {pending ? actions.unblocking : actions.unblock}
       </Button>
@@ -182,10 +182,10 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
   return (
     <div className="flex min-w-0 flex-col gap-3">
       {parts.status}
-      {parts.note === null && parts.action === null ? null : (
+      {parts.note === null && parts.buttons === null ? null : (
         <div className="flex flex-wrap items-center gap-3">
           {parts.note}
-          {parts.action}
+          {parts.buttons}
         </div>
       )}
       {parts.dialog}

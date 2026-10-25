@@ -30,13 +30,11 @@ import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // §6.5, §7.3: the link to this Student's page on `/messages`, where the
-// composer sends. Never on the viewer's own profile, and never for a
-// Removed Student, who can receive nothing (§4.6).
-function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.Element | null {
+// composer sends. ProfileActions shows it where Report shows: never on the
+// viewer's own profile, and never for a Removed Student, who can receive
+// nothing (§4.6).
+function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.Element {
   const { t } = useI18n();
-  const { data: session } = useQuery(sessionQueryOptions());
-  const viewerId = session?.authenticated === true ? session.student.id : null;
-  if (viewerId === null || viewerId === student.id || student.removed) return null;
   return (
     <Link
       to="/messages/$peerId"
@@ -60,9 +58,9 @@ function ProfileActions({ student }: { student: StudentRef }): React.JSX.Element
   const block = useBlockControl(student);
   const viewerId = session?.authenticated === true ? session.student.id : null;
   const target = { studentId: student.id };
-  // Report and the Direct Message link show to the same viewers.
+  // The Direct Message link shows to the viewers Report shows to.
   const reportable = canReport(viewerId, target, student);
-  const hasRow = reportable || (friend !== null && friend.action !== null) || (block !== null && block.action !== null);
+  const hasRow = reportable || (friend !== null && friend.buttons !== null) || (block !== null && block.buttons !== null);
   if (friend === null && block === null && !hasRow) return null;
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -72,11 +70,11 @@ function ProfileActions({ student }: { student: StudentRef }): React.JSX.Element
       {block?.note}
       {hasRow ? (
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-3">
-          {friend?.action}
-          <DirectMessageControl student={student} />
+          {friend?.buttons}
+          {reportable ? <DirectMessageControl student={student} /> : null}
           <div className="ms-auto flex min-w-0 flex-wrap items-center gap-2">
             <ReportControl target={target} student={student} />
-            {block?.action}
+            {block?.buttons}
           </div>
         </div>
       ) : null}

@@ -85,7 +85,7 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
         </div>
       ),
       note: null,
-      action: null,
+      buttons: null,
       dialog: null,
     };
   }
@@ -150,16 +150,16 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
   };
 
   let noteText: string | null = null;
-  let action: React.ReactNode;
+  let buttons: React.JSX.Element;
   if (isFriend) {
     noteText = copy.friendsNote;
-    action = actionButton('end', 'secondary', friendActions.end, friendActions.ending, () => {
+    buttons = actionButton('end', 'secondary', friendActions.end, friendActions.ending, () => {
       setStatus(undefined);
       setConfirming(true);
     });
   } else if (incoming !== undefined) {
     noteText = copy.incomingNote;
-    action = (
+    buttons = (
       <div className="flex flex-wrap items-center gap-2">
         {actionButton('accept', 'primary', friendActions.accept, friendActions.accepting, () => {
           void run('accept', () => acceptFriendRequest(queryClient, incoming.id));
@@ -171,11 +171,11 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
     );
   } else if (outgoing !== undefined) {
     noteText = copy.outgoingNote;
-    action = actionButton('cancel', 'secondary', friendActions.cancelRequest, friendActions.cancelling, () => {
+    buttons = actionButton('cancel', 'secondary', friendActions.cancelRequest, friendActions.cancelling, () => {
       void run('cancel', () => cancelFriendRequest(queryClient, outgoing.id));
     });
   } else {
-    action = actionButton('send', 'primary', friendActions.send, friendActions.sending, () => {
+    buttons = actionButton('send', 'primary', friendActions.send, friendActions.sending, () => {
       void run('send', () => sendFriendRequest(queryClient, student.id));
     });
   }
@@ -199,7 +199,7 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
         </div>
       ),
     note: noteText === null ? null : <p className="text-sm text-ink-muted">{noteText}</p>,
-    action,
+    buttons,
     dialog: (
       <EndFriendshipDialog
         student={confirming ? student : null}
