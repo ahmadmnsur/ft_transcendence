@@ -8,7 +8,7 @@ export default {
   question: 'I want to learn {learn} and I can teach {teach}.',
   learnLabel: 'A Skill you want to learn',
   teachLabel: 'A Skill you can teach',
-  lead: 'Each Round, students at 42 are paired up: the Mentor teaches a Skill the Mentee wants to learn, and both see exactly why.',
+  lead: 'Each Round, matching pairs up students at 42: the Mentor teaches a Skill the Mentee wants to learn, and both see exactly why.',
   signUp: 'Sign up and list your Skills',
   example: {
     label: 'Example, with an invented name',
@@ -17,7 +17,7 @@ export default {
     // example label the eye reads on the tag above it.
     heading: 'Example, with an invented name: your Match in Round {number}',
     // The invented Student of the example Match.
-    partner: 'Lina',
+    partner: 'Maya',
     // {skill} is the Skill picked to learn.
     goalLabel: '{skill} is my Learning Goal',
     // §8.3 step 4: a pair's Match runs in the direction that scores higher;
@@ -30,7 +30,7 @@ export default {
     skillsTitle: 'List your Skills',
     skillsBody: 'What you can teach and what you want to learn, from one catalogue every Student shares. You can single one out as your Learning Goal.',
     matchTitle: 'Get your Match',
-    matchBody: 'When an Admin opens a Round, matching runs at once. Each Match has a Mentor, a Mentee and a Compatibility Score with its reasons, fixed once it is made.',
+    matchBody: 'When an Admin opens a Round, matching runs at once. Each Match it makes has a Mentor, a Mentee and a Compatibility Score with its reasons, fixed once it is made.',
     meetTitle: 'Meet',
     meetBody: 'Accept the Match, or decline it. Its Mission suggests how to meet, such as a pair-programming session or a code review.',
     reviewTitle: 'Write the Review',

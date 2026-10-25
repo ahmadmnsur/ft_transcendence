@@ -34,7 +34,9 @@ const sectionHeading = 'text-2xl font-semibold text-balance text-ink sm:text-3xl
 // the keyboard, a screen reader and a phone's picker get the real control.
 // The drawn name is hidden from assistive technology: the heading's
 // accessible name already reads the select's chosen option. A new name
-// fades in, so a blank the other one changed shows that it moved.
+// fades in, so a blank the other one changed shows that it moved. A name
+// wider than the line, with the text enlarged, breaks inside the blank
+// rather than pushing the page sideways.
 function SkillBlank({
   label,
   value,
@@ -47,12 +49,12 @@ function SkillBlank({
   onChange: (skill: string) => void;
 }): React.JSX.Element {
   return (
-    <span className="relative inline-flex items-center border-b-4 border-primary-500 px-0.5 text-primary-700 transition-colors duration-150 hover:border-primary-700 hover:bg-primary-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus">
+    <span className="relative inline-flex max-w-full items-center border-b-4 border-primary-500 px-0.5 text-primary-700 transition-colors duration-150 hover:border-primary-700 hover:bg-primary-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus">
       <SkillName
         key={value}
         aria-hidden="true"
         name={value}
-        className="transition-opacity duration-300 ease-out starting:opacity-0 motion-reduce:transition-none"
+        className="min-w-0 transition-opacity duration-300 ease-out wrap-anywhere starting:opacity-0 motion-reduce:transition-none"
       />
       <ChevronDownIcon size="0.5em" strokeWidth={2.5} className="ms-[0.15em] text-primary-500" />
       <select
@@ -174,7 +176,7 @@ function WayIn({ className = '' }: { className?: string }): React.JSX.Element {
   const { t, format } = useI18n();
   return (
     <div className={`flex flex-col items-start gap-3 ${className}`.trim()}>
-      <Link to="/sign-up" className={`w-full text-center sm:w-auto lg:w-full ${buttonClasses({ variant: 'primary', size: 'lg' })}`}>
+      <Link to="/sign-up" className={`w-full text-center wrap-anywhere sm:w-auto lg:w-full ${buttonClasses({ variant: 'primary', size: 'lg' })}`}>
         {t.landing.signUp}
       </Link>
       <p className="text-sm text-ink-muted">
@@ -280,7 +282,7 @@ export function LandingPage(): React.JSX.Element {
           </div>
           <dl className="grid min-w-0 gap-px overflow-hidden rounded-xl border border-line bg-line">
             {parts.map((part) => (
-              <div key={part.term} className="grid gap-1 bg-surface px-5 py-5 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
+              <div key={part.term} className="grid gap-1 bg-surface px-5 py-5 wrap-anywhere sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                 <dt className="font-semibold text-ink">{part.term}</dt>
                 <dd className="text-pretty text-ink-muted">{part.body}</dd>
               </div>

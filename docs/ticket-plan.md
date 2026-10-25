@@ -198,6 +198,10 @@ Triggered by a PR touching `prisma/**`, `prisma.config.ts`, `compose.yaml`, `com
 | CC8 | The demo Student signs in with `SEED_STUDENT_PASSWORD` | T40 (§18 item 12 complete) |
 | CC9 | `/admin/rounds` shows four closed Rounds and none open | T40 |
 
+> **Updated 2026-10-25 by [#222](https://github.com/ahmadmnsur/ft_transcendence/issues/222) (spec §3.5.1's note of 2026-10-25, §16.5):**
+> in CC7, `https://localhost:8443` shows the landing page to a signed-out visitor, and its Sign in
+> reaches the sign-in page.
+
 ### The seed, slice by slice (§14.9, §18 item 12)
 
 **Every seed increment is a follow-up ticket, never inside its slice's ticket**, and the increments
@@ -800,6 +804,10 @@ behaviour-free ticket after Rounds.
   12. The `/sign-in` and `/sign-up` screens validate with the shared limits. The signed-in guard
       is live, and there is a sign-out control. `https://localhost:8443` shows the sign-in page
       (§3.5.1, §3.5.2, §16.5).
+
+      > **Updated 2026-10-25 by [#222](https://github.com/ahmadmnsur/ft_transcendence/issues/222) (spec §3.5.1's note of 2026-10-25, §16.5):**
+      > `https://localhost:8443` shows the landing page to a signed-out visitor, and its Sign in
+      > reaches the sign-in page.
   13. Password change, `POST /api/auth/password { currentPassword, newPassword }` (§5.1, §5.8,
       §6.1):
       - the new password is 8–128 characters;
@@ -887,6 +895,10 @@ behaviour-free ticket after Rounds.
   4. No Markdown library is added (§3.3, M22).
   5. Both routes are readable signed out. The signed-out routes are exactly `/sign-in`,
      `/sign-up`, `/privacy` and `/terms` (§3.5.1).
+
+     > **Updated 2026-10-25 by [#222](https://github.com/ahmadmnsur/ft_transcendence/issues/222) (spec §3.5.1's note of 2026-10-25):**
+     > here and in *Implements*, the signed-out pages are now five. The landing page at `/` joins
+     > them and shows no data; `/privacy` and `/terms` are unchanged.
 - **Tests / verification:** none — fails loudly (§16.1): a bad construct fails the build.
 - **Records the PR moves:** none. Rendering only; text changes belong to T41.
 
