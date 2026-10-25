@@ -3650,9 +3650,10 @@ holds on both targets, the team project and the fallback.
   team project the record is read in the dashboard's SQL editor with the query below.
 
   > **2026-10-25** ([#228](https://github.com/ahmadmnsur/ft_transcendence/issues/228)): a v7 record
-  > written before 2026-10-25 predates §14.8 check 1's Round check and still counts. The seed skips
-  > such a database, so the check never runs on it (§14.8 check 1's note of 2026-10-25). A reset
-  > gives it a record the check has passed.
+  > written before §14.8 check 1's Round check reached `main` still counts. The seed skips such a
+  > database, so the check never runs on it (§14.8 check 1's note of 2026-10-25). `make reset-team`,
+  > then `make up` from `main`, gives it a record the check has passed: the reset only empties, and
+  > the boot after it writes the record (§15.6).
 - **The lock comes first.** The seed opens a connection for the lock alone, outside the `api`'s
   pool, takes a session advisory lock on it before it reads the record, and keeps it to the end of
   the run; the record is cleared and written on that connection. Prisma gives a connection back to
@@ -4168,8 +4169,8 @@ names, run locally as `make test`.
     sign-in itself pay for a real password check;
   - tables are truncated between tests; `fileParallelism: false`; a test or hook without its own
     limit gets 20 s (`testTimeout`, `hookTimeout`), the limit most slow tests set one by one, since
-    Vitest's defaults (5 s a test, 10 s a hook) failed sub-second tests when other Docker work shared
-    the machine. **Supabase Auth users and files
+    Vitest's 5 s default failed sub-second tests when other Docker work shared the machine, and
+    hooks get the same room. **Supabase Auth users and files
     outlive the truncation** and are deleted with the copy. Their ids never repeat, so they collide
     with nothing: a test checks a user or a file by its id, never by a count, and a file's name is
     its row's token (§9.8);
