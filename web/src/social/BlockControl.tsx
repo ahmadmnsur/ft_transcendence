@@ -129,7 +129,7 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
       ) : student.removed ? null : (
         <div>
           <Button
-            variant="danger-ghost"
+            variant="danger-secondary"
             size="sm"
             onClick={() => {
               setStatus(undefined);
