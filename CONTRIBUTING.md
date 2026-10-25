@@ -680,9 +680,11 @@ interpolation. Among Makefile targets that start a stack, only `make up` reads a
 for `api` and `proxy`, after `.env.example`; it copies the example into place if absent.
 `make reset-team` also reads it after `.env.example`, without copying anything, to find the team
 project it empties. Bare Compose uses the same base file and works without `.env` because its
-interpolated ports have defaults. To run the team project, a team member's `.env` holds only its
+interpolated values have defaults. To run the team project, a team member's `.env` holds only its
 values (`DATABASE_URL`, `SUPABASE_URL`, the two keys, the three passwords and the `FT_OAUTH_*`
-pair), never a copy of `.env.example`, and only `make up`, bare `docker compose up --build` and
+pair, plus `BIND_ADDRESS` and `PUBLIC_ORIGIN` while its member opens `make up` to the local
+network: `README.md` → *Open it from other laptops on the same network*), never a copy of
+`.env.example`, and only `make up`, bare `docker compose up --build` and
 `make reset-team` read it (`README.md` → *The `.env` model*, *Running the team project* and
 *The two resets*; [ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the
 database runs on the fallback, and migrations reach the team project only through `make up` on

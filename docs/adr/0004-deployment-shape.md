@@ -128,6 +128,11 @@ and why there is no `SESSION_SECRET`.
    > cannot change them, which suits a stack nothing outside the machine can reach. The build checks it: with a
    > team `.env` in place, `docker compose config` shows no team value in any fallback service.
    >
+   > > **Narrowed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223):** a member's `.env` can open
+   > > the proxy to the local network (decision 5's note of that date). The fallback's own services stay
+   > > unreachable from outside, but its staff and seed passwords are the committed defaults, so anyone on
+   > > that network can sign in with them; the README says so.
+   >
    > **The fallback's credentials are fixed, and `.env` is for the team values.** Under `make up`
    > the `api` still reads `.env` over `.env.example`, so a `.env` that changes `POSTGRES_*` and
    > `DATABASE_URL` together passes the rule below but points the `api` at a password the
@@ -167,6 +172,11 @@ and why there is no `SESSION_SECRET`.
    > `PUBLIC_ORIGIN`: `https://localhost:8443` for the base path or
    > `http://localhost:8081` for the development overlay. This is still one-origin routing;
    > it adds no origin and no environment variable.
+
+   > **Changed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223):** the base path's
+   > configured `PUBLIC_ORIGIN` may also be `https://<the laptop's IP>:8443`, while a member opens
+   > `make up` to the local network (decision 5's note of that date). The gate still admits that one
+   > value only.
 
    > **Upload envelope extended 2026-09-22 by ADR-0009.** nginx's
    > [documented default](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size)
@@ -274,6 +284,19 @@ and why there is no `SESSION_SECRET`.
    > process that `make dev` does not start. Decision 7 enforces production locality; this
    > overlay binding enforces development locality.
 
+   > **Changed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223): the base path may open to the local network, by a member's
+   > choice.** So that teammates and other laptops on the same Wi-Fi can reach a member's `make up`,
+   > two lines in that member's own `.env` open it: `BIND_ADDRESS=0.0.0.0` (decision 7's note of
+   > the same date) and `PUBLIC_ORIGIN=https://<the laptop's IP>:8443`. The mechanism above still
+   > holds, and is why only the base path opens: it is HTTPS, so after the certificate interstitial
+   > (decision 6) the `Secure` cookie is set on the IP, while over the dev overlay's plain HTTP it
+   > would still be dropped. One origin per path still holds too: while the site is open, everyone,
+   > the laptop's owner included, opens the IP, since the socket gate, the upload check and the 42
+   > callback compare against `PUBLIC_ORIGIN` byte for byte. Without the two lines nothing changes,
+   > so localhost stays the contract for a fresh clone, for the evaluator and on defense day. A new
+   > network gives the laptop a new IP, so the `PUBLIC_ORIGIN` line is edited again. The README's
+   > *Open it from other laptops on the same network* has every step.
+
 6. **TLS terminates at the proxy with a self-signed certificate generated at image build.**
    No key is ever committed. The evaluator clicks through one interstitial. `mkcert` was the
    tempting alternative and requires installing a local CA into the evaluator's trust store,
@@ -303,6 +326,14 @@ and why there is no `SESSION_SECRET`.
    > warning above records the earlier gap. The overlay publishes nginx on
    > **`127.0.0.1:8081`**; the production bindings remain exactly
    > **`127.0.0.1:8443`** and **`127.0.0.1:8080`**.
+
+   > **Changed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223): the production bindings follow `BIND_ADDRESS`, `127.0.0.1` by
+   > default.** The proxy publishes `${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-8443}:8443` and
+   > `${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:8080`, and `.env.example` sets
+   > `BIND_ADDRESS=127.0.0.1` (decision 9's note of the same date), so a fresh clone, bare Compose
+   > and `make local` stay on loopback. Only a member's own `.env` sets `0.0.0.0`, with
+   > `PUBLIC_ORIGIN` on the laptop's IP (decision 5's note of the same date). For `make up`, loopback
+   > is now the default rather than the only binding; the dev overlay's `127.0.0.1:8081` is unchanged.
 
 8. **`make up` is the single command, and bare `docker compose up --build` must also work
    end-to-end.** The Makefile carries convenience targets (`dev`, `down`, `seed`, `logs`)
@@ -556,6 +587,11 @@ and why there is no `SESSION_SECRET`.
    > Auth and Storage use their image-specific aliases for the same fixed local signing
    > secret or keys. All twenty-seven values belong to the fallback; the team project's values
    > belong in `.env`.
+
+   > **Updated 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223): 28 entries.** `BIND_ADDRESS=127.0.0.1` joins them, read only by
+   > Compose's interpolation, for the proxy's two ports (decision 7's note of the same date). Its
+   > value is the fallback's default like the rest; a member's `.env` may set `BIND_ADDRESS` and
+   > `PUBLIC_ORIGIN` to open `make up` to the local network (decision 5's note of the same date).
 
 10. **There is no `SESSION_SECRET`, deliberately.** ADR-0003 decision 1 makes the session id
     opaque with the database row as the authority, so there is nothing to sign. Recorded
@@ -896,6 +932,11 @@ six weeks and three developers.
   > hides. Full findings and citations: `docs/research/42-oauth-redirect-uris.md`. Fed to
   > [#24](https://github.com/ahmadmnsur/ft_transcendence/issues/24) as an input to its
   > who-registers-the-application question.
+
+  > **Changed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223):** a member's `.env` may set
+  > the base path's `PUBLIC_ORIGIN` to `https://<the laptop's IP>:8443` to open `make up` to the local
+  > network (decision 5's note of that date). Application code still reads the one source, and the 42
+  > application gets that origin's callback as one more line (the amendment's note of the same date).
 * **This decision earns no module points and must not grow.** The four infrastructure
   majors are out of scope, and the pull to add monitoring, a WAF or a second environment
   because the Compose file is already open is the thing this ADR is meant to stop.
@@ -1066,6 +1107,12 @@ so the single authorization path ADR-0003 defends survives intact.
 >   > **Changed 2026-10-11 by [Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100):** the team `.env` is no
 >   > longer handed to the evaluator, so the 42 application's `UID` and `SECRET` stay with the team
 >   > like the rest of it (decision 9's note of 2026-10-11).
+>
+>   > **Changed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223):** the application also holds one redirect URI
+>   > for each network address a member opens `make up` on, `https://<the laptop's IP>:8443/api/auth/42/callback`,
+>   > each on a line of its own beside the `localhost` one, as issue #26 found one application can
+>   > (decision 5's note of the same date). Kamel adds each when asked; the `UID` and `SECRET` do
+>   > not change.
 > - **Where 42 is on.** `make local`, `make dev` and `make test` read `.env.example` alone, so 42
 >   is off on them and `http://localhost:8081` is not registered. The open question of
 >   2026-09-21, whether 42 accepts plain `http://` for `localhost`, no longer matters. A branch
