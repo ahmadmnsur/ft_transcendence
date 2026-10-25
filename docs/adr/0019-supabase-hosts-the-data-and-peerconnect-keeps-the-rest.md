@@ -93,6 +93,10 @@ The audit added these notes, dated 2026-10-12, and one dated 2026-10-13 after re
   2026-10-08, and [Settle how a 42 identity maps to a Student](https://github.com/ahmadmnsur/ft_transcendence/issues/24) closed on 2026-10-12.
 - **ADR-0017**: `.env.example` has 27 entries, not fifteen (ADR-0004 d9), and decision 6's shared
   password is a Supabase Auth password of 8 characters to 72 bytes.
+
+  > **Twenty-eight since 2026-10-25** (ADR-0004 d9's note of that date, from [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223)):
+  > `BIND_ADDRESS` joins them.
+
 - **ADR-0013** (2026-10-13): decision 5 says ADR-0009 put Evidence in Postgres so that every read
   passes through NestJS. Since [Settle how avatars and Evidence are stored and served on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/94) settled it on 2026-10-05, Evidence goes in a private Storage
   bucket, and every read still passes through NestJS (ADR-0009 d2's note), so the decision stands.

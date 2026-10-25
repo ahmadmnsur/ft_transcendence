@@ -130,8 +130,15 @@ and why there is no `SESSION_SECRET`.
    >
    > > **Narrowed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223):** a member's `.env` can open
    > > the proxy to the local network (decision 5's note of that date). The fallback's own services stay
-   > > unreachable from outside, but its staff and seed passwords are the committed defaults, so anyone on
-   > > that network can sign in with them; the README says so.
+   > > unreachable from outside, and their values stay fixed, `POSTGRES_PASSWORD` included. Its staff and
+   > > seed passwords are the committed defaults, though, and a fallback open to the network is a place
+   > > others can reach, so the rule of decision 9's consolidated list, of *Consequences* and of ADR-0008
+   > > d12 and ADR-0017 d6 applies to it: that member's `.env` sets `ADMIN_PASSWORD`,
+   > > `MODERATOR_PASSWORD` and `SEED_STUDENT_PASSWORD` to values other than the defaults before opening
+   > > it. Shared use, which the paragraph below limits to the team project, now includes it. The seed
+   > > writes those accounts only into an empty database, so a fallback already seeded takes one
+   > > `make wipe` before the boot that opens it. The README's *Open it from other laptops on the same
+   > > network* has the step.
    >
    > **The fallback's credentials are fixed, and `.env` is for the team values.** Under `make up`
    > the `api` still reads `.env` over `.env.example`, so a `.env` that changes `POSTGRES_*` and
@@ -1110,7 +1117,7 @@ so the single authorization path ADR-0003 defends survives intact.
 >
 >   > **Changed 2026-10-25 by [Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223):** the application also holds one redirect URI
 >   > for each network address a member opens `make up` on, `https://<the laptop's IP>:8443/api/auth/42/callback`,
->   > each on a line of its own beside the `localhost` one, as issue #26 found one application can
+>   > each on a line of its own beside the `localhost` one, as issue #26 expects one application can
 >   > (decision 5's note of the same date). Kamel adds each when asked; the `UID` and `SECRET` do
 >   > not change.
 > - **Where 42 is on.** `make local`, `make dev` and `make test` read `.env.example` alone, so 42

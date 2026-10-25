@@ -322,7 +322,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0004 d5, d7 | `http://localhost:8081` (dev, `127.0.0.1:8081`) and `https://localhost:8443` (base, `127.0.0.1:8443` + redirect `127.0.0.1:8080`); LAN out of scope on dev. The base path's two ports listen on `BIND_ADDRESS`, `127.0.0.1` by default: a member's `.env` with `BIND_ADDRESS=0.0.0.0` and `PUBLIC_ORIGIN` on the laptop's IP opens `make up` to the local network (notes of 2026-10-25). |
 | ADR-0004 d6 | Self-signed certificate generated at image build; never committed. |
 | ADR-0004 d8 | `make up` and bare `docker compose up --build` both work, independently; `.env.example` first, optional `.env` second; Compose ≥ 2.24 (`env_file.required`'s own floor — the toolchain floor is §3.3). Of the targets that start a stack, only `make up` reads `.env`; `make local`, `make dev` and `make test` always run the fallback; the boot check is the chain's first step and never falls back by itself; `make test` runs a copy of its own (d8's notes of 2026-10-03 and 2026-10-04). |
-| ADR-0004 d9 | Twenty-eight `.env.example` entries, all the fallback's (notes of 2026-10-04 and 2026-10-25); the team project's values only in `.env`; OAuth pair ships empty; staff and seed credentials are development defaults for the fallback, 8 characters to 72 bytes, set to other values in the team `.env` before its first boot; the team `.env` is never handed to an evaluator (note of 2026-10-11). |
+| ADR-0004 d9 | Twenty-eight `.env.example` entries, all the fallback's (notes of 2026-10-04 and 2026-10-25); the team project's values only in `.env`; OAuth pair ships empty; staff and seed credentials are development defaults for the fallback, 8 characters to 72 bytes, set to other values in the team `.env` before its first boot, and in a member's `.env` before that member opens the fallback to the local network (d1's note of 2026-10-25); the team `.env` is never handed to an evaluator (note of 2026-10-11). |
 | ADR-0004 d10 | No `SESSION_SECRET`. |
 | ADR-0004 d11 | Boot: the boot check → migrate → seed, whose first step makes the buckets, the same chain on both targets; on the team project the session pooler, TLS verified against Supabase's certificate, a pool of 5; `make reset-team` and `make reset-local`, each emptying one fixed target (d11's notes of 2026-10-03 to 2026-10-11). |
 | ADR-0004 d12 | Kamel owns the infrastructure slice in week 1 as a gate, README Instructions included. |
@@ -1926,10 +1926,13 @@ transport, (B) what a 42 account maps to, (C) recovery through 42.
   belongs to an enabled flow only. `make local`, `make dev` and `make test` read `.env.example`
   alone, whose pair is empty, so 42 is off there (ADR-0004 amendment's note of 2026-10-08).
 - **The application**: one team application, *PeerConnect*, registered by Kamel under his 42 account
-  on 2026-10-07, scope `public`, one redirect URI, `https://localhost:8443/api/auth/42/callback`. Its
-  `UID` and `SECRET` are the two `FT_OAUTH_*` values of the team `.env` only (§15.4). A branch that
-  needs a real 42 sign-in runs `make up` with a `.env` holding only those two lines, which boots the
-  local fallback. Hosting later adds a second redirect URI (ADR-0004 amendment's note).
+  on 2026-10-07, scope `public`, redirect URI `https://localhost:8443/api/auth/42/callback`, plus
+  `https://<the laptop's IP>:8443/api/auth/42/callback` on a line of its own for each network address
+  a member opens `make up` on, which Kamel adds when asked (§15.2; ADR-0004 amendment's note of
+  2026-10-25). Its `UID` and `SECRET` are the two `FT_OAUTH_*` values of the team `.env` only (§15.4).
+  A branch that needs a real 42 sign-in runs `make up` with a `.env` holding only those two lines,
+  which boots the local fallback. Hosting later adds one more redirect URI (ADR-0004 amendment's
+  note).
 - **Fixed endpoints** (constants, not variables): authorize `https://api.intra.42.fr/oauth/authorize`,
   token `https://api.intra.42.fr/oauth/token`, identity `https://api.intra.42.fr/v2/me`; scope
   `public`. **Redirect URI** `${PUBLIC_ORIGIN}/api/auth/42/callback`, registered on the 42
@@ -3874,7 +3877,10 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
   `PUBLIC_ORIGIN` while its member opens `make up` to the local network; never the fallback's own
   names, such as `POSTGRES_PASSWORD`. Every other value comes from `.env.example`, so the file is
   never a copy of it. **It sets all three passwords to values other than the defaults before the
-  first boot on the team project**, which is shared use. It holds the `postgres` role's password and
+  first boot on the team project**, which is shared use. So is the fallback opened to the local
+  network: before opening it, that member's `.env` sets the three passwords too, and a fallback
+  already seeded takes one `make wipe` first, since the seed writes the accounts only into an empty
+  database (ADR-0004 d1's note of 2026-10-25). The team `.env` holds the `postgres` role's password and
   the secret key, so whoever has it can read and change every account and file on the team project:
   only the team holds it, it passes between members privately, it is never committed, and **it is
   never handed to an evaluator**. It is not rotated after a defense; rotating stays cheap if that
@@ -3910,7 +3916,9 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
     its `db` always initializes from `.env.example`'s password, so a `.env` that changes
     `POSTGRES_*` and `DATABASE_URL` together passes this rule but names a password the fallback's
     database never read, and the boot check's step 4 refuses it with the remedy (§15.5). Changing
-    the database password for shared use no longer applies: shared use is the team project. An old
+    the database password for shared use no longer applies: shared use is the team project, or a
+    fallback opened to the local network, whose database stays unreachable from outside and whose
+    three passwords change in `.env` instead (ADR-0004 d1's note of 2026-10-25). An old
     `.env` from before the fallback (`POSTGRES_USER=peerconnect`) is deleted, and `make wipe` run,
     as the README says.
   - When `PUBLIC_ORIGIN` is `https:`, its port must equal `HTTPS_PORT`.
