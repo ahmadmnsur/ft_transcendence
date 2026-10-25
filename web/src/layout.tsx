@@ -16,10 +16,10 @@ import { PresenceUpdates } from './social/PresenceUpdates';
 import { useDisclosure } from './shell/useDisclosure';
 
 // The product name is never translated.
-export const BRAND = '42 PeerConnect';
+export const BRAND = '21 Beirut';
 
 // One message with placeholders: the page's name, then the brand, or the
-// brand alone when `name` is absent, so an Arabic name keeps `42 PeerConnect`
+// brand alone when `name` is absent, so an Arabic name keeps `21 Beirut`
 // in its own order. React hoists the string into <head> and removes it on
 // unmount, so each page owns its title and every transition ends with the
 // right one. `web/index.html` keeps its static title before the app mounts.
@@ -148,6 +148,31 @@ function SiteHeader(): React.JSX.Element {
     { to: '/rules', label: t.progress.rules.nav },
   ];
 
+  // The logo is drawn, not set in a font, so it looks the same on every
+  // machine: BEIRUT is Liberation Sans Bold traced into paths. Its label is the
+  // brand, which names the link. It is inline, not an <img>, so its colors are
+  // classes: a forced-colors theme repaints it like the links instead of
+  // leaving it dark on a dark page. It may shrink: signed in below 360 px the
+  // row is too narrow for it, and it must not push the language menu off.
+  const brandLink = (
+    <Link to="/" className="inline-flex h-9 min-w-0 items-center rounded-lg focus-ring">
+      <svg role="img" aria-label={BRAND} viewBox="0.8 10 274 72.3" fill="currentColor" className="h-9 w-auto max-w-full">
+        <g className="text-primary-700 forced-colors:text-[LinkText]">
+          <path d="M29.2 43.1 49 26H86V30.4L0.9 81H96V65H59.1L102 39.6V10H43L18.8 30.9Z" />
+          <path d="M122 35 143 14H156V82H137V38L122 52Z" />
+        </g>
+        <g className="text-primary-900 forced-colors:text-[LinkText]">
+          <path d="M193.9 77.1Q193.9 79.4 192.2 80.7Q190.4 82 187.3 82H178.7V64.8H186.5Q189.7 64.8 191.3 65.9Q192.9 67 192.9 69.1Q192.9 70.6 192.1 71.6Q191.3 72.6 189.6 73Q191.7 73.2 192.8 74.3Q193.9 75.3 193.9 77.1ZM189.3 69.6Q189.3 68.5 188.6 68Q187.8 67.5 186.4 67.5H182.3V71.7H186.4Q187.9 71.7 188.6 71.2Q189.3 70.7 189.3 69.6ZM190.3 76.8Q190.3 74.4 186.8 74.4H182.3V79.3H187Q188.7 79.3 189.5 78.7Q190.3 78.1 190.3 76.8Z" />
+          <path d="M197.7 82V64.8H211.3V67.6H201.3V71.9H210.5V74.7H201.3V79.2H211.8V82Z" />
+          <path d="M215.4 82V64.8H219V82Z" />
+          <path d="M235.2 82 231.2 75.5H226.9V82H223.3V64.8H231.9Q235 64.8 236.7 66.1Q238.4 67.4 238.4 69.9Q238.4 71.7 237.3 73Q236.3 74.4 234.6 74.8L239.2 82ZM234.7 70.1Q234.7 67.6 231.6 67.6H226.9V72.7H231.7Q233.2 72.7 234 72Q234.7 71.3 234.7 70.1Z" />
+          <path d="M249.6 82.2Q246 82.2 244.1 80.5Q242.2 78.8 242.2 75.6V64.8H245.8V75.3Q245.8 77.3 246.8 78.4Q247.8 79.4 249.7 79.4Q251.6 79.4 252.6 78.3Q253.7 77.2 253.7 75.2V64.8H257.3V75.4Q257.3 78.6 255.2 80.4Q253.2 82.2 249.6 82.2Z" />
+          <path d="M269.2 67.6V82H265.6V67.6H260.1V64.8H274.8V67.6Z" />
+        </g>
+      </svg>
+    </Link>
+  );
+
   const languageSwitcher = (
     <Select
       hideLabel
@@ -168,9 +193,7 @@ function SiteHeader(): React.JSX.Element {
     return (
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-          <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
-            <bdi>{BRAND}</bdi>
-          </Link>
+          {brandLink}
           <nav aria-label={copy.navLabel} className="ms-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
             <Link to="/sign-in" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
               {copy.signInLink}
@@ -215,9 +238,7 @@ function SiteHeader(): React.JSX.Element {
   return (
     <header className="relative border-b border-line bg-surface">
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 pt-3 max-md:pb-3 sm:gap-3">
-        <Link to="/" className="min-w-0 rounded-lg text-lg font-semibold text-ink focus-ring">
-          <bdi>{BRAND}</bdi>
-        </Link>
+        {brandLink}
         <div className="relative ms-auto hidden md:block">
           <button type="button" {...accountMenu.buttonProps} className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
             <span className="sr-only">{copy.accountMenu}</span>

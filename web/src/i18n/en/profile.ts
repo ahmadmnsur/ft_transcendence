@@ -38,7 +38,7 @@ export default {
     connecting: 'Connecting…',
     disconnecting: 'Disconnecting…',
     noticeConnected: 'Your 42 account is connected.',
-    noticeInUse: 'This 42 account is connected to another PeerConnect account.',
+    noticeInUse: 'This 42 account is already connected to another account.',
     disconnectedNotice: 'Your 42 account is disconnected.',
   },
   // §5.6 C: recovery through Confirm with 42, on `/me` while a 42 account is

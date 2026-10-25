@@ -742,6 +742,18 @@ included (ADR-0020 d6, §3.5.5).
   Terms (ADR-0011 d4's note). Until the foundation build ticket creates `web/src/i18n/`, a slice
   keeps its English in one object per area shaped like the dictionary, and its French and Arabic
   come when that object moves (§3.5.5; `CONTRIBUTING.md` → *Before the foundation*).
+
+  > **Updated 2026-10-25** (map #1's note of this date): the product a visitor sees is named
+  > **21 Beirut**. `PageTitle` writes the page name before `· 21 Beirut`, the header draws the name
+  > as a logo labelled with it, and the Privacy Policy and the Terms use it (§3.5.4). The name is
+  > still never translated. In the SPA's code one constant, `BRAND`, holds it, beside `index.html`'s
+  > title for the moment before the app mounts, and a text that names it takes it as the value
+  > `{brand}`, which the dictionary isolates (§3.5.5). Text for developers keeps the earlier name,
+  > PeerConnect: this spec, the ADRs and the rest of `docs/` but the two legal pages, code comments
+  > and the API's `message`. The README does not: the subject asks its Description for a clear name
+  > for the project (`document/en.subject.md:1240`), and the evaluator reads it before seeing the
+  > site, so the Description names the project 21 Beirut and can say PeerConnect was its earlier
+  > name (§17.5, #71).
 - **Errors by code, and the tombstone** (ADR-0020 d2). The SPA never displays the API's `message`;
   §3.8.1 stays as written. It picks its text by `code` from one map typed over every `ErrorCode` and
   `RefusalCode`, so a code without text fails `tsc`, and an unknown code, or a response that is not
@@ -891,6 +903,10 @@ in a build-time check), so a page can never silently mis-render. No Markdown lib
   The three 42 logins render as `<code dir="ltr">`, and a code span holds Latin only. The Arabic text
   writes its numbers in Arabic-Indic digits, except the name *42* and a list item's `1.` in the
   Markdown source, which is syntax. It uses `**bold**` where the English uses `*italic*`.
+
+  > **Updated 2026-10-25** (map #1's note of this date): the product's name, *21 Beirut*, is also
+  > written as it is, with Western digits, since the product name is never translated (§3.5.2's
+  > note of this date).
 - **The legal check's text rules.** It fails an `.ar.md` file that holds italic or a vowel mark
   (U+064B–U+0652), and an `.fr.md` file with a plain space before `: ; ! ? »` or after `«`. It reads
   the parsed text, not the raw lines (M38): a line break inside a paragraph counts as a plain space,
@@ -2021,6 +2037,10 @@ amendment's note, ADR-0018 d7's note).
   `302 /me?oauth=in_use`, *"This 42 account is connected to another PeerConnect account."*;
   otherwise it sets `forty_two_id` on the Student's own row and redirects `302 /me?oauth=connected`.
   The `forty_two_id` unique is the backstop and gives the same answer. The session is untouched.
+
+  > **Updated 2026-10-25** (map #1's note of this date): the notice no longer names the product. It
+  > reads *"This 42 account is already connected to another account."*, since the Student reading
+  > it is signed in.
 - **Disconnect 42**: **`POST /api/auth/42/disconnect`** `{ password }`, signed in. After the throttle, a
   password check of the current password (§5.1), refused → `password_incorrect`, counted (§5.5); then one SSI tx
   re-reads the Student: no 42 account connected → `forty_two_not_connected`; otherwise it clears

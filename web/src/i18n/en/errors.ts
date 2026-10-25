@@ -19,7 +19,7 @@ const codes = {
   password_incorrect: 'Wrong password.',
   already_signed_in: 'You are already signed in.',
   oauth_failed: 'Sign in with 42 failed. Try again.',
-  forty_two_connected: 'This PeerConnect account already has a 42 account connected.',
+  forty_two_connected: 'Your account already has a 42 account connected.',
   forty_two_not_connected: 'Your account has no 42 account connected.',
   confirmation_required: 'Confirm with 42 again, then set your new password.',
   student_removed: 'This Student was removed.',
