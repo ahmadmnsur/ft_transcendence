@@ -522,23 +522,33 @@ and resolution comments the same way. The version with the `gh` commands is `AGE
 
 ### Personal data moves the Privacy Policy
 
-[`docs/legal/privacy-policy.md`](docs/legal/privacy-policy.md) is the data model told to the people
-it describes, and `document/en.subject.md:336` rejects the project if it is inadequate. It goes
-stale the first time someone adds a column. So:
+The Privacy Policy ([`docs/legal/privacy-policy.md`](docs/legal/privacy-policy.md) and its French
+and Arabic translations) is the data model told to the people it describes, and
+`document/en.subject.md:336` rejects the project if it is inadequate. It goes stale the first time
+someone adds a column. So:
 
 * **A PR that changes what personal data is stored, who can see it, or how long it is kept updates
   the Privacy Policy in the same PR.** A new column holding something about a Student, a new
   surface showing it, and a new delete path all count.
 * **A PR that changes a conduct rule or a sanction updates
-  [`docs/legal/terms-of-service.md`](docs/legal/terms-of-service.md)** — including the Report
-  reasons, which are the Terms' first three rules (ADR-0011 d4).
+  the Terms ([`docs/legal/terms-of-service.md`](docs/legal/terms-of-service.md) and its
+  translations)** — including the Report reasons, which are the Terms' first three rules
+  (ADR-0011 d4).
+* **Each page is three files with one date.** The English file is the canonical text, and its
+  French and Arabic translations sit beside it: `privacy-policy.md`, `privacy-policy.fr.md`
+  and `privacy-policy.ar.md`, and the same three for `terms-of-service`. A PR that changes
+  one version of a page changes all three, even for a change to one translation alone, and
+  moves their three *Last updated* dates to the same day; the SPA build fails, naming the file,
+  when the dates differ. Their French and Arabic are checked before merge by a member who did
+  not write them: Ahmad when Hussein wrote them, Hussein otherwise (ADR-0018 d15's note of
+  2026-10-13).
 * **Kamel checks it on `prisma/` PRs**, as part of the schema gate. Everywhere else, the PR
   template's Done box is the check.
 
   > **On every gated PR, 2026-10-10:** the gate now also covers `supabase/**` and the Compose files
   > (*Review*, above), and the check comes with it.
 * **The pages are corrected in place, not annotated.** They are user-facing text, not records an
-  evaluator audits; update the *Last updated* date and let git keep the history.
+  evaluator audits; update their shared *Last updated* date and let git keep the history.
 
 The rules the pages already bind — one cookie, nothing fetched from third parties, no passwords or
 request bodies in logs, and the rest — are in

@@ -123,6 +123,10 @@ purpose.
 The date at the top shows when these Terms last changed. 21 Beirut sends no notice of changes and
 does not ask you to accept a new version, so check back from time to time.
 
+These Terms are also written in French and Arabic. Those versions are translations: if they differ
+from this English version, the English version applies. The date at the top is the same in the
+English, French and Arabic versions, and moves when any of them changes.
+
 ## 10. Contact
 
 For anything about your account — Removal, a correction, a Suspension — contact an **Admin** of your
