@@ -213,8 +213,10 @@ votre adresse e-mail sert à vous connecter.
 | L'Analytique des apprentissages | les Admins uniquement, et uniquement des chiffres sur l'ensemble de la communauté |
 | Votre rôle, et si votre compte est suspendu ou exclu | vous et les Admins dans leur liste de tous les comptes. Les autres Étudiants ne voient un compte exclu que comme celui d'un ancien étudiant (voir *Quitter 21 Beirut*). Les Admins sont désignés comme Admins partout où les autres Étudiants les voient. Le rôle de Modérateur étudiant n'est pas montré aux autres Étudiants |
 
-Une personne non connectée ne voit que les pages de connexion et d'inscription et ces deux pages
-de règles.
+Une personne non connectée ne voit que la page d'accueil, qui explique ce qu'est 21 Beirut, les
+pages de connexion et d'inscription, et ces deux pages de règles. Aucune ne montre quoi que ce
+soit sur un Étudiant : un exemple sur la page d'accueil utilise des noms inventés et indique
+qu'il s'agit d'un exemple.
 
 **Les Admins peuvent modifier votre nom d'affichage, votre adresse e-mail, votre avatar, vos
 Compétences et votre Objectif d'apprentissage** — par exemple pour retirer un nom offensant —
