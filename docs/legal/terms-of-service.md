@@ -1,6 +1,6 @@
 # Terms of Service
 
-**42 PeerConnect** · Last updated: 24 October 2026
+**42 PeerConnect** · Last updated: 25 October 2026
 
 These Terms are the rules for using 42 PeerConnect: what you agree to when you create an account, how
 the community is moderated, and what PeerConnect does and does not promise. The *Privacy Policy*
@@ -83,7 +83,8 @@ a Post from the feed, but its text is kept.
 ## 6. Matches and meetings
 
 A Match, its Compatibility Score and its Mission are suggestions. PeerConnect doesn't check anyone's
-Skills or identity, or whether a meeting took place. You can decline any Match.
+Skills or identity, or whether a meeting took place. You can decline any Match while it is in
+progress.
 
 Meetings happen outside PeerConnect, and campus rules apply to them. PeerConnect doesn't organise
 meetings and takes no part in them.
@@ -104,7 +105,7 @@ meetings and takes no part in them.
     it deletes.
 - **Admins can edit your profile fields** — display name, email address, avatar, Skills and Learning
   Goal — for example to remove an offensive name. They can never change your password, your XP or
-  Badges, or anything you wrote.
+  Badges, or your Posts, Reviews, Reports or Direct Messages.
 - **There is no formal appeal.** An Admin can lift a Suspension; nobody can reverse a Removal.
 
 To leave PeerConnect yourself, ask an Admin to remove your account.
