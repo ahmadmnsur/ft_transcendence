@@ -337,6 +337,8 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > ([Settle what the Privacy Policy and Terms say about Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/100)), so they can still sign in as any seeded Student. The
    > environment list has twenty-seven entries since 2026-10-04 (the *Consequences* note).
 
+   > **Twenty-eight since 2026-10-25** (ADR-0004 d9's note of that date): `BIND_ADDRESS` joins them.
+
    The cohort is deterministic from its seed, so **the designated demo Student is stable by
    construction**. They must carry a Match, a Review, a Badge, a **Streak of at least 3**, and
    **Private Feedback received** — that last one because ADR-0013 decision 5's private route is
@@ -656,6 +658,9 @@ question by another route. The consequence below states what we accept instead.
   > **Twenty-seven since 2026-10-04, noted 2026-10-12.** The fifteen remain, and the move to
   > Supabase added twelve: the `api`'s three `SUPABASE_*` entries and nine signing secrets and
   > keys of the local fallback (ADR-0004 d9's note of 2026-10-04).
+
+  > **Twenty-eight since 2026-10-25, noted the same day.** `BIND_ADDRESS` joins them, read only by
+  > Compose for the proxy's two ports (ADR-0004 d9's note of 2026-10-25).
 - **The seed is now the largest gated artifact in the repository** after `schema.prisma`, and
   ADR-0005 decision 6 puts it through the same review. Whoever writes it should expect the gate.
 - **The map's *Not yet specified* section is empty.** Testing went to ADR-0016 and the demo

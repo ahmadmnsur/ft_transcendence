@@ -43,6 +43,12 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > recovery through Confirm with 42](https://github.com/ahmadmnsur/ft_transcendence/issues/157), so
 > recovery is not in T42. T15 builds the seed's bucket step, which T09 does not.
 
+> **Changed 2026-10-25** by [Open make up to the local network when a member's .env
+> asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223): `.env.example` has twenty-eight
+> entries, and Compose interpolates `BIND_ADDRESS` beside the two ports, so T01's base-path ports
+> listen on `127.0.0.1` by default and on every network when a member's `.env` opens `make up` to it
+> (§15.2, §15.4).
+
 > **Changed 2026-10-15 for French, Arabic and right-to-left** ([ADR-0020](adr/0020-peerconnect-speaks-english-french-and-arabic.md);
 > [`docs/spec.md`](spec.md) as updated that day by [Write the ADR for French, Arabic and
 > right-to-left, and update the spec](https://github.com/ahmadmnsur/ft_transcendence/issues/147)).

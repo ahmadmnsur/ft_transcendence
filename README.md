@@ -25,9 +25,9 @@ or clone the repository again.
 
 ### The `.env` model
 
-`.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets that start a stack, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. `make reset-team` reads it the same way, to find the team project it empties. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for its two interpolated ports.
+`.env.example` contains fixed development values for the local Supabase fallback. Every service loads it. The fallback's Postgres, Auth, Storage and gateway services load only that file, even when `.env` exists. `make local`, `make dev` and `make test` also give `api` and `proxy` only `.env.example`. Among Makefile targets that start a stack, only `make up` reads `.env`: it loads `.env.example` first and an optional `.env` second for `api` and `proxy`. `make reset-team` reads it the same way, to find the team project it empties. Bare Compose uses the same base file. A fresh clone needs no `.env`, and Compose has defaults for the three values it interpolates: the two ports and `BIND_ADDRESS`.
 
-The fallback credentials are fixed. A team member who runs the team project keeps its values in the gitignored `.env`, and only those: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ADMIN_PASSWORD`, `MODERATOR_PASSWORD`, `SEED_STUDENT_PASSWORD`, and the `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair. Every other value comes from `.env.example`, so the team `.env` is never a copy of it. Set the three passwords to values other than the defaults before the first boot on the team project. Paste `DATABASE_URL` as the dashboard's Session pooler string with no TLS settings: on the team project the `api` and `prisma migrate` replace any TLS setting it carries and verify the connection themselves against Supabase's certificate, `supabase/prod-ca-2021.crt`. Add no other query parameter: the boot check refuses every one but the TLS settings, because `pg` takes the user, password, host and port from a parameter before the URL's own, so it could connect somewhere the check never saw. That includes `connect_timeout`: `prisma migrate` already waits up to 30 seconds for the pooler, so remove it if your `.env` has one. The team values pass between members privately and are never committed. *Running the team project*, below, says how it boots. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory. If this checkout has a `.env` that the old `make up` copied, delete it: it still has `POSTGRES_USER=peerconnect`, and `make up` writes a fresh copy of `.env.example` when `.env` is absent.
+The fallback credentials are fixed. A team member who runs the team project keeps its values in the gitignored `.env`, and only those: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `ADMIN_PASSWORD`, `MODERATOR_PASSWORD`, `SEED_STUDENT_PASSWORD`, and the `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair, plus `BIND_ADDRESS` and `PUBLIC_ORIGIN` while the site is open to the network (*Open it from other laptops on the same network*, below). Every other value comes from `.env.example`, so the team `.env` is never a copy of it. Set the three passwords to values other than the defaults before the first boot on the team project. On the fallback, `.env` may set them too, and must before the site is opened to the network (*Open it from other laptops on the same network*, below). Paste `DATABASE_URL` as the dashboard's Session pooler string with no TLS settings: on the team project the `api` and `prisma migrate` replace any TLS setting it carries and verify the connection themselves against Supabase's certificate, `supabase/prod-ca-2021.crt`. Add no other query parameter: the boot check refuses every one but the TLS settings, because `pg` takes the user, password, host and port from a parameter before the URL's own, so it could connect somewhere the check never saw. That includes `connect_timeout`: `prisma migrate` already waits up to 30 seconds for the pooler, so remove it if your `.env` has one. The team values pass between members privately and are never committed. *Running the team project*, below, says how it boots. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair ships empty and the platform works without it. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory. If this checkout has a `.env` that the old `make up` copied, delete it: it still has `POSTGRES_USER=peerconnect`, and `make up` writes a fresh copy of `.env.example` when `.env` is absent.
 
 The team project's settings, its members' roles and the few changes ever made to it by hand are recorded in [`supabase/team-project.md`](supabase/team-project.md).
 
@@ -45,7 +45,7 @@ The same stack through the convenience target, which copies `.env.example` to `.
 make up
 ```
 
-Both serve the application at `https://localhost:8443`. Port 8080 only redirects to it.
+Both serve the application at `https://localhost:8443`. Port 8080 only redirects to it. Two lines in `.env` open them to the local network instead (*Open it from other laptops on the same network*, below).
 
 To run the production image on the fallback regardless of `.env`:
 
@@ -95,7 +95,64 @@ Each checks the values it reads as the boot check's first two steps do, and refu
 
 ### Certificate interstitial
 
-The production proxy uses a self-signed certificate generated at image build time. The browser shows a trust warning on first visit. Accept the exception for `localhost` to continue. The key and certificate exist only inside the local image and are never committed.
+The production proxy uses a self-signed certificate generated at image build time. The browser shows a trust warning on first visit. Accept the exception for `localhost`, or for the laptop's IP while the site is open to the network, to continue. The key and certificate exist only inside the local image and are never committed.
+
+### Open it from other laptops on the same network
+
+By default `make up` answers on this computer only. Two lines in your own `.env` let anyone on the same Wi-Fi open the site from their laptop, for testing or a demo. Only `make up` and bare `docker compose up --build` read them: `make local`, `make dev` and `make test` stay on localhost whatever `.env` holds. Nothing else changes: the same code, and the same target, the team project or the fallback, that `.env` already names. `make dev` cannot be opened from the network: it serves plain HTTP, and browsers drop the `Secure` session cookie on any HTTP address but localhost, so nobody could stay signed in.
+
+The app trusts exactly one address, `PUBLIC_ORIGIN`: live updates, uploads, the port 8080 redirect and Sign in with 42 all compare against it. So while the site is open to the network, everyone opens it at this laptop's IP, you included. `https://localhost:8443` still loads, but its live updates stop under a banner that starts *This address can't reach*, its uploads fail and 42 cannot send you back to it.
+
+Anyone on the same network can then reach the sign-in page and sign up. On the team project, their account lands in the team's database. On the fallback, the staff and seed passwords are `.env.example`'s public defaults until you change them (step 3), and anyone who has read this repository knows them. Turn it on at home or for a demo, and off on a shared network such as campus Wi-Fi.
+
+**1. Find this laptop's IP** on the Wi-Fi:
+
+- Linux: `ip -4 -br addr`, the address on the Wi-Fi interface, whose name starts with `wl` (such as `wlp0s20f3`), written before the `/`: for example `192.168.1.102`.
+- macOS: `networksetup -listallhardwareports` names the Wi-Fi device under *Wi-Fi* (usually `en0`, on some Macs `en1`). Then `ipconfig getifaddr en0`, with that device's name in place of `en0`.
+- Windows: `ipconfig`, the *IPv4 Address* under the Wi-Fi adapter.
+
+Use the Wi-Fi address, never a VPN's (Cloudflare WARP's `172.16.0.2`, for example) or a Docker network's (`172.17.0.1` and its neighbours).
+
+**2. Set two lines in `.env`.** Add them, or change them where `.env` already has them (a copy of `.env.example` does):
+
+```bash
+BIND_ADDRESS=0.0.0.0
+PUBLIC_ORIGIN=https://192.168.1.102:8443
+```
+
+`BIND_ADDRESS=0.0.0.0` makes the proxy's ports 8443 and 8080 listen on every network the laptop is on, not only on itself. `PUBLIC_ORIGIN` is the address everyone types: `https://`, the IP, then `:8443`, with no trailing slash. The boot check catches some mistakes: a path or a trailing slash fails on `PUBLIC_ORIGIN`, and a missing `:8443` fails on `HTTPS_PORT`. It does not catch `http://` written instead of `https://`: the site boots, but port 8080 then redirects to plain HTTP on the HTTPS port, and live updates stop under the banner.
+
+**3. On the fallback, change the three passwords.** Its staff and seed passwords are `.env.example`'s, so on the network anyone who has read this repository could sign in as the Admin, the Peer Moderator or any seeded Student. Set your own in the same `.env`, each 8 characters to 72 bytes:
+
+```bash
+ADMIN_PASSWORD=<your own>
+MODERATOR_PASSWORD=<your own>
+SEED_STUDENT_PASSWORD=<your own>
+```
+
+The seed writes these accounts only into an empty database, with the passwords of the command that boots it: `make up` reads your `.env`, while `make local` and `make dev` always use `.env.example`'s. So a fallback that has booted before keeps the passwords it was seeded with. Run `make wipe` once, which deletes everything on the fallback, then boot it with `make up` (step 4), not `make local` or `make dev`. Do the same after any later `make wipe` or `make reset-local`. Before you give anyone the address, sign in there as `admin@peerconnect.test` with `.env.example`'s `change-me-admin`: it must answer *Wrong password*. On the team project, skip this step: its `.env` already sets passwords of its own.
+
+**4. Restart:** `make down`, then `make up`.
+
+**5. Ask Kamel to register the 42 callback** for this IP, the first time you use it. Only he can, because the PeerConnect application is under his 42 account:
+
+1. Sign in at `https://profile.intra.42.fr/oauth/applications` and open **PeerConnect**.
+2. Click **Edit**. In **Redirect URI**, add `https://192.168.1.102:8443/api/auth/42/callback` on a line of its own, and keep every line already there, `https://localhost:8443/api/auth/42/callback` included.
+3. Click **Save**.
+
+The application's UID and secret stay the same, so nobody's `.env` changes. Until the line is there, the 42 button lands on a 42 error page about the redirect URI, while email and password still work. A home router usually gives a laptop the same IP every time, so each place needs its line once.
+
+**6. Open it from another laptop** at `https://192.168.1.102:8443`. Each browser warns once, because the certificate is self-signed and made for `localhost` (*Certificate interstitial*, above): choose *Advanced*, then *Proceed* (Chrome, Brave) or *Accept the Risk and Continue* (Firefox). `http://192.168.1.102:8080` redirects there.
+
+**After changing Wi-Fi, or on another computer**, the laptop has a new IP. Find it (step 1), change the `PUBLIC_ORIGIN` line (`BIND_ADDRESS` stays), restart (step 4), and ask Kamel for the new callback if 42 should work there (step 5). Visitors accept the warning again, since a new address is a new site to the browser.
+
+**To turn it off**, delete both lines from `.env`, or set them back to `.env.example`'s `BIND_ADDRESS=127.0.0.1` and `PUBLIC_ORIGIN=https://localhost:8443`, then restart (step 4). Do this before a defense: the evaluator opens `https://localhost:8443`. The passwords of step 3 can stay. To go back to `.env.example`'s, delete their lines, then run `make wipe` and `make up`.
+
+**When it does not work:**
+
+- **The *This address can't reach …* banner:** the address in the browser is not `PUBLIC_ORIGIN`. Usually the IP changed: follow *After changing Wi-Fi*. Or the page was opened at `localhost`, or `PUBLIC_ORIGIN` starts with `http://` (step 2).
+- **This laptop opens it but the others cannot connect:** check they are on the same network. Some networks, such as guest Wi-Fi and many campus and office networks, stop devices from reaching each other, and nothing in the project can change that: use another network, or a phone's hotspot. Otherwise check the firewall. On Linux, Docker usually opens its published ports itself. macOS and Windows may ask whether Docker may accept incoming connections: allow it on private networks.
+- **42 shows an error about the redirect URI:** the callback for this IP is not registered yet (step 5).
 
 ### Dev overlay and host Vite
 

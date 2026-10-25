@@ -208,6 +208,11 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > one allowed value per path: `https://localhost:8443` in production and
    > `http://localhost:8081` in development.
 
+   > **Changed 2026-10-25 by ADR-0004 d5's note ([Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223)).**
+   > The production value is whatever the base path's `PUBLIC_ORIGIN` holds: `https://localhost:8443`
+   > by default, or `https://<the laptop's IP>:8443` while a member opens `make up` to the local
+   > network. It is still one value per path, and the gate admits nothing else.
+
 8. **Deleting a Student's sessions force-disconnects their live sockets**, through the same
    in-memory registry that already backs **Presence**. Without this, a suspended Student keeps
    messaging over an already-authenticated socket.
@@ -457,6 +462,11 @@ database read per chat message.
   > the dev overlay separately publishes nginx on `127.0.0.1:8081`, making
   > `http://localhost:8081` the supported development origin. The production socket uses
   > `wss`; the developer-only HTTP overlay uses same-origin `ws` and HMR through nginx.
+
+  > **Changed 2026-10-25 by ADR-0004 d5 and d7's notes ([Open make up to the local network when a member's .env asks](https://github.com/ahmadmnsur/ft_transcendence/issues/223)).**
+  > The base path may open to the local network when a member's `.env` sets `BIND_ADDRESS=0.0.0.0`
+  > and `PUBLIC_ORIGIN` on the laptop's IP. It is HTTPS, so the `Secure` cookie is still set there;
+  > the HTTP dev overlay stays on localhost for the reason this bullet names.
 - **A Session entity enters the data model**, owned by nobody's feature slice — it is
   infrastructure that every slice reads through.
 - **Presence is process-local and not durable.** A backend restart reads every Student as
