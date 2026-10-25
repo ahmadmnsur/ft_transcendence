@@ -16,6 +16,7 @@ import { Banner, Button } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 import { EndFriendshipDialog } from './EndFriendshipDialog';
+import type { ControlParts } from './parts';
 
 type Action = 'send' | 'accept' | 'decline' | 'cancel' | 'end';
 
@@ -30,8 +31,8 @@ type Status = { kind: 'done'; action: Action } | { kind: 'failed'; action: Actio
 // loaded, never on the viewer's own profile or a Removed Student's, and not
 // while the viewer blocks the Student, whose Block control says so. A Block
 // the other Student set is never shown: the request is refused with the same
-// sentence whoever blocked (§6.4).
-export function FriendControl({ student }: { student: StudentRef }): React.JSX.Element | null {
+// sentence whoever blocked (§6.4). The profile lays out its parts.
+export function useFriendControl(student: StudentRef): ControlParts | null {
   const { t, formatText, personNameValue, errorText } = useI18n();
   const actions = t.social.actions;
   const friendActions = t.social.friendActions;
@@ -66,22 +67,27 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
   const failed = [friends, requests, blocks].find((query) => query.data === undefined && query.isError);
   if (friends.data === undefined || requests.data === undefined || blocks.data === undefined) {
     if (failed === undefined) return null;
-    return (
-      <div className="order-first flex basis-full flex-wrap items-center gap-3">
-        <p role="alert" className="text-sm text-ink-danger">
-          {errorText(failureCode(failed.error))}
-        </p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            for (const query of [friends, requests, blocks]) if (query.isError) void query.refetch();
-          }}
-        >
-          {actions.retry}
-        </Button>
-      </div>
-    );
+    return {
+      status: (
+        <div className="flex flex-wrap items-center gap-3">
+          <p role="alert" className="text-sm text-ink-danger">
+            {errorText(failureCode(failed.error))}
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              for (const query of [friends, requests, blocks]) if (query.isError) void query.refetch();
+            }}
+          >
+            {actions.retry}
+          </Button>
+        </div>
+      ),
+      note: null,
+      action: null,
+      dialog: null,
+    };
   }
 
   // A Block made here deleted any Friendship or request, and the Block
@@ -143,55 +149,41 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
     end: friendActions.ended,
   };
 
-  // Each note takes a line of its own above the profile's row of actions.
-  const noteClass = 'order-first basis-full text-sm text-ink-muted';
-
-  let controls: React.ReactNode;
+  let noteText: string | null = null;
+  let action: React.ReactNode;
   if (isFriend) {
-    controls = (
-      <>
-        <p className={noteClass}>{copy.friendsNote}</p>
-        {actionButton('end', 'secondary', friendActions.end, friendActions.ending, () => {
-          setStatus(undefined);
-          setConfirming(true);
-        })}
-      </>
-    );
+    noteText = copy.friendsNote;
+    action = actionButton('end', 'secondary', friendActions.end, friendActions.ending, () => {
+      setStatus(undefined);
+      setConfirming(true);
+    });
   } else if (incoming !== undefined) {
-    controls = (
-      <>
-        <p className={noteClass}>{copy.incomingNote}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          {actionButton('accept', 'primary', friendActions.accept, friendActions.accepting, () => {
-            void run('accept', () => acceptFriendRequest(queryClient, incoming.id));
-          })}
-          {actionButton('decline', 'secondary', friendActions.decline, friendActions.declining, () => {
-            void run('decline', () => declineFriendRequest(queryClient, incoming.id));
-          })}
-        </div>
-      </>
+    noteText = copy.incomingNote;
+    action = (
+      <div className="flex flex-wrap items-center gap-2">
+        {actionButton('accept', 'primary', friendActions.accept, friendActions.accepting, () => {
+          void run('accept', () => acceptFriendRequest(queryClient, incoming.id));
+        })}
+        {actionButton('decline', 'secondary', friendActions.decline, friendActions.declining, () => {
+          void run('decline', () => declineFriendRequest(queryClient, incoming.id));
+        })}
+      </div>
     );
   } else if (outgoing !== undefined) {
-    controls = (
-      <>
-        <p className={noteClass}>{copy.outgoingNote}</p>
-        {actionButton('cancel', 'secondary', friendActions.cancelRequest, friendActions.cancelling, () => {
-          void run('cancel', () => cancelFriendRequest(queryClient, outgoing.id));
-        })}
-      </>
-    );
+    noteText = copy.outgoingNote;
+    action = actionButton('cancel', 'secondary', friendActions.cancelRequest, friendActions.cancelling, () => {
+      void run('cancel', () => cancelFriendRequest(queryClient, outgoing.id));
+    });
   } else {
-    controls = actionButton('send', 'primary', friendActions.send, friendActions.sending, () => {
+    action = actionButton('send', 'primary', friendActions.send, friendActions.sending, () => {
       void run('send', () => sendFriendRequest(queryClient, student.id));
     });
   }
 
-  // The pieces are items of the profile's row of actions; the status Banner
-  // takes the first line, above the note.
-  return (
-    <>
-      {status !== undefined ? (
-        <div ref={statusRef} tabIndex={-1} className="order-first basis-full rounded-lg focus-ring">
+  return {
+    status:
+      status === undefined ? null : (
+        <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
           {status.kind === 'failed' ? (
             <Banner
               tone="danger"
@@ -205,14 +197,16 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
             <Banner tone="success" title={formatText(doneText[status.action], { name })} />
           )}
         </div>
-      ) : null}
-      {controls}
+      ),
+    note: noteText === null ? null : <p className="text-sm text-ink-muted">{noteText}</p>,
+    action,
+    dialog: (
       <EndFriendshipDialog
         student={confirming ? student : null}
         pending={pending === 'end'}
         onConfirm={() => void run('end', () => endFriendship(queryClient, student.id))}
         onClose={() => setConfirming(false)}
       />
-    </>
-  );
+    ),
+  };
 }

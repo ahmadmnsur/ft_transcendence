@@ -20,8 +20,8 @@ import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { ReportControl, canReport } from '../moderation/ReportControl';
 import { GoalSection, SkillSection } from '../profile/ProfileSections';
-import { BlockControl } from '../social/BlockControl';
-import { FriendControl } from '../social/FriendControl';
+import { useBlockControl } from '../social/BlockControl';
+import { useFriendControl } from '../social/FriendControl';
 import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
 
 // The shape the API's ParseUUIDPipe accepts (§6.0.1). A malformed id is
@@ -45,6 +45,44 @@ function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.E
     >
       {t.messages.profile.messageLink}
     </Link>
+  );
+}
+
+// §6.4, §6.5, §12.2: a profile's actions, none on the viewer's own profile.
+// First, each on a line of its own, what just happened and where things stand:
+// the friend control's status and note, then the Block control's. Then one row:
+// the friend request buttons and the Direct Message link, then Report and Block,
+// together at the row's end, wrapping as one. Statuses and notes come before the
+// buttons in the page as on screen, so reading and Tab follow the eye.
+function ProfileActions({ student }: { student: StudentRef }): React.JSX.Element | null {
+  const { data: session } = useQuery(sessionQueryOptions());
+  const friend = useFriendControl(student);
+  const block = useBlockControl(student);
+  const viewerId = session?.authenticated === true ? session.student.id : null;
+  const target = { studentId: student.id };
+  // Report and the Direct Message link show to the same viewers.
+  const reportable = canReport(viewerId, target, student);
+  const hasRow = reportable || (friend !== null && friend.action !== null) || (block !== null && block.action !== null);
+  if (friend === null && block === null && !hasRow) return null;
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      {friend?.status}
+      {friend?.note}
+      {block?.status}
+      {block?.note}
+      {hasRow ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-3">
+          {friend?.action}
+          <DirectMessageControl student={student} />
+          <div className="ms-auto flex min-w-0 flex-wrap items-center gap-2">
+            <ReportControl target={target} student={student} />
+            {block?.action}
+          </div>
+        </div>
+      ) : null}
+      {friend?.dialog}
+      {block?.dialog}
+    </div>
   );
 }
 
@@ -132,8 +170,6 @@ export function StudentPage(): React.JSX.Element {
 
   const { student, profile } = data;
   const removed = student.removed;
-  const viewerId = session?.authenticated === true ? session.student.id : null;
-  const reportTarget = { studentId: student.id };
 
   return (
     <>
@@ -148,30 +184,9 @@ export function StudentPage(): React.JSX.Element {
               {student.isAdmin && !removed ? <RoleLabel /> : null}
             </h1>
           </div>
-          {/* §6.4, §6.5, §12.2: one row of actions, none on the viewer's own
-          profile: the friend request button and the Direct Message link,
-          then Report, which takes itself and Block to the row's end. A
-          Removed Student offers at most Unblock, at the row's start. The
-          friend and Block controls render their pieces straight into the
-          row, and put their notes, status Banners and load failures on lines
-          of their own above it. Keyed by the Student, so a status or an open
-          dialog never carries over to the next profile. */}
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-3 empty:hidden">
-            <FriendControl key={`friend-${student.id}`} student={student} />
-            <DirectMessageControl student={student} />
-            {/* Below md, Report and Block take a line of their own: the pair
-            never splits, and the line's second gap sets it apart from the
-            buttons above. Only where Report shows, so the row stays empty and
-            hidden where no action does. */}
-            {canReport(viewerId, reportTarget, student) ? <span className="basis-full md:hidden" /> : null}
-            <ReportControl
-              key={`report-${student.id}`}
-              target={reportTarget}
-              student={student}
-              buttonClassName="ms-auto"
-            />
-            <BlockControl key={student.id} student={student} />
-          </div>
+          {/* Keyed by the Student, so a status or an open dialog never
+          carries over to the next profile. */}
+          <ProfileActions key={student.id} student={student} />
         </header>
         {removed || profile === null ? (
           <p className="text-sm text-ink-muted">{copy.removedNote}</p>
