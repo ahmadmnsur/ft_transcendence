@@ -4,19 +4,9 @@ import type { Catalogue } from '../types';
 export default {
   password: {
     hint: {
-      text: '{minChars}, {maxBytes}. Aucune autre règle.',
-      parts: {
-        minChars: {
-          one: 'Au moins {count} caractère',
-          many: 'Au moins {count} de caractères',
-          other: 'Au moins {count} caractères',
-        },
-        maxBytes: {
-          one: 'au plus {count} octet',
-          many: "au plus {count} d'octets",
-          other: 'au plus {count} octets',
-        },
-      },
+      one: 'Au moins {count} caractère.',
+      many: 'Au moins {count} de caractères.',
+      other: 'Au moins {count} caractères.',
     },
     invalid: {
       text: 'Utilisez {minChars} et {maxBytes}.',

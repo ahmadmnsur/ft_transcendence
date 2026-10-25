@@ -308,10 +308,7 @@ export function SignUpPage(): React.JSX.Element {
                 <PasswordField
                   ref={passwordRef}
                   label={t.auth.signUp.passwordLabel}
-                  hint={format(t.auth.password.hint, {
-                    minChars: LIMITS.password.minChars,
-                    maxBytes: LIMITS.password.maxBytes,
-                  })}
+                  hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
                   {...t.auth.passwordVisibility}
                   autoComplete="new-password"
                   value={password}
