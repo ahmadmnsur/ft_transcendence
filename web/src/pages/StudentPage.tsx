@@ -18,7 +18,7 @@ import {
 import { PostList } from '../feed/PostList';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
-import { ReportControl } from '../moderation/ReportControl';
+import { ReportControl, canReport } from '../moderation/ReportControl';
 import { GoalSection, SkillSection } from '../profile/ProfileSections';
 import { BlockControl } from '../social/BlockControl';
 import { FriendControl } from '../social/FriendControl';
@@ -132,7 +132,8 @@ export function StudentPage(): React.JSX.Element {
 
   const { student, profile } = data;
   const removed = student.removed;
-  const own = session?.authenticated === true && session.student.id === student.id;
+  const viewerId = session?.authenticated === true ? session.student.id : null;
+  const reportTarget = { studentId: student.id };
 
   return (
     <>
@@ -149,22 +150,25 @@ export function StudentPage(): React.JSX.Element {
           </div>
           {/* §6.4, §6.5, §12.2: one row of actions, none on the viewer's own
           profile: the friend request button and the Direct Message link,
-          then Report and Block at the row's end. The friend and Block
-          controls put their notes and status Banners on lines of their own
-          above the row. Keyed by the Student, so a status or an open dialog
-          never carries over to the next profile. */}
+          then Report, which takes itself and Block to the row's end. A
+          Removed Student offers at most Unblock, at the row's start. The
+          friend and Block controls render their pieces straight into the
+          row, and put their notes, status Banners and load failures on lines
+          of their own above it. Keyed by the Student, so a status or an open
+          dialog never carries over to the next profile. */}
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-3 empty:hidden">
             <FriendControl key={`friend-${student.id}`} student={student} />
             <DirectMessageControl student={student} />
-            {/* On a phone, Report and Block take a line of their own, so the
-            pair never splits. Where they do not show, nothing is added: the
-            row stays empty and hidden on the viewer's own profile. */}
-            {own || removed ? null : <span className="basis-full sm:hidden" />}
+            {/* Below md, Report and Block take a line of their own: the pair
+            never splits, and the line's second gap sets it apart from the
+            buttons above. Only where Report shows, so the row stays empty and
+            hidden where no action does. */}
+            {canReport(viewerId, reportTarget, student) ? <span className="basis-full md:hidden" /> : null}
             <ReportControl
               key={`report-${student.id}`}
-              target={{ studentId: student.id }}
+              target={reportTarget}
               student={student}
-              className="ms-auto"
+              buttonClassName="ms-auto"
             />
             <BlockControl key={student.id} student={student} />
           </div>
@@ -186,7 +190,7 @@ export function StudentPage(): React.JSX.Element {
               skills={profile.skills.learn}
             />
             <GoalSection title={copy.goalHeading} empty={copy.goalNone} goal={profile.learningGoal} />
-            {own ? <OwnProgressCard /> : <ProgressCard progress={profile} />}
+            {session?.authenticated && session.student.id === student.id ? <OwnProgressCard /> : <ProgressCard progress={profile} />}
             <StudentPosts key={student.id} studentId={student.id} />
           </>
         )}

@@ -12,20 +12,28 @@ import { BlockControl } from '../social/BlockControl';
 
 type Props = { target: ReportTarget; student: StudentRef };
 
+// Whether Report shows: to a signed-in Student, never on their own profile or
+// Post, and never on a Removed Student's profile. A profile lays out its row of
+// actions by it too.
+export function canReport(viewerId: string | null, target: ReportTarget, student: StudentRef): boolean {
+  return viewerId !== null && viewerId !== student.id && !('studentId' in target && student.removed);
+}
+
 // §12.2: each opening is keyed to start a fresh form. The Modal stays mounted
 // between openings so closing returns focus to Report: a native dialog restores
-// focus on close, not on removal.
-export function ReportControl({ target, student, className }: Props & { className?: string }): React.JSX.Element | null {
+// focus on close, not on removal. `buttonClassName` places the Report button in
+// its parent's layout.
+export function ReportControl({ target, student, buttonClassName }: Props & { buttonClassName?: string }): React.JSX.Element | null {
   const { t } = useI18n();
   const { data: session } = useQuery(sessionQueryOptions());
   const [open, setOpen] = useState(false);
   const [openings, setOpenings] = useState(0);
   const viewerId = session?.authenticated === true ? session.student.id : null;
-  if (viewerId === null || viewerId === student.id || ('studentId' in target && student.removed)) return null;
+  if (!canReport(viewerId, target, student)) return null;
 
   return (
     <>
-      <Button variant="ghost" size="sm" className={className} aria-haspopup="dialog" onClick={() => {
+      <Button variant="ghost" size="sm" className={buttonClassName} aria-haspopup="dialog" onClick={() => {
         setOpenings((count) => count + 1);
         setOpen(true);
       }}>
@@ -152,6 +160,7 @@ function ReportDialog({ target, student, open, onClose }: Props & {
         )}
         {student.removed ? null : (
           <div className="flex min-w-0 flex-wrap items-center gap-3 border-t border-line pt-4 empty:hidden">
+            {/* A row, since BlockControl renders its pieces straight into it. */}
             <BlockControl student={student} />
           </div>
         )}

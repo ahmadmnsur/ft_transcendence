@@ -51,7 +51,7 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
   if (blocks.data === undefined) {
     if (!blocks.isError) return null;
     return (
-      <div className="flex basis-full flex-wrap items-center gap-3">
+      <div className="order-first flex basis-full flex-wrap items-center gap-3">
         <p role="alert" className="text-sm text-ink-danger">
           {errorText(failureCode(blocks.error))}
         </p>

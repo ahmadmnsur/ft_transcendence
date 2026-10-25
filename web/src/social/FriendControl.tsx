@@ -67,7 +67,7 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
   if (friends.data === undefined || requests.data === undefined || blocks.data === undefined) {
     if (failed === undefined) return null;
     return (
-      <div className="flex basis-full flex-wrap items-center gap-3">
+      <div className="order-first flex basis-full flex-wrap items-center gap-3">
         <p role="alert" className="text-sm text-ink-danger">
           {errorText(failureCode(failed.error))}
         </p>
@@ -144,13 +144,13 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
   };
 
   // Each note takes a line of its own above the profile's row of actions.
-  const note = 'order-first basis-full text-sm text-ink-muted';
+  const noteClass = 'order-first basis-full text-sm text-ink-muted';
 
   let controls: React.ReactNode;
   if (isFriend) {
     controls = (
       <>
-        <p className={note}>{copy.friendsNote}</p>
+        <p className={noteClass}>{copy.friendsNote}</p>
         {actionButton('end', 'secondary', friendActions.end, friendActions.ending, () => {
           setStatus(undefined);
           setConfirming(true);
@@ -160,7 +160,7 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
   } else if (incoming !== undefined) {
     controls = (
       <>
-        <p className={note}>{copy.incomingNote}</p>
+        <p className={noteClass}>{copy.incomingNote}</p>
         <div className="flex flex-wrap items-center gap-2">
           {actionButton('accept', 'primary', friendActions.accept, friendActions.accepting, () => {
             void run('accept', () => acceptFriendRequest(queryClient, incoming.id));
@@ -174,7 +174,7 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
   } else if (outgoing !== undefined) {
     controls = (
       <>
-        <p className={note}>{copy.outgoingNote}</p>
+        <p className={noteClass}>{copy.outgoingNote}</p>
         {actionButton('cancel', 'secondary', friendActions.cancelRequest, friendActions.cancelling, () => {
           void run('cancel', () => cancelFriendRequest(queryClient, outgoing.id));
         })}
