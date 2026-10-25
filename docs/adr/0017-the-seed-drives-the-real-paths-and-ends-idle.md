@@ -279,13 +279,14 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > §14.8 checks (decision 10; `docs/ticket-plan.md` T40).
 
    > **Round numbers checked, 2026-10-25 ([#228](https://github.com/ahmadmnsur/ft_transcendence/issues/228)).**
-   > The seed also stops unless each Round, read back at its close, shows its own number: the
-   > *n*-th Round it opens shows as Round *n*. A Round's number is its position by opening time
-   > (`docs/spec.md` §4.3.9), and a clock step back during a run once swapped Rounds 1 and 2 on the
-   > Admin's Rounds page while every row stayed the same. A run that fails here leaves no record,
-   > and the next boot retries (decision 10). The fixture stays v7 on Kamel's call: no row changes,
-   > and a database seeded at v7 before this check keeps its record (`docs/spec.md` §14.8 check 1's
-   > note of 2026-10-25).
+   > The seed also stops unless each Round, read back at its close, shows its own number and
+   > closes after it opens: the *n*-th Round it opens shows as Round *n*. A Round's number is its
+   > position by opening time (`docs/spec.md` §4.3.9), and a clock step back during a run once
+   > swapped Rounds 1 and 2 on the Admin's Rounds page while the pairings and outcomes stayed the
+   > same. A step inside a Round can also make it close before it opens. A run that fails here
+   > leaves no record, and the next boot retries (decision 10). The fixture stays v7 on Kamel's
+   > call: no row changes, and a database seeded at v7 before this check keeps its record
+   > (`docs/spec.md` §14.8 check 1's note of 2026-10-25, §14.9's note of 2026-10-25).
 
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 

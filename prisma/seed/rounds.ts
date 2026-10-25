@@ -138,10 +138,13 @@ export async function seedRound(
   const closed = items.find((round) => round.id === opened.round.id);
   if (closed === undefined) throw new SeedFailure(`Round ${number} is missing after close`);
   // §4.3.9 numbers Rounds by (opened_at, id); opened_at comes from the clock.
-  // A clock step back while seeding can swap two labels. Stop before recording
-  // the fixture so the next boot retries (§14.9).
+  // A clock step back while seeding can swap Round numbers or make one close
+  // before it opens. Stop before recording so the next boot retries (§14.9).
   if (closed.number !== number) {
     throw new SeedFailure(`Round ${number} shows as Round ${closed.number}: its opening time sorts out of order`);
+  }
+  if (closed.closedAt !== null && Date.parse(closed.closedAt) < Date.parse(closed.openedAt)) {
+    throw new SeedFailure(`Round ${number} closes before it opens: the clock stepped back while it was open`);
   }
   return {
     roundId: opened.round.id,
