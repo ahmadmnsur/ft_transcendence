@@ -16,10 +16,10 @@ import { PresenceUpdates } from './social/PresenceUpdates';
 import { useDisclosure } from './shell/useDisclosure';
 
 // The product name is never translated.
-export const BRAND = '42 PeerConnect';
+export const BRAND = '21 Beirut';
 
 // One message with placeholders: the page's name, then the brand, or the
-// brand alone when `name` is absent, so an Arabic name keeps `42 PeerConnect`
+// brand alone when `name` is absent, so an Arabic name keeps `21 Beirut`
 // in its own order. React hoists the string into <head> and removes it on
 // unmount, so each page owns its title and every transition ends with the
 // right one. `web/index.html` keeps its static title before the app mounts.
@@ -148,6 +148,14 @@ function SiteHeader(): React.JSX.Element {
     { to: '/rules', label: t.progress.rules.nav },
   ];
 
+  // The logo is drawn, not set in a font, so it looks the same on every
+  // machine; its alt text is the brand, which names the link.
+  const brandLink = (
+    <Link to="/" className="inline-flex h-7 shrink-0 items-center rounded-lg focus-ring">
+      <img src="/logo.svg" width="94" height="20" alt={BRAND} className="h-5 w-auto" />
+    </Link>
+  );
+
   const languageSwitcher = (
     <Select
       hideLabel
@@ -168,9 +176,7 @@ function SiteHeader(): React.JSX.Element {
     return (
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-          <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
-            <bdi>{BRAND}</bdi>
-          </Link>
+          {brandLink}
           <nav aria-label={copy.navLabel} className="ms-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
             <Link to="/sign-in" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
               {copy.signInLink}
@@ -215,9 +221,7 @@ function SiteHeader(): React.JSX.Element {
   return (
     <header className="relative border-b border-line bg-surface">
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 pt-3 max-md:pb-3 sm:gap-3">
-        <Link to="/" className="min-w-0 rounded-lg text-lg font-semibold text-ink focus-ring">
-          <bdi>{BRAND}</bdi>
-        </Link>
+        {brandLink}
         <div className="relative ms-auto hidden md:block">
           <button type="button" {...accountMenu.buttonProps} className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
             <span className="sr-only">{copy.accountMenu}</span>

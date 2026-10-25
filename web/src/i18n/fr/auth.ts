@@ -94,7 +94,7 @@ export default {
     notePrefilled: 'Pré-rempli depuis votre compte 42. Vous pouvez modifier les deux champs.',
     loading42: 'Chargement de vos informations 42…',
     retry42: 'Réessayer',
-    emailTaken42: 'Cette adresse e-mail appartient déjà à un compte PeerConnect.',
+    emailTaken42: 'Cette adresse e-mail appartient déjà à un compte 21 Beirut.',
     emailTaken42Action:
       'Connectez-vous avec votre mot de passe, puis associez 42 depuis votre profil\u00a0: {link}',
     no42Question: 'Plutôt vous inscrire sans 42\u202f? {link}',

@@ -32,7 +32,7 @@ export default {
     connecting: 'جار الربط…',
     disconnecting: 'جار إلغاء الربط…',
     noticeConnected: 'تم ربط حساب 42.',
-    noticeInUse: 'حساب 42 هذا مرتبط بحساب آخر على PeerConnect.',
+    noticeInUse: 'حساب 42 هذا مرتبط بالفعل بحساب آخر.',
     disconnectedNotice: 'تم إلغاء ربط حساب 42.',
   },
   confirm42: {

@@ -21,7 +21,7 @@ export default {
     password_incorrect: 'Mot de passe incorrect.',
     already_signed_in: 'Vous êtes déjà connecté.',
     oauth_failed: 'La connexion avec 42 a échoué. Réessayez.',
-    forty_two_connected: 'Ce compte PeerConnect a déjà un compte 42 associé.',
+    forty_two_connected: 'Votre compte a déjà un compte 42 associé.',
     forty_two_not_connected: "Votre compte n'a aucun compte 42 associé.",
     confirmation_required: 'Confirmez de nouveau avec 42, puis définissez votre nouveau mot de passe.',
     student_removed: 'Cet Étudiant a été exclu.',

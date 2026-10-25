@@ -21,7 +21,7 @@ export default {
     password_incorrect: 'كلمة المرور خاطئة.',
     already_signed_in: 'أنت مسجل الدخول بالفعل.',
     oauth_failed: 'فشل تسجيل الدخول باستخدام 42. حاول مرة أخرى.',
-    forty_two_connected: 'هذا الحساب على PeerConnect مرتبط بالفعل بحساب 42.',
+    forty_two_connected: 'حسابك مرتبط بالفعل بحساب 42.',
     forty_two_not_connected: 'حسابك غير مرتبط بأي حساب 42.',
     confirmation_required: 'أكد هويتك باستخدام 42 مرة أخرى، ثم عين كلمة المرور الجديدة.',
     student_removed: 'تم استبعاد هذا الطالب.',

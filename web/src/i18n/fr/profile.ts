@@ -32,7 +32,7 @@ export default {
     connecting: 'Association…',
     disconnecting: 'Dissociation…',
     noticeConnected: 'Votre compte 42 est associé.',
-    noticeInUse: 'Ce compte 42 est associé à un autre compte PeerConnect.',
+    noticeInUse: 'Ce compte 42 est déjà associé à un autre compte.',
     disconnectedNotice: 'Votre compte 42 est dissocié.',
   },
   confirm42: {
