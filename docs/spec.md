@@ -3492,6 +3492,11 @@ Let `M[0..n−1]` be the matcher's Matches in selection order.
   forces**: no Match is added to reach 15. The seed logs the actual distribution; if the first run
   differs, ADR-0017 d4's table and the 74 % are corrected from it (a record update, not a code change).
 
+  > **Confirmed 2026-10-25** by [Seed v7: Suspension, Removal and their files](https://github.com/ahmadmnsur/ft_transcendence/issues/68):
+  > the first complete run gives exactly these targets, Round by Round and in total: 62 Matches,
+  > 46 `COMPLETED`, 8 `LAPSED`, 6 `DECLINED`, 2 `TERMINATED_BY_ADMIN`, completion 74 %. So ADR-0017
+  > d4's table and the 74 % stand uncorrected.
+
 ### 14.6 Social graph, Likes, Direct Messages (ADR-0017 d9)
 
 - **Demo Student *D*** = the first Active `STUDENT` by position, outside the reserved positions,

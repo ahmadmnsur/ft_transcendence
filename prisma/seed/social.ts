@@ -6,7 +6,6 @@ import type { Role } from '../../src/shared/roles';
 import type { SocialService } from '../../src/social/social.service';
 import { RESERVED_POSITIONS } from './cohort';
 import { SeedFailure } from './failure';
-import { isSanctioned, type Sanctioned } from './sanctioned';
 
 // §14.4 step 5's first three parts (§14.6, ADR-0017 d9): the social graph,
 // the Likes and the two Direct Message threads, each one call to a service
@@ -14,12 +13,11 @@ import { isSanctioned, type Sanctioned } from './sanctioned';
 
 export type ActiveMember = { id: string; position: number; role: Role };
 
-// The cohort's Active Students in position order, as §14.6 counts them:
-// neither flag set, and neither S nor R.
+// The cohort's Active Students in position order (§14.6). S and R already
+// carry their sanction flags by §14.4 step 5.
 export async function activeCohort(
   prisma: PrismaService,
   cohortIds: readonly string[],
-  sanctioned: Sanctioned,
 ): Promise<ActiveMember[]> {
   const rows = await prisma.student.findMany({
     where: { id: { in: [...cohortIds] }, suspendedAt: null, removedAt: null },
@@ -28,7 +26,7 @@ export async function activeCohort(
   const roles = new Map(rows.map((row) => [row.id, row.role]));
   return cohortIds.flatMap((id, position) => {
     const role = roles.get(id);
-    if (role === undefined || isSanctioned(sanctioned, id)) return [];
+    if (role === undefined) return [];
     return [{ id, position, role }];
   });
 }

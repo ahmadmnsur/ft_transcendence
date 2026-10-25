@@ -13,8 +13,10 @@ import { quoteIdentifier } from './sql';
 // §14.5 step b's answers, and §14.8's checks 1 (Prompts), 3 and 9. v6: §14.4
 // step 5, the social graph, Likes and Direct Messages of §14.6 and the report
 // fixtures of §14.7, with S and R chosen but not sanctioned, and §14.8's
-// check 6.
-export const FIXTURE_VERSION = 6;
+// check 6. v7: S suspended in Round 3; R's avatar and Evidence uploaded, then
+// R removed, in Round 4; §14.8's check 5. This is ADR-0017's complete end
+// state: all of §14.4–§14.8, all ten checks.
+export const FIXTURE_VERSION = 7;
 
 // Only this text is a record. Both databases start with Postgres's own
 // comment, "default administrative connection database", which is none.

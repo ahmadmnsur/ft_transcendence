@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AdminModule } from '../../src/admin/admin.module';
 import { AuthModule } from '../../src/auth/auth.module';
 import { CoreModule } from '../../src/core/core.module';
 import { FeedModule } from '../../src/feed/feed.module';
@@ -25,6 +26,7 @@ import { StudentsModule } from '../../src/students/students.module';
     FeedModule,
     MessagingModule,
     ModerationModule,
+    AdminModule,
   ],
 })
 export class SeedModule {}

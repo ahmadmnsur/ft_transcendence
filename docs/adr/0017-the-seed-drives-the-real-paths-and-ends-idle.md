@@ -257,6 +257,27 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > certifies these steps and checks, not the complete end state (decision 10;
    > `docs/ticket-plan.md` T39).
 
+   > **Fixture v7, 2026-10-25 ([#68](https://github.com/ahmadmnsur/ft_transcendence/issues/68)).**
+   > This increment applies decision 5's two sanctions inside the Rounds, through the real paths.
+   > In Round 3, after the declines and the repair and before either side accepts, the Admin
+   > suspends *S*, whose Match ends `TERMINATED_BY_ADMIN`. *S* stays suspended, so *S* is skipped
+   > from Round 4's answers and leaves Round 4's pool. In Round 4, at the same point, *R* uploads
+   > `prisma/seed/assets/avatar.png` through the avatar path and `evidence.pdf` as Evidence on *R*'s
+   > earliest Review, then the Admin removes *R*: *R*'s Match ends `TERMINATED_BY_ADMIN`, the Avatar
+   > row goes, and its file is deleted after commit. Both are chosen by `docs/spec.md` §14.5's rules
+   > from the Matches of their own Round, so *R* comes from v7's Round 4, not v6's. The seed checks
+   > that *S* is Suspended and not Removed, and that *R* is Removed, has no Avatar, keeps their
+   > email and has Evidence on a Review they wrote as Mentee, with its Private Feedback (§14.8 check
+   > 5). It logs the four Rounds' totals against this decision's targets, with the run's duration.
+   > **The first complete run confirms the targets exactly**: 62 Matches, 46 `COMPLETED`, 8
+   > `LAPSED`, 6 `DECLINED` and 2 `TERMINATED_BY_ADMIN`, a completion rate of 74%, so the tables
+   > above stand as written. Rounds 1 and 2, and Round 3's pairs, are those of v6. Round 4's
+   > Matches change, and every Review submitted after *S*'s Match moves up in the submission order
+   > that picks its rating; the Posts, the Likes and some step-5 parties change with them. *S*, *R*
+   > and the demo Student are positions 5, 24 and 3 (v6: 5, 22 and 3). From this version on, the
+   > completion record certifies the complete end state: every step of §14.4–§14.7 and all ten
+   > §14.8 checks (decision 10; `docs/ticket-plan.md` T40).
+
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
    Both are one flag, and between them they make six settled rules visible that a clean cohort

@@ -1,8 +1,8 @@
 import type { Actor } from '../../src/core/actor';
 import { Refusal } from '../../src/core/errors';
 import type { MatchingService } from '../../src/matching/matching.service';
-import type { AdminRoundMatch, MatchDetailView } from '../../src/matching/views';
-import type { MatchRole } from '../../src/shared/matches';
+import type { AdminRoundMatch, MatchDetailView, StatusCounts } from '../../src/matching/views';
+import { MATCH_STATUSES, type MatchRole } from '../../src/shared/matches';
 import { SeedFailure } from './failure';
 import type { PromptScript } from './prompts';
 import type { SubmitReview } from './reviews';
@@ -17,14 +17,24 @@ const DECLINES = [
 ] as const satisfies readonly (readonly MatchRole[])[];
 
 // §14.5's full-fixture targets, reported beside the actual counts, never
-// asserted. Until the sanctions join, the Matches that S's Suspension and R's
-// Removal would terminate complete instead.
+// asserted: the matcher determines how many Matches each Round holds.
 export const ROUND_TARGETS = [
   { matcherMatches: 15, COMPLETED: 12, LAPSED: 2, DECLINED: 2, TERMINATED_BY_ADMIN: 0 },
   { matcherMatches: 15, COMPLETED: 12, LAPSED: 2, DECLINED: 1, TERMINATED_BY_ADMIN: 0 },
   { matcherMatches: 15, COMPLETED: 11, LAPSED: 2, DECLINED: 2, TERMINATED_BY_ADMIN: 1 },
   { matcherMatches: 15, COMPLETED: 11, LAPSED: 2, DECLINED: 1, TERMINATED_BY_ADMIN: 1 },
 ] as const;
+
+// §14.8 check 2: actual counts and §14.5's targets share totals and rounding.
+// The targets omit the in-progress statuses of a closed Round.
+export function matchDistribution(roundCounts: readonly Partial<StatusCounts>[]) {
+  const counts = Object.fromEntries(MATCH_STATUSES.map((status) => [status, 0])) as StatusCounts;
+  for (const round of roundCounts) {
+    for (const status of MATCH_STATUSES) counts[status] += round[status] ?? 0;
+  }
+  const matches = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  return { counts, matches, completionPercent: Math.round(100 * counts.COMPLETED / matches) };
+}
 
 // Returns the Mentee's view, read after its acceptance.
 async function acceptBoth(matching: MatchingService, match: AdminRoundMatch): Promise<MatchDetailView> {
@@ -76,16 +86,21 @@ async function repair(
 
 export type SeededRound = Awaited<ReturnType<typeof seedRound>>;
 
-// §14.5 steps a, b, c, d, g, h and i. The application's Round detail is in
-// creation order: the matcher's selection order before repairs. No seed
-// write sets a Match status or fabricates coverage. Returns the Round's id
-// and M, the snapshot its script ran on, beside what the seed logs.
+// Steps e and f act on the same M as the rest of the script, returning the
+// terminated Match so step h leaves it untouched (§14.5).
+export type SanctionStep = (matches: readonly AdminRoundMatch[]) => Promise<string>;
+
+// §14.5 steps a–i. The application's Round detail is in creation order:
+// the matcher's selection order before repairs. No seed write sets a Match
+// status or fabricates coverage. Returns the Round's id and M, the snapshot
+// its script ran on, beside what the seed logs.
 export async function seedRound(
   matching: MatchingService,
   submitReview: SubmitReview,
   afterOpen: PromptScript['afterOpen'],
   admin: Actor,
   number: number,
+  sanction?: SanctionStep,
 ) {
   const declines = DECLINES[number - 1];
   if (declines === undefined) throw new SeedFailure('the per-Round script only covers Rounds 1–4');
@@ -105,13 +120,18 @@ export async function seedRound(
   const hasRepair = number === 1 || number === 3;
   if (hasRepair) await repair(matching, submitReview, admin, matches[0], matches[1]);
 
+  const terminatedMatchId = await sanction?.(matches);
+
   // Step g: M[n−1] both accept; M[n−2] only the Mentor accepts.
   await acceptBoth(matching, matches[matches.length - 1]);
   const mentorOnly = matches[matches.length - 2];
   await matching.accept({ studentId: mentorOnly.mentor.id, sessionHash: null }, mentorOnly.id);
 
-  // Step h: selection order, excluding declines and the two lapse indices.
-  for (const match of matches.slice(declines.length, -2)) await complete(matching, submitReview, match);
+  // Step h: selection order, excluding declines, sanctions and the two lapse indices.
+  for (const match of matches.slice(declines.length, -2)) {
+    if (match.id === terminatedMatchId) continue;
+    await complete(matching, submitReview, match);
+  }
   await matching.closeRound(admin);
 
   const { items } = await matching.listRounds(admin);

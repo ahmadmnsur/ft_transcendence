@@ -11,7 +11,7 @@ import { cohortEmails, GAP_SKILL, RESERVED_POSITIONS, X_POSITION, Y_POSITION } f
 import { SeedFailure } from './failure';
 import { PROMPT_QUESTIONS } from './prompts';
 import type { ReportFixtures } from './reports';
-import { isSanctioned, type Sanctioned } from './sanctioned';
+import type { Sanctioned } from './sanctioned';
 
 // Every email the seed makes at this fixture version: the two bootstrap
 // accounts and the thirty of §14.3.
@@ -47,15 +47,13 @@ export type DemoStudent = { id: string; position: number; email: string };
 
 // §14.6, §14.8 check 3: the demo Student D is the first Student by position,
 // outside the reserved ones, that meets every condition of the check. S and
-// R are not Active by §14.4 step 5, so neither is D. The seed chooses D before
-// step 5, which, like Prompt 4, touches nothing the check reads.
+// R carry their sanction flags by §14.4 step 5, so neither is D. The seed
+// chooses D before step 5, which, like Prompt 4, touches nothing the check reads.
 export async function findDemoStudent(
   prisma: PrismaService,
   cohortIds: readonly string[],
-  sanctioned: Sanctioned,
 ): Promise<DemoStudent> {
-  const candidateIds = cohortIds.filter((id, position) =>
-    !RESERVED_POSITIONS.includes(position) && !isSanctioned(sanctioned, id));
+  const candidateIds = cohortIds.filter((_, position) => !RESERVED_POSITIONS.includes(position));
   const rows = await prisma.student.findMany({
     where: {
       id: { in: candidateIds },
@@ -129,9 +127,9 @@ async function assertModerationViews(reads: ModerationReads): Promise<void> {
   }
 }
 
-// §14.8, the end-state assertions this fixture version implements. D was
-// chosen before §14.4 step 5; check 3 chooses again and must find the same
-// Student.
+// §14.8, all end-state assertions. Check 2 is reported before the completion
+// record. D was chosen before §14.4 step 5; check 3 chooses again and must
+// find the same Student.
 export async function assertEndState(
   prisma: PrismaService,
   cohortIds: readonly string[],
@@ -158,7 +156,7 @@ export async function assertEndState(
   }
 
   // Check 3: the demo Student D exists. The seed logs their email (§3.9).
-  const { id, position, email } = await findDemoStudent(prisma, cohortIds, sanctioned);
+  const { id, position, email } = await findDemoStudent(prisma, cohortIds);
   if (id !== demo.id) {
     throw new SeedFailure(`check 3: the demo Student is at position ${position}, not ${demo.position} as before §14.4 step 5`);
   }
@@ -172,6 +170,31 @@ export async function assertEndState(
   });
   if (ratings.length < 3) {
     throw new SeedFailure(`check 4: ${ratings.length} distinct non-null ratings among Private Feedback; expected at least 3`);
+  }
+
+  // Check 5: Suspension persists; Removal drops the Avatar but preserves
+  // the email, Evidence and its Review's Private Feedback (ADR-0017 d5).
+  const suspended = await prisma.student.findUnique({
+    where: { id: sanctioned.suspendedId },
+    select: { suspendedAt: true, removedAt: true },
+  });
+  if (suspended === null || suspended.suspendedAt === null || suspended.removedAt !== null) {
+    throw new SeedFailure('check 5: S must be Suspended and not Removed');
+  }
+  const removedPosition = cohortIds.indexOf(sanctioned.removedId);
+  const removed = await prisma.student.findUnique({
+    where: { id: sanctioned.removedId },
+    select: { removedAt: true, email: true, avatar: { select: { token: true } } },
+  });
+  if (removedPosition < 0 || removed === null || removed.removedAt === null || removed.avatar !== null ||
+      removed.email !== cohortEmails()[removedPosition]) {
+    throw new SeedFailure('check 5: R must be Removed, have no Avatar and keep their §14.3 email');
+  }
+  const retainedEvidence = await prisma.evidence.count({
+    where: { review: { match: { menteeId: sanctioned.removedId }, privateFeedback: { isNot: null } } },
+  });
+  if (retainedEvidence === 0) {
+    throw new SeedFailure('check 5: R must retain Evidence on a Review they wrote as Mentee with its Private Feedback');
   }
 
   await assertModerationViews(moderationReads);
