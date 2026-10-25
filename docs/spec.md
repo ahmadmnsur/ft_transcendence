@@ -141,6 +141,11 @@ and 42 projects as Skills; hosting PeerConnect anywhere, Vercel included.
    password is wrong, and then a temporary throttle, so that I know what to fix and nobody can keep
    guessing; a Suspension or Removal is told only once the right password is typed.
 
+   > **Updated 2026-10-25** (ADR-0003 d10's note of the same day): the sign-in page shows a wrong
+   > email and a wrong password the same sentence, *"Wrong email or password."*, so the page no
+   > longer says which one is wrong; the API's codes still do. The throttle and the sanction rule
+   > stand.
+
 **Student — account and profile**
 
 7. As a Student, I want to edit my display name and email, so that my account stays accurate.
@@ -307,7 +312,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0003 d7 | Socket authenticates by the cookie; WebSocket-only; Origin must equal `PUBLIC_ORIGIN` before session resolution; rejection stops retry. |
 | ADR-0003 d8 | Deleting sessions force-disconnects live sockets via the Presence registry. |
 | ADR-0003 d9 | No privileged action over the socket; a DM is the only client write. |
-| ADR-0003 d10 | CSRF: SameSite=Lax + JSON content type on every mutation; upload exception with Origin + `X-PeerConnect-CSRF: 1`; no GET changes a domain row except lazy renewal and the OAuth callback; `state` mandatory; throttle 5 / 15 min keyed on client address **and** email, in memory, nginx the only trusted proxy. Sign-in says what is wrong, a sanction only after the right password; a Supabase 429 is `too_many_attempts`, not counted; Supabase Auth unreachable is `busy_retry_later` (d10's note of 2026-10-02). The 42 callback writes only a found Student's session or a Connect 42 link; Connect 42 and Disconnect 42 ask for the current password; the 42 sign-up form's own request creates the Student (note of 2026-10-08). |
+| ADR-0003 d10 | CSRF: SameSite=Lax + JSON content type on every mutation; upload exception with Origin + `X-PeerConnect-CSRF: 1`; no GET changes a domain row except lazy renewal and the OAuth callback; `state` mandatory; throttle 5 / 15 min keyed on client address **and** email, in memory, nginx the only trusted proxy. Sign-in's codes say what is wrong, a sanction only after the right password; a Supabase 429 is `too_many_attempts`, not counted; Supabase Auth unreachable is `busy_retry_later` (d10's note of 2026-10-02). The sign-in page shows a wrong email and a wrong password one sentence, *"Wrong email or password."* (note of 2026-10-25). The 42 callback writes only a found Student's session or a Connect 42 link; Connect 42 and Disconnect 42 ask for the current password; the 42 sign-up form's own request creates the Student (note of 2026-10-08). |
 | ADR-0003 d11 | Logout ships; email verification, password reset by email and Admin-set passwords do not. A Student who connected 42 may set a new password without the current one within ten minutes of Confirm with 42 (d11's note of 2026-10-08). |
 | ADR-0004 top notes | `make up` runs on the team Supabase project when `.env` holds its values, for `main` and the defense, and on the local fallback otherwise; nothing falls back by itself. Kamel keeps the Free project active. Still no public deployment. The team `.env` stays with the team (note of 2026-10-11). |
 | ADR-0004 d1–d3 | Six services: `proxy`, `api`, and the fallback's `db` (Supabase's Postgres image), `auth`, `storage` and `api-gw` (d1's notes of 2026-10-03 and 2026-10-04); the fallback's services load `.env.example` alone; only `proxy` publishes ports; nginx serves the bundle and proxies `/api` and `/socket.io`. |
@@ -1736,6 +1741,13 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   **A sanction is told only after the right password**, so someone who only knows the email never
   learns of it (ADR-0008 d5's note). Saying that no account uses an email discloses nothing new,
   since sign-up's `email_unavailable` already answers that for any email, so there is no dummy hash.
+
+  > **Updated 2026-10-25** (ADR-0003 d10's note of the same day): step 2's sentence is now *"Wrong
+  > email or password."* The codes do not change. `/sign-in` shows that sentence for
+  > `password_incorrect` too, so a wrong email and a wrong password read the same. Every check of a
+  > signed-in Student's current password (the password change, and Connect 42 and Disconnect 42 in
+  > §5.6) still shows *"Wrong password."*
+
 - **The password check runs before the transaction (§3.6.2); the write re-checks what it read.**
   `password_version` (§4.3.1) is what the transactions re-read in place of a hash: sign-in creates
   its Session only if the version is unchanged since before its check, and every sign-out of a

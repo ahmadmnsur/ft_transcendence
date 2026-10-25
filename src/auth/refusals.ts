@@ -13,7 +13,7 @@ function counted(code: RefusalCode, message: string): CountedRefusal {
 }
 
 export function noAccount(): CountedRefusal {
-  return counted('no_account', 'No account uses this email.');
+  return counted('no_account', 'Wrong email or password.');
 }
 
 export function wrongPassword(): CountedRefusal {

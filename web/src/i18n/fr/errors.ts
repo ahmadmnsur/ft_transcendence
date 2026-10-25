@@ -13,7 +13,7 @@ export default {
     unsupported_media_type: 'La requête a été refusée. Rechargez la page et réessayez.',
     internal_error: "Une erreur s'est produite. Réessayez.",
     busy_retry_later: 'Le serveur est occupé. Réessayez dans un instant.',
-    no_account: "Aucun compte n'utilise cette adresse e-mail.",
+    no_account: 'Adresse e-mail ou mot de passe incorrect.',
     account_removed: 'Ce compte a été exclu et ne peut plus se connecter.',
     account_suspended: 'Votre compte est suspendu. Contactez un Admin.',
     too_many_attempts: 'Trop de tentatives. Réessayez plus tard.',

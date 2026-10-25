@@ -11,7 +11,7 @@ const codes = {
   unsupported_media_type: 'The request was refused. Reload the page and try again.',
   internal_error: 'Something went wrong. Try again.',
   busy_retry_later: 'The server is busy. Try again in a moment.',
-  no_account: 'No account uses this email.',
+  no_account: 'Wrong email or password.',
   account_removed: "This account was removed and can't sign in again.",
   account_suspended: 'Your account is suspended. Contact an Admin.',
   too_many_attempts: 'Too many attempts. Try again later.',
