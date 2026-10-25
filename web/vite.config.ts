@@ -44,6 +44,7 @@ function legalCheck(): Plugin {
           throw new Error(`${fileName}: missing; each legal page is three files: ${name}.md, ${name}.fr.md and ${name}.ar.md (§3.5.4)`);
         }
         const parsed = parseMarkdown(fs.readFileSync(sibling, 'utf8'), fileName);
+        checkLegalText(parsed, fileName);
         return { fileName, date: readLegalDate(parsed, fileName) };
       });
       checkSameDate(versions);
