@@ -620,6 +620,10 @@ d5).
 > sign-in page after the certificate warning, the bootstrap Admin and the demo Student can sign in,
 > `/admin/rounds` shows four closed Rounds and none open, and the console is clean.
 
+> **The landing page, 2026-10-25** ([`docs/spec.md`](docs/spec.md) §16.5 step 5's note;
+> [#222](https://github.com/ahmadmnsur/ft_transcendence/issues/222)). `https://localhost:8443` now
+> shows the landing page after the certificate warning, and its Sign in reaches the sign-in page.
+
 > **That pass line is the final one, 2026-09-24** ([`docs/spec.md`](docs/spec.md) §16.5 step 6). It
 > binds in full before defense and on every PR from the one that completes the seed's four-Round end
 > state. Before that, a criterion counts from the PR whose slice creates it: the infrastructure

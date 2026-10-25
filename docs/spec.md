@@ -334,7 +334,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0015 | `/admin/analytics`, Admin-only; Demand/Supply/Gap over the candidate pool; completion over closed Rounds, per closed Round series, absent when zero; state now + outcomes, no dwell or funnel; Round-indexed; nothing stored; refresh on `round:opened`/`round:closed`; Recharts; no export. |
 | ADR-0016 | Vitest, one command, a real Postgres, Auth and Storage (Supabase's own containers, never a stand-in, d1's note of 2026-10-04), twelve closed categories, shared fixture, C3/C4/C6/C7, clean-clone check in two fresh clones from an empty database (triggers also `supabase/**` except Markdown, and `.env.example`), Done = merged PR with every box ticked, advisory CI running `make test`'s copy, Firefox + Brave in week 5. |
 | ADR-0017 | Seed drives real write paths; four closed Rounds, ends idle; 62-Match target; suspension in Round 3, Removal in Round 4 with prerequisites; `SEED_STUDENT_PASSWORD`, a Supabase Auth password; four Report rows in three fixture groups (two grouped on one Post, one Student, one resolved) asserted per role; 27-Skill catalogue; both gap forms; social graph; completion-based idempotence, loud failure; a run that writes first checks its guard, then deletes our rows, every Supabase Auth user and every file in the two buckets; the lock on a connection of its own; minutes on the team project (d10's notes of 2026-10-03 and 2026-10-11); both boot paths; no Presence seeding. |
-| ADR-0018 | Pages describe the model as built; two kinds of copy, the team's (Supabase, Frankfurt) and a local one (d1's note of 2026-10-11); one cookie; the browser loads nothing from third parties and never contacts Supabase (Sign in with 42 the one chosen exception); logs clean and capped, the team project's `postgres` role with four log settings (d6's note of 2026-10-11); throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes, footer everywhere; acceptance checkbox validated, not stored, on the 42 sign-up form too; Removal on request only, keeping the hash and the 42 account number; 42 data minimisation; 42's account `id` in `Student.forty_two_id` as the only key; recovery through 42 only; Privacy Policy moves with personal data. |
+| ADR-0018 | Pages describe the model as built; two kinds of copy, the team's (Supabase, Frankfurt) and a local one (d1's note of 2026-10-11); one cookie; the browser loads nothing from third parties and never contacts Supabase (Sign in with 42 the one chosen exception); logs clean and capped, the team project's `postgres` role with four log settings (d6's note of 2026-10-11); throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes (a fifth, the landing page at `/`, since d12's note of 2026-10-25), footer everywhere; acceptance checkbox validated, not stored, on the 42 sign-up form too; Removal on request only, keeping the hash and the 42 account number; 42 data minimisation; 42's account `id` in `Student.forty_two_id` as the only key; recovery through 42 only; Privacy Policy moves with personal data. |
 | ADR-0019 | Supabase is three stores and nothing more: Postgres as the database, Storage for the two buckets, Auth as the place each password is kept and checked. The browser never talks to Supabase; PeerConnect keeps its session, Prisma, Socket.IO and Sign in with 42. One team project in Frankfurt, which Kamel owns and keeps available. |
 | ADR-0020 | Multi-language (English, French, Arabic) and right-to-left (Arabic) claimed; WCAG stays out. Every text the SPA shows or gives to a screen reader is translated in the SPA; names, text for developers, the seed's text and what the browser or 42 draws are not; the API keeps its English `message` and `"Former student"`, which the SPA never shows. A typed dictionary over `Intl`, no package; `tsc -b` refuses a missing text, plural form or placeholder; English is the fallback. Every value isolated; numbers, dates and lists by `Intl` with `en-GB`, `fr` and `ar-u-nu-arab`. First visit from the browser's languages; the choice in `localStorage` only when picked; switcher in the shared header on every route. Flow-relative classes only, the build refusing a left or right class; tables and the chart mirror; arrows flip. A bundled Noto Sans Arabic for Arabic characters. Legal pages English until translated once, the English canonical, one date for three versions. Each slice ships its text in three languages (`CONTRIBUTING.md` → *Text ships in three languages*). |
 | Map #1 | Stack: NestJS, PostgreSQL, Prisma, socket.io, React, Tailwind, TanStack, Recharts, Vitest, Docker Compose. Vertical slices DB-through-UI. |
@@ -632,9 +632,17 @@ route (§5.6 B). Every other route requires a session; the router's
 `beforeLoad` redirects to `/sign-in` when `GET /api/session` reports `authenticated: false`. Role
 routes redirect a Student without the role to `/`; the server enforces the same rule again.
 
+> **A fifth signed-out page, 2026-10-25** ([Landing: what PeerConnect is, at / for a signed-out visitor](https://github.com/ahmadmnsur/ft_transcendence/issues/222);
+> ADR-0018 d12's note of 2026-10-25). This read "exactly four". **`/` signed out is the landing
+> page**: what PeerConnect is, the Match loop and the way in, Sign up and Sign in. It shows no
+> data, and any example on it uses invented names and says so. `/` signed in is still the feed.
+> `/` alone changes: every other signed-in route still redirects a signed-out visitor to
+> `/sign-in`, and so do a 401 (§3.8.2) and Sign out.
+
 | Route | Who | Surface |
 | --- | --- | --- |
 | `/` | signed-in | Feed (live via `post:created`) |
+| `/` | signed out | Landing page: what PeerConnect is, the Match loop, Sign up and Sign in; no data (2026-10-25) |
 | `/prompts`, `/prompts/:promptId` | signed-in | Live Prompt with answer form (hidden for `ADMIN`), history, answers |
 | `/match` | signed-in | Current Match: partner, role, Score + explanation or "Matched by an Admin", Mission, accept/decline, Review entry |
 | `/matches`, `/matches/:matchId` | the pair | Own Match history; completed Match shows Learning Outcome, Evidence (preview), Private Feedback to its readers |
@@ -659,6 +667,9 @@ The **footer shows on every route**, signed in or out, with links to `/privacy` 
 wherever another Student sees them (ADR-0018 d4). **The language switcher sits at the end of the
 shared header, on every route**, signed in or out, the four signed-out routes and the error page
 included (ADR-0020 d6, §3.5.5).
+
+> **2026-10-25:** the signed-out pages are five, with the landing page at `/` (the note above the
+> table); the footer and the switcher show on it too.
 
 > **The signed-in header, 2026-10-24.** It showed one button for every page: ten for a Student,
 > eleven for a Peer Moderator and fifteen for an Admin. It now holds three parts. **A bar of links**
@@ -1657,6 +1668,9 @@ application:**
 | Learning Analytics | Admins only; community aggregates only |
 | Leaderboard | every signed-in Student; ranks active `STUDENT`/`PEER_MODERATOR` only |
 | Signed out | the four routes of §3.5.1 only |
+
+> **2026-10-25:** the *Signed out* row also covers the landing page at `/`, which shows no data
+> (§3.5.1's note of 2026-10-25).
 
 **Removed-row surface rule** (ADR-0008 Consequences, corrected): discovery and participation
 surfaces (search, friend requests, new DMs, new Reports, matching, Leaderboard, friend lists,
@@ -4194,6 +4208,9 @@ own run is §15.7's.
    database; `https://localhost:8443` shows the sign-in page after the interstitial; the bootstrap Admin
    and the demo Student (`SEED_STUDENT_PASSWORD`) can sign in; `/admin/rounds` shows four closed Rounds
    and none open; the console is clean.
+
+   > **2026-10-25** (§3.5.1's note of 2026-10-25): `https://localhost:8443` shows the landing page,
+   > and its Sign in reaches the sign-in page. The rest of the pass line is unchanged.
 6. **Which of those apply to a given PR.** Step 5 is the final contract: it binds in full before
    defense and on every qualifying PR from the one that completes ADR-0017's end state (§18 item 12)
    onward. Before that, a criterion applies from the PR whose slice creates its surface, and a PR

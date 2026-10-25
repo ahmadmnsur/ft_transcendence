@@ -17,6 +17,13 @@ export async function requireSession({ context }: GuardArgs): Promise<{ student:
   return { student: session.student };
 }
 
+// `/`, readable signed in or out (§3.5.1's note of 2026-10-25): the same
+// fresh probe as requireSession, without its redirect. The page picks the
+// feed or the landing page from the session query it fills.
+export async function readSession({ context }: GuardArgs): Promise<void> {
+  await context.queryClient.fetchQuery({ ...sessionQueryOptions(), staleTime: 0 });
+}
+
 // requireSession first, then the role check: a student without one of the
 // roles returns to `/` (§3.5.1). Takes a list because the moderation routes
 // admit both PEER_MODERATOR and ADMIN (§5.3).

@@ -59,6 +59,9 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
   rather than changed**: sign-in, sign-up and the two pages are the **only routes readable signed
   out**, and the footer shows on every screen (decision 12). Every service's container log gains a
   **size cap with rotation** in Compose (decision 6). ADR-0004 is extended, not amended.
+
+  > **2026-10-25** (decision 12's note of 2026-10-25): the routes readable signed out are five,
+  > with the landing page at `/`, which shows no data. ADR-0004's note carries it too.
 - **ADR-0003 is extended three times.** Decision 1's session cookie becomes the product's **only**
   cookie (decision 5). Decision 10's sign-in throttle keeps its counts **in memory only**
   (decision 6). Decision 11's missing password reset gains its other half: **no Admin may set or
@@ -69,6 +72,9 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
   PeerConnect currently sits behind no login"* gains four exceptions, none of them holding Student
   data; the guest-role reasoning it supports is unaffected. Removal itself is unchanged and stays
   Admin-only — a Student reaches it **on request** (decision 3).
+
+  > **2026-10-25** (decision 12's note of 2026-10-25): the exceptions are five, with the landing
+  > page at `/`, which holds no Student data either. ADR-0008's note carries it too.
 - **ADR-0011 decision 4's reason list is now also the Terms' conduct list** (decision 9), so changing
   one changes the other.
 - **ADR-0005 decision 5's schema gate and ADR-0016 decision 6's Done list each gain one check**: a
@@ -165,6 +171,9 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    | The read state of a Direct Message | its recipient only, as their unread count. **No read receipt** is ever shown to the sender |
    | Role | Admins carry a visible Admin label; the Peer Moderator role is not shown to other Students |
    | Signed out | nothing but sign-in, sign-up and the two pages |
+
+   > **2026-10-25:** the *Signed out* row gains the landing page at `/`, which shows no data
+   > (decision 12's note of 2026-10-25).
 
    **Match history is the row with product weight.** The proposal's `:55` puts "a running record of
    students helped and students learned from" on the profile, but that is the Learning Progress view,
@@ -401,6 +410,15 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
     > sides and not stored. Connecting 42 to an existing account creates no account and asks for
     > no new acceptance.
 
+    > **A fifth page readable signed out, 2026-10-25, by [Landing: what PeerConnect is, at / for a signed-out visitor](https://github.com/ahmadmnsur/ft_transcendence/issues/222).**
+    > This read "four routes are readable signed out". A signed-out visitor at `/` now reads a
+    > landing page saying what PeerConnect is and how a Match works; a signed-in Student still
+    > gets the feed there. The page shows no data: no Student, Post or count, nothing read from
+    > the database, and any example on it uses invented names and says it is an example. So the
+    > reason above holds: what a visitor can read signed out is the terms they are asked to
+    > accept, and now also what they would be signing up for. The Privacy Policy's sentence on
+    > what someone who is not signed in can see names the page.
+
 13. **Every settled limit is stated plainly.** Everything is kept for as long as the copy's database
     exists — no automatic deletion, no backups, and a wipe erases everything — with the exceptions
     listed: sessions (ADR-0003 d4, d6), the avatar (ADR-0009 d6), Evidence on its Mentee's delete or
@@ -585,6 +603,9 @@ open the account-takeover path that decision 4's Direct Message row cannot survi
   Compose log cap; the throttle in memory; no Admin-set password; decision 4's visibility rows, the
   Admin label and no read receipts; four signed-out routes with the footer everywhere; the signup
   checkbox; and Removal on request only.
+
+  > **Five signed-out pages, 2026-10-25** (decision 12's note of 2026-10-25): the landing page at
+  > `/` joins the four, and shows no data.
 - **Decision 4's Direct Message promise rests on decisions 7 and 8.** Either an Admin password reset
   or an Admin-steerable 42 link would silently falsify the page.
 - **ADR-0011's reason enum and the Terms are coupled.** Adding or renaming a reason changes the Terms
