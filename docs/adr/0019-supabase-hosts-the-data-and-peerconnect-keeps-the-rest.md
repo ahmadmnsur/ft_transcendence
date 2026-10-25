@@ -44,6 +44,11 @@ for, checked against every ADR on 2026-10-12.
   signs out twice and moves `password_version`), decision 10 (sign-in gives the real reason, a
   sanction only after the right password) and decision 11 (it stands; password reset by email is
   out of scope), plus the notes on Sign in with 42. From [Settle how the browser and the socket prove who is signed in](https://github.com/ahmadmnsur/ft_transcendence/issues/91), [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) and [Settle how a 42 login finds its Student on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/93).
+
+  > **Changed 2026-10-25 by ADR-0003 d10's note of that date**: the sign-in page shows a wrong
+  > email and a wrong password one sentence, so it no longer tells which one is wrong. Decision 5's
+  > note below has the detail.
+
 - **ADR-0004**: the team project and the local fallback (the top note, decisions 1, 8, 9 and 11, and
   the first *Consequence*); "no deployed environment" qualified, since the team project is hosted
   infrastructure; `.env.example` at 27 entries; the boot check, the session pooler, verified TLS
@@ -166,6 +171,11 @@ Unaffected:
    again, with `password_version` replacing `password_hash`. Sign-in tells the real reason, and a
    sanction only after the right password. The audit log's copy in the database is off ([Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92)).
    ADR-0003 decisions 3, 6 and 10; ADR-0008 decisions 5, 7, 8, 9 and 12.
+
+   > **Changed 2026-10-25 by ADR-0003 d10's note of that date, decided by Ahmad**: the sign-in page
+   > shows a wrong email and a wrong password one sentence, "Wrong email or password." The API
+   > keeps both codes, `no_account` and `password_incorrect`, and a sanction is still told only
+   > after the right password.
 
 6. **Sign in with 42 stays NestJS's own.** Supabase Auth takes no part in it. A 42 login finds its
    Student by 42's account `id`, in `Student.forty_two_id`. A 42 account that no Student holds gets

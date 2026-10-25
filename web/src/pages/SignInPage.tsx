@@ -20,7 +20,8 @@ function failureCode(error: unknown): unknown {
 
 // ADR-0003 d10's note of 2026-10-25: a wrong email and a wrong password show
 // one sentence here, `no_account`'s. The API keeps both codes, and the
-// password change still shows `password_incorrect`'s own sentence.
+// password change, Connect 42 and Disconnect 42 still show
+// `password_incorrect`'s own sentence.
 function signInFailureCode(code: unknown): unknown {
   return code === 'password_incorrect' ? 'no_account' : code;
 }
