@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**42 PeerConnect** · Last updated: 24 October 2026
+**42 PeerConnect** · Last updated: 25 October 2026
 
 This page explains what 42 PeerConnect records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -175,7 +175,7 @@ your email address is used to sign in.
 | The Leaderboard: the top ten eligible Students by XP | every signed-in Student |
 | Your own position outside the top ten, when eligible | you alone |
 | Whether you are online now | your Friends only |
-| Your email address | you and Admins — never shown on your profile or in search |
+| Your email address | you and Admins — never shown on your profile or in a Student's search |
 | Your list of Friends | you only |
 | A friend request you sent or received, while it waits for an answer | you and the other Student only |
 | Your Matches: who you were paired with, their status, the Compatibility Score and its explanation, the suggested Mission, which of you has accepted and, for Admins, which of you declined | the two of you, and Admins. No profile lists anyone's Matches, and a Public Takeaway has no field naming the Mentor |
@@ -192,7 +192,8 @@ Someone who is not signed in can see nothing but the sign-in and sign-up pages a
 pages.
 
 **Admins can edit your display name, email address, avatar, Skills and Learning Goal** — for example
-to remove an offensive name — but never your password, your XP or Badges, or your Posts, Reviews, Reports or Direct Messages.
+to remove an offensive name — but never your password, your XP or Badges, or your Posts, Reviews,
+Reports or Direct Messages.
 
 ## Cookies and your browser
 
@@ -263,9 +264,9 @@ PeerConnect can remain in them until Supabase deletes them. A local copy has no 
 Some things end sooner:
 
 - **Sessions.** Signing out ends that session. Changing your password, a Suspension or a Removal ends
-  all of them. If the last step of a password change fails, a session signed in with your old
-  password while the change was being saved can stay open until it expires. An unused session stops
-  working after 30 days, and is deleted the next time you sign in.
+  all of them. If the last step of a password change fails, a session opened while the change was
+  being saved can stay open, and it renews itself while it is used. Changing your password again
+  ends it. An unused session stops working after 30 days, and is deleted the next time you sign in.
 - **Your avatar** is deleted when you replace or remove it, and when your account is removed, or
   within two hours if that deletion fails, as long as PeerConnect is running and its
   hourly cleanup succeeds.

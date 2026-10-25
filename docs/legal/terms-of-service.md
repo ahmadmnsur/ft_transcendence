@@ -1,6 +1,6 @@
 # Terms of Service
 
-**42 PeerConnect** · Last updated: 24 October 2026
+**42 PeerConnect** · Last updated: 25 October 2026
 
 These Terms are the rules for using 42 PeerConnect: what you agree to when you create an account, how
 the community is moderated, and what PeerConnect does and does not promise. The *Privacy Policy*
@@ -83,7 +83,8 @@ a Post from the feed, but its text is kept.
 ## 6. Matches and meetings
 
 A Match, its Compatibility Score and its Mission are suggestions. PeerConnect doesn't check anyone's
-Skills or identity, or whether a meeting took place. You can decline any Match while it is in progress.
+Skills or identity, or whether a meeting took place. You can decline any Match while it is in
+progress.
 
 Meetings happen outside PeerConnect, and campus rules apply to them. PeerConnect doesn't organise
 meetings and takes no part in them.
