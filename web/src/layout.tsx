@@ -50,6 +50,27 @@ const panelItemClass =
 // Tailwind's `md`: from here the bar and the account menu show, below it the
 // phone Menu.
 const MD_QUERY = '(width >= 48rem)';
+// The header stays at the top of the window while the page scrolls under it
+// (§3.5.1), over the page's own positioned parts and under the skip link.
+const headerClass = 'sticky top-0 z-40 border-b border-line bg-surface';
+
+// Whatever the browser scrolls into view, a focused field or a notice, must
+// stop below the header, not behind it: the page's scroll padding follows the
+// header's height, which moves with the width, the language and the links a
+// role adds. A ref callback, since the signed-out and the signed-in header are
+// two elements; React runs the cleanup it returns when one replaces the other.
+function followHeaderHeight(header: HTMLElement | null): (() => void) | undefined {
+  if (header === null) return undefined;
+  const root = document.documentElement;
+  const observer = new ResizeObserver(() => {
+    root.style.scrollPaddingTop = `${header.offsetHeight}px`;
+  });
+  observer.observe(header, { box: 'border-box' });
+  return () => {
+    observer.disconnect();
+    root.style.removeProperty('scroll-padding-top');
+  };
+}
 
 function SiteHeader(): React.JSX.Element {
   const { t, language, setLanguage } = useI18n();
@@ -166,7 +187,7 @@ function SiteHeader(): React.JSX.Element {
 
   if (student === null) {
     return (
-      <header className="border-b border-line bg-surface">
+      <header ref={followHeaderHeight} className={headerClass}>
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
           <Link to="/" className="rounded-lg text-lg font-semibold text-ink focus-ring">
             <bdi>{BRAND}</bdi>
@@ -213,7 +234,7 @@ function SiteHeader(): React.JSX.Element {
   );
 
   return (
-    <header className="relative border-b border-line bg-surface">
+    <header ref={followHeaderHeight} className={headerClass}>
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 pt-3 max-md:pb-3 sm:gap-3">
         <Link to="/" className="min-w-0 rounded-lg text-lg font-semibold text-ink focus-ring">
           <bdi>{BRAND}</bdi>
@@ -247,11 +268,13 @@ function SiteHeader(): React.JSX.Element {
           <MenuIcon size={20} />
         </IconButton>
         {/* The panel follows its button in the DOM, so Tab reaches its links
-        before the switcher, and lies over the page under the header's line. */}
+        before the switcher, and lies over the page under the header's line.
+        It moves with the header, so the page's scroll never reaches its end:
+        taller than the window below the header, it scrolls on its own. */}
         <nav
           aria-label={copy.navLabel}
           {...phoneMenu.panelProps}
-          className="absolute inset-x-0 top-full z-30 border-y border-line bg-surface shadow-lg md:hidden"
+          className="absolute inset-x-0 top-full z-30 max-h-[calc(100dvh-100%)] overflow-y-auto overscroll-contain border-y border-line bg-surface shadow-lg md:hidden"
         >
           <div className="mx-auto w-full max-w-6xl px-4 py-2">
             <ul>
