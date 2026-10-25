@@ -15,6 +15,8 @@ const testEnv =
 export default defineConfig({
   plugins: [swc.vite()],
   test: {
+    // The default 5 s fails sub-second tests when other Docker work shares the machine.
+    testTimeout: 20_000,
     include: ['test/[0-9][0-9]-*/*.test.ts'],
     globalSetup: ['test/harness/global-setup.ts'],
     env: testEnv,

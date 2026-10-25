@@ -3600,6 +3600,15 @@ about the Admin.
 ### 14.8 End-state assertions (all, or the seed fails)
 
 1. No open Round; exactly four closed Rounds; exactly four Prompts; the live one is Prompt 4.
+
+   > **Refined 2026-10-25** by [Seed and suite: stop when a Round shows another Round's number, and give tests room under load](https://github.com/ahmadmnsur/ft_transcendence/issues/228):
+   > each seeded Round must also show its own number: read back through the Admin's Round list at
+   > its close (§14.5 step i), the *n*-th Round the script opens shows as Round *n*. A Round's number
+   > is its position by `(opened_at, id)` (§4.3.9), and `opened_at` comes from the clock, so a clock
+   > step back while the seed runs can swap two labels, as it did once on 2026-10-25 in a clean
+   > clone. The seed then stops, leaving no record, and the next boot retries (§14.9). The fixture
+   > stays v7, on Kamel's call: no row changes, and a database seeded at v7 before this check keeps
+   > its record.
 2. The Match status distribution is logged against the §14.5 targets (reported, not asserted), with
    how long the run took (ADR-0017 d10's note of 2026-10-11).
 3. **Demo Student**: *D* exists — Active, `STUDENT`, a `COMPLETED` Match as Mentee with its Review, at
@@ -4150,7 +4159,9 @@ names, run locally as `make test`.
     item 3), and the staff helper with the seed that builds the shared bootstrap function. A staff
     session is opened by the code sign-in runs after the password check, so only the tests of
     sign-in itself pay for a real password check;
-  - tables are truncated between tests; `fileParallelism: false`. **Supabase Auth users and files
+  - tables are truncated between tests; `fileParallelism: false`; a test without its own limit gets
+    20 s (`testTimeout`), the limit the slow tests set one by one, since the default 5 s fails
+    sub-second tests when other Docker work shares the machine. **Supabase Auth users and files
     outlive the truncation** and are deleted with the copy. Their ids never repeat, so they collide
     with nothing: a test checks a user or a file by its id, never by a count, and a file's name is
     its row's token (§9.8);
