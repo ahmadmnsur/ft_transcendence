@@ -3,7 +3,7 @@ import { createRootRouteWithContext, createRoute, createRouter, lazyRouteCompone
 import { setUnauthorizedHandler } from './api/client';
 import { fetchSession, setSignedOut } from './api/session';
 import { ErrorContent, NotFoundPage, RootErrorPage, RootLayout } from './layout';
-import { requireRole, requireSession, requireSignedOut } from './guards';
+import { readSession, requireRole, requireSession, requireSignedOut } from './guards';
 import { AdminHomePage } from './pages/AdminHomePage';
 import { AdminMatchPage } from './pages/AdminMatchPage';
 import { AdminRoundPage } from './pages/AdminRoundPage';
@@ -46,11 +46,12 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   notFoundComponent: NotFoundPage,
 });
 
-// §3.5.1, §6.0.1: the feed, paged by `page`.
+// §3.5.1, §6.0.1: the feed, paged by `page`, for a signed-in Student, and
+// the landing page for a signed-out visitor (§3.5.1's note of 2026-10-25).
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: requireSession,
+  beforeLoad: readSession,
   validateSearch: parsePageSearch,
   component: HomePage,
 });

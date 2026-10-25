@@ -456,6 +456,10 @@ this map never made.
 > read the terms the signup checkbox asks them to accept. None of the four holds Student data, so
 > the reasoning above is unaffected: the feed and every Student surface still sit behind login.
 
+> **A fifth, 2026-10-25, by ADR-0018 d12's note of 2026-10-25.** A signed-out visitor at `/`
+> reads a landing page saying what PeerConnect is; a signed-in Student still gets the feed there.
+> It holds no Student data either, so no guest role exists and the feed stays behind login.
+
 ## Consequences
 
 - **The advanced permissions module converts from contingent to firm.** All three bullets at

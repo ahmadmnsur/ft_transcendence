@@ -152,6 +152,9 @@ Unaffected:
    and on each switch in the same update as the text (`:572`). The switcher is the design system's
    `Select`, at the end of the shared header, on every route, the four signed-out ones included.
 
+   > **2026-10-25** (ADR-0018 d12's note of 2026-10-25): the signed-out pages are five, with the
+   > landing page at `/`; the switcher ends its header too.
+
 7. **The SPA mirrors through flow-relative classes only, and its build refuses a left or right
    class** ([Settle how Arabic looks: mirroring, font, digits and dates](https://github.com/ahmadmnsur/ft_transcendence/issues/146), points 1 to 4 and 11). `rtl:` and `ltr:` are used
    only where no flow-relative class exists, and never for content whose direction can differ from

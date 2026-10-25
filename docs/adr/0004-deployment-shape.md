@@ -917,6 +917,10 @@ six weeks and three developers.
   > checkbox (ADR-0018 d12) links terms a visitor has to be able to read before an account
   > exists.
   >
+  > > **A fifth, 2026-10-25, by ADR-0018 d12's note of 2026-10-25** ([#222](https://github.com/ahmadmnsur/ft_transcendence/issues/222)): a signed-out
+  > > visitor at `/` also reads a landing page saying what PeerConnect is, with no data on it; a
+  > > signed-in Student still gets the feed there. The footer still shows on every screen.
+  >
   > > **Noted 2026-10-13 by [Settle how the legal pages exist in three languages](https://github.com/ahmadmnsur/ft_transcendence/issues/143):** the
   > > deadline covers the English pages. Their French and Arabic translations come later, on their
   > > own build ticket finished before [Pre-defense readiness](https://github.com/ahmadmnsur/ft_transcendence/issues/73), and Ahmad signs them off
