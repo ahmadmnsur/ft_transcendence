@@ -188,7 +188,7 @@ your email address is used to sign in.
 | Learning Analytics | Admins only, and only community-wide figures |
 | Your role, and whether your account is suspended or removed | you, and Admins in their list of every account. Other Students see a removed account only as a former student (see *Leaving 21 Beirut*). Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
 
-Someone who is not signed in can see nothing but the home page, which says what PeerConnect is, the
+Someone who is not signed in can see nothing but the home page, which says what 21 Beirut is, the
 sign-in and sign-up pages, and these two policy pages. None of them shows anything about a Student:
 an example on the home page uses invented names and says it is an example.
 

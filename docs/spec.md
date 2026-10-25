@@ -749,8 +749,11 @@ included (ADR-0020 d6, §3.5.5).
   > still never translated. In the SPA's code one constant, `BRAND`, holds it, beside `index.html`'s
   > title for the moment before the app mounts, and a text that names it takes it as the value
   > `{brand}`, which the dictionary isolates (§3.5.5). Text for developers keeps the earlier name,
-  > PeerConnect: this spec, the ADRs and the rest of `docs/` but the two legal pages, the README,
-  > code comments and the API's `message`.
+  > PeerConnect: this spec, the ADRs and the rest of `docs/` but the two legal pages, code comments
+  > and the API's `message`. The README does not: the subject asks its Description for a clear name
+  > for the project (`document/en.subject.md:1240`), and the evaluator reads it before seeing the
+  > site, so the Description names the project 21 Beirut and can say PeerConnect was its earlier
+  > name (§17.5, #71).
 - **Errors by code, and the tombstone** (ADR-0020 d2). The SPA never displays the API's `message`;
   §3.8.1 stays as written. It picks its text by `code` from one map typed over every `ErrorCode` and
   `RefusalCode`, so a code without text fails `tsc`, and an unknown code, or a response that is not

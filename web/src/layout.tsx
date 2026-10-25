@@ -149,36 +149,25 @@ function SiteHeader(): React.JSX.Element {
   ];
 
   // The logo is drawn, not set in a font, so it looks the same on every
-  // machine: its wordmark is Liberation Sans Bold traced into paths. Its label
-  // is the brand, which names the link. It is inline, not an <img>, so its
-  // colors are classes: a forced-colors theme repaints the tile and the
-  // wordmark like the links instead of leaving them dark on a dark page.
+  // machine: BEIRUT is Liberation Sans Bold traced into paths. Its label is the
+  // brand, which names the link. It is inline, not an <img>, so its colors are
+  // classes: a forced-colors theme repaints it like the links instead of
+  // leaving it dark on a dark page. It may shrink: signed in below 360 px the
+  // row is too narrow for it, and it must not push the language menu off.
   const brandLink = (
-    <Link to="/" className="inline-flex h-8 shrink-0 items-center rounded-lg focus-ring">
-      <svg role="img" aria-label={BRAND} viewBox="0 0 196.4 64" fill="currentColor" className="h-8 w-auto">
-        <rect width="64" height="64" rx="14" className="text-primary-700 forced-colors:text-[LinkText]" />
-        <path
-          d="M12 23c0-7 5-12 12-12s12 5 12 12c0 6-3 9-9 14L15 47h21M44 19l8-7v35"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={6}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-white forced-colors:text-[Canvas]"
-        />
-        <g className="text-primary-300 forced-colors:text-[Canvas]">
-          <circle cx="13" cy="47" r="3" />
-          <circle cx="52" cy="12" r="3" />
+    <Link to="/" className="inline-flex h-9 min-w-0 items-center rounded-lg focus-ring">
+      <svg role="img" aria-label={BRAND} viewBox="0.8 10 274 72.3" fill="currentColor" className="h-9 w-auto max-w-full">
+        <g className="text-primary-700 forced-colors:text-[LinkText]">
+          <path d="M29.2 43.1 49 26H86V30.4L0.9 81H96V65H59.1L102 39.6V10H43L18.8 30.9Z" />
+          <path d="M122 35 143 14H156V82H137V38L122 52Z" />
         </g>
         <g className="text-primary-900 forced-colors:text-[LinkText]">
-          <path d="M80 42V39.2Q80.8 37.5 82.2 35.9Q83.7 34.3 85.8 32.5Q87.9 30.8 88.8 29.7Q89.6 28.6 89.6 27.5Q89.6 24.9 87 24.9Q85.7 24.9 85.1 25.6Q84.4 26.3 84.2 27.7L80.2 27.4Q80.5 24.7 82.2 23.2Q84 21.8 87 21.8Q90.2 21.8 91.9 23.2Q93.7 24.7 93.7 27.4Q93.7 28.8 93.1 29.9Q92.6 31 91.7 32Q90.8 32.9 89.8 33.8Q88.7 34.6 87.7 35.4Q86.7 36.2 85.9 37Q85.1 37.8 84.7 38.7H94V42Z" />
-          <path d="M96.2 42V39H101.1V25.4L96.3 28.4V25.3L101.3 22H105.1V39H109.6V42Z" />
-          <path d="M136.5 36.3Q136.5 39 134.5 40.5Q132.5 42 128.8 42H118.9V22H128Q131.6 22 133.5 23.3Q135.4 24.6 135.4 27.1Q135.4 28.8 134.5 29.9Q133.5 31.1 131.6 31.5Q134 31.8 135.3 33Q136.5 34.3 136.5 36.3ZM131.2 27.6Q131.2 26.3 130.3 25.7Q129.5 25.1 127.8 25.1H123V30.1H127.8Q129.6 30.1 130.4 29.5Q131.2 28.9 131.2 27.6ZM132.3 36Q132.3 33.2 128.3 33.2H123V38.9H128.5Q130.5 38.9 131.4 38.2Q132.3 37.4 132.3 36Z" />
-          <path d="M145.4 42.3Q141.9 42.3 140 40.2Q138.2 38.2 138.2 34.3Q138.2 30.5 140.1 28.4Q142 26.4 145.4 26.4Q148.7 26.4 150.5 28.6Q152.2 30.8 152.2 35V35.1H142.4Q142.4 37.3 143.2 38.5Q144 39.6 145.6 39.6Q147.7 39.6 148.2 37.8L152 38.1Q150.3 42.3 145.4 42.3ZM145.4 28.9Q144 28.9 143.2 29.9Q142.4 30.9 142.4 32.6H148.3Q148.2 30.8 147.5 29.8Q146.7 28.9 145.4 28.9Z" />
-          <path d="M154.4 23.9V21H158.4V23.9ZM154.4 42V26.7H158.4V42Z" />
-          <path d="M161.7 42V30.3Q161.7 29 161.6 28.2Q161.6 27.3 161.6 26.7H165.3Q165.4 26.9 165.5 28.2Q165.5 29.5 165.5 29.9H165.6Q166.2 28.3 166.6 27.7Q167.1 27 167.7 26.7Q168.3 26.4 169.3 26.4Q170 26.4 170.5 26.6V29.9Q169.5 29.7 168.8 29.7Q167.3 29.7 166.5 30.9Q165.6 32.1 165.6 34.5V42Z" />
-          <path d="M175.9 26.7V35.3Q175.9 39.3 178.6 39.3Q180.1 39.3 181 38.1Q181.8 36.8 181.8 34.9V26.7H185.8V38.6Q185.8 40.5 185.9 42H182.1Q182 40 182 39H181.9Q181.1 40.7 179.9 41.5Q178.7 42.3 177 42.3Q174.5 42.3 173.2 40.8Q171.9 39.3 171.9 36.4V26.7Z" />
-          <path d="M193 42.3Q191.2 42.3 190.3 41.3Q189.3 40.3 189.3 38.4V29.4H187.4V26.7H189.5L190.8 23.1H193.3V26.7H196.2V29.4H193.3V37.3Q193.3 38.4 193.7 39Q194.1 39.5 195 39.5Q195.5 39.5 196.3 39.3V41.8Q194.9 42.3 193 42.3Z" />
+          <path d="M193.9 77.1Q193.9 79.4 192.2 80.7Q190.4 82 187.3 82H178.7V64.8H186.5Q189.7 64.8 191.3 65.9Q192.9 67 192.9 69.1Q192.9 70.6 192.1 71.6Q191.3 72.6 189.6 73Q191.7 73.2 192.8 74.3Q193.9 75.3 193.9 77.1ZM189.3 69.6Q189.3 68.5 188.6 68Q187.8 67.5 186.4 67.5H182.3V71.7H186.4Q187.9 71.7 188.6 71.2Q189.3 70.7 189.3 69.6ZM190.3 76.8Q190.3 74.4 186.8 74.4H182.3V79.3H187Q188.7 79.3 189.5 78.7Q190.3 78.1 190.3 76.8Z" />
+          <path d="M197.7 82V64.8H211.3V67.6H201.3V71.9H210.5V74.7H201.3V79.2H211.8V82Z" />
+          <path d="M215.4 82V64.8H219V82Z" />
+          <path d="M235.2 82 231.2 75.5H226.9V82H223.3V64.8H231.9Q235 64.8 236.7 66.1Q238.4 67.4 238.4 69.9Q238.4 71.7 237.3 73Q236.3 74.4 234.6 74.8L239.2 82ZM234.7 70.1Q234.7 67.6 231.6 67.6H226.9V72.7H231.7Q233.2 72.7 234 72Q234.7 71.3 234.7 70.1Z" />
+          <path d="M249.6 82.2Q246 82.2 244.1 80.5Q242.2 78.8 242.2 75.6V64.8H245.8V75.3Q245.8 77.3 246.8 78.4Q247.8 79.4 249.7 79.4Q251.6 79.4 252.6 78.3Q253.7 77.2 253.7 75.2V64.8H257.3V75.4Q257.3 78.6 255.2 80.4Q253.2 82.2 249.6 82.2Z" />
+          <path d="M269.2 67.6V82H265.6V67.6H260.1V64.8H274.8V67.6Z" />
         </g>
       </svg>
     </Link>
