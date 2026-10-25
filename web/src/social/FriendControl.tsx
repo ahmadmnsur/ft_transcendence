@@ -117,7 +117,10 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
   }
 
   // One button: while it is in flight its text names that state, and every
-  // other button of the control is disabled.
+  // other button of the control is disabled. It is keyed by its action, so it
+  // never turns into another button in place: when the End Friendship dialog
+  // closes on its own, focus does not come back to a button that now sends a
+  // friend request.
   function actionButton(
     action: Action,
     variant: 'primary' | 'secondary',
@@ -128,6 +131,7 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
     const inFlight = pending === action;
     return (
       <Button
+        key={action}
         variant={variant}
         size="sm"
         loading={inFlight}

@@ -127,12 +127,16 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
         </div>
       ),
     note: blocked ? <p className="text-sm text-ink-muted">{copy.blockedNote}</p> : null,
+    // Keyed, so Block never turns into Unblock in place: when the confirmation
+    // closes because a Block came from elsewhere, focus does not come back to
+    // Unblock.
     buttons: blocked ? (
-      <Button variant="secondary" size="sm" loading={pending} onClick={() => void onUnblock()}>
+      <Button key="unblock" variant="secondary" size="sm" loading={pending} onClick={() => void onUnblock()}>
         {pending ? actions.unblocking : actions.unblock}
       </Button>
     ) : student.removed ? null : (
       <Button
+        key="block"
         variant="danger-secondary"
         size="sm"
         onClick={() => {
