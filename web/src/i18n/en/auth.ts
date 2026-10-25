@@ -2,13 +2,7 @@ import type { EnGroup } from '../types';
 
 export default {
   password: {
-    hint: {
-      text: '{minChars}, {maxBytes}. No other rules.',
-      parts: {
-        minChars: { one: 'At least {count} character', other: 'At least {count} characters' },
-        maxBytes: { one: 'at most {count} byte', other: 'at most {count} bytes' },
-      },
-    },
+    hint: { one: 'At least {count} character.', other: 'At least {count} characters.' },
     invalid: {
       text: 'Use {minChars} and {maxBytes}.',
       parts: {

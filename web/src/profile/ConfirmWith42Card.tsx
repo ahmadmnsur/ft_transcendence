@@ -189,10 +189,7 @@ export function ConfirmWith42Card({
             <TextField
               ref={newRef}
               label={t.auth.passwordChange.newLabel}
-              hint={format(t.auth.password.hint, {
-                minChars: LIMITS.password.minChars,
-                maxBytes: LIMITS.password.maxBytes,
-              })}
+              hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
               type="password"
               autoComplete="new-password"
               value={newPassword}

@@ -4,25 +4,12 @@ import type { Catalogue } from '../types';
 export default {
   password: {
     hint: {
-      text: '{minChars}، و{maxBytes}. لا قواعد أخرى.',
-      parts: {
-        minChars: {
-          zero: '{count} حرف على الأقل',
-          one: 'حرف واحد على الأقل',
-          two: 'حرفان على الأقل',
-          few: '{count} أحرف على الأقل',
-          many: '{count} حرفا على الأقل',
-          other: '{count} حرف على الأقل',
-        },
-        maxBytes: {
-          zero: '{count} بايت على الأكثر',
-          one: 'بايت واحد على الأكثر',
-          two: 'بايتان على الأكثر',
-          few: '{count} بايتات على الأكثر',
-          many: '{count} بايتا على الأكثر',
-          other: '{count} بايت على الأكثر',
-        },
-      },
+      zero: '{count} حرف على الأقل.',
+      one: 'حرف واحد على الأقل.',
+      two: 'حرفان على الأقل.',
+      few: '{count} أحرف على الأقل.',
+      many: '{count} حرفا على الأقل.',
+      other: '{count} حرف على الأقل.',
     },
     invalid: {
       text: 'استخدم {minChars} و{maxBytes}.',
