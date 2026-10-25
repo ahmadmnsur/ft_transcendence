@@ -2,6 +2,15 @@
 // no React, no DOM, no Node APIs, so both the app and vite.config.ts can
 // import it. Throws on anything outside the supported set.
 
+import type { Language } from '../i18n/types';
+
+// A legal file's language is in its name: `.fr.md`, `.ar.md`, or English.
+export function legalLanguage(fileName: string): Language {
+  if (fileName.endsWith('.fr.md')) return 'fr';
+  if (fileName.endsWith('.ar.md')) return 'ar';
+  return 'en';
+}
+
 export type InlineNode =
   | { kind: 'text'; text: string }
   | { kind: 'strong'; children: InlineNode[] }
@@ -784,7 +793,7 @@ export function parseMarkdown(source: string, fileName: string): Block[] {
     if (raw.includes('\t')) fail(fileName, no, 'tab characters are not supported');
     if (/[\x00-\x08\x0B-\x1F\x7F-\x9F]/.test(raw)) fail(fileName, no, 'control characters are not supported');
     // French punctuation needs U+00A0 and U+202F (§3.5.4).
-    const spaceCheck = fileName.endsWith('.fr.md') ? raw.replace(/[\u00A0\u202F]/g, '') : raw;
+    const spaceCheck = legalLanguage(fileName) === 'fr' ? raw.replace(/[\u00A0\u202F]/g, '') : raw;
     if (/[\u00A0\u1680\u2000-\u200D\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]/.test(spaceCheck)) {
       fail(fileName, no, 'non-breaking or invisible spaces are not supported; use a plain space');
     }

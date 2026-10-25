@@ -19,7 +19,7 @@ export function TermsPage(): React.JSX.Element {
   return (
     <>
       <PageTitle name={t.legal.termsTitle} />
-      <LegalDocument source={source} fileName={fileName} language={language} />
+      <LegalDocument source={source} fileName={fileName} />
     </>
   );
 }

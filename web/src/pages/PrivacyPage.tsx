@@ -19,7 +19,7 @@ export function PrivacyPage(): React.JSX.Element {
   return (
     <>
       <PageTitle name={t.legal.privacyTitle} />
-      <LegalDocument source={source} fileName={fileName} language={language} />
+      <LegalDocument source={source} fileName={fileName} />
     </>
   );
 }

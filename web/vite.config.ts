@@ -25,19 +25,14 @@ function legalCheck(): Plugin {
       const query = queryIndex < 0 ? '' : id.slice(queryIndex);
       if (!query.includes('raw') || path.extname(file) !== '.md') return null;
       if (!path.resolve(file).startsWith(legalDir + path.sep)) return null;
-      // Watched before parsing so `vite dev` reloads once a file that
-      // throws on load is fixed.
-      this.addWatchFile(file);
-      const text = fs.readFileSync(file, 'utf8');
-      // Throws with `<path>:<line>: <reason>`; the error propagates and
-      // the build fails.
-      const rel = path.relative(repoRoot, path.resolve(file));
-      const blocks = parseMarkdown(text, rel);
-      checkLegalText(blocks, rel);
       const base = file.replace(/(?:\.fr|\.ar)?\.md$/, '');
       const siblings = [`${base}.md`, `${base}.fr.md`, `${base}.ar.md`];
+      // Watched before parsing so `vite dev` reloads once a file that
+      // throws on load is fixed.
       for (const sibling of siblings) this.addWatchFile(sibling);
-      const versions = siblings.map((sibling) => {
+      // Each version is parsed, text-checked and dated. Any failure names
+      // its file; the error propagates so the build fails.
+      const [english, ...translations] = siblings.map((sibling) => {
         const fileName = path.relative(repoRoot, sibling);
         if (!fs.existsSync(sibling)) {
           const name = path.basename(base);
@@ -47,7 +42,7 @@ function legalCheck(): Plugin {
         checkLegalText(parsed, fileName);
         return { fileName, date: readLegalDate(parsed, fileName) };
       });
-      checkSameDate(versions);
+      checkSameDate(english, translations);
       // Null lets Vite's own `?raw` handling load the file.
       return null;
     },

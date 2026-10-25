@@ -1,10 +1,10 @@
 import { Fragment, useMemo } from 'react';
 import { useI18n } from '../i18n/context';
 import { direction } from '../i18n/language';
-import type { Language } from '../i18n/types';
 import { BRAND } from '../layout';
 import {
   inlineText,
+  legalLanguage,
   parseMarkdown,
   type Block,
   type BulletItem,
@@ -172,12 +172,10 @@ function LegalBlock({
   block,
   label,
   tightTop,
-  language,
 }: {
   block: Block;
   label: string;
   tightTop: boolean;
-  language: Language;
 }): React.JSX.Element {
   switch (block.kind) {
     case 'heading': {
@@ -207,7 +205,7 @@ function LegalBlock({
       );
     case 'numberedList':
       return (
-        <ol className={`${language === 'ar' ? 'list-[arabic-indic]' : 'list-decimal'} space-y-2 ps-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
+        <ol className={`list-decimal arabic:list-[arabic-indic] space-y-2 ps-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
           {block.items.map((item, index) => (
             <NumberedListItem key={index} item={item} />
           ))}
@@ -221,13 +219,12 @@ function LegalBlock({
 export function LegalDocument({
   source,
   fileName,
-  language,
 }: {
   source: string;
   fileName: string;
-  language: Language;
 }): React.JSX.Element {
   const { t } = useI18n();
+  const language = legalLanguage(fileName);
   const blocks = useMemo(() => parseMarkdown(source, fileName), [source, fileName]);
   // Each table names the nearest preceding heading, so the scroll region
   // has a label even though tables carry no caption of their own.
@@ -244,7 +241,7 @@ export function LegalDocument({
       className="mx-auto max-w-[68ch] text-base leading-relaxed text-ink selection:bg-primary-100 selection:text-primary-900 [&>h1+p]:border-b [&>h1+p]:border-line [&>h1+p]:pb-6 [&>h1+p]:text-sm [&>h1+p]:text-ink-muted [&>h1+p+*]:mt-6"
     >
       {labelled.map(({ block, label, tightTop }, index) => (
-        <LegalBlock key={index} language={language} block={block} label={label} tightTop={tightTop} />
+        <LegalBlock key={index} block={block} label={label} tightTop={tightTop} />
       ))}
     </article>
   );
