@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import type { INestApplicationContext } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { AdminUsersService } from '../../src/admin/admin-users.service';
 import { AuthService } from '../../src/auth/auth.service';
 import { assertEnvOrExit, resolveSupabaseTarget } from '../../src/core/env';
 import { ApiError, Refusal } from '../../src/core/errors';
@@ -15,8 +16,10 @@ import { MatchingService } from '../../src/matching/matching.service';
 import { MessagingService } from '../../src/messaging/messaging.service';
 import { ModerationService } from '../../src/moderation/moderation.service';
 import { PromptsService } from '../../src/prompts/prompts.service';
+import { EvidenceService } from '../../src/reviews/evidence.service';
 import { ReviewsService } from '../../src/reviews/reviews.service';
 import { SocialService } from '../../src/social/social.service';
+import { AvatarsService } from '../../src/students/avatars.service';
 import { StudentsService } from '../../src/students/students.service';
 import { bootstrapStaff, createStaffAccount } from './bootstrap';
 import { insertCatalogue } from './catalogue';
@@ -38,8 +41,8 @@ import { promptScript } from './prompts';
 import { FIXTURE_VERSION, clearRecord, readRecord, writeRecord } from './record';
 import { seedReports } from './reports';
 import { submitReviewsInOrder } from './reviews';
-import { ROUND_TARGETS, seedRound, type SeededRound } from './rounds';
-import { completedMentees, selectRemoved, selectSuspended } from './sanctioned';
+import { matchDistribution, ROUND_TARGETS, seedRound, type SanctionStep, type SeededRound } from './rounds';
+import { completedMentees, removeR, suspendS } from './sanctioned';
 import { SeedModule } from './seed.module';
 import { activeCohort, eligibleStudents, seedDirectMessages, seedLikes, seedSocialGraph } from './social';
 
@@ -86,7 +89,8 @@ async function step<T>(name: string, work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (err) {
-    throw new StepFailed(name, err);
+    // Nested steps keep the innermost step's name and reason in the log.
+    throw err instanceof StepFailed ? err : new StepFailed(name, err);
   }
 }
 
@@ -147,6 +151,9 @@ async function run(): Promise<number> {
     const feed = app.get(FeedService);
     const messaging = app.get(MessagingService);
     const moderation = app.get(ModerationService);
+    const adminUsers = app.get(AdminUsersService);
+    const avatars = app.get(AvatarsService);
+    const evidence = app.get(EvidenceService);
 
     // §9.8: the seed's first step, on every run, before the record is read,
     // so a run that skips the fixture still sets the buckets. A failure stops
@@ -233,9 +240,39 @@ async function run(): Promise<number> {
     log('seed: Prompt published', { prompt: 1 });
     const submitReview = submitReviewsInOrder(reviews);
     const rounds: SeededRound[] = [];
+    const rules = {
+      peerModeratorId: staffIds.peerModeratorId,
+      reservedIds: RESERVED_POSITIONS.map((position) => studentIds[position]),
+    };
+    let suspendedId: string | undefined;
+    let removedId: string | undefined;
+
+    // §14.5 steps e and f: each sanction precedes either participant's
+    // acceptance. The callbacks return the Match step h must skip.
+    const suspension: SanctionStep = (matches) => step('S suspension', async () => {
+      const { studentId, matchId } = await suspendS(adminUsers, admin, matches, rules);
+      suspendedId = studentId;
+      log('seed: S suspended', { position: studentIds.indexOf(studentId) });
+      return matchId;
+    });
+    const removal: SanctionStep = (matches) => step('R removal', async () => {
+      if (suspendedId === undefined) throw new SeedFailure('S must be suspended before R is chosen');
+      const menteesInRounds1to3 = await completedMentees(prisma, rounds.slice(0, 3).map((round) => round.roundId));
+      const { studentId, matchId } = await removeR(
+        { prisma, adminUsers, avatars, evidence },
+        admin,
+        matches,
+        { ...rules, suspendedId, completedMentees: menteesInRounds1to3 },
+      );
+      removedId = studentId;
+      log('seed: R removed', { position: studentIds.indexOf(studentId) });
+      return matchId;
+    });
+
     for (let number = 1; number <= 4; number += 1) {
+      const sanction = number === 3 ? suspension : number === 4 ? removal : undefined;
       const round = await step(`Round ${number}`, () =>
-        seedRound(matching, submitReview, promptSteps.afterOpen, admin, number),
+        seedRound(matching, submitReview, promptSteps.afterOpen, admin, number, sanction),
       );
       log('seed: Round closed', {
         ...round.distribution,
@@ -244,26 +281,16 @@ async function run(): Promise<number> {
       rounds.push(round);
     }
 
-    // §14.5's S and R, by its selection rules over Rounds 3 and 4. This
-    // version applies neither sanction; §14.6 counts both out all the same.
-    const rules = {
-      peerModeratorId: staffIds.peerModeratorId,
-      reservedIds: RESERVED_POSITIONS.map((position) => studentIds[position]),
-    };
-    const [, , round3, round4] = rounds;
-    const sanctioned = await step('S and R', async () => {
-      const suspendedId = selectSuspended(round3.matches, rules);
-      const menteesInRounds1to3 = await completedMentees(prisma, rounds.slice(0, 3).map((round) => round.roundId));
-      const removedId = selectRemoved(round4.matches, { ...rules, suspendedId, completedMentees: menteesInRounds1to3 });
-      return { suspendedId, removedId };
-    });
-    log('seed: S and R');
+    if (suspendedId === undefined || removedId === undefined) {
+      throw new SeedFailure('the four Rounds must suspend S and remove R');
+    }
+    const sanctioned = { suspendedId, removedId };
 
     // §14.4 step 5, after Round 4's close: the social graph, Likes, Direct
     // Messages, then the report fixtures. D comes first; the eligible
     // Students exclude D, S, R and the reserved positions.
-    const demo = await step('demo Student', () => findDemoStudent(prisma, studentIds, sanctioned));
-    const active = await step('eligible Students', () => activeCohort(prisma, studentIds, sanctioned));
+    const demo = await step('demo Student', () => findDemoStudent(prisma, studentIds));
+    const active = await step('eligible Students', () => activeCohort(prisma, studentIds));
     const eligible = eligibleStudents(active, demo.id);
     log('seed: eligible Students', { eligible: eligible.length });
     const graph = await step('social graph', () => seedSocialGraph(social, prisma, demo.id, eligible));
@@ -293,6 +320,22 @@ async function run(): Promise<number> {
       assertEndState(prisma, studentIds, sanctioned, demo, moderationReads),
     );
     log('seed: demo Student', demoStudent);
+
+    // §14.8 check 2: report the run against §14.5's targets, never force them.
+    const distribution = matchDistribution(rounds.map((round) => round.distribution.counts));
+    const target = matchDistribution(ROUND_TARGETS);
+    log('seed: Match distribution', {
+      ...distribution,
+      target: {
+        matches: target.matches,
+        COMPLETED: target.counts.COMPLETED,
+        LAPSED: target.counts.LAPSED,
+        DECLINED: target.counts.DECLINED,
+        TERMINATED_BY_ADMIN: target.counts.TERMINATED_BY_ADMIN,
+        completionPercent: target.completionPercent,
+      },
+      ...elapsed(),
+    });
     await step('completion record', () => writeRecord(db, FIXTURE_VERSION));
     log(`seed complete (fixture-v${FIXTURE_VERSION})`, elapsed());
     return 0;
