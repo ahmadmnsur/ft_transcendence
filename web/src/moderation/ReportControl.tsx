@@ -15,7 +15,7 @@ type Props = { target: ReportTarget; student: StudentRef };
 // §12.2: each opening is keyed to start a fresh form. The Modal stays mounted
 // between openings so closing returns focus to Report: a native dialog restores
 // focus on close, not on removal.
-export function ReportControl({ target, student }: Props): React.JSX.Element | null {
+export function ReportControl({ target, student, className }: Props & { className?: string }): React.JSX.Element | null {
   const { t } = useI18n();
   const { data: session } = useQuery(sessionQueryOptions());
   const [open, setOpen] = useState(false);
@@ -25,7 +25,7 @@ export function ReportControl({ target, student }: Props): React.JSX.Element | n
 
   return (
     <>
-      <Button variant="ghost" size="sm" aria-haspopup="dialog" onClick={() => {
+      <Button variant="ghost" size="sm" className={className} aria-haspopup="dialog" onClick={() => {
         setOpenings((count) => count + 1);
         setOpen(true);
       }}>
@@ -151,7 +151,9 @@ function ReportDialog({ target, student, open, onClose }: Props & {
           </form>
         )}
         {student.removed ? null : (
-          <div className="border-t border-line pt-4 empty:hidden"><BlockControl student={student} /></div>
+          <div className="flex min-w-0 flex-wrap items-center gap-3 border-t border-line pt-4 empty:hidden">
+            <BlockControl student={student} />
+          </div>
         )}
       </div>
     </Modal>

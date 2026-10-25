@@ -67,7 +67,7 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
   if (friends.data === undefined || requests.data === undefined || blocks.data === undefined) {
     if (failed === undefined) return null;
     return (
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex basis-full flex-wrap items-center gap-3">
         <p role="alert" className="text-sm text-ink-danger">
           {errorText(failureCode(failed.error))}
         </p>
@@ -143,21 +143,24 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
     end: friendActions.ended,
   };
 
+  // Each note takes a line of its own above the profile's row of actions.
+  const note = 'order-first basis-full text-sm text-ink-muted';
+
   let controls: React.ReactNode;
   if (isFriend) {
     controls = (
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-sm text-ink-muted">{copy.friendsNote}</p>
+      <>
+        <p className={note}>{copy.friendsNote}</p>
         {actionButton('end', 'secondary', friendActions.end, friendActions.ending, () => {
           setStatus(undefined);
           setConfirming(true);
         })}
-      </div>
+      </>
     );
   } else if (incoming !== undefined) {
     controls = (
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-sm text-ink-muted">{copy.incomingNote}</p>
+      <>
+        <p className={note}>{copy.incomingNote}</p>
         <div className="flex flex-wrap items-center gap-2">
           {actionButton('accept', 'primary', friendActions.accept, friendActions.accepting, () => {
             void run('accept', () => acceptFriendRequest(queryClient, incoming.id));
@@ -166,31 +169,29 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
             void run('decline', () => declineFriendRequest(queryClient, incoming.id));
           })}
         </div>
-      </div>
+      </>
     );
   } else if (outgoing !== undefined) {
     controls = (
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-sm text-ink-muted">{copy.outgoingNote}</p>
+      <>
+        <p className={note}>{copy.outgoingNote}</p>
         {actionButton('cancel', 'secondary', friendActions.cancelRequest, friendActions.cancelling, () => {
           void run('cancel', () => cancelFriendRequest(queryClient, outgoing.id));
         })}
-      </div>
+      </>
     );
   } else {
-    controls = (
-      <div>
-        {actionButton('send', 'primary', friendActions.send, friendActions.sending, () => {
-          void run('send', () => sendFriendRequest(queryClient, student.id));
-        })}
-      </div>
-    );
+    controls = actionButton('send', 'primary', friendActions.send, friendActions.sending, () => {
+      void run('send', () => sendFriendRequest(queryClient, student.id));
+    });
   }
 
+  // The pieces are items of the profile's row of actions; the status Banner
+  // takes the first line, above the note.
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <>
       {status !== undefined ? (
-        <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
+        <div ref={statusRef} tabIndex={-1} className="order-first basis-full rounded-lg focus-ring">
           {status.kind === 'failed' ? (
             <Banner
               tone="danger"
@@ -212,6 +213,6 @@ export function FriendControl({ student }: { student: StudentRef }): React.JSX.E
         onConfirm={() => void run('end', () => endFriendship(queryClient, student.id))}
         onClose={() => setConfirming(false)}
       />
-    </div>
+    </>
   );
 }

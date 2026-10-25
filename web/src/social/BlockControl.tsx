@@ -51,7 +51,7 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
   if (blocks.data === undefined) {
     if (!blocks.isError) return null;
     return (
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex basis-full flex-wrap items-center gap-3">
         <p role="alert" className="text-sm text-ink-danger">
           {errorText(failureCode(blocks.error))}
         </p>
@@ -105,10 +105,13 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
   // gives no advice about one.
   const unblockedText = student.removed ? actions.unblockedRemoved : actions.unblocked;
 
+  // The pieces are items of the row of actions around it, on a profile and in
+  // the report dialog; the status Banner and the note take lines of their own
+  // above its button.
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <>
       {status !== undefined ? (
-        <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
+        <div ref={statusRef} tabIndex={-1} className="order-first basis-full rounded-lg focus-ring">
           {status.kind === 'failed' ? (
             <Banner tone="danger" title={errorText(status.code)} />
           ) : (
@@ -120,12 +123,12 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
         </div>
       ) : null}
       {blocked ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-ink-muted">{copy.blockedNote}</p>
+        <>
+          <p className="order-first basis-full text-sm text-ink-muted">{copy.blockedNote}</p>
           <Button variant="secondary" size="sm" loading={pending} onClick={() => void onUnblock()}>
             {pending ? actions.unblocking : actions.unblock}
           </Button>
-        </div>
+        </>
       ) : student.removed ? null : (
         <div>
           <Button
@@ -166,6 +169,6 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
           </>
         }
       />
-    </div>
+    </>
   );
 }

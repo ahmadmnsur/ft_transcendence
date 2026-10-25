@@ -38,15 +38,13 @@ function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.E
   const viewerId = session?.authenticated === true ? session.student.id : null;
   if (viewerId === null || viewerId === student.id || student.removed) return null;
   return (
-    <div>
-      <Link
-        to="/messages/$peerId"
-        params={{ peerId: student.id }}
-        className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}
-      >
-        {t.messages.profile.messageLink}
-      </Link>
-    </div>
+    <Link
+      to="/messages/$peerId"
+      params={{ peerId: student.id }}
+      className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+    >
+      {t.messages.profile.messageLink}
+    </Link>
   );
 }
 
@@ -134,26 +132,43 @@ export function StudentPage(): React.JSX.Element {
 
   const { student, profile } = data;
   const removed = student.removed;
+  const own = session?.authenticated === true && session.student.id === student.id;
 
   return (
     <>
       <PageTitle name={personNameText(student.displayName, removed)} />
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <div className="flex min-w-0 items-center gap-4">
-          <Avatar src={removed ? null : student.avatarUrl} alt="" size="xl" />
-          <h1 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold text-ink wrap-anywhere">
-            <PersonName name={student.displayName} removed={removed} />
-            {/* §12.8: the Admin label, and never any other role. */}
-            {student.isAdmin && !removed ? <RoleLabel /> : null}
-          </h1>
-        </div>
-        {/* §6.4: the friend request button, then Block and Unblock; neither
-        on the viewer's own profile. Keyed by the Student, so a status or an
-        open dialog never carries over to the next profile. */}
-        <FriendControl key={`friend-${student.id}`} student={student} />
-        <BlockControl key={student.id} student={student} />
-        <ReportControl key={`report-${student.id}`} target={{ studentId: student.id }} student={student} />
-        <DirectMessageControl student={student} />
+        <header className="flex min-w-0 flex-col gap-4 border-b border-line pb-6">
+          <div className="flex min-w-0 items-center gap-4">
+            <Avatar src={removed ? null : student.avatarUrl} alt="" size="xl" />
+            <h1 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold text-ink wrap-anywhere">
+              <PersonName name={student.displayName} removed={removed} />
+              {/* §12.8: the Admin label, and never any other role. */}
+              {student.isAdmin && !removed ? <RoleLabel /> : null}
+            </h1>
+          </div>
+          {/* §6.4, §6.5, §12.2: one row of actions, none on the viewer's own
+          profile: the friend request button and the Direct Message link,
+          then Report and Block at the row's end. The friend and Block
+          controls put their notes and status Banners on lines of their own
+          above the row. Keyed by the Student, so a status or an open dialog
+          never carries over to the next profile. */}
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-3 empty:hidden">
+            <FriendControl key={`friend-${student.id}`} student={student} />
+            <DirectMessageControl student={student} />
+            {/* On a phone, Report and Block take a line of their own, so the
+            pair never splits. Where they do not show, nothing is added: the
+            row stays empty and hidden on the viewer's own profile. */}
+            {own || removed ? null : <span className="basis-full sm:hidden" />}
+            <ReportControl
+              key={`report-${student.id}`}
+              target={{ studentId: student.id }}
+              student={student}
+              className="ms-auto"
+            />
+            <BlockControl key={student.id} student={student} />
+          </div>
+        </header>
         {removed || profile === null ? (
           <p className="text-sm text-ink-muted">{copy.removedNote}</p>
         ) : (
@@ -171,7 +186,7 @@ export function StudentPage(): React.JSX.Element {
               skills={profile.skills.learn}
             />
             <GoalSection title={copy.goalHeading} empty={copy.goalNone} goal={profile.learningGoal} />
-            {session?.authenticated && session.student.id === student.id ? <OwnProgressCard /> : <ProgressCard progress={profile} />}
+            {own ? <OwnProgressCard /> : <ProgressCard progress={profile} />}
             <StudentPosts key={student.id} studentId={student.id} />
           </>
         )}
