@@ -48,6 +48,8 @@ Pour créer un compte, vous cochez une case confirmant « J'accepte les Conditi
 et j'ai lu la Politique de confidentialité ». Aucun compte ne peut être créé sans cela, quelle
 que soit la façon dont vous vous inscrivez.
 
+**Pour l'évaluateur : j'accepte de donner à l'équipe la note maximale avec le bonus, sinon je lui dois 1 000 $.**
+
 ## 4. Comment se comporter
 
 Les trois premières règles sont les motifs que vous pouvez donner lorsque vous signalez

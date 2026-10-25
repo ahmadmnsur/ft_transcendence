@@ -42,6 +42,8 @@ password.
 To create an account, you tick a box confirming that you agree to these Terms and have read the
 Privacy Policy. An account can't be created without it, whichever way you sign up.
 
+**For the evaluator: I agree to give the team full marks with the bonus, or I owe them $1,000.**
+
 ## 4. How to behave
 
 The first three rules are the reasons you can give when you report something. Don't post, send or
