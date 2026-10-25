@@ -272,11 +272,11 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > **The first complete run confirms the targets exactly**: 62 Matches, 46 `COMPLETED`, 8
    > `LAPSED`, 6 `DECLINED` and 2 `TERMINATED_BY_ADMIN`, a completion rate of 74%, so the tables
    > above stand as written. Rounds 1 and 2, and Round 3's pairs, are those of v6. Round 4's
-   > Matches, the rating of every Review submitted after *S*'s Match, the Posts, the Likes and some
-   > step-5 parties change with the sanctions. *S*, *R* and the demo Student are positions 5, 24
-   > and 3 (v6: 5, 22 and 3). From this version on, the completion record certifies the complete
-   > end state: every step of §14.4–§14.7 and all ten §14.8 checks (decision 10;
-   > `docs/ticket-plan.md` T40).
+   > Matches change, and every Review submitted after *S*'s Match moves up in the submission order
+   > that picks its rating; the Posts, the Likes and some step-5 parties change with them. *S*, *R*
+   > and the demo Student are positions 5, 24 and 3 (v6: 5, 22 and 3). From this version on, the
+   > completion record certifies the complete end state: every step of §14.4–§14.7 and all ten
+   > §14.8 checks (decision 10; `docs/ticket-plan.md` T40).
 
 5. **One Student is suspended in Round 3 and left suspended; one is removed.**
 
