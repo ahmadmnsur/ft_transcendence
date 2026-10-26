@@ -15,6 +15,9 @@ const testEnv =
 export default defineConfig({
   plugins: [swc.vite()],
   test: {
+    // Shared Docker work can push sub-second tests and hooks past their 5 s and 10 s defaults.
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     include: ['test/[0-9][0-9]-*/*.test.ts'],
     globalSetup: ['test/harness/global-setup.ts'],
     env: testEnv,

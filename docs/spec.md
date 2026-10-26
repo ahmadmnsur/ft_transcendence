@@ -3605,6 +3605,17 @@ about the Admin.
 ### 14.8 End-state assertions (all, or the seed fails)
 
 1. No open Round; exactly four closed Rounds; exactly four Prompts; the live one is Prompt 4.
+
+   > **Refined 2026-10-25** by [Seed and suite: stop when a Round shows another Round's number, and give tests room under load](https://github.com/ahmadmnsur/ft_transcendence/issues/228):
+   > each seeded Round must also show its own number and close after it opens: read back through
+   > the Admin's Round list at its close (§14.5 step i), the *n*-th Round the script opens shows as
+   > Round *n*, and its `closed_at` is not before its `opened_at`. A Round's number is its position
+   > by `(opened_at, id)` (§4.3.9), and both times come from the clock. So a clock step back while
+   > the seed runs can swap two labels, as it did once on 2026-10-25 in a clean clone, or, inside a
+   > Round, make it close before it opens. The seed then stops, leaving no record, and the next boot
+   > retries (§14.9). The fixture
+   > stays v7, on Kamel's call: no row changes, and a database seeded at v7 before this check keeps
+   > its record.
 2. The Match status distribution is logged against the §14.5 targets (reported, not asserted), with
    how long the run took (ADR-0017 d10's note of 2026-10-11).
 3. **Demo Student**: *D* exists — Active, `STUDENT`, a `COMPLETED` Match as Mentee with its Review, at
@@ -3642,6 +3653,12 @@ holds on both targets, the team project and the fallback.
   slice (§18 item 12), a version implements only the steps and assertions whose slices have merged;
   from the PR that completes ADR-0017's end state onward, `<N>` implements all of §14.4–§14.8. On the
   team project the record is read in the dashboard's SQL editor with the query below.
+
+  > **2026-10-25** ([#228](https://github.com/ahmadmnsur/ft_transcendence/issues/228)): a v7 record
+  > written before §14.8 check 1's Round check reached `main` still counts. The seed skips such a
+  > database, so the check never runs on it (§14.8 check 1's note of 2026-10-25). `make reset-team`,
+  > then `make up` from `main`, gives it a record the check has passed: the reset only empties, and
+  > the boot after it writes the record (§15.6).
 - **The lock comes first.** The seed opens a connection for the lock alone, outside the `api`'s
   pool, takes a session advisory lock on it before it reads the record, and keeps it to the end of
   the run; the record is cleared and written on that connection. Prisma gives a connection back to
@@ -4155,7 +4172,10 @@ names, run locally as `make test`.
     item 3), and the staff helper with the seed that builds the shared bootstrap function. A staff
     session is opened by the code sign-in runs after the password check, so only the tests of
     sign-in itself pay for a real password check;
-  - tables are truncated between tests; `fileParallelism: false`. **Supabase Auth users and files
+  - tables are truncated between tests; `fileParallelism: false`; a test or hook without its own
+    limit gets 20 s (`testTimeout`, `hookTimeout`), the limit most slow tests set one by one, since
+    Vitest's 5 s default failed sub-second tests when other Docker work shared the machine, and
+    hooks get the same room. **Supabase Auth users and files
     outlive the truncation** and are deleted with the copy. Their ids never repeat, so they collide
     with nothing: a test checks a user or a file by its id, never by a count, and a file's name is
     its row's token (§9.8);
