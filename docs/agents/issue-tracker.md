@@ -114,9 +114,11 @@ correction. Where no ADR exists, synchronize only the applicable surfaces that e
   ADR revises an earlier one, this repo's convention is a `## What this ADR changes in earlier
   records` section (ADR-0011, ADR-0015).
 * **Legal pages (`docs/legal/`)** — when the change moves what personal data is stored, who can
-  see it or how long it is kept, update `privacy-policy.md`; when it moves a conduct rule, a
-  Report reason or a sanction, update `terms-of-service.md`. They are user-facing text, so
-  correct them in place and move their *Last updated* date; git keeps the history (ADR-0018 d15).
+  see it or how long it is kept, update the Privacy Policy; when it moves a conduct rule, a
+  Report reason or a sanction, update the Terms, each in all three languages with one
+  *Last updated* date (`CONTRIBUTING.md` → *Personal data moves the Privacy Policy*). They are
+  user-facing text, so correct them in place and move their shared date; git keeps the history
+  (ADR-0018 d15).
 
 **Edits that ride on a PR** are marked *(uncommitted)* on the map and on each issue until the PR
 merges. Then each gets `Landed on main at <sha>`, naming the squash commit, or a withdrawn note if

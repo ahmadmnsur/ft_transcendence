@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
+import { useI18n } from '../i18n/context';
 import { direction } from '../i18n/language';
-import type { Language } from '../i18n/types';
+import { BRAND } from '../layout';
 import {
   inlineText,
+  legalLanguage,
   parseMarkdown,
   type Block,
   type BulletItem,
@@ -21,9 +23,20 @@ function isExternalUrl(url: string): boolean {
 function Inline({ node }: { node: InlineNode }): React.JSX.Element | string {
   switch (node.kind) {
     case 'text':
-      return node.text;
+      // The product name is isolated, as every value in the SPA's own text is (§3.5.5): in an
+      // Arabic page, `21 Beirut` would otherwise read `Beirut 21`.
+      return (
+        <>
+          {node.text.split(BRAND).map((part, index) => (
+            <Fragment key={index}>
+              {index > 0 && <bdi>{BRAND}</bdi>}
+              {part}
+            </Fragment>
+          ))}
+        </>
+      );
     case 'code':
-      return <code className="whitespace-pre-wrap rounded bg-surface-muted px-1 py-0.5 font-mono text-[0.875em] text-ink">{node.text}</code>;
+      return <code dir="ltr" className="whitespace-pre-wrap rounded bg-surface-muted px-1 py-0.5 font-mono text-[0.875em] text-ink">{node.text}</code>;
     case 'strong':
       return (
         <strong className="font-semibold text-ink">
@@ -139,7 +152,7 @@ function isLabelParagraph(block: Block): boolean {
 // Per-level heading classes; h4–h6 share one rung and h1 takes no top margin.
 const HEADING_LOW_BASE_CLASS = 'mb-2 scroll-mt-6 text-balance text-base font-semibold text-ink';
 const HEADING_BASE_CLASS: Record<number, string> = {
-  1: 'scroll-mt-6 text-balance text-3xl font-semibold tracking-tight text-ink',
+  1: 'scroll-mt-6 text-balance text-3xl font-semibold tracking-tight arabic:tracking-normal text-ink',
   2: 'mb-3 scroll-mt-6 text-balance text-xl font-semibold text-ink',
   3: 'mb-2 scroll-mt-6 text-balance text-lg font-semibold text-ink',
   4: HEADING_LOW_BASE_CLASS,
@@ -192,7 +205,7 @@ function LegalBlock({
       );
     case 'numberedList':
       return (
-        <ol className={`list-decimal space-y-2 ps-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
+        <ol className={`list-decimal arabic:list-[arabic-indic] space-y-2 ps-6 marker:text-ink-subtle ${tightTop ? 'mt-2' : 'mt-4'}`}>
           {block.items.map((item, index) => (
             <NumberedListItem key={index} item={item} />
           ))}
@@ -206,12 +219,12 @@ function LegalBlock({
 export function LegalDocument({
   source,
   fileName,
-  language,
 }: {
   source: string;
   fileName: string;
-  language: Language;
 }): React.JSX.Element {
+  const { t } = useI18n();
+  const language = legalLanguage(fileName);
   const blocks = useMemo(() => parseMarkdown(source, fileName), [source, fileName]);
   // Each table names the nearest preceding heading, so the scroll region
   // has a label even though tables carry no caption of their own.
@@ -219,7 +232,7 @@ export function LegalDocument({
   const labelled = blocks.map((block, index) => {
     if (block.kind === 'heading') heading = inlineText(block.children);
     // A table before any heading still needs an accessible name.
-    return { block, label: heading === '' ? 'Table' : heading, tightTop: index > 0 && isLabelParagraph(blocks[index - 1]) };
+    return { block, label: heading === '' ? t.legal.untitledTable : heading, tightTop: index > 0 && isLabelParagraph(blocks[index - 1]) };
   });
   return (
     <article

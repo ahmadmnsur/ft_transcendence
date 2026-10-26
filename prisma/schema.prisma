@@ -61,7 +61,8 @@ enum CoverageDirection {
 }
 
 // §4.2: coupled to the Terms (ADR-0011 d4, ADR-0018 d9): adding, removing or
-// renaming a reason changes docs/legal/terms-of-service.md in the same PR.
+// renaming a reason changes the Terms in all three languages in the same PR
+// (CONTRIBUTING.md → Personal data moves the Privacy Policy).
 enum ReportReason {
   HARASSMENT
   SPAM

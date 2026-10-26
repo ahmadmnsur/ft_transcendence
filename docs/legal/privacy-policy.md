@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**21 Beirut** · Last updated: 25 October 2026
+**21 Beirut** · Last updated: 26 October 2026
 
 This page explains what 21 Beirut records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -385,3 +385,7 @@ For questions about this page, contact its authors on the 42 intranet: `ahmmanso
 
 The date at the top shows when this page last changed. 21 Beirut sends no notice of changes, so
 check back from time to time.
+
+This page is also written in French and Arabic. Those versions are translations: if they differ
+from this English version, the English version applies. The date at the top is the same in the
+English, French and Arabic versions, and moves when any of them changes.

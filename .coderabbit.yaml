@@ -46,7 +46,7 @@ reviews:
           report_one_per_reporter_post / report_one_per_reporter_student.
         - schema.prisma changes ship with their migration in the same PR.
         - The seed (prisma/seed/**, prisma/fixtures/**) stays idempotent: it runs on every boot.
-        - New or changed personal data must come with an update to docs/legal/privacy-policy.md.
+        - New or changed personal data must come with an update to docs/legal/privacy-policy.md, docs/legal/privacy-policy.fr.md and docs/legal/privacy-policy.ar.md (CONTRIBUTING.md → Personal data moves the Privacy Policy).
     - path: "{prisma.config*,prisma7.config*,.config/prisma*}"
       instructions: "Inside the schema gate. The root prisma.config.ts is the only Prisma Config; any other file matching /prisma.config*, /prisma7.config* or /.config/prisma* is refused."
     - path: "supabase/**"
@@ -96,7 +96,7 @@ reviews:
         instructions: "If the PR touches prisma/**, supabase/**, src/files/buckets.ts, any compose*.yaml, or any file matching prisma.config*, prisma7.config* or .config/prisma*, or moves or renames one of these, pass only if Kamel is a requested reviewer, or Ahmad when Kamel is the author or the PR description says Kamel has been blocked for more than 24 hours. Otherwise pass."
       - name: "Privacy Policy moves with personal data"
         mode: warning
-        instructions: "If the PR changes what personal data about a Student is stored, who can see it, or how long it is kept, pass only if docs/legal/privacy-policy.md is also changed. Otherwise pass."
+        instructions: "If the PR changes what personal data about a Student is stored, who can see it, or how long it is kept, pass only if all three files, docs/legal/privacy-policy.md, docs/legal/privacy-policy.fr.md and docs/legal/privacy-policy.ar.md, are also changed. (CONTRIBUTING.md → Personal data moves the Privacy Policy: each page is three files with one date.) Otherwise pass."
 
   # No bot-authored commits in the history.
   finishing_touches:
