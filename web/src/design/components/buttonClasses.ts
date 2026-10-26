@@ -1,6 +1,8 @@
 // danger is the confirming step of a destructive action; danger-ghost is the
-// quiet way in to one, for a footer or a row where it must not shout.
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-ghost';
+// quiet way in to one, for a footer or a row where it must not shout;
+// danger-secondary is the way in that stands as a button of its own, such as
+// Block on a profile.
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-secondary' | 'danger-ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 // On a touch screen an invisible layer stretches each size to a 44 px target.
@@ -16,6 +18,8 @@ const variants: Record<ButtonVariant, string> = {
   secondary: 'border-line-strong bg-surface text-ink hover:bg-surface-muted active:bg-surface-sunken',
   ghost: 'border-transparent text-primary-700 hover:bg-primary-50 active:bg-primary-100',
   danger: 'border-transparent bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800',
+  // Secondary in red: the danger-600 border is 5.1:1 on white, past the 3:1 a boundary needs.
+  'danger-secondary': 'border-danger-600 bg-surface text-ink-danger hover:bg-danger-50 active:bg-danger-100',
   'danger-ghost': 'border-transparent text-ink-danger hover:bg-danger-50 active:bg-danger-100',
 };
 
