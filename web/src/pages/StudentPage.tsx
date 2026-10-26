@@ -21,7 +21,7 @@ import { NotFoundPage, PageTitle } from '../layout';
 import { ReportControl, canReport } from '../moderation/ReportControl';
 import { GoalSection, SkillSection } from '../profile/ProfileSections';
 import { useBlockControl } from '../social/BlockControl';
-import { useFriendControl } from '../social/FriendControl';
+import { useFriendControl } from '../social/useFriendControl';
 import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
 
 // The shape the API's ParseUUIDPipe accepts (§6.0.1). A malformed id is
@@ -30,9 +30,8 @@ import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // §6.5, §7.3: the link to this Student's page on `/messages`, where the
-// composer sends. ProfileActions shows it where Report shows: never on the
-// viewer's own profile, and never for a Removed Student, who can receive
-// nothing (§4.6).
+// composer sends. ProfileActions shows it to a signed-in viewer, never on
+// their own profile or for a Removed Student, who can receive nothing (§4.6).
 function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.Element {
   const { t } = useI18n();
   return (
@@ -58,9 +57,10 @@ function ProfileActions({ student }: { student: StudentRef }): React.JSX.Element
   const block = useBlockControl(student);
   const viewerId = session?.authenticated === true ? session.student.id : null;
   const target = { studentId: student.id };
-  // The Direct Message link shows to the viewers Report shows to.
+  const messageable = viewerId !== null && viewerId !== student.id && !student.removed;
   const reportable = canReport(viewerId, target, student);
-  const hasRow = reportable || (friend !== null && friend.buttons !== null) || (block !== null && block.buttons !== null);
+  const hasLeadingActions = messageable || (friend !== null && friend.buttons !== null);
+  const hasRow = hasLeadingActions || reportable || (block !== null && block.buttons !== null);
   if (friend === null && block === null && !hasRow) return null;
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -71,8 +71,8 @@ function ProfileActions({ student }: { student: StudentRef }): React.JSX.Element
       {hasRow ? (
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-3">
           {friend?.buttons}
-          {reportable ? <DirectMessageControl student={student} /> : null}
-          <div className="ms-auto flex min-w-0 flex-wrap items-center gap-2">
+          {messageable ? <DirectMessageControl student={student} /> : null}
+          <div className={`flex min-w-0 flex-wrap items-center gap-2${hasLeadingActions ? ' ms-auto' : ''}`}>
             <ReportControl target={target} student={student} />
             {block?.buttons}
           </div>
