@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**21 Beirut** · Dernière mise à jour : 25 octobre 2026
+**21 Beirut** · Dernière mise à jour : 26 octobre 2026
 
 Ceci est une traduction. Si elle diffère de la version anglaise, la version anglaise s'applique.
 

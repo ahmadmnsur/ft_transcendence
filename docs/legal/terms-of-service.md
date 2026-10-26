@@ -1,6 +1,6 @@
 # Terms of Service
 
-**21 Beirut** · Last updated: 25 October 2026
+**21 Beirut** · Last updated: 26 October 2026
 
 These Terms are the rules for using 21 Beirut: what you agree to when you create an account, how
 the community is moderated, and what 21 Beirut does and does not promise. The *Privacy Policy*
