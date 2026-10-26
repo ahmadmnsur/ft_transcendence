@@ -303,12 +303,14 @@ const feedbackRoute = createRoute({
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy',
+  beforeLoad: readSession,
   component: PrivacyPage,
 });
 
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/terms',
+  beforeLoad: readSession,
   component: TermsPage,
 });
 

@@ -17,9 +17,12 @@ export async function requireSession({ context }: GuardArgs): Promise<{ student:
   return { student: session.student };
 }
 
-// `/`, readable signed in or out (§3.5.1's note of 2026-10-25): the same
-// fresh probe as requireSession, without its redirect. The page picks the
-// feed or the landing page from the session query it fills.
+// `/`, `/privacy` and `/terms`, readable signed in or out: the same fresh
+// probe as requireSession, without its redirect. `/` picks the feed or the
+// landing page from the session query it fills (§3.5.1's note of
+// 2026-10-25). On the legal pages it gives the header its final height before
+// the router scrolls to a `#` link; otherwise the header would grow over the
+// heading when the session answered.
 export async function readSession({ context }: GuardArgs): Promise<void> {
   await context.queryClient.fetchQuery({ ...sessionQueryOptions(), staleTime: 0 });
 }

@@ -1,7 +1,7 @@
 // danger is the confirming step of a destructive action; danger-ghost is the
 // quiet way in to one, for a footer or a row where it must not shout;
-// danger-secondary is the way in that stands as a button of its own, such as
-// Block on a profile.
+// danger-secondary is the way in that stands as a button of its own or beside
+// a bordered one, such as Block on a profile and Remove Post beside Dismiss.
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-secondary' | 'danger-ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
