@@ -62,13 +62,14 @@ const panelFitClass = 'max-h-[calc(100dvh-var(--header-height))] overflow-y-auto
 // The header's height as `--header-height` on the root element, measured once
 // as the header mounts, before the router scrolls a page opened at a `#` link,
 // then on each resize: it moves with the width, the language, a sign-in or a
-// sign-out, and the links a role adds. Every route reads the session before
-// it renders (`guards.ts`), so the header that mounts is already the signed-in
-// or the signed-out one and keeps its height when the session answers. The
-// page's scroll padding reads it (`index.css`), so whatever the browser
-// scrolls into view, a focused field, a notice or the heading a `#` link
-// opens, stops below the header, not behind it; so does `panelFitClass`.
-// React runs the cleanup when the header unmounts.
+// sign-out, and the links a role adds. Every route but the not-found page
+// reads the session before it renders (`guards.ts`; the legal pages wait a
+// second at most), so the header that mounts is already the signed-in or the
+// signed-out one and keeps its height when the session answers. The page's
+// scroll padding reads it (`index.css`), so whatever the browser scrolls into
+// view, a focused field, a notice or the heading a `#` link opens, stops below
+// the header, not behind it; so does `panelFitClass`. React runs the cleanup
+// when the header unmounts.
 function followHeaderHeight(header: HTMLElement | null): (() => void) | undefined {
   if (header === null) return undefined;
   const root = document.documentElement;
