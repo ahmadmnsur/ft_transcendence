@@ -356,13 +356,33 @@ function SiteHeader(): React.JSX.Element {
 
 function SiteFooter(): React.JSX.Element {
   const { t } = useI18n();
+  const footerRef = useRef<HTMLElement>(null);
+
+  // Reserve the fixed footer's actual height, including wrapped translations
+  // and the phone's safe area, before painting and whenever its size changes.
+  useLayoutEffect(() => {
+    const footer = footerRef.current;
+    if (footer === null) return;
+    const root = document.documentElement;
+    const measure = (): void => {
+      root.style.setProperty('--footer-height', `${footer.offsetHeight}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(footer, { box: 'border-box' });
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--footer-height');
+    };
+  }, []);
+
   return (
-    <footer className="border-t border-line bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-4 text-sm">
-        <Link to="/privacy" className="rounded text-link underline underline-offset-2 focus-ring">
+    <footer ref={footerRef} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-1 text-sm">
+        <Link to="/privacy" className="inline-flex min-h-11 items-center rounded text-link underline underline-offset-2 focus-ring">
           {t.shell.footer.privacy}
         </Link>
-        <Link to="/terms" className="rounded text-link underline underline-offset-2 focus-ring">
+        <Link to="/terms" className="inline-flex min-h-11 items-center rounded text-link underline underline-offset-2 focus-ring">
           {t.shell.footer.terms}
         </Link>
       </div>
@@ -382,12 +402,11 @@ function SkipLink(): React.JSX.Element {
   );
 }
 
-// The footer sits at the bottom on short pages: the frame is a full-height
-// column and the main grows. The dynamic viewport unit keeps it there on
-// mobile browsers whose toolbar shrinks the visible viewport.
+// The main fills short pages. Bottom padding leaves room for the fixed
+// footer on every page, following the height measured by SiteFooter.
 function ShellFrame({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col bg-canvas text-ink">
+    <div className="flex min-h-dvh min-w-0 flex-col bg-canvas pb-[var(--footer-height,0px)] text-ink">
       <SkipLink />
       <SiteHeader />
       {children}

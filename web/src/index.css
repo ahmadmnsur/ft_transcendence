@@ -5,10 +5,11 @@
    so Tailwind does not read it. */
 @source not '../scripts';
 
-/* The header stays at the top of the window, and `SiteHeader` (layout.tsx) sets its height as
-   `--header-height`: whatever the browser scrolls into view stops below the header. */
+/* The header and footer stay visible. Their measured heights (layout.tsx) keep
+   focused controls and fragment targets inside the space between them. */
 html {
   scroll-padding-top: var(--header-height, 0px);
+  scroll-padding-bottom: var(--footer-height, 0px);
 }
 
 body {
