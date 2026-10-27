@@ -6,6 +6,7 @@ import { sessionQueryOptions } from '../api/session';
 import { Banner, Button, Modal } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
+import type { ControlParts } from './parts';
 
 // What the status Banner says, kept as what happened rather than as a text,
 // so it follows a language switch: a Block, its lifting, or a failure's code.
@@ -15,8 +16,9 @@ type Status = { kind: 'blocked' } | { kind: 'unblocked' } | { kind: 'failed'; co
 // shows once the viewer's own Blocks have loaded, never on the viewer's own
 // profile, and a Removed Student offers only the lifting of a Block set
 // before the Removal. Blocking asks first, since it ends any Friendship;
-// lifting restores nothing and asks nothing.
-export function BlockControl({ student }: { student: StudentRef }): React.JSX.Element | null {
+// lifting restores nothing and asks nothing. A profile lays out its parts;
+// the report dialog shows them as BlockControl, below.
+export function useBlockControl(student: StudentRef): ControlParts | null {
   const { t, formatText, personNameValue, errorText } = useI18n();
   const actions = t.social.actions;
   const copy = t.social.profile;
@@ -50,20 +52,25 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
 
   if (blocks.data === undefined) {
     if (!blocks.isError) return null;
-    return (
-      <div className="flex flex-wrap items-center gap-3">
-        <p role="alert" className="text-sm text-ink-danger">
-          {errorText(failureCode(blocks.error))}
-        </p>
-        <Button variant="secondary" size="sm" onClick={() => void blocks.refetch()}>
-          {actions.retry}
-        </Button>
-      </div>
-    );
+    return {
+      status: (
+        <div className="flex flex-wrap items-center gap-3">
+          <p role="alert" className="text-sm text-ink-danger">
+            {errorText(failureCode(blocks.error))}
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => void blocks.refetch()}>
+            {actions.retry}
+          </Button>
+        </div>
+      ),
+      note: null,
+      buttons: null,
+      dialog: null,
+    };
   }
 
-  // A Removed Student the viewer has not blocked offers no action, and an
-  // empty box would still take a gap in the page's column.
+  // A Removed Student the viewer has not blocked offers no action, so the
+  // control has no parts at all.
   if (!blocked && student.removed && status === undefined) return null;
 
   // A refusal such as `student_removed` means the profile on screen is out
@@ -105,9 +112,9 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
   // gives no advice about one.
   const unblockedText = student.removed ? actions.unblockedRemoved : actions.unblocked;
 
-  return (
-    <div className="flex min-w-0 flex-col gap-3">
-      {status !== undefined ? (
+  return {
+    status:
+      status === undefined ? null : (
         <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
           {status.kind === 'failed' ? (
             <Banner tone="danger" title={errorText(status.code)} />
@@ -118,28 +125,29 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
             />
           )}
         </div>
-      ) : null}
-      {blocked ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-ink-muted">{copy.blockedNote}</p>
-          <Button variant="secondary" size="sm" loading={pending} onClick={() => void onUnblock()}>
-            {pending ? actions.unblocking : actions.unblock}
-          </Button>
-        </div>
-      ) : student.removed ? null : (
-        <div>
-          <Button
-            variant="danger-secondary"
-            size="sm"
-            onClick={() => {
-              setStatus(undefined);
-              setConfirming(true);
-            }}
-          >
-            {actions.block}
-          </Button>
-        </div>
-      )}
+      ),
+    note: blocked ? <p className="text-sm text-ink-muted">{copy.blockedNote}</p> : null,
+    // Keyed, so Block never turns into Unblock in place: when the confirmation
+    // closes because a Block came from elsewhere, focus does not come back to
+    // Unblock.
+    buttons: blocked ? (
+      <Button key="unblock" variant="secondary" size="sm" loading={pending} onClick={() => void onUnblock()}>
+        {pending ? actions.unblocking : actions.unblock}
+      </Button>
+    ) : student.removed ? null : (
+      <Button
+        key="block"
+        variant="danger-secondary"
+        size="sm"
+        onClick={() => {
+          setStatus(undefined);
+          setConfirming(true);
+        }}
+      >
+        {actions.block}
+      </Button>
+    ),
+    dialog: (
       <Modal
         open={confirming}
         size="sm"
@@ -166,6 +174,25 @@ export function BlockControl({ student }: { student: StudentRef }): React.JSX.El
           </>
         }
       />
+    ),
+  };
+}
+
+// Block and Unblock in the report dialog (§12.2), as one column: the status,
+// then the note beside its button.
+export function BlockControl({ student }: { student: StudentRef }): React.JSX.Element | null {
+  const parts = useBlockControl(student);
+  if (parts === null) return null;
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      {parts.status}
+      {parts.note === null && parts.buttons === null ? null : (
+        <div className="flex flex-wrap items-center gap-3">
+          {parts.note}
+          {parts.buttons}
+        </div>
+      )}
+      {parts.dialog}
     </div>
   );
 }
