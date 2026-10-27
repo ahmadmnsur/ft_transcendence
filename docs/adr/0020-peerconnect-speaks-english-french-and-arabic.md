@@ -98,6 +98,10 @@ Unaffected:
    #7's reasons, and so do a fourth language and the README in French or Arabic, which the subject
    requires in English (`:1346`). Settled when [Map: PeerConnect in English, French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/139) was charted, 2026-10-11.
 
+   > **Noted 2026-10-27** (`docs/spec.md` §1.3's note of this date): the matching engine and its
+   > validation method are also claimed, as a Module of choice Major (`:937`), so the claim is 22
+   > points. This decision's two Minors are unchanged.
+
 2. **Every text PeerConnect's own SPA shows, or gives to a screen reader, is translated, and all of
    it lives in the SPA** ([Settle what counts as user-facing text](https://github.com/ahmadmnsur/ft_transcendence/issues/142)). That covers every route, the Peer Moderator
    and Admin screens included; fixed text stored as codes (Missions, Badges, Report reasons and
@@ -271,6 +275,10 @@ Unaffected:
 - **The legal translations land last**, near the end, and from then on a change to either page is
   written in three languages and checked by a member who did not write it.
 - **The README's Modules section counts 20 points**, with both Minors ([README: the sections with no recorded owner](https://github.com/ahmadmnsur/ft_transcendence/issues/71)).
+
+  > **Noted 2026-10-27** (§1.3's note of this date in `docs/spec.md`): the README's Modules section
+  > counts 22 points, with the matching engine as a Module of choice and its justification.
+
 - **The spec and the build tickets follow.** [Write the ADR for French, Arabic and right-to-left, and update the spec](https://github.com/ahmadmnsur/ft_transcendence/issues/147) updates `docs/spec.md` in
   the same PR as this ADR, and [Write the build tickets for French, Arabic and right-to-left](https://github.com/ahmadmnsur/ft_transcendence/issues/148) opens the foundation, the
   tickets for the merged code that changes and the legal translations, and puts the criterion on
