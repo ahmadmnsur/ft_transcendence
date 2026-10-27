@@ -87,7 +87,7 @@ function QueueGroupCard({
             <Button
               key={action}
               size="sm"
-              variant={action === 'REMOVE_POST' ? 'danger-ghost' : 'secondary'}
+              variant={action === 'REMOVE_POST' ? 'danger-secondary' : 'secondary'}
               aria-haspopup="dialog"
               onClick={() => {
                 setChosen(action);

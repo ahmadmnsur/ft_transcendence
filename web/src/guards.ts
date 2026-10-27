@@ -24,6 +24,27 @@ export async function readSession({ context }: GuardArgs): Promise<void> {
   await context.queryClient.fetchQuery({ ...sessionQueryOptions(), staleTime: 0 });
 }
 
+// `/privacy` and `/terms`, readable signed in or out: the same probe, so a
+// session that answers within a second gives the header its final height
+// before the router scrolls to a `#` link; otherwise the header would change
+// height under the heading. Their text is in the bundle and shows whatever the
+// API does (ADR-0018 d14), so the read never fails the page and holds it a
+// second at most. After a failed or slower read the header shows what its own
+// session query holds, and a later answer can still change its height.
+const LEGAL_SESSION_WAIT_MS = 1000;
+
+export async function readSessionIfUp({ context }: GuardArgs): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const read = context.queryClient
+    .fetchQuery({ ...sessionQueryOptions(), staleTime: 0, retry: false })
+    .catch(() => undefined);
+  const capped = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, LEGAL_SESSION_WAIT_MS);
+  });
+  await Promise.race([read, capped]);
+  clearTimeout(timer);
+}
+
 // requireSession first, then the role check: a student without one of the
 // roles returns to `/` (§3.5.1). Takes a list because the moderation routes
 // admit both PEER_MODERATOR and ADMIN (§5.3).
