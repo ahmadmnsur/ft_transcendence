@@ -421,7 +421,8 @@ The team is three members. Fadel started with the team as Scrum Master and Devel
 ### How the work was organized
 
 1. **Decisions before code.** From 2026-09-18 the team settled the product and its rules first.
-   Each open question became a GitHub issue, and each answer an ADR in [`docs/adr/`](docs/adr/).
+   Each open question became a GitHub issue, and each answer was recorded on its issue; most also
+   became an ADR in [`docs/adr/`](docs/adr/).
    The map, [issue #1](https://github.com/ahmadmnsur/ft_transcendence/issues/1), indexes every
    decision, what is still open and what is out of scope.
 2. **One specification, then tickets.** On 2026-09-23 the ADRs became one buildable specification,
@@ -464,7 +465,9 @@ The team is three members. Fadel started with the team as Scrum Master and Devel
 
 The plan gave the project about six weeks from 2026-09-18. Week 1 is 2026-09-18 to 09-24, and each
 week after it starts on a Friday. The records date only weeks 1, 2, 4 and 5; the other milestones
-had a place in the order, not a date. Each milestone, its deadline, and when it was met:
+had a place in the order, not a date. Dates are in UTC, as GitHub records them; Beirut is two or
+three hours ahead, so `git log` shows a late merge on the next day. Each milestone, its deadline,
+and when it was met:
 
 | Milestone | Owner | Deadline | Done |
 | --- | --- | --- | --- |
@@ -501,7 +504,7 @@ had a place in the order, not a date. Each milestone, its deadline, and when it 
 | **NestJS 11** on Express | The backend half of the *framework on both ends* Major. Its modules, guards and pipes give each concern one place: sessions, roles and CSRF are guards, and a global `ValidationPipe` with `class-validator` checks every input. |
 | **Socket.IO 4** through `@nestjs/websockets` | The *real-time* Major: rooms, broadcasts, reconnection, and a grace window before a Student shows as offline. |
 | **Prisma 7** with `@prisma/adapter-pg` | The *ORM* Minor: a typed client and versioned migrations. Every operation that writes runs in a PostgreSQL `SERIALIZABLE` transaction through our own Unit of Work, retried on a serialization failure, so concurrent requests cannot break an invariant. |
-| Session cookies, not JWT | A random token in one `HttpOnly`, `Secure`, `SameSite=Lax` cookie, stored only as its SHA-256 hash in the `Session` table. A Suspension, a Removal or a password change ends every session at once, which a JWT cannot do, and a role change applies on the next request, since the role is read on each request, never carried in the session ([ADR-0003](docs/adr/0003-session-cookies-over-jwt.md)). |
+| Session cookies, not JWT | A random token in one `HttpOnly`, `Secure`, `SameSite=Lax` cookie, stored only as its SHA-256 hash in the `Session` table. A Suspension, a Removal or a password change ends every session at once by deleting its rows; a JWT would need a server-side denylist to do the same, which is a session table anyway. A role change applies on the next request, since the role is read on each request, never carried in the session ([ADR-0003](docs/adr/0003-session-cookies-over-jwt.md)). |
 | `pngjs`, `jpeg-js`, `pdf-lib` | Uploads are decoded, not trusted: an avatar must parse as a PNG or a JPEG, and Evidence as a PDF, a PNG or a JPEG. |
 
 ### Database and storage
@@ -785,7 +788,8 @@ Prompt answer, and a `/rules` page show them.
 
 **Design system (Minor).** *Why:* three developers building pages in parallel need the same parts.
 *How:* the project's own palette, type scale and icon set, and more than ten reusable components,
-documented in [`DESIGN.md`](DESIGN.md), in three languages and both directions.
+in three languages and both directions. They are in [`web/src/design/`](web/src/design/), and
+[`docs/spec.md`](docs/spec.md) section 3.5.3 describes them.
 
 **File upload (Minor).** *Why:* avatars, and Evidence of what was learned. *How:* avatars (PNG or
 JPEG) and Evidence (PDF, PNG or JPEG), checked in the browser and again on the server by decoding
@@ -822,8 +826,12 @@ the chart are mirrored as well.
 
 ## Individual Contributions
 
-What each member built, with the date each part was merged. Every item is a pull request, or a
-group of them, in the repository's history.
+What each member built, with the date each part was merged. Dates are in UTC, as GitHub records
+them: for a pull request, the day it merged. Beirut is two or three hours ahead, so `git log` shows
+a late merge on the next day. Most items are pull requests. The rest are in the issues and the
+reviews, like the legal pages' sign-off on [issue
+#69](https://github.com/ahmadmnsur/ft_transcendence/issues/69), or, for the planning, in commits
+made straight to `main` before pull requests were required on 2026-09-27.
 
 ### Ahmad Mansour (`ahmmanso`)
 
