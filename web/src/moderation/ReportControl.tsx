@@ -31,7 +31,7 @@ export function ReportControl({ target, student }: Props): React.JSX.Element | n
 
   return (
     <>
-      <Button variant="ghost" size="sm" aria-haspopup="dialog" onClick={() => {
+      <Button variant="primary-secondary" size="sm" aria-haspopup="dialog" onClick={() => {
         setOpenings((count) => count + 1);
         setOpen(true);
       }}>

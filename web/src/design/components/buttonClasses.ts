@@ -2,7 +2,8 @@
 // quiet way in to one, for a footer or a row where it must not shout;
 // danger-secondary is the way in that stands as a button of its own or beside
 // a bordered one, such as Block on a profile and Remove Post beside Dismiss.
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-secondary' | 'danger-ghost';
+// primary-secondary is the bordered way in for a non-destructive action, such as Report.
+export type ButtonVariant = 'primary' | 'primary-secondary' | 'secondary' | 'ghost' | 'danger' | 'danger-secondary' | 'danger-ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 // On a touch screen an invisible layer stretches each size to a 44 px target.
@@ -14,6 +15,8 @@ const sizes: Record<ButtonSize, string> = {
 
 const variants: Record<ButtonVariant, string> = {
   primary: 'border-transparent bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800',
+  // Secondary in green: the primary-600 border is 5.2:1 on white, past the 3:1 a boundary needs.
+  'primary-secondary': 'border-primary-600 bg-surface text-primary-700 hover:bg-primary-50 active:bg-primary-100',
   // The border is all that marks a white button on white, so it meets 3:1.
   secondary: 'border-line-strong bg-surface text-ink hover:bg-surface-muted active:bg-surface-sunken',
   ghost: 'border-transparent text-primary-700 hover:bg-primary-50 active:bg-primary-100',
