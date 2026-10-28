@@ -76,6 +76,11 @@ The issues are the live record from here. This file keeps the plan's reasoning.
 > Arabic; T43 the 20-point Modules, and #173 and #174 as blockers; T44 the Arabic pass, and #172
 > and #173 as blockers; and T45 the Arabic pass, the last proofreading pass, how the evaluation
 > shows both Minors, and #174 as a blocker.
+>
+> **Noted 2026-10-27** by [README: the sections with no recorded
+> owner](https://github.com/ahmadmnsur/ft_transcendence/issues/71) (spec §1.3's note of that date):
+> T43's Modules counts 22 points, the matching engine and its validation method claimed as a Module
+> of choice Major (F.1's note of that date).
 
 **Revision 2 applies the review of revision 1.**
 - **Gap decisions:** A-1, A-2 and A-3 are each decided as option (a).
@@ -2449,6 +2454,12 @@ against the milestone they affect.
 > Policy and the Terms in French and Arabic](https://github.com/ahmadmnsur/ft_transcendence/issues/174)
 > build both Minors, outside this plan. In it, T32 has the chart in Arabic, T44 and T45 the Arabic
 > pass, and T43 claims both Minors under *Modules*, after #173 and #174.
+
+> **22 points since 2026-10-27** (spec §1.3's note of that date; ADR-0020's notes of that date): the
+> matching engine and its validation method joined the claim as a Module of choice Major (`:937`),
+> the fallback #7 named. No ticket is added: the engine is T07's, and T43 gives its justification
+> under the README's *Modules* ([README: the sections with no recorded
+> owner](https://github.com/ahmadmnsur/ft_transcendence/issues/71)).
 
 **The mandatory part (§1.3):**
 - containerised single command: T01, T45;

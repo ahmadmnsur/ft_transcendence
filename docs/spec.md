@@ -68,12 +68,20 @@ beside it: **Reflection Prompts** the Admin publishes, answered once as Posts. B
 team's copy, whose database, files and passwords Supabase keeps, when the team's `.env` is present,
 and on a local copy otherwise (§15, ADR-0019).
 
-### 1.3 Claimed modules — 20 points (5 Majors, 10 Minors), threshold 14
+### 1.3 Claimed modules — 22 points (6 Majors, 10 Minors), threshold 14
 
 Locked by [#7](https://github.com/ahmadmnsur/ft_transcendence/issues/7) at 18, all firm since #14;
 the multi-language and right-to-left Minors joined on 2026-10-15 (ADR-0020 d1, from
 [map #139](https://github.com/ahmadmnsur/ft_transcendence/issues/139)). Target policy: survive two
 Majors failing (20 − 4 = 16).
+
+> **Updated 2026-10-27** (#71, Ahmad as Product Owner): the heading read *"20 points (5 Majors, 10
+> Minors)"*. The matching engine and its validation method are also claimed, as a Module of choice
+> Major (`document/en.subject.md:937`): the fallback #7 named on 2026-09-18, found not needed on
+> 2026-09-19 and never rejected. The claim is 22 points, so two Majors failing leave 18. The bonus
+> counts at most 5 points above 14 (`:1375`), so the three points above 19 are margin, not score.
+> `README.md` → *Modules* gives the justification `:941`–`:949` asks for, framed as #7 requires:
+> the engine and its validation method, never the platform's matching counted twice.
 
 | Module (`document/en.subject.md`) | Pts | What in this spec satisfies each bullet |
 | --- | --- | --- |
@@ -82,6 +90,7 @@ Majors failing (20 − 4 = 16).
 | **Major — user interaction** (`:498`) | 2 | Chat: 1:1 Direct Messages (§11.4). Profile: §6.2. Friends: request/accept/decline/end, list (§11.1, §6.4). |
 | **Major — standard user management** (`:592`) | 2 | Profile edit (§6.2); avatar with default (§9.6, §6.3); Friends with online status (Presence, §7.6); profile page (§6.2). |
 | **Major — advanced permissions** (`:622`) | 2 | Users table: view, edit, delete-by-Removal (§6.12); roles `STUDENT`/`PEER_MODERATOR`/`ADMIN` managed on the role column; three distinct views (Student: none; Peer Moderator: `/moderation`; Admin: `/admin/*`). |
+| **Major — Module of choice: the matching engine and its validation method** (`:937`) | 2 | The pure engine of §8.3 over the exact integer Compatibility Score of §8.2 (ADR-0006): most-constrained-first selection, the Level term in the selection priority only, the total tie-break order and the hard pair rules; validated against the best of 600 randomized re-runs across 8 seeds and cohorts of 12, 20 and 30 (ADR-0006 d6); test category 1 (§16.3). Added 2026-10-27, note above. |
 | **Minor — ORM** (`:516`) | 1 | Prisma `^7`, on Supabase's Postgres (§3.3, §4). |
 | **Minor — advanced search** (`:534`) | 1 | `GET /api/students` with Skill filters, sort, pagination over TanStack Table (§6.2). |
 | **Minor — gamification** (`:848`) | 1 | Exactly three of `:850`: XP/Level, Badges, Leaderboard; persisted; progress bar + earn panels; `/rules` page (§10). |
@@ -4482,6 +4491,14 @@ other sections**; `/to-tickets` should surface that as a ticket rather than assu
 
 > **Updated 2026-10-09:** this read *"browser limitations — Fadel"*. The section has been Ahmad's
 > since Fadel left the team on 2026-10-01 (#72, which covers the pass and that section).
+
+> **Updated 2026-10-27** (#71, at Ahmad's request as Product Owner): the README also holds
+> **Individual Contributions** (`document/en.subject.md:1308`), each member's work with the date
+> each part merged and the challenges they met, and a **Timeline** under Project Management, each
+> milestone with its deadline and the date it was met. The subject requires Individual
+> Contributions, which this list had left out. Both are #71's, the ticket for the sections with no
+> recorded owner. The same day **Modules** became the 22-point calculation, with the matching engine
+> as a Module of choice and its justification (§1.3's note of 2026-10-27).
 
 ### 17.6 Settled dates
 
