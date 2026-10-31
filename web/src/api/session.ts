@@ -4,7 +4,6 @@ import type { Role } from '@shared/roles';
 import { ROLES } from '@shared/roles';
 import { ApiProtocolError, apiFetch } from './client';
 
-// §6.1: what GET /api/session reports. `avatarUrl` is a string or null.
 export interface SignedInStudent {
   id: string;
   displayName: string;
@@ -33,9 +32,6 @@ function unexpected(): ApiProtocolError {
   return new ApiProtocolError(200, 'internal_error', 'The server returned an unexpected response.');
 }
 
-// A fresh fetch, never the Query cache. It goes through the client, whose
-// 401 path skips `/session`: the probe is what that path calls, so it must
-// not call back into it (§3.8.2). Only the shape of `data` is checked here.
 export async function fetchSession(): Promise<SessionValue> {
   const data = await apiFetch<unknown>('/session');
   if (!isRecord(data) || typeof data.authenticated !== 'boolean') throw unexpected();
@@ -44,8 +40,6 @@ export async function fetchSession(): Promise<SessionValue> {
   return { authenticated: true, student: data.student };
 }
 
-// One query key for the session, briefly cached for components that read
-// it. The guard bypasses the cache with `staleTime: 0` and always probes.
 export function sessionQueryOptions() {
   return queryOptions({
     queryKey: SESSION_QUERY_KEY,
@@ -54,25 +48,16 @@ export function sessionQueryOptions() {
   });
 }
 
-// Drops the signed-in Student's cached server state and takes the session
-// query to its signed-out value (§3.8.2). The router's 401 handler and the
-// socket's terminal outcomes both use it, so the two cannot drift apart.
 export function setSignedOut(client: QueryClient): void {
   client.clear();
   client.setQueryData(SESSION_QUERY_KEY, { authenticated: false });
 }
 
-// The Student the cached session names now, or null when signed out.
 function signedInStudentId(client: QueryClient): string | null {
   const session = client.getQueryData<SessionValue>(SESSION_QUERY_KEY);
   return session?.authenticated === true ? session.student.id : null;
 }
 
-// A write whose answer updates the cache. The answer belongs to the Student
-// who sent it: if another Student signed in while it was in flight, the cache
-// holds that Student's data by then (§4.6), so none of the answer reaches it,
-// neither `apply` on success nor `reread` on failure. A failure is still
-// rethrown for the screen to show.
 export async function writeAsSignedIn<T>(
   client: QueryClient,
   send: () => Promise<T>,

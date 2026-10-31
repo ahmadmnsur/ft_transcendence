@@ -5,9 +5,6 @@ import { createTestAccount } from '../harness/accounts';
 
 const harness = useHarness();
 
-// The SQLSTATE and message a failed raw statement reports, whichever layer of
-// the driver carries them. The driver adapter keeps a constraint's name only
-// for unique and foreign-key violations, so a CHECK is named by the message.
 function violation(err: unknown): { code?: string; message?: string } {
   const e = err as {
     code?: string;
@@ -23,8 +20,6 @@ function violation(err: unknown): { code?: string; message?: string } {
 
 type Origins = { authorId: string; promptId: string; reviewId: string; roundId: string };
 
-// Both origins a Post can have: a Prompt, and the Review of a Match in an open
-// Round. The Match's Mentee writes the Posts.
 async function makeOrigins(): Promise<Origins> {
   const prisma = harness.app.get(PrismaService);
   const mentor = await createTestAccount(harness.app);
@@ -54,8 +49,6 @@ async function makeOrigins(): Promise<Origins> {
   return { authorId: mentee.id, promptId: prompt.id, reviewId: review.id, roundId: round.id };
 }
 
-// Inserts one Post with these three nullable columns; a null leaves one unset.
-// Resolves to the error the insert failed with, or undefined.
 function insertPost(
   authorId: string,
   columns: { promptId: string | null; reviewId: string | null; answerRoundId: string | null },
@@ -76,9 +69,6 @@ function insertPost(
     );
 }
 
-// §4.4 step 1, §16.3 row 2. Prisma does not represent the CHECK, so a
-// migration that loses it lets a Post carry both origins, or neither, and
-// nothing says so.
 describe('post origins migration', () => {
   it('creates post_exactly_one_origin as a CHECK that exactly one origin is set', async () => {
     const rows = await harness.app

@@ -10,18 +10,7 @@ import { emptyEverything } from '../seed/empty';
 import { openLockConnection, tryTakeSeedLock } from '../seed/lock';
 import { clearRecord } from '../seed/record';
 
-// The two resets (§15.6, ADR-0004 d11's notes of 2026-10-03 and 2026-10-11).
-// `make reset-team` runs this with `team` and reads .env; `make reset-local`
-// runs it with `local` and reads .env.example alone. Each empties its one
-// fixed target through the seed's own function, so the next boot seeds
-// afresh, and leaves the project or the stack, its settings, the buckets and
-// the keys. `make reset-team` has already checked, on the host, that the
-// checkout is an up-to-date main (require-main.sh). It prints a variable's
-// name, a host, the project ref and counts, never a value or an error's
-// message, which can quote DATABASE_URL (§3.9).
 
-// Each command's one target: the boot check's name for it, the file its
-// values come from, and what to do once it is empty.
 const TARGETS = {
   team: {
     command: 'make reset-team',
@@ -49,8 +38,6 @@ function parseTarget(arg: string | undefined): Target {
 
 const target = parseTarget(process.argv[2]);
 
-// Set just before the first write. From then on a stop leaves the target
-// partly emptied, and running the reset again finishes it (§15.6 step 4).
 let wrote = false;
 
 function stop(message: string): never {
@@ -59,7 +46,6 @@ function stop(message: string): never {
   process.exit(1);
 }
 
-// An error as its class and code, never its message.
 function failureLabel(err: unknown): string {
   const name = err instanceof Error ? err.constructor.name : typeof err;
   return `${name}${err instanceof ApiError ? ` (${err.code})` : errorCodeSuffix(err)}`;
@@ -76,9 +62,6 @@ async function orStop<T>(doing: string, work: () => Promise<T>): Promise<T> {
   }
 }
 
-// The boot check's steps 1 and 2 (§15.4, §15.5), since neither reset runs the
-// boot chain, then this command's one target: a mixed .env would otherwise
-// delete Supabase Auth users on one target and rows on the other.
 function checkValues(env: EnvRecord): SupabaseTarget {
   const failure = envFailure(env);
   if (failure !== undefined) stop(`refused: ${failure}`);
@@ -89,7 +72,6 @@ function checkValues(env: EnvRecord): SupabaseTarget {
   return found;
 }
 
-// One line from the terminal, or null when the input ends or Ctrl-C closes it.
 async function ask(question: string): Promise<string | null> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const closed = new Promise<null>((resolve) => rl.once('close', () => resolve(null)));
@@ -101,8 +83,6 @@ async function ask(question: string): Promise<string | null> {
   }
 }
 
-// The team project's ref is printed and must be typed back before anything
-// is deleted; a wrong ref deletes nothing (§15.6 step 2).
 async function confirmRef(ref: string): Promise<void> {
   console.log(
     `${target.command} empties ${target.name} ${ref}: every row of our tables, every Supabase Auth user ` +
@@ -117,18 +97,11 @@ async function confirmRef(ref: string): Promise<void> {
   if (typed.trim() !== ref) stop(`refused: the typed ref is not ${ref}`);
 }
 
-// Supabase Auth's admin list, read once before the first write. The
-// emptying's TRUNCATE comes before its first Auth call, so a wrong
-// SUPABASE_SECRET_KEY would otherwise be found only once the rows are gone.
-// Neither reset runs the boot check's step 3, which tests the keys (§15.5).
 async function checkAuthAdmin(auth: SupabaseAuthClient): Promise<void> {
   try {
     await auth.adminListUserIds();
   } catch (err) {
     const host = new URL(process.env['SUPABASE_URL'] as string).hostname;
-    // An ApiError here is busy_retry_later: no answer, a timeout or a 5xx.
-    // Anything else carries no status: a wrong key's 401 or 403, but also a
-    // path on SUPABASE_URL or a body that breaks off, so it names both values.
     stop(
       err instanceof ApiError
         ? `refused: Supabase Auth at SUPABASE_URL host ${host} did not answer; run the reset once it does`
@@ -145,8 +118,6 @@ async function reset(): Promise<void> {
   if (found.kind === 'team') await confirmRef(found.ref);
   const where = found.kind === 'team' ? `${target.name} ${found.ref}` : target.name;
 
-  // The seed's lock, on a connection of its own (§14.9). Losing it stops the
-  // reset at once, with no reconnect, since a seed could take the freed lock.
   const host = new URL(process.env['DATABASE_URL'] as string).hostname;
   const lock = await orStop(`connecting to DATABASE_URL host ${host}`, () =>
     openLockConnection(process.env, () => stop('stopped: the lock connection was lost')),
@@ -157,12 +128,9 @@ async function reset(): Promise<void> {
   await checkAuthAdmin(auth);
   console.log(`${target.command}: emptying ${where}`);
 
-  // The first write, on the lock's connection: a reset that stops partway
-  // leaves no record over the rows left (§14.9).
   wrote = true;
   await orStop('clearing the completion record', () => clearRecord(lock.client));
   const emptied = await orStop('emptying', () => emptyEverything(lock.client, auth, storage));
-  // Closing on purpose is no loss; the lock ends with its connection.
   await lock.release().catch(() => undefined);
 
   console.log(
@@ -171,5 +139,4 @@ async function reset(): Promise<void> {
   );
 }
 
-// Exit at once, so no socket left open can hold the terminal.
 void reset().then(() => process.exit(0));

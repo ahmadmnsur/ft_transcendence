@@ -11,53 +11,30 @@ export interface EvidenceCardProps {
   matchId: string;
   reviewId: string;
   evidence: EvidenceView | null;
-  // Whether the reader is this Review's Mentee, who alone writes it (§9.4).
   editable: boolean;
 }
 
-// §9.4, §9.7: the Review's one Evidence file, under its Learning Outcome.
-// The Mentee uploads, replaces and deletes it in FileDrop; the Mentor and
-// Admins see it read-only.
 export function EvidenceCard(props: EvidenceCardProps): React.JSX.Element {
   return props.editable ? <EvidenceEditor {...props} /> : <EvidenceReader evidence={props.evidence} />;
 }
 
-// What the status Banner says, kept as what happened rather than as a text,
-// so it follows a language switch.
 type Status = { kind: 'saved' } | { kind: 'removed' } | { kind: 'failed'; code: unknown };
 
-// A picked file is uploaded at once through XMLHttpRequest, with FileDrop's
-// progress bar. FileDrop has already checked the size, extension and declared
-// type against the shared limits (§9.5); the server still decides, and a
-// refusal shows on the field while the saved Evidence stays. FileDrop shows
-// the saved file with its preview, and asks before deleting it.
 function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): React.JSX.Element {
   const { t, errorText } = useI18n();
   const copy = t.reviews.evidence;
   const queryClient = useQueryClient();
-  // The file being uploaded and how much of it is sent.
   const [upload, setUpload] = useState<{ file: File; progress: number } | null>(null);
-  // A file the server refused, kept in the field beside the refusal's sentence.
   const [refused, setRefused] = useState<{ file: File; code: unknown } | null>(null);
   const [status, setStatus] = useState<Status | undefined>(undefined);
-  // The upload in flight, so a new pick or a removal can stop it: two
-  // uploads at once would leave whichever commits last.
   const controllerRef = useRef<AbortController | null>(null);
-  // The delete still waiting for its answer, at most one: a second confirmed
-  // delete joins it. An upload picked meanwhile waits for it, so the delete's
-  // answer cannot land after the upload's and clear the new Evidence from the
-  // page (§9.7).
   const removalRef = useRef<Promise<void> | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, as on the other cards.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
-  // The Match detail takes the new Evidence at once; an Admin's view of the
-  // Match is read again on its next visit.
   async function applyEvidence(next: EvidenceView | null): Promise<void> {
     const { queryKey } = matchQueryOptions(matchId);
     await queryClient.cancelQueries({ queryKey });
@@ -78,7 +55,6 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
     setUpload({ file, progress: 0 });
     try {
       await removalRef.current;
-      // Emptied or replaced by another pick while it waited.
       if (controllerRef.current !== controller) return;
       const saved = await uploadEvidence(reviewId, file, {
         signal: controller.signal,
@@ -90,8 +66,6 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
       await applyEvidence(saved);
       setStatus({ kind: 'saved' });
     } catch (error) {
-      // A stopped upload may still have been saved once its body was sent,
-      // so the Match is read again rather than guessed.
       if (controller.signal.aborted) {
         void queryClient.invalidateQueries({ queryKey: matchQueryOptions(matchId).queryKey });
         return;
@@ -106,7 +80,6 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
   }
 
   async function remove(): Promise<void> {
-    // FileDrop still shows the saved file, and its Delete, until the answer.
     if (removalRef.current !== null) return removalRef.current;
     setStatus(undefined);
     const removal = (async () => {
@@ -123,9 +96,6 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
     removalRef.current = null;
   }
 
-  // FileDrop hands a file that passed its checks, or null. Null on a picked
-  // file, uploading or refused, empties the field and stops its upload; on
-  // the saved file, which FileDrop has confirmed, it deletes the Evidence.
   function onChange(file: File | null): void {
     if (file !== null) {
       void start(file);
@@ -173,8 +143,6 @@ function EvidenceEditor({ matchId, reviewId, evidence }: EvidenceCardProps): Rea
   );
 }
 
-// The Mentor's and Admins' view (§9.7): an image as `<img>`, a PDF in a
-// same-origin `<iframe>`, each with a download link.
 function EvidenceReader({ evidence }: { evidence: EvidenceView | null }): React.JSX.Element {
   const { t, format, formatText } = useI18n();
   const copy = t.reviews.evidence;

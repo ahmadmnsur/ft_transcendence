@@ -6,11 +6,6 @@ import { AlertIcon, Avatar, Button, Card, EmptyState, MessageIcon, PersonName, R
 import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 
-// §6.5, §7.4: the signed-in Student's threads on `/messages`, each with the
-// peer, the pair's last Direct Message in either direction, and the count of
-// the viewer's unread ones, kept live by `dm:message`. The page reads it
-// again when it opens, so a thread the other Student's first Direct Message
-// created shows as soon as it opens.
 export function ThreadsCard(): React.JSX.Element {
   const { t, formatText, formatDateTime, errorText } = useI18n();
   const copy = t.messages.list;
@@ -66,9 +61,6 @@ export function ThreadsCard(): React.JSX.Element {
                         removed={row.peer.removed}
                         className="min-w-0 truncate font-medium text-link"
                       />
-                      {/* Wherever another Student sees an Admin's name, the
-                      Admin label stands beside it (§3.5.1), never for a
-                      Removed one, whose tombstone is the name. */}
                       {row.peer.isAdmin && !row.peer.removed ? <RoleLabel /> : null}
                       {row.unreadCount > 0 ? (
                         <span className="ms-auto shrink-0 text-sm text-ink">

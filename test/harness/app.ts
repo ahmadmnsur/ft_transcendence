@@ -20,17 +20,12 @@ type SupertestTest = ReturnType<ReturnType<typeof request>['get']>;
 export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 export type Harness = {
-  // The real AppModule, booted in-process against the test database (§16.2).
   app: INestApplication;
   port: number;
   baseUrl: string;
-  // The address every request carries in X-Real-IP for the current test; pass
-  // an override to any request helper where a test asserts the throttle (§5.5).
   clientIp: string;
   recorder: RecordingRealtimePublisher;
   barriers: BarrierRegistry;
-  // The application's clock, real time unless a test moves it; set back
-  // before every test.
   clock: TestClock;
   http(method: HttpMethod, path: string, ip?: string): SupertestTest;
   get(path: string, ip?: string): SupertestTest;
@@ -38,7 +33,6 @@ export type Harness = {
   put(path: string, ip?: string): SupertestTest;
   patch(path: string, ip?: string): SupertestTest;
   delete(path: string, ip?: string): SupertestTest;
-  // Empties every public table except the migration ledger.
   truncate(): Promise<void>;
 };
 
@@ -52,26 +46,16 @@ async function truncatePublicTables(prisma: PrismaService): Promise<void> {
        WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
        ORDER BY tablename`,
   );
-  // A fresh clone has no migrations yet, so there is nothing to truncate.
   if (tables.length === 0) return;
   const list = tables.map((table) => `"public".${quoteIdentifier(table.tablename)}`).join(', ');
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`);
 }
 
-// Options a file may pass `useHarness`, applied before its app boots.
-// `env` entries are set before `AppModule` compiles — `AppConfig` reads the
-// environment at construction — and restored as soon as the boot returns,
-// so the values are in while the module compiles and no other file's app
-// sees them: the suite runs its files one at a time. `overrides` runs after
-// the shared provider overrides, for a file that must hand one component a
-// test double.
 export type HarnessOptions = {
   env?: Record<string, string>;
   overrides?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
 };
 
-// Registers the file's hooks and returns the shared harness. Call it once at
-// the top level of a `*.test.ts` file that talks to the database or the API.
 export function useHarness(options: HarnessOptions = {}): Harness {
   const recorder = new RecordingRealtimePublisher();
   const barriers = new BarrierRegistry();
@@ -104,8 +88,6 @@ export function useHarness(options: HarnessOptions = {}): Harness {
       process.env[key] = value;
     }
     try {
-      // The suite's own buckets, and no cleanup by itself, neither at start
-      // nor hourly: `08-files` calls it (§16.2).
       const base = Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(RealtimePublisher)
         .useValue(recorder)
@@ -134,24 +116,15 @@ export function useHarness(options: HarnessOptions = {}): Harness {
   }, 30_000);
 
   beforeEach(async () => {
-    // A run a finished test left held keeps its read lock, so every held arrival
-    // is rejected before the truncate: the run rolls back, and the truncate
-    // waits only for that.
     barriers.reset();
     clock.reset();
     await harness.truncate();
-    // Clear after the truncate, which waits for any transaction still open on
-    // those tables to end.
     recorder.clear();
     ipCounter += 1;
-    // One fixed address per test, so §5.5's key is deterministic within a test
-    // and cannot leak a throttle bucket into the next one.
     harness.clientIp = `192.0.2.${((ipCounter - 1) % 250) + 1}`;
   });
 
   afterAll(async () => {
-    // The file's last test gets no beforeEach after it, so its held arrivals are
-    // rejected here, or a held request would keep app.close() waiting.
     barriers.reset();
     await harness.app?.close();
   }, 30_000);

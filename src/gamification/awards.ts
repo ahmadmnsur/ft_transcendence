@@ -2,8 +2,6 @@ import type { PrismaTx } from '../core/uow';
 import { levelProgress } from './level';
 import type { EarnResult } from './views';
 
-// These helpers join the event's transaction. A rollback undoes its event,
-// XP and Badge together; the event's own unique constraint prevents double pay.
 export async function awardMatchXp(
   tx: PrismaTx, mentorId: string, menteeId: string, now: Date,
 ): Promise<EarnResult> {

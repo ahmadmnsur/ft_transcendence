@@ -30,11 +30,6 @@ import { ATTEMPT_TTL_SECONDS } from './oauth-attempt-store';
 import { signedOutBy } from './password-change';
 import { oauthFailed, tooManyAttempts } from './refusals';
 
-// §5.6 A: while either `FT_OAUTH_*` value is empty, every `/api/auth/42/*`
-// route answers 404 `not_found` — before any session or attempt lookup, any
-// external call, any cookie change and any redirect. The guard sits on the
-// controller, so it runs after the global guards: a request already refused
-// for its own reason (a non-JSON mutation is 415) keeps that reason.
 @Injectable()
 export class FortyTwoEnabledGuard implements CanActivate {
   constructor(private readonly config: AppConfig) {}
@@ -45,14 +40,6 @@ export class FortyTwoEnabledGuard implements CanActivate {
   }
 }
 
-// §6.1: the throttle stays at the HTTP boundary, keyed on address and email
-// (§5.5). The 42 sign-up counts every attempt under its body's email, the
-// way `auth/signup` does; Connect 42's start counts a refused current
-// password through the service's wrapper, under the session's email; and
-// Disconnect 42 counts under the signed-in Student's own email. The draft
-// read counts nothing: it writes nothing and carries no email. Confirm with
-// 42's start and its new password count nothing either: neither checks a
-// password (§5.6 C).
 @Controller('auth/42')
 @UseGuards(FortyTwoEnabledGuard)
 export class FortyTwoController {
@@ -76,13 +63,6 @@ export class FortyTwoController {
     if (err instanceof CountedRefusal) this.throttle.settleCounted(slot);
   }
 
-  // §5.6 A step 2 + §5.5: Connect 42's start counts a wrong current password
-  // under the signed-in Student's own email, which the service learns only
-  // after resolving the session — so the boundary hands the service this
-  // wrapper: reserve for the email, await the check (a refusal escapes the
-  // `catch` only once it is thrown into an awaited call, §5.6 A step 2),
-  // settle counted on a `CountedRefusal`, release in `finally` (M37) — the
-  // same shape as `auth`'s `changePassword`.
   private throttledCheck(request: Request): ThrottledPasswordCheck {
     return async (email, check) => {
       const slot = this.reserveOrRefuse(request, email);
@@ -97,10 +77,6 @@ export class FortyTwoController {
     };
   }
 
-  // `POST /api/auth/42/start` (§5.6 A step 1, §6.1): a JSON mutation. The
-  // service mints the attempt under the cookie's binding; this boundary
-  // answers the SPA's next navigation. Only `sign_in` sets the `a.` cookie;
-  // a `link` or `confirm` start leaves the session cookie exactly as it is.
   @Public()
   @Post('start')
   @HttpCode(200)
@@ -124,10 +100,6 @@ export class FortyTwoController {
     return { authorizeUrl: started.authorizeUrl };
   }
 
-  // `GET /api/auth/42/callback?code=…&state=…` (§5.6 A). The envelope skips a
-  // `@Redirect()` handler, so `Cache-Control: no-store` is set here, beside
-  // the clearing cookie when the request carried an `a.` one. The query is
-  // read as optional strings and never logged.
   @Public()
   @Get('callback')
   @Redirect()
@@ -138,9 +110,6 @@ export class FortyTwoController {
     const query = request.query;
     const outcome = await this.fortyTwo.complete42({
       cookie: parseSessionCookie(request.headers.cookie),
-      // `code` and `state` must be single strings; `error` is presence
-      // alone, so a duplicate, empty or malformed one still rejects at
-      // step 5. No query value is ever read into a log.
       query: {
         code: typeof query.code === 'string' ? query.code : undefined,
         state: typeof query.state === 'string' ? query.state : undefined,
@@ -149,8 +118,6 @@ export class FortyTwoController {
     });
     response.setHeader('Cache-Control', 'no-store');
     if (outcome.clearAttemptCookie) response.setHeader('Set-Cookie', clearAttemptCookie());
-    // A successful 42 sign-in replaces the attempt cookie: the new session
-    // cookie is the one `Set-Cookie` this answer sets (§5.6 B).
     if (outcome.sessionCookie !== undefined) {
       response.setHeader(
         'Set-Cookie',
@@ -160,22 +127,12 @@ export class FortyTwoController {
     return { url: outcome.location, statusCode: 302 };
   }
 
-  // `GET /api/auth/42/draft` (§5.6 B): `{ login, email }` for the 42 sign-up
-  // form. Public, and read-only: the draft is never removed by this read.
   @Public()
   @Get('draft')
   async draft(@Req() request: Request): Promise<{ login: string; email: string }> {
     return this.fortyTwo.signUpDraft(parseSessionCookie(request.headers.cookie));
   }
 
-  // `POST /api/auth/42/signup` (§5.6 B): a route of its own, so it can never
-  // be taken for an ordinary sign-up. The order is §5.1's: no `a.` cookie is
-  // refused `oauth_failed` here, before anything; the service then refuses a
-  // missing or expired draft the same way, before the throttle, so it costs
-  // no counted attempt; and every attempt past that is counted, the way the
-  // ordinary sign-up counts up front. The service calls back through
-  // `countAttempt` — the boundary keeps the throttle, §5.5 "Layer". On
-  // success the session cookie replaces the attempt cookie.
   @Public()
   @Post('signup')
   async signUp(
@@ -190,9 +147,6 @@ export class FortyTwoController {
       email: dto.email,
       password: dto.password,
       displayName: dto.displayName,
-      // Reserve, settle counted at once — counted whatever the sign-up
-      // turns out, exactly as `auth/signup` — so a full bucket refuses
-      // before anything else runs (§5.5).
       countAttempt: (email) => {
         const slot = this.reserveOrRefuse(request, email);
         this.throttle.settleCounted(slot);
@@ -202,15 +156,6 @@ export class FortyTwoController {
     return created.student;
   }
 
-  // `POST /api/auth/42/disconnect` (§5.6 B): a session route. `@Public` only
-  // so the controller's enabled guard answers 404 first while 42 is off
-  // (§5.6 A), before any session lookup; the handler does the session
-  // resolution the global guard would, through the same
-  // `authenticateSession` (§5.3), so a stale `s.` cookie still gets 401 plus
-  // the cleared cookie. `requestActor` builds the `Actor` the service acts
-  // for (§3.4); the throttle counts under that Student's own email, its slot
-  // settled counted on a `CountedRefusal` and released in `finally`, as
-  // `changePassword` does.
   @Public()
   @Post('disconnect')
   @HttpCode(200)
@@ -232,13 +177,6 @@ export class FortyTwoController {
     }
   }
 
-  // `POST /api/auth/42/password` (§5.6 C): the new password after Confirm
-  // with 42, a session route `@Public` for the same reason as Disconnect 42
-  // above, and resolved the same way. No throttle: it checks no password, so
-  // it counts nothing and has nothing to slow down (§5.5). The cookie is
-  // cleared as `auth/password` clears it: on success, and on a failure that
-  // left the Student signed out (`signedOutBy`); a refusal before the first
-  // sign-out, `confirmation_required` among them, leaves it.
   @Public()
   @Post('password')
   @HttpCode(200)

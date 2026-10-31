@@ -6,21 +6,10 @@ import { IconButton } from './IconButton';
 export interface ModalProps {
   open: boolean;
   title: string;
-  // Read out with the title when the dialog opens: for a confirm, what the
-  // action does and whether it can be undone.
   description?: ReactNode;
-  // A request, not a command: Escape, the backdrop and the close button all
-  // call it, and the dialog stays open until open turns false. A form with
-  // unsaved text can ask first, for example with a nested confirm Modal.
   onClose: () => void;
-  // Left out for a confirm whose description says it all.
   children?: ReactNode;
-  // The actions, end-aligned; a destructive one can take className="me-auto"
-  // to sit apart at the start.
   footer?: ReactNode;
-  // Where focus starts: the first field of a form, or the safe button of a
-  // confirm. Left out, the browser starts on the first control, the Close
-  // button.
   initialFocusRef?: RefObject<HTMLElement | null>;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -31,33 +20,21 @@ const widths: Record<NonNullable<ModalProps['size']>, string> = {
   lg: 'max-w-2xl',
 };
 
-// A native modal <dialog>: the browser makes the page behind it inert, keeps
-// focus inside, sends Escape to the topmost dialog only, and returns focus
-// when it closes. The open prop stays the source of truth.
 export function Modal({ open, title, description, onClose, children, footer, initialFocusRef, size = 'md' }: ModalProps): React.JSX.Element {
   const { t } = useI18n();
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  // Set when this component closes the dialog, so the close event that
-  // follows is not reported back as the user closing it.
   const closingRef = useRef(false);
   const openRef = useRef(open);
   const startRef = useRef(initialFocusRef);
-  // The recovery timer runs after the render that set it up, so it reads
-  // the latest props through these refs.
   useLayoutEffect(() => {
     openRef.current = open;
     startRef.current = initialFocusRef;
   });
 
-  // Shows the dialog and moves focus to where the caller wants it to start.
-  // autoFocus cannot do this: React focuses the element while the dialog is
-  // still closed, and showModal() then moves focus again.
   function reveal(dialog: HTMLDialogElement): void {
     dialog.showModal();
-    // This runs only while the content is mounted, so the target is set.
-    // Read through a ref, so the effect below leaves it out.
     startRef.current?.current?.focus();
   }
 
@@ -69,8 +46,6 @@ export function Modal({ open, title, description, onClose, children, footer, ini
       if (cancelled || dialog.open) return;
       reveal(dialog);
     };
-    // React runs a nested dialog's effect before its parent's. When both open
-    // in one render, the nested one waits so it lands above its parent.
     const parent = dialog.parentElement?.closest('dialog');
     if (parent && !parent.open) queueMicrotask(show);
     else show();
@@ -82,8 +57,6 @@ export function Modal({ open, title, description, onClose, children, footer, ini
     };
   }, [open]);
 
-  // React passes a nested dialog's events up through this one; each dialog
-  // answers only for itself.
   const ownEvent = (event: SyntheticEvent<HTMLDialogElement>): boolean => event.target === event.currentTarget;
 
   return (
@@ -92,8 +65,6 @@ export function Modal({ open, title, description, onClose, children, footer, ini
       aria-labelledby={titleId}
       aria-describedby={description != null ? descriptionId : undefined}
       onCancel={(event) => {
-        // A cancel the page may not stop comes just before the dialog closes,
-        // and the close event reports that one, so it asks only once.
         if (!ownEvent(event) || !event.cancelable) return;
         event.preventDefault();
         onClose();
@@ -105,16 +76,12 @@ export function Modal({ open, title, description, onClose, children, footer, ini
           return;
         }
         onClose();
-        // The browser can close a dialog without a cancel event, for example on
-        // a second Escape in a row. If the caller kept it open, show it again.
         const dialog = event.currentTarget;
         setTimeout(() => {
           if (openRef.current && dialog.isConnected && !dialog.open) reveal(dialog);
         }, 0);
       }}
       onMouseDown={(event) => {
-        // The dialog has no padding of its own, so a press on the dialog
-        // element itself is a press on the backdrop.
         if (ownEvent(event)) onClose();
       }}
       className={`m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-hidden rounded-xl bg-surface p-0 text-ink shadow-lg backdrop:bg-black/50 ${widths[size]}`}

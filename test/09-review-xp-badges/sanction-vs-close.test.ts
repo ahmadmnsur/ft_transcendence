@@ -20,11 +20,6 @@ function settle(work: Promise<unknown>): Promise<string> {
   );
 }
 
-// §3.6.3 *Sanction vs Round close* (ADR-0010 d4; ADR-0008 d5's note of
-// 2026-09-22), §16.3 row 9: both write the Student row, so they have one
-// serial order. Sanction first, the close skips the Student, Streak and
-// Consistent Learner alike, though the Round holds their qualifying answer.
-// Close first, the Streak and the Badge it gave survive the sanction.
 describe.each(['suspend', 'remove'] as const)('%s against Round close, with prior qualifying activity', (kind) => {
   it.each(['sanction', 'close'] as const)('%s released first', async (first) => {
     const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
@@ -60,7 +55,6 @@ describe.each(['suspend', 'remove'] as const)('%s against Round close, with prio
     expect(await prisma.badgeAward.findMany({ where: { studentId: student.id }, select: { badge: true } })).toEqual(
       first === 'sanction' ? [] : [{ badge: 'CONSISTENT_LEARNER' }],
     );
-    // The answer and its XP stay either way.
     expect(row.xp).toBe(20);
   });
 });

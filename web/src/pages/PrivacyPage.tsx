@@ -6,7 +6,6 @@ import englishSource from '../../../docs/legal/privacy-policy.md?raw';
 import frenchSource from '../../../docs/legal/privacy-policy.fr.md?raw';
 import arabicSource from '../../../docs/legal/privacy-policy.ar.md?raw';
 
-// Each language's file is the page: its `# …` is the only h1.
 const files: Record<Language, { source: string; fileName: string }> = {
   en: { source: englishSource, fileName: 'docs/legal/privacy-policy.md' },
   fr: { source: frenchSource, fileName: 'docs/legal/privacy-policy.fr.md' },

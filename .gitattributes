@@ -1,2 +1,1 @@
-# Check out text files with LF everywhere; CRLF on Windows breaks shell scripts run from the checkout.
 * text=auto eol=lf

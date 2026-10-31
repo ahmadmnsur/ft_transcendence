@@ -25,8 +25,6 @@ export function Avatar({ src, alt, size = 'md', onError, loading = 'lazy', class
       {...rest}
       src={resolved}
       alt={alt}
-      // Record the src prop, not currentTarget.src: the browser makes that
-      // absolute, so it would never equal the prop.
       onError={(event) => {
         setFailedSrc(src ?? null);
         onError?.(event);

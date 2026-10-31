@@ -3,14 +3,8 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 import { connectionConfig } from './database-connection';
 
-// Two members' stacks on the team project, plus `prisma migrate deploy` and the
-// seed's two connections, its pool's and its lock's, must fit its session-mode
-// Pool Size of 15: 2 × 5 + 3, with 2 to spare (ADR-0004 d11). node-postgres
-// would otherwise open up to 10.
 export const POOL_MAX = 5;
 
-// The one Prisma client, through the pg driver adapter (§3.3). Its `log`
-// option stays empty: Prisma's own logs can carry query values (§3.9).
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
   constructor() {

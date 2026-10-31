@@ -27,10 +27,6 @@ import type {
   StudentSearchPage,
 } from './views';
 
-// §3.4: controllers are thin — parse, validate the DTO, take the actor with
-// `requestActor`, call ONE service method, and return its value. The global
-// interceptor wraps it in the §3.8 envelope. Every route needs a session: the
-// global SessionGuard already enforces it, so none is marked `@Public` (§5.3).
 @Controller()
 export class StudentsController {
   constructor(
@@ -38,60 +34,46 @@ export class StudentsController {
     private readonly avatars: AvatarsService,
   ) {}
 
-  // `GET /api/skills` (§6.2): the whole catalogue, by name.
   @Get('skills')
   listSkills(@Req() request: Request): Promise<{ items: SkillView[] }> {
     return this.students.listSkills(requestActor(request));
   }
 
-  // `GET /api/me` (§6.2): own profile; the only profile route that returns
-  // the email.
   @Get('me')
   getOwnProfile(@Req() request: Request): Promise<OwnProfile> {
     return this.students.getOwnProfile(requestActor(request));
   }
 
-  // `GET /api/students` (§6.2): Advanced search. The DTO validates the query
-  // string and fills its defaults. The search term stays in the query string,
-  // which no log records (§3.9).
   @Get('students')
   search(@Query() query: SearchStudentsQueryDto, @Req() request: Request): Promise<StudentSearchPage> {
     return this.students.search(requestActor(request), query);
   }
 
-  // `GET /api/students/:id` (§6.2). A malformed id is 400 (`UuidParam`); an
-  // unknown id is 404. Never an email, for any viewer (§4.6).
   @Get('students/:id')
   getProfile(@UuidParam('id') id: string, @Req() request: Request): Promise<PublicProfile> {
     return this.students.getProfile(requestActor(request), id);
   }
 
-  // `PATCH /api/me` (§6.2): display name and/or email.
   @Patch('me')
   updateOwnProfile(@Body() dto: UpdateProfileDto, @Req() request: Request): Promise<OwnProfile> {
     return this.students.updateOwnProfile(requestActor(request), dto);
   }
 
-  // `PUT /api/me/skills` (§6.2): replace both lists, keeping kept rows.
   @Put('me/skills')
   setSkills(@Body() dto: SkillsDto, @Req() request: Request): Promise<{ goalCleared: boolean }> {
     return this.students.setSkills(requestActor(request), dto.teach, dto.learn);
   }
 
-  // `PUT /api/me/learning-goal` (§6.2).
   @Put('me/learning-goal')
   setLearningGoal(@Body() dto: LearningGoalDto, @Req() request: Request): Promise<LearningGoalView> {
     return this.students.setLearningGoal(requestActor(request), dto.skillId, dto.text);
   }
 
-  // `DELETE /api/me/learning-goal` (§6.2): clears both columns.
   @Delete('me/learning-goal')
   clearLearningGoal(@Req() request: Request): Promise<Record<string, never>> {
     return this.students.clearLearningGoal(requestActor(request));
   }
 
-  // `PUT /api/me/avatar` (§6.3): multipart field `file`. UploadCsrfGuard and
-  // the session guard run before FileUpload's Multer reads the body.
   @Put('me/avatar')
   @UseInterceptors(FileUpload(LIMITS.avatar.maxBytes))
   putAvatar(
@@ -101,7 +83,6 @@ export class StudentsController {
     return this.avatars.putAvatar(requestActor(request), file);
   }
 
-  // `DELETE /api/me/avatar` (§6.3): `{}`, idempotent.
   @Delete('me/avatar')
   deleteAvatar(@Req() request: Request): Promise<Record<string, never>> {
     return this.avatars.deleteAvatar(requestActor(request));

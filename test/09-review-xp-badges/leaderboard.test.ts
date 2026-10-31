@@ -16,8 +16,6 @@ async function setXp(student: TestAccount, xp: number): Promise<void> {
 }
 
 it('ranks only eligible participants by XP and id, and pins the viewer only outside the top ten', async () => {
-  // These accounts have ascending UUIDv7 ids. Create the two tied Students
-  // first so the lower id must win regardless of the XP write order.
   const students: TestAccount[] = [];
   for (let i = 0; i < 11; i++) students.push(await createTestAccount(harness.app));
   expect(students[8].id < students[9].id).toBe(true);
@@ -37,7 +35,6 @@ it('ranks only eligible participants by XP and id, and pins the viewer only outs
 
   const result = await leaderboard(students[9].cookie);
   expect(result.status).toBe(200);
-  // The moderator takes rank 2; the first of the 100-XP ties takes rank 10.
   const ranked = [students[0], moderator, ...students.slice(1, 9)];
   const expectedXp = [2600, 2250, 2000, 1500, 1250, 1000, 750, 500, 250, 100];
   const expectedLevels = [10, 10, 9, 7, 6, 5, 4, 3, 2, 1];
@@ -71,7 +68,6 @@ it('never reintroduces an Admin through the pin, and demotion restores the retai
   await setXp(viewer, 120);
   const read = () => leaderboard(viewer.cookie);
   expect((await read()).body.data.me).toEqual({ rank: 11, xp: 120, level: 1 });
-  // Promotion and demotion through the Users table's role change (§12.7).
   const admin = { studentId: (await createTestStaff(harness.app, 'ADMIN')).id, sessionHash: null };
   const users = harness.app.get(AdminUsersService);
   await users.changeRole(admin, viewer.id, 'ADMIN');
@@ -103,8 +99,6 @@ it('never reintroduces a Suspended or Removed viewer through the pin, and reinst
   const me = actor(viewer.id);
   const board = harness.app.get(GamificationService);
   expect((await board.leaderboard(me)).me).toEqual({ rank: 11, xp: 120, level: 1 });
-  // The real sanctions, through the Users table (§12.7). A sanctioned viewer
-  // has no session, so the read is the service's, for a constructed actor.
   const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
   const users = harness.app.get(AdminUsersService);
   await users.suspend(admin, viewer.id);

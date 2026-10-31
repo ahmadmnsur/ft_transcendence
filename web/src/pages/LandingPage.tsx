@@ -6,37 +6,18 @@ import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { ScoreDetails } from '../matching/MatchParts';
 
-// Names from the Skill catalogue (§14.1), written here because a signed-out
-// page reads nothing from the database (§3.5.1's note of 2026-10-25). Skill
-// names are never translated.
 const EXAMPLE_SKILLS = ['C', 'C++', 'Docker', 'Git', 'Makefile', 'Networking', 'React', 'Shell', 'SQL', 'Threads', 'TypeScript', 'Valgrind'];
 
-// The example Match's Score, by §8.2: the invented Mentor teaches the Skill
-// picked to learn (f = 1) and wants the one picked to teach (r = 1), which is
-// 50; when the first is the Mentee's Learning Goal, 10 more. The invented
-// Mentor has no Learning Goal, so without the visitor's the two ways round
-// tie (§8.3 step 4).
 const SCORE_WITHOUT_GOAL = 50;
 const SCORE_WITH_GOAL = 60;
-// §8.2: a Score is at most 100.
 const SCORE_MAX = 100;
 const EXAMPLE_ROUND = 4;
-// How long the picks must stay still before the change is read out: arrow
-// keys on a closed select change it once per option.
 const SETTLE_MS = 700;
 
 const BADGES = ['FIRST_MENTOR', 'KNOWLEDGE_SHARER', 'CONSISTENT_LEARNER'] as const;
 
 const sectionHeading = 'text-2xl font-semibold text-balance text-ink sm:text-3xl';
 
-// One blank of the opening sentence, as wide as the Skill it shows: the
-// name is drawn as text, and a transparent native select lies over it, so
-// the keyboard, a screen reader and a phone's picker get the real control.
-// The drawn name is hidden from assistive technology: the heading's
-// accessible name already reads the select's chosen option. A new name
-// fades in, so a blank the other one changed shows that it moved. A name
-// wider than the line, with the text enlarged, breaks inside the blank
-// rather than pushing the page sideways.
 function SkillBlank({
   label,
   value,
@@ -72,13 +53,8 @@ function SkillBlank({
   );
 }
 
-// A sentence that settles in when its Skill changes; the others stay still.
 const settling = 'block transition-[opacity,translate] duration-300 ease-out starting:translate-y-1 starting:opacity-0 motion-reduce:transition-none';
 
-// The example Match the two blanks make, in the words a real Match uses
-// (§8.11): the Score with its sentences, the Mission, the reader's role and
-// why the Match runs in that direction. The Learning Goal is the one input
-// that moves the Score.
 function ExampleMatch({ learn, teach }: { learn: string; teach: string }): React.JSX.Element {
   const { t, format, formatText } = useI18n();
   const copy = t.landing.example;
@@ -87,10 +63,6 @@ function ExampleMatch({ learn, teach }: { learn: string; teach: string }): React
   const [goal, setGoal] = useState(true);
   const score = goal ? SCORE_WITH_GOAL : SCORE_WITHOUT_GOAL;
 
-  // What the polite region reads: only the part that changed, once the
-  // picks have settled, so a screen reader hears one update, not a queue.
-  // It reads the picks as they were when they settled, never the ones
-  // still changing, so a later run of arrow keys waits for its own pause.
   const [news, setNews] = useState<{ learn: string; teach: string; goal: boolean; skills: boolean; goalChanged: boolean } | null>(null);
   const heard = useRef({ learn, teach, goal });
   useEffect(() => {
@@ -169,8 +141,6 @@ function ExampleMatch({ learn, teach }: { learn: string; teach: string }): React
   );
 }
 
-// The way in: one action, and the sign-in for those who already have an
-// account, as the sign-up page offers it.
 function WayIn({ className = '' }: { className?: string }): React.JSX.Element {
   const { t, format } = useI18n();
   return (
@@ -191,18 +161,12 @@ function WayIn({ className = '' }: { className?: string }): React.JSX.Element {
   );
 }
 
-// `/` for a signed-out visitor (§3.5.1's note of 2026-10-25): the question
-// every Student answers, the example Match it makes, then the Round, the
-// Review, the Reflection Prompts and the XP, and the way in. It reads nothing
-// from the database: every example is marked as one.
 export function LandingPage(): React.JSX.Element {
   const { t, format, formatNumber } = useI18n();
   const copy = t.landing;
   const [learn, setLearn] = useState('Docker');
   const [teach, setTeach] = useState('C');
 
-  // The teach blank never offers the Skill picked to learn: picking that one
-  // to learn hands the old learn pick to the teach blank.
   function onLearn(skill: string): void {
     if (skill === teach) setTeach(learn);
     setLearn(skill);
@@ -228,8 +192,6 @@ export function LandingPage(): React.JSX.Element {
       <PageTitle />
       <div className="flex flex-col gap-20 sm:gap-28">
         <section aria-labelledby="landing-question" className="pt-2 sm:pt-10">
-          {/* The display line extends the type scale's 1.2 steps past 3xl, from
-          3xl on a phone to the sixth step at full width. */}
           <h1
             id="landing-question"
             className="max-w-5xl text-[length:clamp(1.944rem,1.1rem+3vw,3.36rem)] leading-[1.14] font-semibold tracking-tight text-balance text-ink arabic:tracking-normal"

@@ -27,8 +27,6 @@ describe('hand-made creation versus Round close', () => {
     const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
     const a = actor((await createTestAccount(harness.app)).id);
     const b = actor((await createTestAccount(harness.app)).id);
-    // Both Students are candidates, but Score 0 in both directions keeps
-    // the matcher from pairing them when either Round opens.
     await students.setSkills(a, [skills.get('Docker')!], []);
     await students.setSkills(b, [skills.get('Docker')!], []);
     const first = await matching.openRound(admin);

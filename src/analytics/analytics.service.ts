@@ -31,7 +31,6 @@ export class AnalyticsService {
         if (row.kind === 'LEARN') skill.demand = row._count._all;
         else skill.supply = row._count._all;
       }
-      // Stable sorts preserve the catalogue's name-ascending tie order.
       const skills = [...bySkill.values()].filter(({ demand, supply }) => demand > 0 || supply > 0);
       const gap: SkillGap[] = skills.map(({ skill, demand, supply }) => ({
         skill, demand, supply, gap: demand - supply,

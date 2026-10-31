@@ -8,10 +8,7 @@ type ViablePair = {
   priority: number;
 };
 
-// §8.3 steps 1-8. Pure: no I/O, no randomness, inputs never mutated.
 export function runMatcher(input: MatcherInput): MatcherMatch[] {
-  // Excluded pairs in either tuple order. A Map of Sets so no id can
-  // collide with a separator.
   const excluded = new Map<string, Set<string>>();
   const exclude = (x: string, y: string): void => {
     let partners = excluded.get(x);
@@ -26,8 +23,6 @@ export function runMatcher(input: MatcherInput): MatcherMatch[] {
     exclude(y, x);
   }
 
-  // Steps 1-6: every unordered pair, minus history/blocked, oriented,
-  // minus below-floor, with its internal selection priority.
   const pairs: ViablePair[] = [];
   const candidates = input.candidates;
   for (let i = 0; i < candidates.length; i++) {
@@ -37,7 +32,6 @@ export function runMatcher(input: MatcherInput): MatcherMatch[] {
       if (excluded.get(a.id)?.has(b.id) === true) continue;
       const orientation = orientPair(a, b);
       if (orientation.score < 25) continue;
-      // The gap is symmetric, so either orientation gives the same value.
       const gap = Math.abs(a.level - b.level);
       pairs.push({
         lowId: a.id < b.id ? a.id : b.id,
@@ -48,8 +42,6 @@ export function runMatcher(input: MatcherInput): MatcherMatch[] {
     }
   }
 
-  // Step 7: most-constrained-first, viable partners recomputed after every
-  // Match. Candidates with zero viable partners are skipped, never selected.
   const matched = new Set<string>();
   const matches: MatcherMatch[] = [];
   for (;;) {
@@ -76,7 +68,6 @@ export function runMatcher(input: MatcherInput): MatcherMatch[] {
     matched.add(won.highId);
   }
 
-  // Step 8: selection order.
   return matches;
 }
 
@@ -93,7 +84,6 @@ function pushViable(
   viable.push(pair);
 }
 
-// priority DESC, Score DESC, pair key (lowerId, higherId) ASC.
 function comparePairs(a: ViablePair, b: ViablePair): number {
   if (a.priority !== b.priority) return b.priority - a.priority;
   if (a.orientation.score !== b.orientation.score) return b.orientation.score - a.orientation.score;

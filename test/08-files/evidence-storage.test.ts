@@ -40,10 +40,6 @@ async function upload(pair: ReviewedMatch, bytes: Buffer): Promise<string> {
   return saved.body.data.token;
 }
 
-// §16.3 row 8's Storage checks 1 and 2 for Evidence (ADR-0016 d1's note of
-// 2026-10-05), on the suite's own bucket (§16.2). Checks 3 and 4 cover both
-// buckets in avatar-storage.test.ts. A file is checked by its name, never by
-// a count: the bucket keeps the files of earlier tests.
 describe('Evidence files in Storage', () => {
   it('(1) deletes the old file after a replace, and the file after a delete', async () => {
     const pair = await reviewedMatch(harness.app);
@@ -51,7 +47,6 @@ describe('Evidence files in Storage', () => {
     const newToken = await upload(pair, makePng({ width: 8, height: 8 }));
     expect(newToken).not.toBe(oldToken);
     expect(await evidenceToken(pair)).toBe(newToken);
-    // The replaced file goes after commit, without holding the response (§3.7).
     await eventually(async () => {
       const names = await fileNames();
       expect(names.has(oldToken)).toBe(false);
@@ -74,14 +69,10 @@ describe('Evidence files in Storage', () => {
     const pair = await reviewedMatch(harness.app);
     const before = await fileNames();
     harness.barriers.arm('evidence-save');
-    // `then` sends the request now; it waits at the barrier until released.
     const pending = putEvidence(nginx.baseUrl, pair.mentee.cookie, pair.reviewId, await makeValidPdf()).then(
       (response) => response,
     );
     await harness.barriers.waitFor('evidence-save', 1);
-    // While the first attempt is held after its reads: the Mentee is
-    // suspended, and a row written beside it makes that attempt's write
-    // conflict, so the retry reads the suspension and is refused.
     const conflicting = randomUUID();
     await prisma.student.update({ where: { id: pair.mentee.id }, data: { suspendedAt: new Date() } });
     await prisma.evidence.create({
@@ -111,12 +102,10 @@ describe('Evidence files in Storage', () => {
     const oldToken = await upload(pair, makePng());
     const before = await fileNames();
     harness.barriers.arm('evidence-save');
-    // `then` sends the request now; it waits at the barrier until released.
     const pending = putEvidence(nginx.baseUrl, pair.mentee.cookie, pair.reviewId, await makeValidPdf()).then(
       (response) => response,
     );
     await harness.barriers.waitFor('evidence-save', 1);
-    // The save is held inside its transaction while the clock moves.
     harness.clock.advance(31 * 60 * 1000);
     harness.barriers.release('evidence-save');
     harness.barriers.disarm('evidence-save');

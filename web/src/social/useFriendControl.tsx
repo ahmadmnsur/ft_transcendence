@@ -20,18 +20,8 @@ import type { ControlParts } from './parts';
 
 type Action = 'send' | 'accept' | 'decline' | 'cancel' | 'end';
 
-// What the status Banner says, kept as what happened rather than as a text,
-// so it follows a language switch: the action that succeeded, or the action
-// that failed and its code.
 type Status = { kind: 'done'; action: Action } | { kind: 'failed'; action: Action; code: unknown };
 
-// §6.4, §11.1: the friend request button on another Student's profile, and
-// what follows it: cancel a request sent, accept or decline one received, end
-// a Friendship. It shows once the viewer's Friends, requests and Blocks have
-// loaded, never on the viewer's own profile or a Removed Student's, and not
-// while the viewer blocks the Student, whose Block control says so. A Block
-// the other Student set is never shown: the request is refused with the same
-// sentence whoever blocked (§6.4). The profile lays out its parts.
 export function useFriendControl(student: StudentRef): ControlParts | null {
   const { t, formatText, personNameValue, errorText } = useI18n();
   const actions = t.social.actions;
@@ -47,16 +37,11 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, since the button that was pressed is replaced.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
   const isFriend = friends.data?.items.some((item) => item.student.id === student.id) ?? false;
-  // A Friendship ended elsewhere, by the other Student or a Block, can reach
-  // the list while the dialog is open; the dialog then closes, since
-  // confirming could only be refused.
   useEffect(() => {
     if (!isFriend && pending === null) setConfirming(false);
   }, [isFriend, pending]);
@@ -90,16 +75,12 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
     };
   }
 
-  // A Block made here deleted any Friendship or request, and the Block
-  // control's own Banner reports it, so nothing of this control stays.
   if (blocks.data.items.some((item) => item.student.id === student.id)) return null;
 
   const incoming = requests.data.incoming.find((request) => request.student.id === student.id);
   const outgoing = requests.data.outgoing.find((request) => request.student.id === student.id);
   const name = personNameValue(student.displayName, student.removed);
 
-  // A refusal such as `student_removed` means the profile on screen is out
-  // of date too, so it is read again beside the lists.
   async function run(action: Action, write: () => Promise<void>): Promise<void> {
     if (pending !== null) return;
     setPending(action);
@@ -116,13 +97,6 @@ export function useFriendControl(student: StudentRef): ControlParts | null {
     }
   }
 
-  // One button: while it is in flight its text names that state, and every
-  // other button of the control is disabled. Its key says when another state
-  // replaces it rather than relabels it. Cancel request and End Friendship
-  // share one, so focus stays on the button when a request is accepted or a
-  // Friendship turns back into a request elsewhere, as it always has; any other
-  // change replaces it, so when the End Friendship dialog closes on its own,
-  // focus does not come back to a button that now sends a friend request.
   function actionButton(
     action: Action,
     variant: 'primary' | 'secondary',

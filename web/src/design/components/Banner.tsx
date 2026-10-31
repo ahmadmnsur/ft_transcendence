@@ -8,16 +8,10 @@ import { IconButton } from './IconButton';
 
 export type BannerTone = 'info' | 'success' | 'warning' | 'danger';
 
-// A warning or danger Banner is an alert, read out as soon as it appears. An
-// info or success Banner is a status, which screen readers only read when it
-// appears inside a live region already on the page; a screen that shows one in
-// answer to an action puts it in such a region, for example role="status".
 export interface BannerProps {
   tone: BannerTone;
   title: string;
   body?: ReactNode;
-  // The caller hides the banner and, if focus was on its dismiss button,
-  // moves focus somewhere sensible, since that button goes with it.
   onDismiss?: () => void;
   className?: string;
 }

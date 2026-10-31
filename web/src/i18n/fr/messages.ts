@@ -1,9 +1,6 @@
 import type messages from '../en/messages';
 import type { Catalogue } from '../types';
 
-// §6.5, §7.3 and §7.4's screens in French. The word stays the product's:
-// Message direct, never conversation, thread or chat (CONTEXT.md's Direct
-// Message entry).
 export default {
   title: 'Messages directs',
   list: {

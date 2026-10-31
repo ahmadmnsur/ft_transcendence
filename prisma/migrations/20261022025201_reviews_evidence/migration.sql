@@ -1,4 +1,3 @@
--- CreateTable
 CREATE TABLE "Evidence" (
     "id" UUID NOT NULL,
     "review_id" UUID NOT NULL,
@@ -11,11 +10,8 @@ CREATE TABLE "Evidence" (
     CONSTRAINT "Evidence_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
 CREATE UNIQUE INDEX "Evidence_review_id_key" ON "Evidence"("review_id");
 
--- CreateIndex
 CREATE UNIQUE INDEX "Evidence_token_key" ON "Evidence"("token");
 
--- AddForeignKey
 ALTER TABLE "Evidence" ADD CONSTRAINT "Evidence_review_id_fkey" FOREIGN KEY ("review_id") REFERENCES "Review"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;

@@ -7,13 +7,9 @@ import { SkillName } from './SkillName';
 export interface SkillChipProps extends Omit<ComponentProps<'span'>, 'children'> {
   name: string;
   variant: 'teach' | 'learn';
-  // The caller removes the chip and moves focus to a neighbour, since the
-  // button that was pressed goes with it.
   onRemove?: () => void;
 }
 
-// Teach is filled and learn is outlined, so the two read apart without colour.
-// Screen readers hear the difference too.
 const tones: Record<SkillChipProps['variant'], string> = {
   teach: 'border-transparent bg-primary-100 text-primary-900',
   learn: 'border-line-strong bg-surface text-ink',
@@ -31,7 +27,6 @@ export function SkillChip({ name, variant, onRemove, className = '', ...rest }: 
         <SkillName name={name} aria-hidden="true" />
       </span>
       {onRemove ? (
-        // The negative margin keeps a chip with a remove button as tall as one without.
         <IconButton label={formatText(t.design.skillChip.remove, { skill: name })} size="xs" tone="inherit" onClick={onRemove} className="-my-0.5">
           <CloseIcon size={14} />
         </IconButton>

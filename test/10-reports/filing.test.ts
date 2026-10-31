@@ -29,8 +29,6 @@ async function outcome(work: Promise<unknown>): Promise<string> {
   }
 }
 
-// §12.2, §16.3 row 10: hold both filings after their reads. The losing
-// insert must refuse without rewriting any part of the winning testimony.
 describe('report filing', () => {
   it.each(['Post', 'Student'] as const)('keeps one unchanged Report when two filings race on a %s', async (kind) => {
     const prisma = harness.app.get(PrismaService);

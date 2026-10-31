@@ -5,8 +5,6 @@ export interface ProgressBarProps {
   value: number;
   max: number;
   label: string;
-  // Replaces the percentage, on screen and for screen readers, with the
-  // quantity itself, such as "240 / 250 XP".
   valueText?: string;
   showValue?: boolean;
   className?: string;
@@ -15,8 +13,6 @@ export interface ProgressBarProps {
 export function ProgressBar({ value, max, label, valueText, showValue = true, className = '' }: ProgressBarProps): React.JSX.Element {
   const { formatNumber } = useI18n();
   const labelId = useId();
-  // A value worked out from an unknown total, such as an upload whose size the
-  // browser cannot report, is NaN; it shows as no progress rather than NaN%.
   const safeMax = Number.isFinite(max) && max > 0 ? max : 1;
   const clamped = Number.isFinite(value) ? Math.min(Math.max(value, 0), safeMax) : 0;
   const percent = Math.round((clamped / safeMax) * 100);

@@ -9,29 +9,22 @@ datasource db {
   provider = "postgresql"
 }
 
-// §4.2: one role per Student.
 enum Role {
   STUDENT
   PEER_MODERATOR
   ADMIN
 }
 
-// §4.2: a StudentSkill row is a teach row or a learn row.
 enum SkillKind {
   TEACH
   LEARN
 }
 
-// §4.2: a friend request waits, then is accepted. Declining, cancelling,
-// ending and a Block delete the row instead, so there is no third status.
 enum FriendshipStatus {
   PENDING
   ACCEPTED
 }
 
-// §4.2, §8.8: where a Match stands. Standing = the first four; repudiated =
-// DECLINED and TERMINATED_BY_ADMIN; in progress = MATCHED and ACCEPTED. The
-// last four are terminal (ADR-0014 d2).
 enum MatchStatus {
   MATCHED
   ACCEPTED
@@ -41,9 +34,6 @@ enum MatchStatus {
   TERMINATED_BY_ADMIN
 }
 
-// §4.2, §8.10: the six meeting modes. Declaration order is the round-robin
-// order, TECHNICAL_CONCEPT first (ADR-0012 d4, d6); the sentences live in the
-// SPA only.
 enum Mission {
   TECHNICAL_CONCEPT
   PROJECT_PROBLEM
@@ -53,16 +43,11 @@ enum Mission {
   ADVICE
 }
 
-// §4.2, §4.3.11: FORWARD is what the Mentee gains (Mentor teaches, Mentee
-// learns), REVERSE what the Mentor gains.
 enum CoverageDirection {
   FORWARD
   REVERSE
 }
 
-// §4.2: coupled to the Terms (ADR-0011 d4, ADR-0018 d9): adding, removing or
-// renaming a reason changes the Terms in all three languages in the same PR
-// (CONTRIBUTING.md → Personal data moves the Privacy Policy).
 enum ReportReason {
   HARASSMENT
   SPAM
@@ -70,7 +55,6 @@ enum ReportReason {
   OTHER
 }
 
-// §4.2: a Report is open until its one resolution.
 enum ReportState {
   OPEN
   ACTIONED
@@ -83,16 +67,10 @@ enum Badge {
   CONSISTENT_LEARNER
 }
 
-// §4.3.1: the account; every person is one. `id` has no default: sign-up
-// makes it with `v7()` before the Supabase Auth user that shares it (§4.1).
 model Student {
   id                         String          @id @db.Uuid
   email                      String          @unique
   passwordVersion            Int             @default(0) @map("password_version")
-  // §4.3.1, §5.6: 42's account `id`, the only key a 42 login maps a Student
-  // by. Nullable; the unique admits nulls and is the backstop that keeps one
-  // 42 account on one Student. Set by a 42 sign-up or Connect 42, cleared by
-  // Disconnect 42; a Removed row keeps it and no Admin path touches it.
   fortyTwoId                 Int?            @unique @map("forty_two_id")
   displayName                String          @map("display_name")
   displayNameSearch          String          @map("display_name_search")
@@ -122,14 +100,9 @@ model Student {
   reportsFiled               Report[]        @relation("ReportsFiled")
   reportsReceived            Report[]        @relation("ReportsReceived")
   reportsResolved            Report[]        @relation("ReportsResolved")
-  // M5: the Goal is one of THIS Student's own StudentSkill rows. The composite
-  // FK makes it a database fact; a null Goal is unchecked (MATCH SIMPLE).
   learningGoal               StudentSkill?   @relation("LearningGoal", fields: [id, learningGoalStudentSkillId], references: [studentId, id], onDelete: Restrict, onUpdate: Restrict)
 }
 
-// §4.3.2: ADR-0003's session row. `id` is the lowercase hex SHA-256 of the
-// 32-byte token the cookie carries (M6), so it is the noted exception to
-// uuid(7) ids (§2.3 R2). The role is never stored here (ADR-0003 d5).
 model Session {
   id        String   @id
   studentId String   @map("student_id") @db.Uuid
@@ -139,8 +112,6 @@ model Session {
   @@index([studentId])
 }
 
-// §4.3.4: the shared catalogue. Rows are inserted by the seed's catalogue
-// step and by migrations only, and are never updated or deleted (ADR-0014 d3).
 model Skill {
   id            String               @id @default(uuid(7)) @db.Uuid
   name          String               @unique
@@ -148,9 +119,6 @@ model Skill {
   matchCoverage MatchSkillCoverage[]
 }
 
-// §4.3.5: teach and learn lists. A row is hard-deleted only through the
-// list-replacement operation (§6.2), which diffs so a Skill kept on a list
-// keeps its row, and therefore its Goal.
 model StudentSkill {
   id        String    @id @default(uuid(7)) @db.Uuid
   studentId String    @map("student_id") @db.Uuid
@@ -159,9 +127,6 @@ model StudentSkill {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   student   Student   @relation("StudentSkills", fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   skill     Skill     @relation(fields: [skillId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  // The back-relation of Student's composite Goal FK (M5): the Students whose
-  // Goal is this row. A list, so Prisma does not demand an extra unique on
-  // the defining Student side.
   goalOf    Student[] @relation("LearningGoal")
 
   @@unique([studentId, skillId, kind])
@@ -169,10 +134,6 @@ model StudentSkill {
   @@index([skillId, kind])
 }
 
-// §4.3.6: one Student's standing refusal, stored directed and evaluated in
-// either direction. Hard-deleted only by its blocker lifting it (M23). The
-// service checks that the blocker is not the blocked Student and that the
-// blocked Student is not Removed at creation.
 model Block {
   id        String   @id @default(uuid(7)) @db.Uuid
   blockerId String   @map("blocker_id") @db.Uuid
@@ -185,11 +146,6 @@ model Block {
   @@index([blockedId])
 }
 
-// §4.3.7: a directed request with an acceptance, one per unordered pair. That
-// unique is raw SQL, `friendship_unordered_pair` (§4.4 step 6), which Prisma
-// cannot represent. Hard-deleted on decline, cancel, end or a Block. The
-// service checks that the two Students differ and sets `responded_at` exactly
-// when the row is accepted.
 model Friendship {
   id          String           @id @default(uuid(7)) @db.Uuid
   requesterId String           @map("requester_id") @db.Uuid
@@ -204,11 +160,6 @@ model Friendship {
   @@index([requesterId, status])
 }
 
-// §4.3.3: 0..1 per Student. No bytes: the file is in the private `avatars`
-// bucket, named by `token`, with no path column (§9.8). `token` has no
-// default: the upload makes it with `randomUUID()`, uploads the file under
-// it, then writes this row with that same token (§4.1). `mime` and `size`
-// come from the validated bytes (§9.5).
 model Avatar {
   id         String   @id @default(uuid(7)) @db.Uuid
   studentId  String   @unique @map("student_id") @db.Uuid
@@ -219,12 +170,6 @@ model Avatar {
   student    Student  @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }
 
-// §4.3.8: a Direct Message sent to exactly one other Student; there is no
-// Conversation entity to join, and the thread is the two directions of the
-// first index. Rows are never deleted, and `read_at` is written once, by the
-// recipient, from null (§11.4): there is no read receipt to send anyone. The
-// send's Unit of Work checks `sender_id ≠ recipient_id`, that the recipient is
-// not Removed and that no Block stands either way (§7.3).
 model DirectMessage {
   id          String    @id @default(uuid(7)) @db.Uuid
   senderId    String    @map("sender_id") @db.Uuid
@@ -239,11 +184,6 @@ model DirectMessage {
   @@index([recipientId, readAt])
 }
 
-// §4.3.9: one matching cycle. Open while `closed_at` is null; at most one is
-// open, held by the raw unique `round_single_open` (§4.4 step 7), which Prisma
-// cannot represent. Never deleted; `closed_at` is written once by close and
-// never cleared (ADR-0002). The displayed Round number is derived: its
-// 1-based position by (opened_at, id).
 model Round {
   id       String    @id @default(uuid(7)) @db.Uuid
   openedAt DateTime  @default(now()) @map("opened_at") @db.Timestamptz(3)
@@ -252,15 +192,6 @@ model Round {
   answers  Post[]
 }
 
-// §4.3.10: two Students in one Round, one Mentor and one Mentee. Never
-// deleted. `mission`, `compatibility_score`, `goal_bonus_applied`, the pair,
-// the Round and the coverage rows are written by the insert and never again,
-// by anyone (ADR-0012 d5, ADR-0014 d9); `status` moves only along §8.8. The
-// Score is null exactly for a hand-made Match. `match_pair_history` (§4.4
-// step 8) is a raw, NON-unique index over the unordered pair: hand-made
-// Matches may repeat a pair. At most one standing Match per Student per Round
-// is held by the creating transaction's reads, never by the schema
-// (ADR-0014 d13).
 model Match {
   id                 String               @id @default(uuid(7)) @db.Uuid
   roundId            String               @map("round_id") @db.Uuid
@@ -272,7 +203,6 @@ model Match {
   goalBonusApplied   Boolean              @map("goal_bonus_applied")
   mentorAcceptedAt   DateTime?            @map("mentor_accepted_at") @db.Timestamptz(3)
   menteeAcceptedAt   DateTime?            @map("mentee_accepted_at") @db.Timestamptz(3)
-  // Set exactly when DECLINED, to the Mentor or the Mentee who declined.
   declinedById       String?              @map("declined_by_id") @db.Uuid
   createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   round              Round                @relation(fields: [roundId], references: [id], onDelete: Restrict, onUpdate: Restrict)
@@ -287,10 +217,6 @@ model Match {
   @@index([menteeId])
 }
 
-// §4.3.11: the frozen explanation. FORWARD rows are mentor.TEACH ∩
-// mentee.LEARN and REVERSE rows mentee.TEACH ∩ mentor.LEARN, as they stood
-// when the Match was created; written in the Match's creating transaction,
-// never updated or deleted.
 model MatchSkillCoverage {
   matchId   String            @map("match_id") @db.Uuid
   skillId   String            @map("skill_id") @db.Uuid
@@ -302,11 +228,6 @@ model MatchSkillCoverage {
   @@index([skillId])
 }
 
-// §4.3.12: the Learning Outcome, one per Match. `match_id` is unique, and that
-// unique is the arbiter for a duplicate or retried submission (ADR-0014 d2).
-// Written only by the Match's Mentee, while the Match is ACCEPTED, in the
-// transaction that moves it to COMPLETED; never updated or deleted
-// (ADR-0014 d11). It owns the Evidence; its Public Takeaway is its Post.
 model Review {
   id        String   @id @default(uuid(7)) @db.Uuid
   matchId   String   @unique @map("match_id") @db.Uuid
@@ -319,10 +240,6 @@ model Review {
   evidence  Evidence?
 }
 
-// §4.3.15: a Reflection Prompt, with no status column (ADR-0007 d1). The live
-// Prompt is the row with the greatest `publication_order`, which publishing
-// sets to max + 1 inside its SSI transaction, the unique backstopping it (M2);
-// `published_at` is descriptive only. Never updated or deleted (ADR-0007 d4).
 model ReflectionPrompt {
   id               String   @id @default(uuid(7)) @db.Uuid
   question         String
@@ -331,15 +248,6 @@ model ReflectionPrompt {
   answers          Post[]
 }
 
-// §4.3.16: the feed item, with exactly one origin: a Prompt answer
-// (`prompt_id`) or a Review's Public Takeaway (`review_id`). That rule is the
-// raw CHECK `post_exactly_one_origin` (§4.4 step 1), which Prisma cannot
-// represent. One answer per Student per Prompt; on the Takeaway arm the null
-// `prompt_id`s are distinct, as intended (ADR-0014 d13). `answer_round_id` is
-// null on the Takeaway arm; on the Prompt arm it is the Round open at the
-// answer's serialization point, or null when none is open (M3). A Takeaway's
-// author is its Review's Mentee. `body` and the origin are never updated;
-// `removed_at` is set once, by a moderation resolution (§12.5).
 model Post {
   id            String            @id @default(uuid(7)) @db.Uuid
   authorId      String            @map("author_id") @db.Uuid
@@ -362,8 +270,6 @@ model Post {
   @@index([answerRoundId])
 }
 
-// §4.3.17: one Student's Like of one Post. Un-Like deletes the row; a
-// Student may Like their own Post (ADR-0014 d5).
 model Like {
   postId    String   @map("post_id") @db.Uuid
   studentId String   @map("student_id") @db.Uuid
@@ -375,8 +281,6 @@ model Like {
   @@index([studentId])
 }
 
-// §4.3.13: immutable testimony, separate from the public Takeaway.
-// The creating migration supplies private_feedback_rating_range (§4.4).
 model PrivateFeedback {
   id                String   @id @default(uuid(7)) @db.Uuid
   reviewId          String   @unique @map("review_id") @db.Uuid
@@ -387,10 +291,6 @@ model PrivateFeedback {
   review            Review   @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }
 
-// §4.3.18: immutable testimony about exactly one Post or Student. The raw
-// CHECKs (§4.4 steps 2–4) hold the target and attribution rules. The partial
-// uniques reserve each reporter's slot for the target's lifetime, through
-// resolution (ADR-0011 d5–d6). Only state and attribution change, once.
 model Report {
   id                String       @id @default(uuid(7)) @db.Uuid
   reporterId        String       @map("reporter_id") @db.Uuid
@@ -414,7 +314,6 @@ model Report {
   @@index([state, resolvedAt])
 }
 
-// §4.3.19: a permanent threshold award, inserted at most once per Student.
 model BadgeAward {
   studentId String   @map("student_id") @db.Uuid
   badge     Badge
@@ -424,13 +323,6 @@ model BadgeAward {
   @@id([studentId, badge])
 }
 
-// §4.3.14: 0..1 per Review, the one mutable attachment of an immutable Review
-// (ADR-0009 d5). No bytes: the file is in the private `evidence` bucket, named
-// by `token`, with no path column (§9.8). `token` has no default: the upload
-// makes it with `randomUUID()`, uploads the file under it, then writes this
-// row with that same token (§4.1). `mime` and `size` come from the validated
-// bytes, `filename` is the sanitised original name (§9.5). Written and
-// deleted only by the Review's Mentee; a Removal keeps it (ADR-0009 d6).
 model Evidence {
   id         String   @id @default(uuid(7)) @db.Uuid
   reviewId   String   @unique @map("review_id") @db.Uuid

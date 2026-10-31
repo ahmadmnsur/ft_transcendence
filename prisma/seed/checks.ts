@@ -13,15 +13,10 @@ import { PROMPT_QUESTIONS } from './prompts';
 import type { ReportFixtures } from './reports';
 import type { Sanctioned } from './sanctioned';
 
-// Every email the seed makes at this fixture version: the two bootstrap
-// accounts and the thirty of §14.3.
 function seedEmails(env: EnvRecord): string[] {
   return [...bootstrapStaff(env).map((staff) => normalizeEmail(staff.email)), ...cohortEmails()];
 }
 
-// §14.9's guard, before a run that writes deletes anything: every Student
-// must be one the seed makes, by email. Otherwise the record was lost over
-// real data, and only a reset, which someone runs on purpose, deletes it.
 export async function assertOnlySeedAccounts(
   prisma: PrismaService,
   env: EnvRecord,
@@ -35,8 +30,6 @@ export async function assertOnlySeedAccounts(
   }
 }
 
-// §8.1's candidate pool, over which §13.2 counts Demand and Supply. A
-// `StudentSkill` row's Student always holds one, the pool's last condition.
 const CANDIDATE_POOL: Prisma.StudentWhereInput = {
   role: { not: 'ADMIN' },
   suspendedAt: null,
@@ -45,10 +38,6 @@ const CANDIDATE_POOL: Prisma.StudentWhereInput = {
 
 export type DemoStudent = { id: string; position: number; email: string };
 
-// §14.6, §14.8 check 3: the demo Student D is the first Student by position,
-// outside the reserved ones, that meets every condition of the check. S and
-// R carry their sanction flags by §14.4 step 5, so neither is D. The seed
-// chooses D before step 5, which, like Prompt 4, touches nothing the check reads.
 export async function findDemoStudent(
   prisma: PrismaService,
   cohortIds: readonly string[],
@@ -78,7 +67,6 @@ export async function findDemoStudent(
   );
 }
 
-// What check 6 reads through, and expects to find.
 export type ModerationReads = {
   moderation: ModerationService;
   admin: Actor;
@@ -86,19 +74,12 @@ export type ModerationReads = {
   fixtures: ReportFixtures;
 };
 
-// A Peer Moderator's row shows its reason, text and time, never who filed it
-// (§12.4).
 const MODERATOR_ROW_KEYS = ['createdAt', 'reason', 'text'];
 
 function isModeratorRow(report: object): boolean {
   return Object.keys(report).sort().join() === MODERATOR_ROW_KEYS.join();
 }
 
-// Check 6, through the moderation service's own reads (ADR-0017 d7's note of
-// 2026-09-23): the Peer Moderator's queue shows the two-report Post group
-// without who filed it; the Admin's open queue shows the Student report; the
-// Admin's resolved audit shows the Peer Moderator's dismissal of the one
-// OTHER report.
 async function assertModerationViews(reads: ModerationReads): Promise<void> {
   const { moderation, admin, peerModerator, fixtures } = reads;
   const moderatorQueue = await moderation.queue(peerModerator, 'PEER_MODERATOR');
@@ -127,9 +108,6 @@ async function assertModerationViews(reads: ModerationReads): Promise<void> {
   }
 }
 
-// §14.8, all end-state assertions. Check 2 is reported before the completion
-// record. D was chosen before §14.4 step 5; check 3 chooses again and must
-// find the same Student.
 export async function assertEndState(
   prisma: PrismaService,
   cohortIds: readonly string[],
@@ -137,8 +115,6 @@ export async function assertEndState(
   demo: DemoStudent,
   moderationReads: ModerationReads,
 ): Promise<{ demoStudent: { position: number; email: string } }> {
-  // Check 1: four closed Rounds and four Prompts in publication order,
-  // making Prompt 4 the live one (§8.12).
   const openRounds = await prisma.round.count({ where: { closedAt: null } });
   const closedRounds = await prisma.round.count({ where: { closedAt: { not: null } } });
   if (openRounds !== 0 || closedRounds !== 4) {
@@ -155,14 +131,11 @@ export async function assertEndState(
     );
   }
 
-  // Check 3: the demo Student D exists. The seed logs their email (§3.9).
   const { id, position, email } = await findDemoStudent(prisma, cohortIds);
   if (id !== demo.id) {
     throw new SeedFailure(`check 3: the demo Student is at position ${position}, not ${demo.position} as before §14.4 step 5`);
   }
 
-  // Check 4: the seeded Private Feedback carries at least three distinct
-  // ratings, unrated rows aside.
   const ratings = await prisma.privateFeedback.findMany({
     where: { rating: { not: null } },
     distinct: ['rating'],
@@ -172,8 +145,6 @@ export async function assertEndState(
     throw new SeedFailure(`check 4: ${ratings.length} distinct non-null ratings among Private Feedback; expected at least 3`);
   }
 
-  // Check 5: Suspension persists; Removal drops the Avatar but preserves
-  // the email, Evidence and its Review's Private Feedback (ADR-0017 d5).
   const suspended = await prisma.student.findUnique({
     where: { id: sanctioned.suspendedId },
     select: { suspendedAt: true, removedAt: true },
@@ -199,8 +170,6 @@ export async function assertEndState(
 
   await assertModerationViews(moderationReads);
 
-  // Check 7, the plain gap: a RARE_SKILLS Skill the pool wants and no one in
-  // it teaches.
   const rareRows = await prisma.studentSkill.findMany({
     where: { student: CANDIDATE_POOL, skill: { name: { in: [...RARE_SKILLS] } } },
     select: { kind: true, skill: { select: { name: true } } },
@@ -213,8 +182,6 @@ export async function assertEndState(
     throw new SeedFailure('check 7: no RARE_SKILLS Skill has Demand > 0 and Supply = 0 over the candidate pool');
   }
 
-  // Check 8: G has demand and supply in the active candidate pool, but
-  // no coverage and no Match of the blocked pair, in either orientation.
   const gapRows = await prisma.studentSkill.findMany({
     where: { student: CANDIDATE_POOL, skill: { name: GAP_SKILL } },
     select: { kind: true },
@@ -231,7 +198,6 @@ export async function assertEndState(
     throw new SeedFailure('check 8: G must have Demand > 0, Supply > 0, no coverage and no Match joining X and Y');
   }
 
-  // Check 9: every Badge has an Active holder, including any added to the enum.
   const awards = await prisma.badgeAward.findMany({
     where: { student: { suspendedAt: null, removedAt: null } },
     distinct: ['badge'],
@@ -243,8 +209,6 @@ export async function assertEndState(
     throw new SeedFailure(`check 9: no Active Student holds ${missing.join(', ')}`);
   }
 
-  // Check 10: every Student's search column is the fold of its name. It
-  // covers the two bootstrap accounts, which the suite never reaches.
   const students = await prisma.student.findMany({
     select: { displayName: true, displayNameSearch: true },
   });

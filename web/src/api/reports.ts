@@ -1,7 +1,6 @@
 import type { ReportReason, ReportTarget } from '@shared/reports';
 import { apiFetch } from './client';
 
-// §12.2: a receipt only; the reporter never reads a Report's outcome.
 export async function fileReport(
   target: ReportTarget,
   reason: ReportReason,

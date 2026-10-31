@@ -1,9 +1,6 @@
 import type messages from '../en/messages';
 import type { Catalogue } from '../types';
 
-// §6.5, §7.3 and §7.4's screens in Modern Standard Arabic, without vowel
-// marks. The word stays the product's: رسالة مباشرة, never a loanword for
-// the screen names (CONTEXT.md's Direct Message entry).
 export default {
   title: 'الرسائل المباشرة',
   list: {

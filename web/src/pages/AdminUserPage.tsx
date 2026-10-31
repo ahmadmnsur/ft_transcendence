@@ -28,14 +28,8 @@ import { StudentLink } from '../profile/StudentLink';
 import { useStudentProfileTarget } from '../profile/target';
 import { ProgressCard } from '../progress/ProgressCard';
 
-// What the role card's status Banner says, kept as what happened rather than
-// as a text, so it follows a language switch.
 type RoleStatus = { kind: 'changed'; role: Role } | { kind: 'failed'; code: unknown };
 
-// §12.7, §10.8: the role column of the Users table. A change asks first,
-// saying what the new role keeps and closes, then writes the role alone; the
-// Student's next request reads it (§5.8). An Admin never changes their own
-// role (ADR-0008 d9), so their own row says so instead.
 function RoleCard({
   student,
   self,
@@ -57,8 +51,6 @@ function RoleCard({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, as on the profile cards.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
@@ -71,9 +63,6 @@ function RoleCard({
     );
   }
 
-  // §10.8: promotion closes participation and keeps what was earned;
-  // demotion restores participation; between the two participating roles,
-  // only the report queue differs. A demotion to Peer Moderator says both.
   const consequence =
     choice === 'ADMIN'
       ? copy.confirm.toAdmin
@@ -173,15 +162,8 @@ function RoleCard({
   );
 }
 
-// What the sanctions card's status Banner says, kept as what happened rather
-// than as a text, so it follows a language switch. A Removal has none: the
-// page turns view-only and its note says so.
 type SanctionStatus = { kind: 'done'; action: Exclude<Sanction, 'remove'> } | { kind: 'failed'; code: unknown };
 
-// §12.7: the account's sanctions, as its status allows (ADR-0008 d11's note):
-// Suspend or Remove an Active account, Reinstate or Remove a Suspended one.
-// Each asks first, saying what it ends and what it keeps. An Admin never
-// suspends or removes themselves (ADR-0008 d9), so their own row says so.
 function SanctionsCard({
   student,
   self,
@@ -194,8 +176,6 @@ function SanctionsCard({
   const { t, formatText, personNameValue, errorText } = useI18n();
   const copy = t.admin.user.sanctions;
   const queryClient = useQueryClient();
-  // The action the dialog asks about, kept while it closes, and whether it
-  // is open.
   const [action, setAction] = useState<Sanction>('suspend');
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
@@ -203,8 +183,6 @@ function SanctionsCard({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, as on the role card.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
@@ -321,9 +299,6 @@ function SanctionsCard({
 
 const column = createColumnHelper<AdminStudentMatch>();
 
-// §6.12: every Match the Student was in, newest first, each linked to the
-// Admin's full Match page. No profile lists Matches (§4.6); this page is an
-// Admin's.
 function MatchesCard({ student }: { student: AdminStudentDetail }): React.JSX.Element {
   const { t, formatText, formatNumber } = useI18n();
   const copy = t.admin.user.matches;
@@ -348,8 +323,6 @@ function MatchesCard({ student }: { student: AdminStudentDetail }): React.JSX.El
           <StudentLink student={row.original.mentor.id === student.id ? row.original.mentee : row.original.mentor} />
         ),
       }),
-      // No Score column: a Score never shows without its explanation sentence
-      // (§8.11), which the Match's own page gives.
       column.display({
         id: 'status',
         header: copy.columns.status,
@@ -364,8 +337,6 @@ function MatchesCard({ student }: { student: AdminStudentDetail }): React.JSX.El
       }),
       column.display({
         id: 'view',
-        // Read by screen readers only; the `relative` wrapper keeps the
-        // `sr-only` text inside the table's scroll frame at 360 px.
         header: () => (
           <span className="relative">
             <span className="sr-only">{copy.view}</span>
@@ -405,19 +376,12 @@ function MatchesCard({ student }: { student: AdminStudentDetail }): React.JSX.El
   );
 }
 
-// The page once its id has the right shape: the account, the actions its
-// status allows (ADR-0008 d11's note), its progress and its Matches. An
-// Active or Suspended account is edited through the `/me` cards on the Users
-// table's routes; a Removed one is view-only.
 function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
   const { t, personNameText, errorText } = useI18n();
   const copy = t.admin.user;
   const detail = useQuery(adminStudentQueryOptions(studentId));
   const target = useStudentProfileTarget(studentId);
   const session = useQuery(sessionQueryOptions());
-  // After a Removal from this page, or a write refused because another Admin
-  // removed the account first, focus moves to the note that says the account
-  // is now view-only, since the card that had focus is gone.
   const [justRemoved, setJustRemoved] = useState(false);
   const removedRef = useRef<HTMLDivElement>(null);
   const removed = detail.data?.status === 'REMOVED';
@@ -495,8 +459,6 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
             >
               {copy.publicProfileLink}
             </Link>
-            {/* Keyed by the Student, so a choice or a status never carries
-            over to the next account. */}
             <RoleCard key={data.id} student={data} self={self} onRemoved={() => setJustRemoved(true)} />
             <SanctionsCard key={`${data.id}-sanctions`} student={data} self={self} onRemoved={() => setJustRemoved(true)} />
             <AvatarCard target={target} />
@@ -532,16 +494,9 @@ function AdminUser({ studentId }: { studentId: string }): React.JSX.Element {
   );
 }
 
-// §3.5.1, §6.12: `/admin/users/:studentId`. An unknown account is the
-// not-found state; a malformed id is answered without a request (§3.5.2).
 export function AdminUserPage(): React.JSX.Element {
   const { studentId } = useParams({ from: '/admin/users/$studentId' });
   if (!isUuid(studentId)) return <NotFoundPage />;
-  // Every id the server issues is lower case, and §6.0.1's pipe passes an
-  // upper-case spelling through, as on `ThreadPage`. The page keys, reads and
-  // writes in lower case, so an upper-case URL still matches the session's id
-  // for the Admin's own row, and an avatar upload still reaches the proxy's
-  // upload location.
   const lowerStudentId = studentId.toLowerCase();
   return <AdminUser key={lowerStudentId} studentId={lowerStudentId} />;
 }

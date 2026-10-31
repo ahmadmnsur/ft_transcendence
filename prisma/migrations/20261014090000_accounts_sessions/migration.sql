@@ -1,10 +1,7 @@
--- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
--- CreateEnum
 CREATE TYPE "Role" AS ENUM ('STUDENT', 'PEER_MODERATOR', 'ADMIN');
 
--- CreateTable
 CREATE TABLE "Student" (
     "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
@@ -21,7 +18,6 @@ CREATE TABLE "Student" (
     CONSTRAINT "Student_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Session" (
     "id" TEXT NOT NULL,
     "student_id" UUID NOT NULL,
@@ -30,14 +26,10 @@ CREATE TABLE "Session" (
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
 CREATE UNIQUE INDEX "Student_email_key" ON "Student"("email");
 
--- CreateIndex
 CREATE INDEX "Session_student_id_idx" ON "Session"("student_id");
 
--- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;
 
--- §4.4 step 9: display names sort with the same collation on every stack.
 ALTER TABLE "Student" ALTER COLUMN display_name TYPE text COLLATE "und-x-icu";

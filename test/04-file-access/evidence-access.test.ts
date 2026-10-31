@@ -6,9 +6,6 @@ import { reviewedMatch } from '../harness/reviews';
 
 const harness = useHarness();
 
-// §16.3 row 4, the Evidence half: an Evidence URL answers 401 signed out,
-// 403 to a Student outside the pair, and 200 with the file to the pair and
-// an Admin (§6.3).
 describe('Evidence file access', () => {
   it('is 401 signed out, 403 to an unrelated Student, and 200 to the pair and an Admin', async () => {
     const pair = await reviewedMatch(harness.app);

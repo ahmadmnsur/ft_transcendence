@@ -6,9 +6,6 @@ import { createTestAccount, createTestStaff, type TestAccount } from '../harness
 
 const harness = useHarness();
 
-// §16.3 row 11: a path that writes a name, then a search by the name's plain
-// form, for sign-up, the Student's own edit and the Admin edit. The outcome
-// is bound, not the fold's technique.
 async function searchIds(viewer: TestAccount, q: string): Promise<string[]> {
   const page = await harness.app
     .get(StudentsService)
@@ -37,7 +34,6 @@ describe("a name written by the Student's own edit is found by its plain form", 
     await students.updateOwnProfile(actor, { displayName: 'Hélène' });
     expect(await searchIds(student, 'helene')).toEqual([student.id]);
 
-    // `zoe` does not contain `helene`, so the old form must stop matching.
     await students.updateOwnProfile(actor, { displayName: 'Zoé' });
     expect(await searchIds(student, 'helene')).toEqual([]);
     expect(await searchIds(student, 'zoe')).toEqual([student.id]);
@@ -54,7 +50,6 @@ describe('a name written by the Admin edit is found by its plain form', () => {
     await users.editUser(actor, student.id, { displayName: 'فاطمة' });
     expect(await searchIds(student, 'فاطمه')).toEqual([student.id]);
 
-    // `zoe` does not contain `فاطمه`, so the old form must stop matching.
     await users.editUser(actor, student.id, { displayName: 'Zoé' });
     expect(await searchIds(student, 'فاطمه')).toEqual([]);
     expect(await searchIds(student, 'zoe')).toEqual([student.id]);

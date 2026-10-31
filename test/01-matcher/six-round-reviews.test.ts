@@ -14,8 +14,6 @@ import { recreateTestDatabase } from '../harness/database';
 const harness = useHarness();
 const actor = (studentId: string) => ({ studentId, sessionHash: null });
 
-// The same service action log replayed against separately created databases.
-// UUIDs and timestamps may differ; cohort positions and frozen explanations may not.
 async function sixRounds(): Promise<unknown[]> {
   const matching = harness.app.get(MatchingService);
   const students = harness.app.get(StudentsService);
@@ -48,14 +46,14 @@ async function sixRounds(): Promise<unknown[]> {
       const match = await matching.getAdminMatch(admin, listed.id);
       const forward = match.coverage.forward.map((skill) => skill.name);
       const reverse = match.coverage.reverse.map((skill) => skill.name);
-      expect(forward.length).toBeGreaterThanOrEqual(1); // C3
+      expect(forward.length).toBeGreaterThanOrEqual(1);
       const score = Math.min(
         100,
         Math.floor(70 * (1 - 0.5 ** forward.length) + 30 * (1 - 0.5 ** reverse.length) + 0.5) +
           (match.goalBonusApplied ? 10 : 0),
       );
-      expect(match.compatibilityScore).toBe(score); // C4
-      expect(match.compatibilityScore).toBeGreaterThanOrEqual(25); // C7
+      expect(match.compatibilityScore).toBe(score);
+      expect(match.compatibilityScore).toBeGreaterThanOrEqual(25);
       entries.push([
         positions.get(match.mentor.id),
         positions.get(match.mentee.id),
@@ -89,8 +87,6 @@ async function sixRounds(): Promise<unknown[]> {
 
 it('C3, C4, C6 and C7: six accepted and reviewed Rounds replay identically from empty databases', async () => {
   const first = await sixRounds();
-  // End the app pool before replacing its database; the next service read
-  // reconnects to the newly migrated database under the same test-only name.
   await harness.app.get(PrismaService).$disconnect();
   const baseUrl = new URL(process.env.DATABASE_URL!);
   if (!baseUrl.pathname.endsWith('_test')) throw new Error('Replay requires the harness test database.');
@@ -102,5 +98,5 @@ it('C3, C4, C6 and C7: six accepted and reviewed Rounds replay identically from 
   });
   if (migrated.status !== 0) throw new Error(`Replay migration failed: ${migrated.stderr}`);
   const second = await sixRounds();
-  expect(second).toEqual(first); // C6
+  expect(second).toEqual(first);
 }, 60_000);

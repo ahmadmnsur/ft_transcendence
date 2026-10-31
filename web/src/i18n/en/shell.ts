@@ -5,17 +5,13 @@ export default {
   pageTitle: '{page} · {brand}',
   header: {
     navLabel: 'Main menu',
-    // The phone-width button that shows every link, and the wider screens'
-    // button, named by the signed-in Student, that holds their own pages.
     menu: 'Menu',
     accountMenu: 'Account menu',
-    // Shown to Admins only: `/admin`, which links each Admin page (§3.5.1).
     adminLink: 'Admin tools',
     studentsLink: 'Students',
     friendsLink: 'Friends',
     messagesLink: 'Direct Messages',
     matchLink: 'Match',
-    // Shown to Peer Moderators only: their queue (§3.5.1).
     moderationLink: 'Moderation',
     profileLink: 'My profile',
     signOut: 'Sign out',

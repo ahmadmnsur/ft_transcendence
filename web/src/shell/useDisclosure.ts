@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 
-// A button that shows and hides a panel of links: the disclosure pattern, not
-// an ARIA menu, so Tab walks the links and a screen reader reads them as
-// links. Only the button and the panel count as inside it, so the panel must
-// follow the button in the DOM for Tab to reach it. The panel closes on
-// Escape, wherever focus is; on a press, or focus, outside the button and the
-// panel; on a link chosen inside it, the page it is on included; and when the
-// page changes some other way, such as the browser's Back.
 export function useDisclosure<Panel extends HTMLElement>(): {
   open: boolean;
   show: () => void;
@@ -46,15 +39,9 @@ export function useDisclosure<Panel extends HTMLElement>(): {
     function onPointerDown(event: PointerEvent): void {
       if (event.target instanceof Node && !inside(event.target)) setOpen(false);
     }
-    // Focus that goes nowhere, to another tab or to `<body>` after a press on
-    // the panel's text, fires no `focusin`: the panel stays as it was.
     function onFocusIn(event: FocusEvent): void {
       if (event.target instanceof Node && !inside(event.target)) setOpen(false);
     }
-    // On the document, not the panel, so Escape still closes it once focus
-    // has fallen to `<body>`: after a press on the panel's text, or in a
-    // browser that does not focus a pressed button. Focus there, or inside
-    // the panel about to hide, goes back to the button.
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key !== 'Escape') return;
       setOpen(false);
@@ -86,15 +73,9 @@ export function useDisclosure<Panel extends HTMLElement>(): {
       id: panelId,
       hidden: !open,
       onClick(event) {
-        // The router's `Link` prevents the default of a click it follows
-        // itself. Any other, such as a Ctrl-click for a new tab, leaves this
-        // page as it is, so the panel stays open with focus on the link.
         const link = event.target instanceof Element ? event.target.closest('a') : null;
         if (link === null || !event.defaultPrevented) return;
         setOpen(false);
-        // The page it is on opens no new page to take focus, and the link
-        // hides with the panel, so focus goes back to the button instead of
-        // `<body>`. A search alone does not move focus either (`RootLayout`).
         if (link.pathname === pathname) buttonRef.current?.focus();
       },
     },

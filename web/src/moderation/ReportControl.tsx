@@ -12,15 +12,10 @@ import { BlockControl } from '../social/BlockControl';
 
 type Props = { target: ReportTarget; student: StudentRef };
 
-// Whether Report shows: to a signed-in Student, never on their own profile or
-// Post, and never on a Removed Student's profile.
 export function canReport(viewerId: string | null, target: ReportTarget, student: StudentRef): boolean {
   return viewerId !== null && viewerId !== student.id && !('studentId' in target && student.removed);
 }
 
-// §12.2: each opening is keyed to start a fresh form. The Modal stays mounted
-// between openings so closing returns focus to Report: a native dialog restores
-// focus on close, not on removal.
 export function ReportControl({ target, student }: Props): React.JSX.Element | null {
   const { t } = useI18n();
   const { data: session } = useQuery(sessionQueryOptions());
@@ -70,7 +65,6 @@ function ReportDialog({ target, student, open, onClose }: Props & {
       : copy.textInvalid
     : undefined;
 
-  // ADR-0011 d12: focus the receipt so the reporter hears the whole promise.
   useEffect(() => {
     if (received) receiptRef.current?.focus();
   }, [received]);

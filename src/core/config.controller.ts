@@ -2,7 +2,6 @@ import { Controller, Get } from '@nestjs/common';
 import { AppConfig } from './app-config';
 import { Public } from './session.guard';
 
-// GET /api/config, public (§6.1).
 @Controller('config')
 export class ConfigController {
   constructor(private readonly config: AppConfig) {}

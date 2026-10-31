@@ -18,10 +18,6 @@ import { changePasswordCore, passwordStep3, PasswordChangeLock } from './passwor
 import { alreadySignedIn, noAccount } from './refusals';
 import { createSessionAfterPasswordCheck } from './session-create';
 
-// §3.4: every method that acts for a signed-in Student takes an Actor. The
-// operations that establish one — signup, login — read the Student row they
-// act on themselves. Every write runs through the Unit of Work; no network
-// call inside `work` (§3.6.2).
 @Injectable()
 export class AuthService {
   constructor(
@@ -35,16 +31,11 @@ export class AuthService {
     private readonly passwordLock: PasswordChangeLock,
   ) {}
 
-  // Whether a session token resolves to a valid session. A sanctioned or
-  // expired session is not a valid one: the request proceeds as signed out.
   private async hasActiveSession(sessionToken: string | null): Promise<boolean> {
     if (sessionToken === null) return false;
     return (await this.sessions.resolveActive(sessionToken)) !== null;
   }
 
-  // §5.1 sign-up. Validation and the throttle already ran at the boundary;
-  // `already_signed_in` is checked first here, keeping the boundary's order.
-  // Steps 2–5 are the shared function.
   async signup(input: {
     email: string;
     password: string;
@@ -61,9 +52,6 @@ export class AuthService {
     return { student: created.student, token: created.token, maxAge: created.maxAge };
   }
 
-  // §5.1 sign-in. `already_signed_in` first; step 2 reads the Student and its
-  // `password_version`; step 3 is the shared password check; step 4 is the
-  // shared session function.
   async login(input: {
     email: string;
     password: string;
@@ -94,11 +82,6 @@ export class AuthService {
     return { student: toStudentView(student), token: session.token, maxAge: session.maxAge };
   }
 
-  // §3.4's session resolution, backing `GET /api/session`: the parsed cookie
-  // resolves through core's `SessionResolver` (which the guard also uses),
-  // with lazy renewal when signed in. An `s.` cookie that resolves to nothing
-  // is cleared; an `a.` cookie never is (§5.3). Returns the §6.1 shape, after
-  // setting or clearing the cookie on the response.
   async resolveSession(
     cookie: ParsedCookie,
     response: SessionCookieSetter,
@@ -122,9 +105,6 @@ export class AuthService {
     };
   }
 
-  // §5.8: deletes that one row. The guard already refused a gone session with
-  // `unauthenticated`; a row lost since is a no-op. Writes nothing to
-  // Supabase Auth.
   async logout(actor: Actor): Promise<void> {
     if (actor.sessionHash === null) return;
     const sessionHash = actor.sessionHash;
@@ -134,8 +114,6 @@ export class AuthService {
     });
   }
 
-  // §5.1's password change. Step 1 already ran at the boundary; steps 2–6
-  // are the shared function, with step 3 as the Supabase check.
   async changePassword(actor: Actor, currentPassword: string, newPassword: string): Promise<void> {
     await changePasswordCore(
       {

@@ -19,17 +19,13 @@ import { countPages } from './pages';
 import { Pagination } from './Pagination';
 
 declare module '@tanstack/react-table' {
-  // Per-column options DataTable reads from a column's `meta`.
   interface ColumnMeta<TData extends RowData, TValue> {
-    // 'end' aligns a column to its end, for numbers, so their digits line up.
     align?: 'end';
   }
 }
 
 export interface DataTableProps<TData> {
   data: TData[];
-  // `any` per column: column helpers type each column by its own value,
-  // so a single shared value type rejects their output.
   columns: Array<ColumnDef<TData, any>>;
   getRowId: (row: TData) => string;
   total: number;
@@ -42,21 +38,13 @@ export interface DataTableProps<TData> {
   emptyTitle?: string;
   emptyDescription?: string;
   emptyIcon?: ReactNode;
-  // A way forward from an empty page, such as a button that clears the filters.
   emptyAction?: ReactNode;
-  // Pass loading until the rows and total for the page have arrived, including
-  // the first load: with no total yet every page looks out of range, and the
-  // table would correct a page read from the URL back to 1.
   loading?: boolean;
-  // Shown in place of the rows when the page failed to load.
   error?: string;
-  // Offered as "Try again" beside the error.
   onRetry?: () => void;
   className?: string;
 }
 
-// As many skeleton rows as the page will hold, so the table keeps its height
-// when the rows arrive; the rows already shown are the best guess.
 function skeletonRowCount(shown: number, pageSize: number): number {
   const expected = shown > 0 ? shown : Number.isFinite(pageSize) ? Math.floor(pageSize) : 1;
   return Math.min(Math.max(expected, 1), 50);
@@ -94,7 +82,6 @@ export function DataTable<TData>({
     getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
     manualPagination: true,
-    // One sort at a time: the server sorts by a single column.
     enableMultiSort: false,
     state: { sorting },
     onSortingChange: (updater) => {
@@ -106,24 +93,14 @@ export function DataTable<TData>({
   const failed = Boolean(error) && !loading;
   const validPage = Number.isInteger(page) && page >= 1 && page <= pageCount;
   const nearestPage = Number.isFinite(page) ? Math.min(Math.max(Math.floor(page), 1), pageCount) : 1;
-  // While the page is being corrected the rows are not an answer yet, so no
-  // "nothing found" is shown or announced.
   const empty = !loading && !failed && validPage && data.length === 0;
 
-  // A page that no longer exists, such as the last page after its last row
-  // went away, or a page read from a bad URL, sends the caller to the nearest
-  // real one; otherwise the table would sit empty with no pages to go back to.
-  // Pagination below gets the corrected page, so the caller is told once.
   const settlePage = useEffectEvent((next: number) => onPageChange(next));
   useEffect(() => {
     if (loading || failed || validPage) return;
     settlePage(nearestPage);
   }, [loading, failed, validPage, nearestPage]);
 
-  // A table wider than its frame scrolls sideways; the frame then takes focus
-  // so the keyboard can scroll it too, and a fade on the end edge shows that
-  // more columns wait there. scrollLeft is 0 at the start and grows toward the
-  // end, below zero right to left, so the distance scrolled is its absolute value.
   function measure(): void {
     const frame = frameRef.current;
     if (!frame) return;
@@ -140,8 +117,6 @@ export function DataTable<TData>({
     return () => observer.disconnect();
   }, []);
 
-  // A language switch can turn the page's direction, which sends the frame
-  // back to its start, and Firefox fires no scroll event then.
   useEffect(() => {
     measure();
   }, [language]);
@@ -174,9 +149,6 @@ export function DataTable<TData>({
                         className={`whitespace-nowrap text-xs font-semibold uppercase tracking-wide arabic:tracking-normal text-ink-muted ${sortable ? '' : 'px-3 py-2'} ${end ? 'text-end' : 'text-start'}`.trim()}
                       >
                         {header.isPlaceholder ? null : sortable ? (
-                          // The button fills the header cell, so the whole cell is the target.
-                          // The table's own toggle sorts numbers high to low first and
-                          // clears the sort on a third press.
                           <button
                             type="button"
                             onClick={header.column.getToggleSortingHandler()}
@@ -213,7 +185,6 @@ export function DataTable<TData>({
                     <tr key={row.id} className="border-b border-line transition-colors duration-150 last:border-0 hover:bg-surface-muted">
                       {row.getVisibleCells().map((cell) => (
                         <td key={cell.id} className={`px-3 py-2.5 text-ink tabular-nums ${cell.column.columnDef.meta?.align === 'end' ? 'text-end' : ''}`.trim()}>
-                          {/* Long text, such as an email address, wraps at a set width instead of widening the table. */}
                           <div className="max-w-xs wrap-anywhere">{flexRender(cell.column.columnDef.cell, cell.getContext())}</div>
                         </td>
                       ))}
@@ -222,7 +193,6 @@ export function DataTable<TData>({
                 : null}
             </tbody>
           </table>
-          {/* Both regions are always present, so a failure or a search that comes back empty is announced. */}
           <div role="alert">
             {failed ? (
               <p className="flex items-center justify-center gap-2 px-4 pt-10 text-center text-sm font-medium text-ink-danger">
@@ -248,7 +218,6 @@ export function DataTable<TData>({
           <div aria-hidden="true" className="pointer-events-none absolute inset-y-px inset-e-px w-10 rounded-e-lg ltr:bg-linear-to-l rtl:bg-linear-to-r from-surface" />
         ) : null}
       </div>
-      {/* Kept through a failed load, so the user can try another page. */}
       {pageCount > 1 ? (
         <Pagination page={nearestPage} pageCount={pageCount} onPageChange={onPageChange} label={formatText(t.design.dataTable.pagesLabel, { caption })} className="mt-3" />
       ) : null}

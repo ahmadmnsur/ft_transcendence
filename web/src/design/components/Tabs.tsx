@@ -8,11 +8,9 @@ export interface TabItem {
 
 export interface TabsProps {
   items: TabItem[];
-  // The selected item's id. Leave it out to let Tabs keep its own selection.
   value?: string;
   defaultValue?: string;
   onValueChange?: (id: string) => void;
-  // Names the tab list.
   label: string;
   className?: string;
 }
@@ -22,22 +20,17 @@ export function Tabs({ items, value, defaultValue, onValueChange, label, classNa
   const [ownValue, setOwnValue] = useState(defaultValue);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const wanted = value !== undefined ? value : ownValue;
-  // An id that names no item, such as a stale URL parameter, falls back to the first tab.
   const current = items.some((item) => item.id === wanted) ? wanted : items[0]?.id;
 
   function select(index: number): void {
     const next = items[(index + items.length) % items.length];
     if (!next) return;
     if (value === undefined) setOwnValue(next.id);
-    // Compared with the id asked for, not the tab shown, so choosing the
-    // fallback tab still corrects a stale id such as an old URL parameter.
     if (next.id !== wanted) onValueChange?.(next.id);
     tabRefs.current.get(next.id)?.focus();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number): void {
-    // The arrow keys move the way they point: in a right-to-left tab list the
-    // next tab is on the left.
     const forward = getComputedStyle(event.currentTarget).direction === 'rtl' ? -1 : 1;
     if (event.key === 'ArrowRight') {
       event.preventDefault();

@@ -58,10 +58,7 @@ const codes = {
   conflict_of_interest: "You can't resolve a Report that concerns you.",
 } as const satisfies Record<ErrorCode | RefusalCode, string>;
 
-// `satisfies` misses a key that comes from a spread, so this names any key
-// of codes that is not a code.
 type NotACode = Exclude<keyof typeof codes, ErrorCode | RefusalCode>;
 export const codesChecked: [NotACode] extends [never] ? true : `${NotACode}: not a code` = true;
 
-// An unknown code, or a response that is not the envelope.
 export default { unknown: 'Something went wrong. Try again.', codes } as const satisfies EnGroup;

@@ -3,9 +3,6 @@ import { PrismaService } from '../../src/core/prisma.service';
 import { ModerationService } from '../../src/moderation/moderation.service';
 import type { ReportReason, ReportTarget } from '../../src/shared/reports';
 
-// A Prompt answer by `authorId`, under a Prompt of its own, so a test may make
-// any number of Posts by the same author (one answer per Prompt and Student,
-// §4.3.16). Written by hand: Prompt publication is not what these tests check.
 export async function createTestPost(app: INestApplication, authorId: string, body = 'Read an index plan.'): Promise<string> {
   const prisma = app.get(PrismaService);
   const [prompt] = await prisma.$queryRaw<Array<{ id: string }>>`
@@ -20,7 +17,6 @@ export async function createTestPost(app: INestApplication, authorId: string, bo
   return post.id;
 }
 
-// A Report filed through §12.2's own service call.
 export async function fileTestReport(
   app: INestApplication,
   reporterId: string,

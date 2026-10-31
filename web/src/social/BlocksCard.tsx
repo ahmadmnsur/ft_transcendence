@@ -7,27 +7,18 @@ import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 
-// What the status Banner says, kept as what happened rather than as a text,
-// so it follows a language switch: whose Block was lifted, or a failure's
-// code.
 type Status = { kind: 'unblocked'; student: StudentRef } | { kind: 'failed'; code: unknown };
 
-// §6.4, §11.3: the signed-in Student's own Blocks on `/friends`, newest first,
-// each with Unblock. Nobody else sees this list, Admins included (§4.6).
 export function BlocksCard(): React.JSX.Element {
   const { t, formatText, formatDate, personNameValue, errorText } = useI18n();
   const actions = t.social.actions;
   const copy = t.social.blocks;
   const queryClient = useQueryClient();
   const blocks = useQuery(blocksQueryOptions());
-  // The one row whose Unblock is in flight; the other rows' buttons are
-  // disabled until it ends, so no press is dropped unseen.
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, since the lifted row and its button are gone.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
@@ -79,9 +70,6 @@ export function BlocksCard(): React.JSX.Element {
                   {formatText(copy.blockedOn, { date: formatDate(new Date(block.createdAt)) })}
                 </p>
               </div>
-              {/* The accessible name adds the Student's name after the visible
-              text; while the row is pending, the visible text names that state
-              instead. */}
               <Button
                 variant="secondary"
                 size="sm"

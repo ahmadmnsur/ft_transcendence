@@ -15,62 +15,29 @@ import { FeedUpdates } from './feed/FeedUpdates';
 import { PresenceUpdates } from './social/PresenceUpdates';
 import { useDisclosure } from './shell/useDisclosure';
 
-// The product name is never translated.
 export const BRAND = '21 Beirut';
 
-// One message with placeholders: the page's name, then the brand, or the
-// brand alone when `name` is absent, so an Arabic name keeps `21 Beirut`
-// in its own order. React hoists the string into <head> and removes it on
-// unmount, so each page owns its title and every transition ends with the
-// right one. `web/index.html` keeps its static title before the app mounts.
 export function PageTitle({ name }: { name?: string }): React.JSX.Element {
   const { t, formatText } = useI18n();
   return <title>{name === undefined ? BRAND : formatText(t.shell.pageTitle, { page: name, brand: BRAND })}</title>;
 }
 
-// The header's links, each a route every role below may open. The bar holds
-// a week's work: the feed, the Match, the Prompt, then the people. The
-// account menu holds the Student's own pages. A Peer Moderator gets one more
-// link, their queue; an Admin gets `/admin`, which lists every Admin page
-// (§3.5.1).
 type BarPath = '/' | '/match' | '/prompts' | '/messages' | '/students' | '/friends' | '/moderation' | '/admin';
 type AccountPath = '/me' | '/feedback' | '/leaderboard' | '/rules';
 
-// The link matches its page and every page under it (`/admin` stays marked on
-// `/admin/users`), whatever the search params; the feed matches `/` alone.
 function activeOptions(to: string): { exact: boolean; includeSearch: false } {
   return { exact: to === '/', includeSearch: false };
 }
 
-// The current page's link is marked by the `aria-current` the router sets.
 const barLinkClass =
   'inline-flex items-center whitespace-nowrap rounded-t-lg border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors duration-150 hover:text-ink focus-ring aria-[current=page]:border-primary-600 aria-[current=page]:text-primary-700';
 const panelItemClass =
   'block w-full rounded-lg px-3 py-2 text-start text-sm text-ink transition-colors duration-150 hover:bg-surface-muted focus-ring pointer-coarse:py-3 aria-[current=page]:bg-primary-50 aria-[current=page]:font-medium aria-[current=page]:text-primary-700';
-// Tailwind's `md`: from here the bar and the account menu show, below it the
-// phone Menu.
 const MD_QUERY = '(width >= 48rem)';
-// The header stays at the top of the window while the page scrolls under it
-// (§3.5.1), over the page's own positioned parts and under the skip link.
 const headerClass = 'sticky top-0 z-40 border-b border-line bg-surface';
 
-// A header panel lies over the page below the header and moves with it, so
-// the page's scroll never reaches the panel's end: taller than the window
-// below the header, it scrolls on its own.
 const panelFitClass = 'max-h-[calc(100dvh-var(--header-height))] overflow-y-auto overscroll-contain';
 
-// The header's height as `--header-height` on the root element, measured once
-// as the header mounts, before the router scrolls a page opened at a `#` link,
-// then on each resize: it moves with the width, the language, a sign-in or a
-// sign-out, and the links a role adds. Every route but the not-found page
-// reads the session before it renders (`guards.ts`), so the header that
-// mounts is already the signed-in or the signed-out one and keeps its height
-// when the session answers. The legal pages wait a second at most: on them
-// this holds when the session answers within that second, and a later answer
-// can still change the header's height. The page's scroll padding reads it
-// (`index.css`), so whatever the browser scrolls into view, a focused field, a
-// notice or the heading a `#` link opens, stops below the header, not behind
-// it; so does `panelFitClass`. React runs the cleanup when the header unmounts.
 function followHeaderHeight(header: HTMLElement | null): (() => void) | undefined {
   if (header === null) return undefined;
   const root = document.documentElement;
@@ -94,15 +61,11 @@ function SiteHeader(): React.JSX.Element {
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
-  // Below `md` one button shows every link under the header's line; from
-  // `md` the bar shows them and the account menu sits beside the switcher.
   const phoneMenu = useDisclosure<HTMLElement>();
   const accountMenu = useDisclosure<HTMLDivElement>();
   const closePhoneMenu = phoneMenu.close;
   const closeAccountMenu = accountMenu.close;
 
-  // Each menu shows on one side of `md` only, so crossing it closes both: a
-  // panel hidden open would show again when the window crosses back.
   useEffect(() => {
     const md = window.matchMedia(MD_QUERY);
     function onChange(): void {
@@ -130,9 +93,6 @@ function SiteHeader(): React.JSX.Element {
     try {
       await logout();
     } catch (error) {
-      // A 401 means the session was already gone. Any other failure re-probes
-      // it: signed out behaves like success, still signed in keeps the
-      // session state and shows an error to try again.
       const gone = error instanceof ApiProtocolError && error.code === 'unauthenticated';
       if (!gone) {
         let signedOut = true;
@@ -144,9 +104,6 @@ function SiteHeader(): React.JSX.Element {
         if (!signedOut) {
           setSignOutFailed(true);
           setSigningOut(false);
-          // The error shows inside the panel, which may have closed while
-          // the sign-out ran: open the one this width shows. Focus stays
-          // where it is.
           if (window.matchMedia(MD_QUERY).matches) accountMenu.show();
           else phoneMenu.show();
           return;
@@ -171,9 +128,6 @@ function SiteHeader(): React.JSX.Element {
     { to: '/students', label: copy.studentsLink },
     { to: '/friends', label: copy.friendsLink },
   ];
-  // §3.5.1: the moderation queue is a Peer Moderator's alone and the Admin
-  // pages an Admin's; the session read here only decides whether the link
-  // shows, and the route guards and the API both check the role again.
   if (student?.role === 'PEER_MODERATOR') barLinks.push({ to: '/moderation', label: copy.moderationLink });
   if (student?.role === 'ADMIN') barLinks.push({ to: '/admin', label: copy.adminLink });
   const accountLinks: Array<{ to: AccountPath; label: string }> = [
@@ -183,12 +137,6 @@ function SiteHeader(): React.JSX.Element {
     { to: '/rules', label: t.progress.rules.nav },
   ];
 
-  // The logo is drawn, not set in a font, so it looks the same on every
-  // machine: BEIRUT is Liberation Sans Bold traced into paths. Its label is the
-  // brand, which names the link. It is inline, not an <img>, so its colors are
-  // classes: a forced-colors theme repaints it like the links instead of
-  // leaving it dark on a dark page. It may shrink: signed in below 360 px the
-  // row is too narrow for it, and it must not push the language menu off.
   const brandLink = (
     <Link to="/" className="inline-flex h-9 min-w-0 items-center rounded-lg focus-ring">
       <svg role="img" aria-label={BRAND} viewBox="0.8 10 274 72.3" fill="currentColor" className="h-9 w-auto max-w-full">
@@ -232,20 +180,12 @@ function SiteHeader(): React.JSX.Element {
               {copy.signUpLink}
             </Link>
           </nav>
-          {/* Below `sm` the switcher ends the brand's line and the nav takes the next line. A button
-          never shrinks its label onto two lines: one that does not fit moves to a further line, as
-          French does at 360 px. The DOM keeps the desktop order: brand, nav, switcher. */}
           {languageSwitcher}
         </div>
       </header>
     );
   }
 
-  // A failed sign-out shows its error under the button, in the open panel,
-  // where the panel cannot cover it. While it runs the button stays
-  // focusable, as `Button` does when loading, so a keyboard user keeps their
-  // place and Enter tries again after a failure; `onSignOut` ignores a second
-  // press meanwhile.
   const signOut = (
     <>
       <button
@@ -297,8 +237,6 @@ function SiteHeader(): React.JSX.Element {
         <IconButton {...phoneMenu.buttonProps} label={copy.menu} className="ms-auto md:hidden">
           <MenuIcon size={20} />
         </IconButton>
-        {/* The panel follows its button in the DOM, so Tab reaches its links
-        before the switcher, and lies over the page under the header's line. */}
         <nav
           aria-label={copy.navLabel}
           {...phoneMenu.panelProps}
@@ -331,7 +269,6 @@ function SiteHeader(): React.JSX.Element {
             </div>
           </div>
         </nav>
-        {/* The switcher ends the header's line at every width (§3.5.5). */}
         {languageSwitcher}
       </div>
       <nav aria-label={copy.navLabel} className="mx-auto hidden w-full max-w-6xl px-4 pt-1 md:block">
@@ -377,9 +314,6 @@ function SkipLink(): React.JSX.Element {
   );
 }
 
-// The footer sits at the bottom on short pages: the frame is a full-height
-// column and the main grows. The dynamic viewport unit keeps it there on
-// mobile browsers whose toolbar shrinks the visible viewport.
 function ShellFrame({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <div className="flex min-h-dvh min-w-0 flex-col bg-canvas text-ink">
@@ -399,18 +333,7 @@ export function RootLayout(): React.JSX.Element {
   const { data: session } = useQuery(sessionQueryOptions());
   const studentId = session?.authenticated === true ? session.student.id : null;
   const previousStudentId = useRef(studentId);
-  // The page on screen: the leaf match the outlet renders. While a
-  // navigation is pending, the location already names the next page but
-  // this one is still shown.
   const pageId = useRouterState({ select: (state) => state.matches.at(-1)?.id });
-  // The page's key moves only when one signed-in Student replaces another.
-  // The page on screen keeps the Student it was mounted for until another
-  // page takes its place, through any signed-out answer or pending
-  // navigation in between, so A → signed out → B still remounts it (a
-  // refetch can store signed out without leaving the page, and a page stays
-  // on screen while the next one loads). A sign-out or a sign-in never
-  // remounts it: a signed-out answer keeps the page's Student, and a page
-  // entered signed out has none until the sign-in gives it one.
   const [pageKey, setPageKey] = useState(0);
   const [pageOwner, setPageOwner] = useState({ pageId, studentId });
   if (pageId !== pageOwner.pageId || (studentId !== null && studentId !== pageOwner.studentId)) {
@@ -420,9 +343,6 @@ export function RootLayout(): React.JSX.Element {
     setPageOwner({ pageId, studentId });
   }
 
-  // On a client-side navigation that changes the pathname, move focus to
-  // the main so keyboard and screen-reader users land on the new page.
-  // Search-param changes and the first load keep focus where it is.
   useEffect(() => {
     if (previousPath.current !== pathname) {
       previousPath.current = pathname;
@@ -430,19 +350,6 @@ export function RootLayout(): React.JSX.Element {
     }
   }, [pathname]);
 
-  // §4.6, §7.5: the cookie is shared across tabs, so a fresh GET /api/session
-  // (a guard, a probe, the socket's confirm-before-connect read) can name a
-  // different Student than the one this tab shows, or a signed-out answer.
-  // Whenever the tab leaves a signed-in Student, drop every query cached for
-  // them — their email of §4.6 among it — so no page keeps rendering it. A
-  // guard stores a signed-out answer without clearing the other queries
-  // (`guards.ts`), so this reset is what keeps the previous Student's data
-  // from reaching the next sign-in; a normal sign-out already cleared the
-  // cache, so the reset there is harmless. Signed out → a Student needs none:
-  // leaving the previous Student already reset. A layout effect, not a
-  // passive one: on a switch to another Student, the keyed remount below
-  // renders the new page from those cached queries, and the reset and the
-  // updates it schedules must flush before that frame is painted.
   useLayoutEffect(() => {
     const previous = previousStudentId.current;
     previousStudentId.current = studentId;
@@ -461,11 +368,6 @@ export function RootLayout(): React.JSX.Element {
           <MessageUpdates />
           <RoundUpdates />
           <FeedUpdates />
-          {/* §7.5, §4.6: the key remounts the page when one signed-in Student
-          replaces another, so no local state of the previous Student (an
-          unsaved draft, typed passwords) survives it. A Fragment, so the
-          page's markup is unchanged; the socket stays outside the keyed
-          element, so a switch never remounts it. */}
           <Fragment key={pageKey}>
             <Outlet />
           </Fragment>
@@ -495,7 +397,6 @@ export function NotFoundPage(): React.JSX.Element {
   );
 }
 
-// A short human message only: never a stack or the raw server text.
 export function ErrorContent({ reset }: ErrorComponentProps): React.JSX.Element {
   const router = useRouter();
   const { t } = useI18n();
@@ -524,8 +425,6 @@ export function ErrorContent({ reset }: ErrorComponentProps): React.JSX.Element 
   );
 }
 
-// An error in the root route itself renders instead of the layout, so it
-// brings its own shell frame around the same content.
 export function RootErrorPage(props: ErrorComponentProps): React.JSX.Element {
   return (
     <ShellFrame>

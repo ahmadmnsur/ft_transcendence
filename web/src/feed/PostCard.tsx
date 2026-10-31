@@ -10,9 +10,6 @@ import { ReportControl } from '../moderation/ReportControl';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 
-// §6.9: who liked a Post, read when the dialog opens. A refusal, such as
-// `post_unavailable` for a Post removed since the page loaded, would only be
-// refused again, so only another failure offers a retry.
 function LikersDialog({
   likers,
   open,
@@ -52,11 +49,6 @@ function LikersDialog({
   );
 }
 
-// §6.9, §11.5: the Like toggle and the count, which opens the likers. A Like
-// of one's own Post is allowed. The count and the toggle come from the
-// server's answer, never guessed ahead of it. A Post a moderator removed
-// since the page loaded answers `post_unavailable` (§4.6): its controls give
-// way to that sentence, since every further press would be refused too.
 function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   const { t, formatText, errorText } = useI18n();
   const copy = t.feed.post;
@@ -72,12 +64,6 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   const unavailable = failure?.code === 'post_unavailable' || failureCode(likers.error) === 'post_unavailable';
   const count = formatText(copy.likeCount, { count: post.likeCount });
 
-  // Focus stays on the card when the control holding it goes. The dialog
-  // returns focus to the count that opened it, but that count can go while
-  // the dialog is open (the last Like withdrawn, or the Post removed), and a
-  // removed Post's notice replaces the toggle that was pressed. Focus then
-  // moves to the toggle, or to the notice. This runs after the dialog's own
-  // effect has closed it.
   useEffect(() => {
     const closed = wasOpen.current && !likersOpen;
     const replaced = unavailable && !wasUnavailable.current;
@@ -129,9 +115,6 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   );
 }
 
-// One Post (§6.9): its author, where it came from, its text and when it was
-// published, then its Likes. A Takeaway names no Mentor (ADR-0018 d4). A
-// Prompt's own page leaves its question out with `showPrompt`.
 export function PostCard({ post, showPrompt = true }: { post: PostView; showPrompt?: boolean }): React.JSX.Element {
   const { t, format, formatDateTime } = useI18n();
   const copy = t.feed.post;

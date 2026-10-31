@@ -37,7 +37,6 @@ function ChartFrame({ title, description, xTitle, yTitle, count, legend, childre
         <bdi>{yTitle}</bdi>
       </p>
       <div className="overflow-x-auto rounded focus-ring" tabIndex={0} role="region" aria-label={title}>
-        {/* SVG coordinates stay physical; each axis and text direction is explicit. */}
         <div dir="ltr" style={{ minWidth: Math.max(320, count * 112 + 104), height: 352 }}>
           {children}
         </div>
@@ -79,8 +78,6 @@ function ChartTooltip({ active, payload, percent = false }: Partial<TooltipConte
   );
 }
 
-// XAxis.reversed drives both the visual order and Recharts' arrow navigation.
-// The tooltip stays inside the view box and prefers its inside edge in Arabic.
 export function AnalyticsBars({ title, description, rows, name, xTitle, unit }: {
   title: string; description?: ReactNode; rows: Row[]; name: string; xTitle: string; unit?: string;
 }): React.JSX.Element {
@@ -125,7 +122,6 @@ export function CompletionChart({ rounds }: { rounds: Analytics['completion']['p
             <XAxis dataKey="roundNumber" reversed={rtl} interval={0} height={48} tickLine={false} stroke={INK}
               padding={{ left: 32, right: 32 }} tick={{ fontSize: 12, fill: INK }}
               tickFormatter={(value: number) => isolate(formatNumber(value))} />
-            {/* CSS isolation avoids embedded bidi controls splitting Arabic digits around the percent sign. */}
             <YAxis orientation={rtl ? 'right' : 'left'} width={64} domain={[0, 1]} ticks={[0, 0.25, 0.5, 0.75, 1]}
               tickFormatter={(value: number) => formatNumber(value, { style: 'percent', maximumFractionDigits: 0 })}
               tick={{ fill: INK, fontSize: 12, direction: rtl ? 'rtl' : 'ltr', unicodeBidi: 'isolate', textAnchor: 'end' }}

@@ -46,8 +46,6 @@ import { completedMentees, removeR, suspendS } from './sanctioned';
 import { SeedModule } from './seed.module';
 import { activeCohort, eligibleStudents, seedDirectMessages, seedLikes, seedSocialGraph } from './social';
 
-// §9.8's bucket step. Its failure names the bucket, and only a SeedFailure's
-// message reaches the log, so it is carried in one.
 async function setBuckets(storage: SupabaseStorageClient): Promise<BucketStepResult> {
   try {
     return await ensureBuckets(storage, PRODUCTION_BUCKETS);
@@ -56,11 +54,6 @@ async function setBuckets(storage: SupabaseStorageClient): Promise<BucketStepRes
   }
 }
 
-// The seed (§14): on every boot, after `migrate deploy`. It either finds its
-// completed fixture and skips, or empties and writes it whole, ending with
-// the completion record. Any failure logs the step and exits 1, so the `api`
-// never starts (§14.9, §15.5). It logs step names and counts, never a
-// password (§3.9).
 
 const started = Date.now();
 const logger = new AppLogger();
@@ -89,15 +82,10 @@ async function step<T>(name: string, work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (err) {
-    // Nested steps keep the innermost step's name and reason in the log.
     throw err instanceof StepFailed ? err : new StepFailed(name, err);
   }
 }
 
-// A code that carries no value, logged beside errorFields so the reason is
-// more than a class: a refusal's or protocol error's code, a SQLSTATE from the
-// lock's connection, or Node's network code. Prisma's own code is already in
-// errorFields.
 function valueFreeCode(err: unknown): { errorCode: string } | Record<string, never> {
   if (err instanceof Refusal || err instanceof ApiError) return { errorCode: err.code };
   const code = (err as { code?: unknown } | null)?.code;
@@ -108,7 +96,6 @@ function valueFreeCode(err: unknown): { errorCode: string } | Record<string, nev
 function logFailure(err: unknown): void {
   const name = err instanceof StepFailed ? err.step : 'unknown';
   const reason = err instanceof StepFailed ? err.reason : err;
-  // Only the seed's own failures carry a message safe to log.
   const detail =
     reason instanceof SeedFailure
       ? { reason: reason.message }
@@ -116,15 +103,11 @@ function logFailure(err: unknown): void {
   logger.entry('error', { message: 'seed failed', step: name, ...detail, ...elapsed() });
 }
 
-// A lost lock connection stops the run at once: a second seed could take the
-// freed lock and start deleting while this one still writes (§14.9).
 function lockLost(): void {
   logFailure(new StepFailed('lock', new SeedFailure('the lock connection was lost')));
   process.exit(1);
 }
 
-// What each target's messages name (§14.9). On the fallback `make wipe`
-// also empties everything, by dropping the volumes, so the guard names both.
 const REMEDIES = {
   team: { olderRecord: 'make reset-team', foreignAccounts: 'make reset-team' },
   fallback: { olderRecord: 'make wipe', foreignAccounts: 'make reset-local or make wipe' },
@@ -155,13 +138,9 @@ async function run(): Promise<number> {
     const avatars = app.get(AvatarsService);
     const evidence = app.get(EvidenceService);
 
-    // §9.8: the seed's first step, on every run, before the record is read,
-    // so a run that skips the fixture still sets the buckets. A failure stops
-    // the seed, and with it the boot.
     const buckets = await step('buckets', () => setBuckets(storage));
     log('seed: buckets', buckets);
 
-    // The lock comes first, before the record is read, and is kept to the end.
     lock = await step('lock', () => openLockConnection(process.env, lockLost));
     const db = lock.client;
     await step('lock', () =>
@@ -187,8 +166,6 @@ async function run(): Promise<number> {
       return 0;
     }
 
-    // A run that writes: the guard, then a stale record cleared as the first
-    // write, then the emptying, then the fixture from step 1.
     await step('guard', () => assertOnlySeedAccounts(prisma, process.env, remedy.foreignAccounts));
     if (recordedVersion !== null) {
       await step('clear stale record', () => clearRecord(db));
@@ -197,8 +174,6 @@ async function run(): Promise<number> {
     const emptied = await step('empty', () => emptyEverything(db, supabase, storage));
     log('seed: emptied', emptied);
 
-    // §14.4 step 1: the catalogue, the bootstrap accounts, the thirty
-    // sign-ups with their lists and Goals, then the Peer Moderator's lists.
     const skillIds = await step('catalogue', () => insertCatalogue(uow));
     log('seed: catalogue', { skills: skillIds.size });
     const staff = bootstrapStaff(process.env);
@@ -227,14 +202,11 @@ async function run(): Promise<number> {
     );
     log('seed: Peer Moderator lists', peerModeratorLists);
 
-    // §14.4 step 2 must precede the first matcher run, so G is never covered.
     await step('X Blocks Y', () => social.block(
       { studentId: studentIds[X_POSITION], sessionHash: null }, studentIds[Y_POSITION],
     ));
     log('seed: X Blocks Y');
     const admin = { studentId: staffIds.adminId, sessionHash: null };
-    // §14.4 steps 3 and 4: Prompt 1 precedes the Rounds; their opens drive
-    // the remaining publications and answers in §14.5.
     const promptSteps = promptScript(prompts, prisma, admin, studentIds, staffIds.peerModeratorId);
     await step('Prompt 1', () => promptSteps.publish(1));
     log('seed: Prompt published', { prompt: 1 });
@@ -247,8 +219,6 @@ async function run(): Promise<number> {
     let suspendedId: string | undefined;
     let removedId: string | undefined;
 
-    // §14.5 steps e and f: each sanction precedes either participant's
-    // acceptance. The callbacks return the Match step h must skip.
     const suspension: SanctionStep = (matches) => step('S suspension', async () => {
       const { studentId, matchId } = await suspendS(adminUsers, admin, matches, rules);
       suspendedId = studentId;
@@ -286,9 +256,6 @@ async function run(): Promise<number> {
     }
     const sanctioned = { suspendedId, removedId };
 
-    // §14.4 step 5, after Round 4's close: the social graph, Likes, Direct
-    // Messages, then the report fixtures. D comes first; the eligible
-    // Students exclude D, S, R and the reserved positions.
     const demo = await step('demo Student', () => findDemoStudent(prisma, studentIds));
     const active = await step('eligible Students', () => activeCohort(prisma, studentIds));
     const eligible = eligibleStudents(active, demo.id);
@@ -307,7 +274,6 @@ async function run(): Promise<number> {
     }));
     log('seed: report fixtures', { reports });
 
-    // §14.4 step 6: Prompt 4 stays live and unanswered at completion.
     await step('Prompt 4', () => promptSteps.publish(4));
     log('seed: Prompt published', { prompt: 4 });
     const moderationReads = {
@@ -321,7 +287,6 @@ async function run(): Promise<number> {
     );
     log('seed: demo Student', demoStudent);
 
-    // §14.8 check 2: report the run against §14.5's targets, never force them.
     const distribution = matchDistribution(rounds.map((round) => round.distribution.counts));
     const target = matchDistribution(ROUND_TARGETS);
     log('seed: Match distribution', {
@@ -343,12 +308,10 @@ async function run(): Promise<number> {
     logFailure(err);
     return 1;
   } finally {
-    // Closing on purpose is no loss; the lock ends with its connection.
     await lock?.release().catch(() => undefined);
     await app?.close().catch(() => undefined);
   }
 }
 
-// Validated first: steps 1 and 2 of the boot check (§15.5).
 assertEnvOrExit(process.env);
 void run().then((code) => process.exit(code));

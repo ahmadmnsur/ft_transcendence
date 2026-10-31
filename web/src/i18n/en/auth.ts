@@ -64,7 +64,6 @@ export default {
     submitting: 'Signing up…',
     haveAccount: 'Already have an account? {link}',
     signInLink: 'Sign in',
-    // §5.6 B: the extra keys the 42 variant shows on `/sign-up?from=42`.
     title42: 'Sign up with 42',
     heading42: 'Finish signing up with 42',
     notePrefilled: 'Pre-filled from your 42 account. You can change both fields.',

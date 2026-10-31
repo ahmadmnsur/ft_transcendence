@@ -6,35 +6,21 @@ import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
 import type { ProfileTarget } from './target';
 
-// What the status Banner says, kept as what happened rather than as a text,
-// so it follows a language switch.
 type Status = { kind: 'saved' } | { kind: 'removed' } | { kind: 'failed'; code: unknown };
 
-// §6.3, §9.6, §9.7: the avatar on `/me`, and on the Users table's detail
-// (§6.12). A picked file is uploaded at once
-// through XMLHttpRequest, with FileDrop's preview and progress bar. FileDrop
-// has already checked the size, extension and declared type against the
-// shared limits (§9.5); the server still decides, and a refusal shows on the
-// field. The saved avatar shows beside it, and removing it asks first.
 export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Element {
   const { t, errorText } = useI18n();
   const copy = target.voice === 'own' ? t.profile.avatar : { ...t.profile.avatar, ...t.admin.cards.avatar };
   const profile = target.profile;
-  // The file being uploaded and how much of it is sent.
   const [upload, setUpload] = useState<{ file: File; progress: number } | null>(null);
-  // A file the server refused, kept in the field beside the refusal's sentence.
   const [refused, setRefused] = useState<{ file: File; code: unknown } | null>(null);
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
-  // The upload in flight, so a new pick or a removal can stop it: two
-  // uploads at once would leave whichever commits last.
   const controllerRef = useRef<AbortController | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const keepRef = useRef<HTMLButtonElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, as on the other cards.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
@@ -64,13 +50,9 @@ export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Ele
         },
       });
       if (controllerRef.current !== controller) return;
-      // The cached profile takes the new URL at once; the target refreshes
-      // the header, the public profile and the search pages, which show it.
       await target.apply({ avatarUrl: saved.avatarUrl });
       setStatus({ kind: 'saved' });
     } catch (error) {
-      // A stopped upload may still have been saved once its body was sent,
-      // so the profile is read again rather than guessed.
       if (controller.signal.aborted) {
         target.reread();
         return;
@@ -84,8 +66,6 @@ export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Ele
     }
   }
 
-  // FileDrop hands a file that passed its checks, or null when the picked
-  // file is removed from the field, which stops its upload.
   function onPick(file: File | null): void {
     if (file !== null) {
       void start(file);

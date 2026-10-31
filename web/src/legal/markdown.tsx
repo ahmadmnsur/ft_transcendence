@@ -13,8 +13,6 @@ import {
   type TableBlock,
 } from './parse';
 
-// The long-form reading surface for the legal pages (§3.5.4). All text
-// arrives as React text children, so everything is escaped by construction.
 
 function isExternalUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
@@ -23,8 +21,6 @@ function isExternalUrl(url: string): boolean {
 function Inline({ node }: { node: InlineNode }): React.JSX.Element | string {
   switch (node.kind) {
     case 'text':
-      // The product name is isolated, as every value in the SPA's own text is (§3.5.5): in an
-      // Arabic page, `21 Beirut` would otherwise read `Beirut 21`.
       return (
         <>
           {node.text.split(BRAND).map((part, index) => (
@@ -97,8 +93,6 @@ function NumberedListItem({ item }: { item: NumberedItem }): React.JSX.Element {
   );
 }
 
-// Every cell's text sits at its start. A <th> is centred when its row's
-// text-align is the initial `start`, so each header cell sets its own.
 function LegalTable({
   block,
   label,
@@ -143,13 +137,10 @@ function LegalTable({
   );
 }
 
-// A paragraph that is exactly one bold phrase (`**Your account**`) labels
-// the block under it, so it sits closer to its own block than to the last.
 function isLabelParagraph(block: Block): boolean {
   return block.kind === 'paragraph' && block.children.length === 1 && block.children[0].kind === 'strong';
 }
 
-// Per-level heading classes; h4–h6 share one rung and h1 takes no top margin.
 const HEADING_LOW_BASE_CLASS = 'mb-2 scroll-mt-6 text-balance text-base font-semibold text-ink';
 const HEADING_BASE_CLASS: Record<number, string> = {
   1: 'scroll-mt-6 text-balance text-3xl font-semibold tracking-tight arabic:tracking-normal text-ink',
@@ -179,7 +170,6 @@ function LegalBlock({
 }): React.JSX.Element {
   switch (block.kind) {
     case 'heading': {
-      // One element with a dynamic tag.
       const Heading = `h${block.level as 1 | 2 | 3 | 4 | 5 | 6}` as const;
       const base = HEADING_BASE_CLASS[block.level];
       const top = block.level === 1 ? '' : tightTop ? 'mt-2' : HEADING_TOP_MARGIN[block.level];
@@ -226,12 +216,9 @@ export function LegalDocument({
   const { t } = useI18n();
   const language = legalLanguage(fileName);
   const blocks = useMemo(() => parseMarkdown(source, fileName), [source, fileName]);
-  // Each table names the nearest preceding heading, so the scroll region
-  // has a label even though tables carry no caption of their own.
   let heading = '';
   const labelled = blocks.map((block, index) => {
     if (block.kind === 'heading') heading = inlineText(block.children);
-    // A table before any heading still needs an accessible name.
     return { block, label: heading === '' ? t.legal.untitledTable : heading, tightTop: index > 0 && isLabelParagraph(blocks[index - 1]) };
   });
   return (

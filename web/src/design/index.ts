@@ -1,9 +1,3 @@
-// Every component but Modal takes a className, and it is for layout only:
-// margin, width, flex or grid placement, visibility. It never sets something
-// the component sets itself: colour, padding, type and borders come from
-// props, and Avatar and IconButton take their width and height from size.
-// className goes on the component's root element; the form fields put the
-// rest of their props, ref included, on the control itself.
 export { Avatar } from './components/Avatar';
 export type { AvatarProps, AvatarSize } from './components/Avatar';
 export { Banner } from './components/Banner';

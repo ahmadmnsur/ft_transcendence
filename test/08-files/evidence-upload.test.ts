@@ -18,8 +18,6 @@ import { reviewedMatch, type ReviewedMatch } from '../harness/reviews';
 const harness = useHarness();
 let nginx: NginxHarness;
 
-// §16.3 row 8 runs through nginx with the production `api.conf`, so an
-// upload crosses the same body limit as in production (§16.2).
 beforeAll(async () => {
   nginx = await startNginx(harness.port);
 }, 30_000);
@@ -29,7 +27,6 @@ afterAll(async () => {
 });
 
 const CAP = 5_242_880;
-// Past Multer's limit, the cap + 1 byte, and under nginx's 6 MiB.
 const PAST_MULTER = 5.5 * 1024 * 1024;
 
 function refusal(code: string, message: string): unknown {
@@ -51,21 +48,16 @@ function remove(pair: ReviewedMatch, cookie: string) {
   return harness.delete(`/api/reviews/${pair.reviewId}/evidence`).set('Cookie', cookie).send({});
 }
 
-// The file as `GET /api/files/evidence/:token` sends it to `cookie`.
 function readEvidence(token: string, cookie: string) {
   return harness.get(`/api/files/evidence/${token}`).set('Cookie', cookie).responseType('blob');
 }
 
-// The Evidence metadata the Mentee's Match detail carries (§9.3).
 async function evidenceOf(pair: ReviewedMatch): Promise<unknown> {
   const detail = await harness.get(`/api/matches/${pair.matchId}`).set('Cookie', pair.mentee.cookie);
   expect(detail.status).toBe(200);
   return detail.body.data.review.evidence;
 }
 
-// §16.3 row 8, Evidence: exact byte caps, server-side byte validation, type
-// spoofing, reads and writes anchored to the owning Review's Match, a failed
-// replacement left atomic, and the upload CSRF gate.
 describe('Evidence acceptance through nginx', () => {
   it('stores a PDF, a PNG and a JPEG of exactly 5,242,880 bytes', async () => {
     const pair = await reviewedMatch(harness.app);
@@ -86,7 +78,6 @@ describe('Evidence acceptance through nginx', () => {
       expect(read.headers['content-type']).toBe(mime);
       expect(Buffer.compare(read.body as Buffer, bytes)).toBe(0);
     }
-    // Three 5 MiB files through nginx and back.
   }, 20_000);
 
   it('refuses one byte over the cap with file_too_large from the API, not an nginx 413', async () => {
@@ -140,9 +131,6 @@ describe('Evidence acceptance through nginx', () => {
     expect(await evidenceOf(pair)).toBeNull();
   });
 
-  // The upload sends a line break and `"` escaped, as a browser does, and
-  // Multer turns them back (§9.5 step 6). Outside §16.3's list because it
-  // fails silently: a garbled or unescapable name breaks only some names.
   it('keeps the sanitised file name, and serves the file inline under it', async () => {
     const pair = await reviewedMatch(harness.app);
     const pdf = await makeValidPdf();
@@ -169,7 +157,6 @@ describe('Evidence acceptance through nginx', () => {
     const saved = await upload(pair, pair.mentee.cookie, await makeValidPdf());
     const token: string = saved.body.data.token;
 
-    // A Student paired with the uploader in another Match, an earlier closed Round.
     const other = await createTestAccount(harness.app);
     const earlier = await prisma.round.create({ data: { closedAt: new Date() } });
     await prisma.match.create({
@@ -184,8 +171,6 @@ describe('Evidence acceptance through nginx', () => {
     });
     expect((await readEvidence(token, other.cookie)).status).toBe(403);
 
-    // A Peer Moderator outside the pair reads nothing; the Mentor made one
-    // still reads as a member of the pair.
     const moderator = await createTestAccount(harness.app);
     await prisma.student.update({ where: { id: moderator.id }, data: { role: 'PEER_MODERATOR' } });
     const outside = await readEvidence(token, moderator.cookie);
@@ -200,8 +185,6 @@ describe('Evidence acceptance through nginx', () => {
 
   it('lets only the Mentee write, after COMPLETED and beside a later Match, and refuses others before parsing', async () => {
     const pair = await reviewedMatch(harness.app);
-    // Each body here would otherwise be refused file_too_large, so a 403
-    // shows the pre-check ran before Multer.
     const big = await makeValidPdf({ size: PAST_MULTER });
     for (const cookie of [pair.mentor.cookie, pair.admin.cookie]) {
       const put = await upload(pair, cookie, big);
@@ -213,14 +196,9 @@ describe('Evidence acceptance through nginx', () => {
     }
     const unknownReview = await putEvidence(nginx.baseUrl, pair.mentee.cookie, '0199a000-0000-7000-8000-000000000000', big);
     expect(unknownReview.status).toBe(403);
-    // nginx admits a large body only on an upload route with a hex id, so
-    // this one goes to the API directly.
     const malformed = await putEvidence(harness.baseUrl, pair.mentee.cookie, 'not-a-uuid', makePng());
     expect(malformed.status).toBe(400);
 
-    // The Round closes, and in a later one an Admin pairs the Mentee with a
-    // new partner by hand; the COMPLETED Match's Mentee still writes its
-    // Evidence, and the later Match is irrelevant (§9.4).
     const matching = harness.app.get(MatchingService);
     const admin = { studentId: pair.admin.id, sessionHash: null };
     await matching.closeRound(admin);
@@ -234,12 +212,10 @@ describe('Evidence acceptance through nginx', () => {
     expect(saved.status).toBe(200);
     expect(saved.body.ok).toBe(true);
     expect((await evidenceOf(pair)) as { token: string }).toMatchObject({ token: saved.body.data.token });
-    // Four bodies over 5 MiB and two Rounds.
   }, 20_000);
 
   it('keeps the path for a Mentee promoted to Admin after the Review', async () => {
     const pair = await reviewedMatch(harness.app);
-    // Through the Users table's role change (§12.7), which keeps sessions.
     const promoted = await harness.post(`/api/admin/students/${pair.mentee.id}/role`).set('Cookie', pair.admin.cookie).send({ role: 'ADMIN' });
     expect(promoted.body).toEqual({ ok: true, data: { role: 'ADMIN' } });
     const saved = await upload(pair, pair.mentee.cookie, makePng(), { filename: 'board.png', contentType: 'image/png' });
@@ -249,8 +225,6 @@ describe('Evidence acceptance through nginx', () => {
     expect(removed.body).toEqual({ ok: true, data: {} });
   });
 
-  // Outside §16.3's list because it fails silently: a delete retried after a
-  // lost reply or a second click would answer an error no demo shows.
   it('deletes idempotently', async () => {
     const pair = await reviewedMatch(harness.app);
     await upload(pair, pair.mentee.cookie, await makeValidPdf());
@@ -262,7 +236,6 @@ describe('Evidence acceptance through nginx', () => {
     }
   });
 
-  // Through the Users table's own routes (§12.7), as an Admin uses them.
   it('pauses the path under Suspension and ends it at Removal, keeping the Evidence both times', async () => {
     const pair = await reviewedMatch(harness.app);
     const pdf = await makeValidPdf();
@@ -272,7 +245,6 @@ describe('Evidence acceptance through nginx', () => {
       const read = await readEvidence(token, pair.mentor.cookie);
       expect(read.status).toBe(200);
       expect(Buffer.compare(read.body as Buffer, pdf)).toBe(0);
-      // The row stays on the Match, as its Mentor reads it (§9.3).
       const detail = await harness.get(`/api/matches/${pair.matchId}`).set('Cookie', pair.mentor.cookie);
       expect(detail.body.data.review.evidence).toMatchObject({ token });
     };
@@ -286,8 +258,6 @@ describe('Evidence acceptance through nginx', () => {
     expect((await remove(pair, pair.mentee.cookie)).status).toBe(401);
     await kept();
 
-    // Reinstatement restores the path. The Suspension deleted every session,
-    // so the Mentee signs in again.
     expect((await sanction('reinstate')).body).toEqual({ ok: true, data: { status: 'ACTIVE' } });
     const cookie = await openTestSession(harness.app, pair.mentee);
     const reinstated = await upload(pair, cookie, pdf);
@@ -315,8 +285,6 @@ describe('Evidence acceptance through nginx', () => {
     expect(Buffer.compare(read.body as Buffer, pdf)).toBe(0);
   });
 
-  // §5.4: the gate runs before Multer. Each body here would otherwise be
-  // refused file_too_large, so a 403 shows nothing parsed it.
   const badGates: Array<[string, { origin?: string | null; csrf?: string | null }]> = [
     ['no Origin', { origin: null }],
     ['a null Origin', { origin: 'null' }],

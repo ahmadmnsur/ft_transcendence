@@ -14,11 +14,7 @@ import type { Badge } from './progress';
 import { SESSION_QUERY_KEY, writeAsSignedIn } from './session';
 import { uploadFile, type UploadOptions } from './upload';
 
-// §6.12's Users-table routes, with the exact wire shapes the API returns.
-// Only Admins read them, so a Removed account keeps its name and email here
-// (§4.6).
 
-// One row: name, email, role and status, Removed rows included.
 export interface AdminStudentRow {
   id: string;
   displayName: string;
@@ -33,13 +29,10 @@ export interface AdminStudentPage {
   total: number;
 }
 
-// One of the Student's Matches: a Round's row with that Round's number.
 export interface AdminStudentMatch extends AdminRoundMatch {
   roundNumber: number;
 }
 
-// The §6.2 profile plus email, role, status, avatar and the Student's
-// Matches. Never their Friends, requests, Blocks or Direct Messages (§4.6).
 export interface AdminStudentDetail {
   id: string;
   displayName: string;
@@ -60,7 +53,6 @@ export interface AdminStudentDetail {
 
 export type UserSort = 'name' | 'email';
 
-// What the Users table sends; an absent filter is no filter (§6.12).
 export interface AdminStudentsParams {
   q?: string;
   role?: Role;
@@ -71,8 +63,6 @@ export interface AdminStudentsParams {
   pageSize: number;
 }
 
-// Every key under ['admin', 'students'] is the Users table, so one prefix
-// reads it all again.
 export const ADMIN_STUDENTS_QUERY_KEY = ['admin', 'students'] as const;
 
 export function adminStudentQueryKey(id: string): readonly ['admin', 'students', 'one', string] {
@@ -83,9 +73,6 @@ function studentPath(id: string, rest = ''): string {
   return `/admin/students/${encodeURIComponent(id)}${rest}`;
 }
 
-// Reads (§6.12). The search term goes in the query string, never in the path
-// (§19 item 19); an id goes in the path only once the page has checked its
-// shape (§3.5.2).
 export async function fetchAdminStudents(params: AdminStudentsParams): Promise<AdminStudentPage> {
   const query = new URLSearchParams();
   if (params.q !== undefined) query.set('q', params.q);
@@ -102,8 +89,6 @@ export async function fetchAdminStudent(id: string): Promise<AdminStudentDetail>
   return apiFetch<AdminStudentDetail>(studentPath(id));
 }
 
-// While the next page loads, the previous page's data stays, so the table
-// keeps its rows and total in between.
 export function adminStudentsQueryOptions(params: AdminStudentsParams) {
   return queryOptions({
     queryKey: [...ADMIN_STUDENTS_QUERY_KEY, 'list', params] as const,
@@ -116,9 +101,6 @@ export function adminStudentQueryOptions(id: string) {
   return queryOptions({ queryKey: adminStudentQueryKey(id), queryFn: () => fetchAdminStudent(id) });
 }
 
-// The edits (§6.12): each the owner's route of §6.2 or §6.3, on the target.
-// A refusal (`student_removed`, `email_unavailable`, `goal_skill_not_listed`,
-// a file refusal) is a typed 200 (§6.15).
 export function updateStudent(id: string, patch: { displayName?: string; email?: string }): Promise<AdminStudentDetail> {
   return apiFetch<AdminStudentDetail>(studentPath(id), { method: 'PATCH', body: patch });
 }
@@ -135,7 +117,6 @@ export function clearStudentLearningGoal(id: string): Promise<Record<string, nev
   return apiFetch<Record<string, never>>(studentPath(id, '/learning-goal'), { method: 'DELETE', body: {} });
 }
 
-// Through `uploadFile`, for its progress and the upload CSRF header (§5.4).
 export function uploadStudentAvatar(id: string, file: File, options: UploadOptions): Promise<{ avatarUrl: string }> {
   return uploadFile<{ avatarUrl: string }>(studentPath(id, '/avatar'), file, options);
 }
@@ -144,13 +125,6 @@ export function deleteStudentAvatar(id: string): Promise<Record<string, never>> 
   return apiFetch<Record<string, never>>(studentPath(id, '/avatar'), { method: 'DELETE', body: {} });
 }
 
-// `POST /api/admin/students/:id/role` (§12.7): the role alone. The detail
-// takes the new role at once and the table is read again; a refusal reads
-// both again, since another Admin may have changed the account first. The
-// Admin label shows on the Student's public profile and in search (§12.8),
-// so the profile is dropped and the search read again. An answer that
-// arrives after another Student signed in reaches none of the cache
-// (`writeAsSignedIn`).
 export function changeStudentRole(queryClient: QueryClient, id: string, role: Role): Promise<void> {
   const reread = (): void => void queryClient.invalidateQueries({ queryKey: ADMIN_STUDENTS_QUERY_KEY });
   return writeAsSignedIn(
@@ -169,21 +143,8 @@ export function changeStudentRole(queryClient: QueryClient, id: string, role: Ro
   );
 }
 
-// §12.7's three sanctions, each `POST /api/admin/students/:id/<action>` with
-// `{}`, answering the new status.
 export type Sanction = 'suspend' | 'reinstate' | 'remove';
 
-// The detail takes the new status at once, and a Removal's default avatar
-// with it (§9.6). A sanction changes what other surfaces show of the
-// Student: a Suspension or a reinstatement moves them out of or back into
-// matching and the Leaderboard and ends their Match, and a Removal turns them
-// into the tombstone wherever they appear and closes the Reports about them
-// (§4.6). So every query but the session that no screen shows now is dropped,
-// to load afresh when next shown rather than render the old person from the
-// cache meanwhile, and the ones on screen are read again. A refusal reads the
-// Users table again, since another Admin may have changed the account first.
-// An answer that arrives after another Student signed in reaches none of the
-// cache (`writeAsSignedIn`).
 export function sanctionStudent(queryClient: QueryClient, id: string, action: Sanction): Promise<void> {
   return writeAsSignedIn(
     queryClient,

@@ -2,14 +2,6 @@ import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/com
 import type { Request } from 'express';
 import { ApiError } from './errors';
 
-// §5.3: the coarse role check, global, after SessionGuard. `/api/admin/*`
-// needs ADMIN, `/api/moderation/*` needs PEER_MODERATOR or ADMIN; otherwise
-// 403 forbidden.
-//
-// The check reads the matched route pattern, not the URL: Express routing is
-// case-insensitive by default, so `/api/ADMIN/users` would reach an admin
-// handler past a case-sensitive URL comparison. The pattern is compared
-// lower-cased; when no route matched yet, the lower-cased URL is the fallback.
 @Injectable()
 export class RolesGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {

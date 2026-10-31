@@ -1,8 +1,6 @@
 import type { ReportReason } from '@shared/reports';
 import type { EnGroup } from '../types';
 
-// ADR-0011 d4: the first three labels are the Terms' own words for its
-// first three conduct rules, in every language.
 const reasons = {
   HARASSMENT: 'Harassment',
   SPAM: 'Spam',

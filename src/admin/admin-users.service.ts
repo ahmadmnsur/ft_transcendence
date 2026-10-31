@@ -33,15 +33,7 @@ import { alreadySuspended, notSuspended } from './refusals';
 import { keepAnActiveAdmin, readTarget } from './target';
 import type { AdminStudentDetail, AdminStudentPage, AdminStudentRow } from './views';
 
-// §3.4's `admin` module: the Users table, role changes and the sanctions
-// (§6.12, §12.7). It owns no table of its own: after §12.7's common reads,
-// inside one transaction this module opens, it sets the target's role or
-// sanction flag itself and runs the owning modules' `tx` writes for the
-// rest: profile fields, Matches, Sessions, the Avatar row and Reports. A
-// read runs outside the Unit of Work and relies on the role guard's fresh
-// per-request read (§3.4, §5.3).
 
-// What `listUsers` filters, sorts and pages by; the DTO fills the defaults.
 export type UsersQuery = {
   q?: string;
   role?: Role;
@@ -67,18 +59,12 @@ const DETAIL_SELECT = { ...PROFILE_SELECT, email: true } as const satisfies Pris
 type Row = Prisma.StudentGetPayload<{ select: typeof ROW_SELECT }>;
 type DetailRow = Prisma.StudentGetPayload<{ select: typeof DETAIL_SELECT }>;
 
-// §4.3.1's derived status as a filter.
 const STATUS_WHERE: Record<StudentStatus, Prisma.StudentWhereInput> = {
   ACTIVE: { removedAt: null, suspendedAt: null },
   SUSPENDED: { removedAt: null, suspendedAt: { not: null } },
   REMOVED: { removedAt: { not: null } },
 };
 
-// §6.12's `q`: the folded name as Advanced search matches it (§6.2), or the
-// email. An email is stored trimmed and lower-cased (§4.3.1), so `q` is too
-// for the email match, never folded, before its `\`, `%` and `_` are escaped:
-// `Karim.01@` finds `karim.01@…`, and `q=_` only an email holding `_`. A term
-// absent or empty after trimming is no filter.
 function usersWhere(query: UsersQuery): Prisma.StudentWhereInput {
   const and: Prisma.StudentWhereInput[] = [];
   const name = nameSearchWhere(query.q);
@@ -91,8 +77,6 @@ function usersWhere(query: UsersQuery): Prisma.StudentWhereInput {
   return { AND: and };
 }
 
-// `sort=name` is a plain order on `displayName`, whose `und-x-icu` collation
-// makes every stack sort names alike (§4.3.1); ties `id ASC`.
 const ORDER_BY: Record<UserSort, (order: SearchOrder) => Prisma.StudentOrderByWithRelationInput> = {
   name: (order) => ({ displayName: order }),
   email: (order) => ({ email: order }),
@@ -133,9 +117,6 @@ export class AdminUsersService {
     private readonly publisher: RealtimePublisher,
   ) {}
 
-  // §6.12's Users table, Removed rows included. The count and the page are
-  // two reads, so `readOnly` keeps them one snapshot; a page past the last
-  // match reads no rows. `actor` is the Admin the read is for (§3.4).
   async listUsers(actor: Actor, query: UsersQuery): Promise<AdminStudentPage> {
     const where = usersWhere(query);
     return this.uow.readOnly(async (tx) => {
@@ -153,9 +134,6 @@ export class AdminUsersService {
     });
   }
 
-  // §6.12's detail: the profile and the Matches in one snapshot. Unknown →
-  // 404. Never Friends, requests, Blocks or Direct Messages (§4.6): none is
-  // read.
   async getUser(actor: Actor, id: string): Promise<AdminStudentDetail> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.student.findUnique({ where: { id }, select: DETAIL_SELECT });
@@ -164,10 +142,6 @@ export class AdminUsersService {
     });
   }
 
-  // `PATCH /api/admin/students/:id`, written as §6.2's `PATCH /api/me`: a
-  // name through `nameFields`, an email in `Student.email` alone, Supabase
-  // Auth untouched (ADR-0008 d8's note of 2026-10-02). The detail is read
-  // after commit.
   async editUser(actor: Actor, id: string, input: { displayName?: string; email?: string }): Promise<AdminStudentDetail> {
     const email = input.email === undefined ? undefined : normalizeEmail(input.email);
     await this.uow.run(
@@ -185,7 +159,6 @@ export class AdminUsersService {
     return this.getUser(actor, id);
   }
 
-  // `PUT /api/admin/students/:id/skills`, as §6.2 on the target.
   async setSkills(actor: Actor, id: string, teach: string[], learn: string[]): Promise<{ goalCleared: boolean }> {
     return this.uow.run('admin-skills-update', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'allowed' });
@@ -195,7 +168,6 @@ export class AdminUsersService {
     });
   }
 
-  // `PUT /api/admin/students/:id/learning-goal`, as §6.2 on the target.
   async setLearningGoal(actor: Actor, id: string, skillId: string, text: string): Promise<LearningGoalView> {
     return this.uow.run('admin-learning-goal-set', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'allowed' });
@@ -203,7 +175,6 @@ export class AdminUsersService {
     });
   }
 
-  // `DELETE /api/admin/students/:id/learning-goal`: clears both, idempotent.
   async clearLearningGoal(actor: Actor, id: string): Promise<Record<string, never>> {
     await this.uow.run('admin-learning-goal-clear', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'allowed' });
@@ -212,9 +183,6 @@ export class AdminUsersService {
     return {};
   }
 
-  // `PUT /api/admin/students/:id/avatar`, as §6.3 on the target: every
-  // refusal of the bytes before the upload, then §9.8's order, the file, the
-  // row, then the old file after commit.
   async putAvatar(actor: Actor, id: string, part: UploadedPart | undefined): Promise<{ avatarUrl: string | null }> {
     if (part === undefined) throw new ApiError('validation_failed');
     const file = validateAvatar(part);
@@ -225,8 +193,6 @@ export class AdminUsersService {
     return { avatarUrl: avatarUrlFor({ token }) };
   }
 
-  // `DELETE /api/admin/students/:id/avatar`: the row, then the file after
-  // commit; idempotent.
   async deleteAvatar(actor: Actor, id: string): Promise<Record<string, never>> {
     await this.uow.run('admin-avatar-delete', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'allowed' });
@@ -236,10 +202,6 @@ export class AdminUsersService {
     return {};
   }
 
-  // `POST /api/admin/students/:id/role` (§12.7, §5.8): the role alone, with
-  // no session or socket change; the target's next request reads it (§5.3).
-  // XP, Level, Streak, Badges and Posts stay; the Leaderboard and the Prompt
-  // path follow the role when read (§10.8).
   async changeRole(actor: Actor, id: string, role: Role): Promise<{ role: Role }> {
     return this.uow.run('role-change', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
@@ -250,12 +212,6 @@ export class AdminUsersService {
     });
   }
 
-  // `POST /api/admin/students/:id/suspend` (§12.7, §5.8): not already
-  // Suspended, and never the last active Admin. One transaction flags the
-  // target, ends their in-progress Matches as `TERMINATED_BY_ADMIN` and
-  // deletes every Session; their sockets drop after commit. No Report is
-  // resolved (ADR-0011 d10), and Supabase Auth is not touched (ADR-0008 d5's
-  // note of 2026-10-02).
   async suspend(actor: Actor, id: string): Promise<{ status: StudentStatus }> {
     return this.uow.run('student-suspend', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
@@ -270,9 +226,6 @@ export class AdminUsersService {
     });
   }
 
-  // `POST /api/admin/students/:id/reinstate` (§12.7): Suspended, else
-  // `not_suspended`. It clears the flag and revives nothing: a terminated
-  // Match stays terminated and no session comes back.
   async reinstate(actor: Actor, id: string): Promise<{ status: StudentStatus }> {
     return this.uow.run('student-reinstate', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
@@ -283,23 +236,12 @@ export class AdminUsersService {
     });
   }
 
-  // `POST /api/admin/students/:id/remove` (§12.7, §12.5, §9.8): final, and
-  // never the last active Admin. One transaction flags the target, ends their
-  // in-progress Matches as `TERMINATED_BY_ADMIN`, deletes every Session and
-  // the `Avatar` row, and actions every open Report on them, one this Admin
-  // filed included, with one resolver and one time (ADR-0011 d10). After
-  // commit their sockets drop and the avatar's file is deleted; a failed
-  // delete is left to the cleanup (§3.7). Everything else they made stays,
-  // rendered as the tombstone, and Supabase Auth is not touched (ADR-0008
-  // d7's notes).
   async remove(actor: Actor, id: string): Promise<{ status: StudentStatus }> {
     return this.uow.run('student-remove', async (tx, ctx) => {
       const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
       await keepAnActiveAdmin(tx, target);
       const matches = await readInProgressMatchIds(tx, target.id);
       const reports = await openRows(tx, { reportedStudentId: target.id });
-      // The Avatar is the last read: the helper makes the one checkpoint
-      // after it, then deletes the row, the first write.
       const avatar = await deleteAvatarRow(tx, target.id, () => ctx.checkpoint('student.remove'));
       await tx.student.update({ where: { id: target.id }, data: { removedAt: ctx.now } });
       await terminateMatches(tx, matches);

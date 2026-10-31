@@ -1,6 +1,5 @@
 import { IconBase, type IconProps } from './IconBase';
 
-// The Like. `filled` draws it solid, for a Post the viewer has liked.
 export function HeartIcon({ size, filled = false, ...rest }: IconProps & { filled?: boolean }): React.JSX.Element {
   return (
     <IconBase size={size} fill={filled ? 'currentColor' : 'none'} {...rest}>

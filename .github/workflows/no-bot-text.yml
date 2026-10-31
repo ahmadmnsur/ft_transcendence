@@ -1,6 +1,3 @@
-# Keeps bot and AI text out of main. Squash-merge builds the commit on main from the PR title and
-# description, and GitHub adds a Co-authored-by line for every other author of a branch commit, so
-# those three are what this checks. A ruleset on main makes it required (CONTRIBUTING.md → Merging).
 name: no-bot-text
 
 on:
@@ -23,8 +20,6 @@ jobs:
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          # Read the title and description live, not from the event: runs can finish out of order,
-          # and a re-run must judge the description as it is now.
           TITLE=$(gh api "repos/$REPO/pulls/$PR" --jq '.title')
           BODY=$(gh api "repos/$REPO/pulls/$PR" --jq '.body // ""')
           pattern='summary by coderabbit|auto-generated comment|co-authored-by:.*(\[bot\]|claude|anthropic|copilot|openai|codex|coderabbit)|generated with \[?claude|noreply@anthropic\.com'

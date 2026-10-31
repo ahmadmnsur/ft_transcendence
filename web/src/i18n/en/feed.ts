@@ -1,18 +1,14 @@
 import type { EnGroup } from '../types';
 
-// `/`, the feed (§6.9), and a Post wherever it shows: on the feed, on a
-// profile and under its Reflection Prompt.
 export default {
   title: 'Feed',
   loading: 'Loading Posts…',
   emptyTitle: 'No Posts yet.',
   emptyDescription: 'Public Takeaways and answers to Reflection Prompts appear here.',
-  // Names the feed's page navigation for screen readers.
   pages: 'Feed pages',
   retry: 'Try again',
   post: {
     takeaway: 'Public Takeaway',
-    // {question} is the Reflection Prompt's question, linked to its page.
     answer: 'Answer to {question}',
     like: 'Like',
     likeCount: { one: '{count} Like', other: '{count} Likes' },

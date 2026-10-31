@@ -46,8 +46,6 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   notFoundComponent: NotFoundPage,
 });
 
-// §3.5.1, §6.0.1: the feed, paged by `page`, for a signed-in Student, and
-// the landing page for a signed-out visitor (§3.5.1's note of 2026-10-25).
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
@@ -57,17 +55,12 @@ const indexRoute = createRoute({
 });
 
 type SignInNotice = 'password-changed' | 'password-change-unknown';
-// 42's one failure path names `failed`; a Removed or Suspended Student by the
-// 42 id names its own (§5.6 B).
 type SignInOAuth = 'failed' | 'removed' | 'suspended';
 
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-in',
   beforeLoad: requireSignedOut,
-  // The password change returns here with a notice, and 42's failure paths
-  // with `oauth`; anything else is no notice, so a hand-written query never
-  // shows a banner.
   validateSearch: (search: Record<string, unknown>): { notice?: SignInNotice; oauth?: SignInOAuth } => ({
     notice:
       search.notice === 'password-changed' || search.notice === 'password-change-unknown'
@@ -85,19 +78,12 @@ const signUpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-up',
   beforeLoad: requireSignedOut,
-  // §5.6 B: a first 42 login lands here with `from=42`, which selects the 42
-  // sign-up form; anything else is the ordinary one. The default search
-  // parser JSON-parses values, so the server's redirect `/sign-up?from=42`
-  // arrives as the NUMBER 42 (as `parseStudentsSearch` notes for `?q=42`) —
-  // accept it and the string alike.
   validateSearch: (search: Record<string, unknown>): { from?: '42' } => ({
     from: search.from === 42 || search.from === '42' ? '42' : undefined,
   }),
   component: SignUpPage,
 });
 
-// 42's Connect and Confirm answers on the profile page (§5.6 B, C); anything
-// else is no notice, so a hand-written query never shows a banner.
 type MeOAuth = 'connected' | 'in_use' | 'failed' | 'confirmed';
 
 const meRoute = createRoute({
@@ -116,8 +102,6 @@ const meRoute = createRoute({
   component: MePage,
 });
 
-// §3.5.1, §6.2: the Advanced search, for any signed-in Student. Its filters,
-// sort and page are search params, checked before any request is sent.
 const studentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/students',
@@ -126,8 +110,6 @@ const studentsRoute = createRoute({
   component: StudentsPage,
 });
 
-// §3.5.1: any signed-in Student reads another's profile; a Removed Student
-// renders as the tombstone there (§4.6). Its Posts are paged by `page`.
 const studentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/students/$studentId',
@@ -136,8 +118,6 @@ const studentRoute = createRoute({
   component: StudentPage,
 });
 
-// §3.5.1: the signed-in Student's own `/friends`: Friends with Presence,
-// friend requests and Blocks.
 const friendsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/friends',
@@ -145,8 +125,6 @@ const friendsRoute = createRoute({
   component: FriendsPage,
 });
 
-// §6.5: `/messages`, the signed-in Student's Direct Messages list, and one
-// peer's page at `/messages/$peerId`.
 const messagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/messages',
@@ -161,8 +139,6 @@ const threadRoute = createRoute({
   component: ThreadPage,
 });
 
-// §3.5.1: the signed-in Student's Match in the open Round, with accept and
-// decline.
 const matchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/match',
@@ -170,8 +146,6 @@ const matchRoute = createRoute({
   component: MatchPage,
 });
 
-// §3.5.1, §6.6: the signed-in Student's own Matches, paged by `page`, and one
-// of them. Only the pair reads a Match: the API answers 404 to anyone else.
 const matchesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/matches',
@@ -187,8 +161,6 @@ const matchDetailRoute = createRoute({
   component: MatchDetailPage,
 });
 
-// §3.5.1: the header's one Admin link, a tile for each Admin page below. A
-// Student without the role returns to `/`.
 const adminHomeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
@@ -196,8 +168,6 @@ const adminHomeRoute = createRoute({
   component: AdminHomePage,
 });
 
-// §3.5.1: the Admin's Round pages. A Student without the role returns to `/`,
-// and the API refuses the same reads with 403 (§5.3).
 const adminRoundsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/rounds',
@@ -226,8 +196,6 @@ const adminMatchRoute = createRoute({
   component: AdminMatchPage,
 });
 
-// §3.5.1, §6.12: the Users table and one account. Its filters, sort and page
-// are search params, checked before any request is sent.
 const adminUsersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/users',
@@ -251,7 +219,6 @@ const promptsRoute = createRoute({
   component: PromptsPage,
 });
 
-// A Prompt and its answers, paged by `page`.
 const promptDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/prompts/$promptId',
@@ -268,9 +235,6 @@ const adminPromptsRoute = createRoute({
   component: AdminPromptsPage,
 });
 
-// §3.5.1: a Peer Moderator's queue. An Admin works the same groups, with
-// reporters, at `/admin/reports`, with the resolved audit beside them; the
-// API refuses a Student both with 403 (§5.3).
 const moderationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/moderation',
@@ -364,8 +328,6 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   context: { queryClient },
-  // A child route's failure renders inside the layout's outlet, so the
-  // header and footer stay on the error page.
   defaultErrorComponent: ErrorContent,
 });
 
@@ -375,14 +337,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// A 401 re-probes the session with a fresh fetch, never the cache. When it
-// reports signed out, the signed-out student's cached server state is
-// dropped, the session query takes the signed-out value, and the shell
-// replaces to `/sign-in` (§3.8.2). Already there, shown or still loading, it
-// runs that page's guards again instead: the notice in its query (the
-// password change's) survives a late 401, and a guard whose session read the
-// cache clear cancelled runs again. Concurrent 401s share one re-probe and
-// one navigation; the original requests still reject with their 401.
 let recheck: Promise<void> | null = null;
 
 function handleUnauthorized(): Promise<void> {

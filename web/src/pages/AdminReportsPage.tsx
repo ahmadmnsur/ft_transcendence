@@ -6,21 +6,15 @@ import { parsePageSearch } from '../search';
 import { ModerationQueue } from '../moderation/ModerationQueue';
 import { ResolvedAudit } from '../moderation/ResolvedAudit';
 
-// `/admin/reports`' search params: the tab, and the resolved audit's page.
-// An absent one is its default, so the address stays short.
 export interface AdminReportsSearch {
   view?: 'resolved';
   page?: number;
 }
 
-// §3.5.2: a value the API would refuse is dropped here, so an edited address
-// never sends a failing request. Only the resolved audit is paged.
 export function parseAdminReportsSearch(search: Record<string, unknown>): AdminReportsSearch {
   return search.view === 'resolved' ? { view: 'resolved', ...parsePageSearch(search) } : {};
 }
 
-// `/admin/reports` (§3.5.1): the open queue with reporters, and the resolved
-// audit (§12.4, §12.6).
 export function AdminReportsPage(): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.moderation;

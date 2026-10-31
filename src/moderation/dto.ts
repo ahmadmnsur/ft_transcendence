@@ -33,7 +33,6 @@ export class FileReportDto {
   @IsUUID()
   studentId?: string;
 
-  // §12.2: validate the pair even when neither optional id is present.
   @ExactlyOneTarget()
   @IsIn(REPORT_REASONS)
   reason!: ReportReason;
@@ -45,7 +44,6 @@ export class FileReportDto {
   text?: string;
 }
 
-// §12.5's bodies: each group kind takes its own two actions.
 export class ResolvePostGroupDto {
   @IsIn(POST_GROUP_ACTIONS)
   action!: PostGroupAction;

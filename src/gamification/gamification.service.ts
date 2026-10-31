@@ -17,8 +17,6 @@ export class GamificationService {
   constructor(private readonly uow: UnitOfWork) {}
 
   leaderboard(actor: Actor): Promise<LeaderboardView> {
-    // §10.5: top ten and the viewer's pin share one filtered snapshot, even
-    // while XP, roles or sanctions change between the reads.
     return this.uow.readOnly(async (tx) => {
       const rows = await tx.student.findMany({
         where: ELIGIBLE,

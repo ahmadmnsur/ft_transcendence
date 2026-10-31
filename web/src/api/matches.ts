@@ -5,18 +5,12 @@ import type { SkillView, StudentRef } from './profile';
 import type { ReviewDetail } from './reviews';
 import { writeAsSignedIn } from './session';
 
-// §6.6 and §6.13's Round and Match routes, with the exact wire shapes the API
-// returns. Every time is an ISO 8601 timestamp.
 
-// The frozen explanation (§4.3.11): FORWARD is what the Mentee gains, REVERSE
-// what the Mentor gains, each by Skill name.
 export interface CoverageView {
   forward: SkillView[];
   reverse: SkillView[];
 }
 
-// §6.6: one Match from one of its pair's side. `handMade` is true exactly
-// when `compatibilityScore` is null.
 export interface MatchView {
   id: string;
   roundNumber: number;
@@ -32,7 +26,6 @@ export interface MatchView {
   partnerAccepted: boolean;
 }
 
-// §6.13: one Match with both participants named, for an Admin.
 export interface AdminMatchView {
   id: string;
   roundNumber: number;
@@ -94,15 +87,12 @@ export interface AdminRoundMatch {
   mission: Mission;
 }
 
-// `unmatched` is derived for the open Round only, and null once it closed.
 export interface AdminRoundDetail {
   round: { id: string; number: number; openedAt: string; closedAt: string | null };
   matches: AdminRoundMatch[];
   unmatched: StudentRef[] | null;
 }
 
-// Every key under ['matches'] is the signed-in Student's own Matches, and
-// every key under ['admin'] an Admin's view, so one prefix reads a group again.
 export const CURRENT_ROUND_QUERY_KEY = ['rounds', 'current'] as const;
 export const CURRENT_MATCH_QUERY_KEY = ['matches', 'current'] as const;
 const MATCHES_PREFIX = ['matches'] as const;
@@ -120,8 +110,6 @@ function adminRoundQueryKey(id: string): readonly ['admin', 'rounds', string] {
 export type MatchDetailView = MatchView & ReviewDetail;
 export type AdminMatchDetailView = AdminMatchView & ReviewDetail;
 
-// Reads (§6.6, §6.13). An id goes in the path only once the page has checked
-// its shape, so a malformed one never reaches the API (§3.5.2).
 export async function fetchCurrentRound(): Promise<CurrentRound> {
   return apiFetch<CurrentRound>('/rounds/current');
 }
@@ -151,11 +139,6 @@ export async function fetchAdminMatch(id: string): Promise<AdminMatchDetailView>
   return apiFetch<AdminMatchDetailView>(`/admin/matches/${encodeURIComponent(id)}`);
 }
 
-// §7.4: `round:opened` and `round:closed` read the Round and Match views
-// again, and `match:ready` the Match views (`matching/RoundUpdates.tsx`). A
-// partner's accept or decline still sends no event, so these are also read
-// again whenever a screen opens or regains focus: the default stale time of
-// zero.
 export function currentRoundQueryOptions() {
   return queryOptions({ queryKey: CURRENT_ROUND_QUERY_KEY, queryFn: fetchCurrentRound });
 }
@@ -188,8 +171,6 @@ export function adminMatchQueryOptions(id: string) {
   return queryOptions({ queryKey: ['admin', 'matches', id] as const, queryFn: () => fetchAdminMatch(id) });
 }
 
-// Writes (§8.4, §8.5, §8.7). A refusal (`round_already_open`, `no_open_round`,
-// `match_not_pending`, `match_not_in_progress`) is a typed 200 (§6.15).
 async function postAccept(id: string): Promise<MatchDetailView> {
   return apiFetch<MatchDetailView>(`/matches/${encodeURIComponent(id)}/accept`, { method: 'POST', body: {} });
 }
@@ -206,36 +187,21 @@ async function postCloseRound(): Promise<CloseRoundResult> {
   return apiFetch<CloseRoundResult>('/admin/rounds/current/close', { method: 'POST', body: {} });
 }
 
-// Cancels any read already in flight, which may have answered before the
-// write, then reads the group again.
 async function readAgain(queryClient: QueryClient, queryKey: readonly string[]): Promise<void> {
   await queryClient.cancelQueries({ queryKey });
   await queryClient.invalidateQueries({ queryKey });
 }
 
-// Reads again every Admin view (the Round and Match pages, and a Student's
-// admin page, which lists their Matches and Streak), the current Round and
-// every view of the signed-in Student's Matches: what a Round's opening or
-// closing changes.
 export function readRoundViewsAgain(queryClient: QueryClient): void {
   void readAgain(queryClient, ADMIN_PREFIX);
   void readAgain(queryClient, CURRENT_ROUND_QUERY_KEY);
   void readAgain(queryClient, MATCHES_PREFIX);
 }
 
-// Reads again every view of the signed-in Student's Matches: the current
-// Match, the history and the detail.
 export function readMatchesAgain(queryClient: QueryClient): void {
   void readAgain(queryClient, MATCHES_PREFIX);
 }
 
-// The Match as the write left it is shown at once — a declined one leaves the
-// current Match, which holds only a standing one (§6.6) — then every view of
-// the Student's Matches is read again: the current Match, the history and the
-// detail all show its status. A failure reads them again too, since the
-// partner or a Round close may have moved it first, and is rethrown for the
-// screen to show. An answer that arrives after another Student signed in
-// reaches none of the cache (`writeAsSignedIn`).
 function matchWrite(
   queryClient: QueryClient,
   send: () => Promise<MatchDetailView>,
@@ -266,9 +232,6 @@ export function declineMatch(queryClient: QueryClient, id: string): Promise<Matc
   return matchWrite(queryClient, () => postDecline(id));
 }
 
-// Opening or closing a Round, or creating a hand-made Match, changes Round
-// and Match views, so all are read again whether the write succeeded or was
-// refused (another Admin may have changed the Round or its Matches first).
 function roundWrite<T>(queryClient: QueryClient, send: () => Promise<T>): Promise<T | undefined> {
   let result: T | undefined;
   return writeAsSignedIn(

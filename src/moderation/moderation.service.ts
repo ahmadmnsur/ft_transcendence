@@ -29,12 +29,8 @@ import type {
   ResolvedPage,
 } from './views';
 
-// §12.5: an action re-reads the actor's role and flags in its own
-// transaction, so a stale queue grants nothing.
 const MODERATION_ROLES = ['PEER_MODERATOR', 'ADMIN'] as const;
 
-// One batch's key as `GROUP BY` returns it (§12.6). The pg adapter maps a
-// uuid to a string and a timestamptz to a Date.
 type BatchKey = {
   post_id: string | null;
   reported_student_id: string | null;
@@ -47,9 +43,6 @@ function batchKey(target: string, resolvedById: string, resolvedAt: Date, state:
   return `${target}|${resolvedById}|${resolvedAt.toISOString()}|${state}`;
 }
 
-// §12.6, ADR-0011 d9: the batches a viewing Admin may read — none whose
-// target is their Student row or their Post, and none holding a row they
-// filed. Each batch is whole: a row is never filtered out of one.
 function visibleBatches(viewerId: string): Prisma.Sql {
   return Prisma.sql`
     SELECT r.post_id, r.reported_student_id, r.resolved_by_id, r.resolved_at, r.state
@@ -62,13 +55,10 @@ function visibleBatches(viewerId: string): Prisma.Sql {
     HAVING NOT bool_or(r.reporter_id = ${viewerId}::uuid)`;
 }
 
-// §3.4: moderation owns Report. Filing, the queue, the two group
-// resolutions and the resolved audit; none sends an event or awards XP.
 @Injectable()
 export class ModerationService {
   constructor(private readonly uow: UnitOfWork) {}
 
-  // §12.2, ADR-0011 d5: the indexes decide duplicates without reading reports.
   file(actor: Actor, input: ReportInput): Promise<ReportReceipt> {
     return this.uow.run({
       name: 'report.file',
@@ -113,14 +103,6 @@ export class ModerationService {
     });
   }
 
-  // §12.4: one snapshot of every open group the reader may see, ordered by
-  // each group's oldest open row. `role` is the one the request's session
-  // guard read (§3.4). A Peer Moderator reads Post groups only, without
-  // reporters, and loses a whole group to their own interest in it or to a
-  // Block, either way, with its author or any open reporter (ADR-0011 d7). An
-  // Admin reads both kinds with reporters, except their own target and any
-  // group holding a row they filed (ADR-0011 d9). An open group's Post is
-  // never removed — removal resolves it — and that is checked all the same.
   queue(actor: Actor, role: Role): Promise<ModerationQueue> {
     const admin = role === 'ADMIN';
     const me = actor.studentId;
@@ -130,7 +112,6 @@ export class ModerationService {
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         select: REPORT_ROW_SELECT,
       });
-      // Insertion order is each group's oldest row.
       const groups = new Map<string, ReportRow[]>();
       for (const row of rows) {
         const key = targetKey(row);
@@ -165,12 +146,6 @@ export class ModerationService {
     });
   }
 
-  // `POST /api/moderation/post-groups/:postId/resolve` (§12.5, M25): the only
-  // way a Post is ever removed, by a Peer Moderator or an Admin. The guard is
-  // read now, never trusted from the queue: the actor's own interest for
-  // either role, and for a Peer Moderator every Block edge with the author
-  // and the open reporters (ADR-0008 d10, ADR-0011 d7). No event: a removed
-  // Post leaves the feed on its next load.
   resolvePostGroup(actor: Actor, postId: string, action: PostGroupAction): Promise<Resolution> {
     return this.uow.run('moderation.resolve', async (tx, ctx) => {
       const role = await readActiveRole(tx, actor.studentId, MODERATION_ROLES);
@@ -195,10 +170,6 @@ export class ModerationService {
     });
   }
 
-  // `POST /api/moderation/student-groups/:studentId/resolve` (§12.5): an
-  // Admin's alone. `ACTION` records that the Reports were acted on and
-  // applies no sanction: Suspension and Removal are Users-table actions
-  // (§12.7). An Admin's guard is self-interest only, with no Block test.
   resolveStudentGroup(actor: Actor, studentId: string, action: StudentGroupAction): Promise<Resolution> {
     return this.uow.run('moderation.resolve', async (tx, ctx) => {
       await readActiveAdmin(tx, actor.studentId);
@@ -211,9 +182,6 @@ export class ModerationService {
     });
   }
 
-  // `GET /api/admin/reports/resolved` (§12.6): one page of the batches the
-  // viewing Admin may read, newest first, in one snapshot. The Post's text
-  // shows even once it is removed, and every row names its reporter.
   resolvedAudit(actor: Actor, page: number, pageSize: number): Promise<ResolvedPage> {
     const batches = visibleBatches(actor.studentId);
     return this.uow.readOnly(async (tx) => {
@@ -238,7 +206,6 @@ export class ModerationService {
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         select: { ...REPORT_ROW_SELECT, resolvedById: true, resolvedAt: true, state: true },
       });
-      // `report_state_attribution` gives every resolved row both fields.
       const byBatch = new Map<string, ReportRow[]>();
       for (const row of rows) {
         if (row.resolvedById === null || row.resolvedAt === null) continue;

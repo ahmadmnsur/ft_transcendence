@@ -3,8 +3,6 @@ import type { Student } from '../generated/prisma/client';
 
 type StreakStudent = Pick<Student, 'id' | 'streak' | 'suspendedAt' | 'removedAt'>;
 
-// §8.7, §10.6: the caller reads every Student and the closing Round's activity
-// before its checkpoint. These writes join that same close transaction.
 export async function evaluateStreaksAtClose(
   tx: PrismaTx, students: readonly StreakStudent[], qualifying: ReadonlySet<string>, now: Date,
 ): Promise<{ streaksIncremented: number; streaksReset: number; consistentLearnerAwarded: number }> {

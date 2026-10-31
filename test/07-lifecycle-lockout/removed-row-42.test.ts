@@ -8,8 +8,6 @@ import { useHarness } from '../harness/app';
 import { createTestAccount, createTestStaff, type TestAccount } from '../harness/accounts';
 import { FIXED_ID, callback, fixedFortyTwo, roundTrip, stateOf } from '../harness/forty-two';
 
-// 42 configured, with the fixed client in place of the real one, so the
-// three 42 writers of the Student row can run here.
 const harness = useHarness(fixedFortyTwo());
 
 function actor(studentId: string): Actor {
@@ -35,7 +33,6 @@ async function removeBy(admin: TestAccount, studentId: string): Promise<void> {
   await harness.app.get(AdminUsersService).remove(actor(admin.id), studentId);
 }
 
-// A Student with the fixed 42 account connected through Connect 42.
 async function connectedStudent(): Promise<TestAccount> {
   const account = await createTestAccount(harness.app);
   const connected = await roundTrip(harness, account, 'link');
@@ -43,16 +40,7 @@ async function connectedStudent(): Promise<TestAccount> {
   return account;
 }
 
-// §4.3.1 (*"a Removed row accepts no update of any column"*), §5.6, §16.3 row
-// 7: the 42 writers of the Student row — Connect 42, Disconnect 42 and the new
-// password after Confirm with 42 — refuse a Removed row and write nothing, and
-// the row keeps its `forty_two_id` (§12.7, ADR-0008 d7's note of 2026-10-08).
 describe('a Removed row and the 42 writers', () => {
-  // §3.6.3: Connect 42's transaction reads the Student's flags and the
-  // Removal writes them, and both write the row, so they have one serial
-  // order. The callback passes its session check first, then is held in its
-  // transaction: Removal first, its retry reads the flag and connects
-  // nothing; Connect 42 first, the Removal keeps the 42 account number.
   it.each(['removal', 'connect'] as const)('Connect 42 against a Removal, %s first', async (first) => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const account = await createTestAccount(harness.app);
@@ -107,8 +95,6 @@ describe('a Removed row and the 42 writers', () => {
     await removeBy(admin, account.id);
     const before = await rowOf(account.id);
 
-    // The route stops at the deleted session; the service, for the actor the
-    // seed or a test constructs, reaches the change's own step 4.
     expect((await harness.post('/api/auth/42/password').set('Cookie', account.cookie).send({ newPassword: 'a-new-password-1' })).status).toBe(401);
     const setting = harness.app.get(FortyTwoService).setPasswordAfter42({
       actor: actor(account.id),
@@ -118,7 +104,6 @@ describe('a Removed row and the 42 writers', () => {
 
     expect(await outcome(setting)).toBe('unauthenticated');
     expect(await rowOf(account.id)).toEqual(before);
-    // The old password still checks: sign-in tells of the Removal only after it.
     const login = await harness.post('/api/auth/login').send({ email: account.email, password: account.password });
     expect(login.body).toMatchObject({ ok: false, error: { code: 'account_removed' } });
   }, 20_000);

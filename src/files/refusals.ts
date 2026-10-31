@@ -1,8 +1,5 @@
 import { Refusal } from '../core/errors';
 
-// §9.5's three refusals. A file whose bytes fail validation is normal use,
-// so each is answered 200 with ok: false (§3.8.2), and the SPA picks its own
-// text by code (§6.15).
 
 export function fileTooLarge(): Refusal {
   return new Refusal('file_too_large', 'This file is too large.');

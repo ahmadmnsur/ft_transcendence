@@ -5,8 +5,6 @@ import { createTestAccount } from '../harness/accounts';
 
 const harness = useHarness();
 
-// The SQLSTATE and constraint a failed raw statement reports, whichever layer
-// of the driver carries them.
 function violation(err: unknown): { code?: string; constraint?: string } {
   const e = err as {
     code?: string;
@@ -20,9 +18,6 @@ function violation(err: unknown): { code?: string; constraint?: string } {
   return { code: e.code, constraint: e.constraint };
 }
 
-// §4.4 step 6, §16.3 row 2: one Friendship per unordered pair. Prisma does
-// not represent the index, so a migration that loses it lets a pair hold two
-// rows, one each way, and nothing says so.
 describe('social friendships migration', () => {
   it('creates friendship_unordered_pair as a unique index over the unordered pair', async () => {
     const rows = await harness.app

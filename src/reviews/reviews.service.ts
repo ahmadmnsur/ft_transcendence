@@ -32,8 +32,6 @@ export class ReviewsService {
         if (match.mentorId === actor.studentId) throw new ApiError('forbidden');
         if (match.status === 'COMPLETED') throw alreadyReviewed();
         if (match.status !== 'ACCEPTED') throw matchNotReviewable();
-        // Sanctions write this row and the Match, ordering their transaction
-        // against this submission (§9.2). Promotion does not remove participation.
         await tx.student.findUniqueOrThrow({
           where: { id: match.mentorId },
           select: { id: true, suspendedAt: true, removedAt: true },
@@ -65,7 +63,6 @@ export class ReviewsService {
         });
         await tx.match.update({ where: { id: matchId }, data: { status: 'COMPLETED' } });
         const earned = await awardMatchXp(tx, match.mentorId, match.menteeId, ctx.now);
-        // An explicit public projection: no Review id, Mentor or private fields.
         const item = {
           id: post.id,
           origin: 'TAKEAWAY',

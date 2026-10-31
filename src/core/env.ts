@@ -51,17 +51,10 @@ function parseUrl(value: string | undefined): URL | undefined {
   }
 }
 
-// A DATABASE_URL's TLS settings: each `ssl…` key, and `uselibpqcompat`, which
-// changes what `sslmode` means.
 export function isTlsSetting(name: string): boolean {
   return name.startsWith('ssl') || name === 'uselibpqcompat';
 }
 
-// A fixed list of the query parameters node-postgres or Prisma reads, the only
-// names a message prints: in a password typed with a raw `@` and then `?`, the
-// rest of the password becomes the first parameter's name (§3.9).
-// `connect_timeout` is on it because `prisma.config.ts` sets it on the pooler
-// URL, so a `.env` that still carries one is told which to remove.
 const NAMED_PARAMETERS = new Set([
   'host',
   'hostaddr',
@@ -77,11 +70,6 @@ const NAMED_PARAMETERS = new Set([
   'connect_timeout',
 ]);
 
-// node-postgres takes the user, password, host and port from a query parameter
-// before the URL's own, so a parameter could move the connection after both
-// steps had checked the URL (§15.4). It reads every parameter, so this names
-// what may stay rather than what is known to move it. Returns the first other
-// parameter as a message prints it: its name when it is a known one.
 export function firstNonTlsParameter(url: URL): string | undefined {
   for (const name of url.searchParams.keys()) {
     if (!isTlsSetting(name)) return NAMED_PARAMETERS.has(name) ? name : 'a parameter';
@@ -89,8 +77,6 @@ export function firstNonTlsParameter(url: URL): string | undefined {
   return undefined;
 }
 
-// The pooler user carries the project ref; its host and the API host must both
-// belong to Supabase before the two values can name the team project.
 export function resolveSupabaseTarget(env: EnvRecord): SupabaseTarget {
   const databaseUrl = parseUrl(env['DATABASE_URL']);
   const supabaseUrl = parseUrl(env['SUPABASE_URL']);
@@ -109,8 +95,6 @@ export function resolveSupabaseTarget(env: EnvRecord): SupabaseTarget {
   }
   const poolerUser = /^postgres\.([a-z0-9]+)$/.exec(databaseUser);
   const projectHost = /^([a-z0-9]+)\.supabase\.co$/.exec(supabaseHost);
-  // The api's requests to Supabase carry the secret key and passwords, and nothing else
-  // encrypts that hop, so only https: names the team project.
   if (
     poolerUser &&
     projectHost &&
@@ -124,8 +108,6 @@ export function resolveSupabaseTarget(env: EnvRecord): SupabaseTarget {
   return { kind: 'none', databaseHost, supabaseHost };
 }
 
-// Pure validation over an env record. Returns the first failure so both
-// entry points share one ordering and one message shape.
 export function validateEnv(env: EnvRecord): EnvResult {
   for (const name of REQUIRED_VARS) {
     const value = env[name];
@@ -151,9 +133,6 @@ export function validateEnv(env: EnvRecord): EnvResult {
     );
   }
 
-  // The rule sign-up and sign-in apply (§5.1, §15.4): measured after
-  // trimming, as every string is (§6.0.3), since the trimmed value is the one
-  // Supabase Auth is given and the one a sign-in sends.
   for (const name of PASSWORD_VARS) {
     if (!isValidPassword(env[name] as string)) {
       return fail(
@@ -175,8 +154,6 @@ export function validateEnv(env: EnvRecord): EnvResult {
   ) {
     return fail('DATABASE_URL', 'must be a PostgreSQL URL with a host, user, password and database');
   }
-  // It holds on both targets, and names the parameter only, since a value may
-  // be a password.
   const parameter = firstNonTlsParameter(databaseUrl);
   if (parameter !== undefined) {
     return fail(
@@ -222,10 +199,6 @@ export function validateEnv(env: EnvRecord): EnvResult {
   return { ok: true };
 }
 
-// The boot check's steps 1 and 2 (§15.5): the one message a failure prints,
-// or undefined when both pass. Both targets pass. Shared by the exit path
-// below and by both resets (§15.4), which then refuse every target but their
-// own.
 export function envFailure(env: EnvRecord): string | undefined {
   const result = validateEnv(env);
   if (!result.ok) return `Invalid environment: ${result.failure.variable}: ${result.failure.reason}`;
@@ -237,8 +210,6 @@ export function envFailure(env: EnvRecord): string | undefined {
   return undefined;
 }
 
-// Steps 1 and 2 as one exit path shared by the boot check, the API entry point
-// and the seed entry point. The boot check's own entry then adds steps 3 and 4.
 export function assertEnvOrExit(env: EnvRecord): void {
   const failure = envFailure(env);
   if (failure !== undefined) {

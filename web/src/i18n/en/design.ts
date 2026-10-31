@@ -1,7 +1,5 @@
 import type { EnGroup } from '../types';
 
-// The design system's own texts: what its components show, or give to a
-// screen reader, when the screen passes none.
 export default {
   dataTable: {
     emptyTitle: 'No rows found',

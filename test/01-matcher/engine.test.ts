@@ -38,15 +38,6 @@ function pairKey(a: string, b: string): string {
 
 describe('most-constrained-first', () => {
   it('strands nobody on the prototype starvation cohort', () => {
-    // Literals from the `starvation` entry of COHORTS in
-    // compatibility-score-PROTOTYPE.html (goal defaults to null there).
-    // Levels via levelOf(xp): s0 → 5, s1 → 6, s2 → 2, s3 → 3.
-    // (s0,s1): (4,2) → 88, reverse (2,4) → 81,
-    //   so s0 mentors. (s0,s2): (2,0) → 53, reverse (0,2) → 23, s0 mentors.
-    // (s1,s3): (1,0) → 35, reverse (0,1) → 15, s1 mentors. Every other pair
-    // scores 0 and is discarded. Viable counts: s0:2, s1:2, s2:1, s3:1, so
-    // s2 picks first and takes its only pair; then s1–s3. Greedy would take
-    // s0–s1 (88) and strand s2 and s3.
     const input: MatcherInput = {
       candidates: [
         candidate('s0', ['Docker', 'Git', 'SQL', 'React'], ['Graphics', 'Threads'], levelOf(1200)),
@@ -80,16 +71,6 @@ describe('most-constrained-first', () => {
   });
 
   it('recounts viable partners after every Match', () => {
-    // (a,b): a mentors (1,0) = 35, reverse (0,1) = 15.
-    // (b,c): b mentors (1,0) = 35, reverse (0,1) = 15.
-    // (c,d): c mentors (1,0) = 35, reverse (0,1) = 15.
-    // (c,e): c mentors (2,0) = 53, reverse (0,2) = 23.
-    // (d,e): d mentors (2,1) = 68, reverse (1,2) = 58.
-    // Every other pair scores 0. Equal Levels, so priority = Score.
-    // Initial counts a:1, b:2, c:3, d:2, e:2 → a takes (a,b). Recounted,
-    // c:2, d:2, e:2 → tie, lower id c takes its best, (c,e) at 53. Counting
-    // once up front would keep c at 3, so d would pick and take (d,e) at 68.
-    // Reverse id order: input order must not stand in for the id tie-breaks.
     const input: MatcherInput = {
       candidates: [
         candidate('e', ['ed'], ['ce1', 'ce2', 'de1', 'de2']),
@@ -124,19 +105,6 @@ describe('most-constrained-first', () => {
   });
 
   it('applies the Level-gap penalty, and breaks an equal priority on Score', () => {
-    // (a,b): f = 3 ({K1..K3}), r = 2 ({R1,R2}) → 84; reverse (2,3) → 79,
-    // so a mentors. Gap 0 → priority 84.
-    // (a,c): f = 4 ({K1..K4}), r = 2 ({R1,R2}) → 88; reverse (2,4) → 81,
-    // so a mentors. a is Level 1, so priority 88 − 2·max(0, (c's Level − 1) − 2).
-    // (b,c): c mentors, (1,0) → 35. All three have two viable partners, so
-    // the lower id a chooses between (a,b) and (a,c):
-    // - c at Level 4, gap 3: 86 > 84, (a,c). Without the 2-Level allowance,
-    //   88 − 2·3 = 82 would hand it to (a,b).
-    // - c at Level 5, gap 4: 84 = 84, the greater Score takes it: (a,c).
-    //   Without the Score step, the smaller pair key would take (a,b).
-    // - c at Level 6, gap 5: 82 < 84, (a,b), although (a,c) scores higher.
-    //   At 1 per Level, 88 − 3 = 85 would hand it to (a,c).
-    // Reverse id order: input order must not stand in for the id tie-breaks.
     const input = (cLevel: number): MatcherInput => ({
       candidates: [
         candidate('c', ['R1', 'R2', 'Q1'], ['K1', 'K2', 'K3', 'K4'], cLevel),
@@ -170,11 +138,6 @@ describe('most-constrained-first', () => {
   });
 
   it('breaks a priority and Score tie on the smaller pair key', () => {
-    // Every pair scores 35 with priority 35 and no level gap: (x,y) and
-    // (x,z) are x mentors (1,0), reverses are (0,1) → 15; (y,z) is y
-    // mentors (1,0), reverse (0,1) → 15. All counts are 2, so the lower id
-    // x chooses between equal pairs; ('x','y') < ('x','z') wins.
-    // Reverse id order: input order must not stand in for the id tie-breaks.
     const input: MatcherInput = {
       candidates: [
         candidate('z', ['Z8'], ['T1', 'T2']),
@@ -196,13 +159,6 @@ describe('most-constrained-first', () => {
       },
     ]);
 
-    // The lower ids differ. Each edge is one Skill taught one way, so it
-    // scores (1,0) → 35 with its reverse (0,1) → 15, at equal Levels:
-    // a→m, a→p, a→q, m→z, z→p, z→q. Every other pair scores 0.
-    // Counts a:3, m:2, p:2, q:2, z:3, so m chooses between (a,m) and (m,z),
-    // equal on priority and Score: ('a','m') < ('m','z'), so a mentors m.
-    // Recounted, p:1, q:1, z:2: p takes its only pair, z mentors p, and q
-    // is left unmatched.
     const lowerIdsDiffer: MatcherInput = {
       candidates: [
         candidate('z', ['zp', 'zq'], ['mz']),
@@ -254,21 +210,17 @@ describe('six rounds over generateCohort({ size: 20, seed: 42 })', () => {
     const { rounds } = sixRounds();
     const seen = new Set<string>();
     for (const matches of rounds) {
-      // Non-vacuous: every Round emits at least one Match.
       expect(matches.length).toBeGreaterThan(0);
       const inRound = new Set<string>();
       matches.forEach((m, i) => {
         expect(m.index).toBe(i);
         expect(m.menteeId).not.toBe(m.mentorId);
-        // C3: at least one FORWARD Skill. C7: none below 25.
         expect(m.forward.length).toBeGreaterThan(0);
         expect(m.score).toBeGreaterThanOrEqual(25);
-        // One Match per Student per Round.
         expect(inRound.has(m.mentorId)).toBe(false);
         expect(inRound.has(m.menteeId)).toBe(false);
         inRound.add(m.mentorId);
         inRound.add(m.menteeId);
-        // No pair repeats across the six Rounds.
         const key = pairKey(m.mentorId, m.menteeId);
         expect(seen.has(key)).toBe(false);
         seen.add(key);
@@ -278,13 +230,8 @@ describe('six rounds over generateCohort({ size: 20, seed: 42 })', () => {
 
   it('is deterministic (C6) and independent of input order', () => {
     const first = sixRounds();
-    // Same input again from scratch → deep-equal output.
     expect(sixRounds().rounds).toEqual(first.rounds);
 
-    // Same Round with its first two Matches blocked → deep-equal output
-    // under either shuffle. Fixed permutations, no randomness. The blocked
-    // pairs come from this Round's own unblocked output, so blocking must
-    // change the Round.
     const roundIndex = 2;
     const history: UnorderedPair[] = [];
     for (let k = 0; k < roundIndex; k++) {
@@ -295,7 +242,6 @@ describe('six rounds over generateCohort({ size: 20, seed: 42 })', () => {
       .map((m): UnorderedPair => [m.mentorId, m.menteeId]);
     const candidates = cohort();
     const base = runMatcher({ candidates, history, blocked });
-    // Non-vacuous: the blocked Round differs and both blocked pairs are gone.
     expect(base).not.toEqual(first.rounds[roundIndex]);
     const baseKeys = new Set(
       base.map((m) => pairKey(m.mentorId, m.menteeId)),
@@ -303,9 +249,6 @@ describe('six rounds over generateCohort({ size: 20, seed: 42 })', () => {
     for (const [x, y] of blocked) {
       expect(baseKeys.has(pairKey(x, y))).toBe(false);
     }
-    // `reordered` reverses each input array, tuples kept as given; `swapped`
-    // keeps array order and swaps every tuple. Separate because changing both
-    // at once cancels out for an engine that reads a tuple in candidate order.
     const reordered = runMatcher({
       candidates: candidates.slice().reverse(),
       history: history.slice().reverse(),
@@ -328,7 +271,6 @@ describe('six rounds over generateCohort({ size: 20, seed: 42 })', () => {
     const rerun = runMatcher({
       candidates,
       history: [[dropped1.mentorId, dropped1.menteeId]],
-      // Reversed tuple: exclusion holds in either order.
       blocked: [[dropped2.menteeId, dropped2.mentorId]],
     });
     const keys = new Set(

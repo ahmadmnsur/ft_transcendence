@@ -1,18 +1,11 @@
 import type { EnGroup } from '../types';
 
-// `/me` and `/students/:id` (§6.2). A failed read or write shows the errors
-// area's sentence for its code, and a Removed Student's name is people's
-// tombstone.
 export default {
   me: {
     publicProfileLink: 'View your public profile',
-    // §6.2: `/me` reads the profile once; while that read is pending the cards
-    // keep their shells and this sentence, and a failed read has one retry.
     loading: 'Loading your profile…',
     retry: 'Try again',
   },
-  // §6.3, §9.6: the avatar card on `/me`. FileDrop writes its own hint,
-  // checks and progress (the design area).
   avatar: {
     title: 'Avatar',
     subtitle: 'Shown beside your name to every signed-in Student.',
@@ -41,8 +34,6 @@ export default {
     noticeInUse: 'This 42 account is already connected to another account.',
     disconnectedNotice: 'Your 42 account is disconnected.',
   },
-  // §5.6 C: recovery through Confirm with 42, on `/me` while a 42 account is
-  // connected.
   confirm42: {
     title: 'Forgot your password?',
     subtitle: 'Confirm with 42, then set a new password within ten minutes. This signs you out everywhere.',
@@ -65,8 +56,6 @@ export default {
       other: 'Enter a display name of {minChars}–{count} characters.',
     },
     emailLabel: 'Email',
-    // §4.6: the email is the owner's and the Admins' alone, never on a
-    // profile.
     emailHint: 'Used only to sign in. Never shown to other Students.',
     emailInvalid: 'Enter a valid email address.',
     save: 'Save',
@@ -107,7 +96,6 @@ export default {
     skillLabel: 'Skill',
     skillPlaceholder: 'Choose a Skill',
     chooseSkillError: 'Choose a Skill from your learn list.',
-    // §6.2: the Goal names a Skill on the learn list, never one outside it.
     noLearn: 'Add a Skill to your learn list first: your Learning Goal names one of them.',
     textLabel: 'Why this Skill matters',
     textHint: {
@@ -138,7 +126,6 @@ export default {
     goalHeading: 'Learning Goal',
     goalNone: 'No Learning Goal.',
     removedNote: 'This account was removed.',
-    // While `GET /api/students/:id` is pending, the page shows this sentence.
     loading: 'Loading the profile…',
     retry: 'Try again',
   },

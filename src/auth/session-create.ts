@@ -6,13 +6,6 @@ export type SessionCreateDeps = {
   uow: UnitOfWork;
 };
 
-// §5.1 sign-in, step 4, as its own function: create the session after
-// Supabase accepted the password. The test harness's session helper calls it
-// directly, with no real password check (§16.2). The transaction re-reads
-// `password_version`, `removed_at` and `suspended_at`, in that order: a moved
-// version → `password_incorrect`; Removed → `account_removed`; Suspended →
-// `account_suspended`; otherwise it creates the Session and purges that
-// Student's expired rows.
 export async function createSessionAfterPasswordCheck(
   input: { studentId: string; expectedPasswordVersion: number },
   deps: SessionCreateDeps,
@@ -23,7 +16,6 @@ export async function createSessionAfterPasswordCheck(
       select: { passwordVersion: true, removedAt: true, suspendedAt: true },
     });
     if (student === null || student.passwordVersion !== input.expectedPasswordVersion) {
-      // A lost race, not a wrong password: not counted toward the throttle.
       throw movedPasswordVersion();
     }
     if (student.removedAt !== null) throw accountRemoved();

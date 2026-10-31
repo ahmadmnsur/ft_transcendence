@@ -1,8 +1,6 @@
 import type { Language } from '../i18n/types';
 import { inlineText, legalLanguage, type Block, type BulletItem, type InlineNode } from './parse';
 
-// One inline run as plain text. A code span stands as U+FFFC, so its content is skipped but
-// the spaces around it are not; a link counts by its text, never its URL.
 function textRun(nodes: InlineNode[]): { text: string; firstEmphasis: number | undefined } {
   let text = '';
   let firstEmphasis: number | undefined;
@@ -32,9 +30,6 @@ function textRun(nodes: InlineNode[]): { text: string; firstEmphasis: number | u
   return { text, firstEmphasis };
 }
 
-// The legal check's text rules (§3.5.4): no italic and no vowel mark in an Arabic file, no
-// plain space before `: ; ! ? »` or after `«` in a French one. A line break inside a
-// paragraph is already a plain space in the parsed text.
 export function checkLegalText(blocks: Block[], fileName: string): void {
   const language = legalLanguage(fileName);
   function checkRun(nodes: InlineNode[]): void {
@@ -94,7 +89,6 @@ export interface LegalDate {
   written: string;
 }
 
-// Fixed month names and digit conversion keep dates independent of the host (§3.5.4).
 const months: Record<Language, string[]> = {
   en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   fr: ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
@@ -111,7 +105,6 @@ const dateExamples: Record<Language, string> = {
   ar: '٢٥ أكتوبر ٢٠٢٦',
 };
 
-// The date at the end of the line under the title, read in the file's own language.
 export function readLegalDate(blocks: Block[], fileName: string): LegalDate {
   const language = legalLanguage(fileName);
   function fail(): never {
@@ -145,7 +138,6 @@ export interface LegalVersion {
   date: LegalDate;
 }
 
-// The three versions of a page share one *Last updated* date (§3.5.4).
 export function checkSameDate(english: LegalVersion, translations: LegalVersion[]): void {
   const differences = translations.filter(({ date }) =>
     date.day !== english.date.day || date.month !== english.date.month || date.year !== english.date.year,

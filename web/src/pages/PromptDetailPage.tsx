@@ -28,7 +28,6 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const { page: requestedPage } = useSearch({ from: '/prompts/$promptId' });
   const navigate = useNavigate({ from: '/prompts/$promptId' });
   const page = requestedPage ?? 1;
-  // One page of 20 answers (§6.0.1), with the Prompt itself on every page.
   const answers = useQuery({ ...promptAnswersQueryOptions(promptId, page), enabled: wellFormedId });
   const detail = answers.data;
   const [body, setBody] = useState('');

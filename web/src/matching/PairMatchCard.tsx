@@ -8,11 +8,6 @@ import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 import { MatchStatusLabel, ScoreDetails, endingOf, useSkillList, type MatchNotice } from './MatchParts';
 
-// §3.5.1, §6.6, §8.11: one Match as one of its pair reads it — the partner,
-// the reader's role, the status, the Compatibility Score with its explanation,
-// the Mission, and accept and decline while it is in progress. Used by
-// `/match` and `/matches/:matchId`. No event tells the reader when the
-// partner answers (§7.4); the page reads the Match again when it opens.
 export function PairMatchCard({
   match,
   onNotice,
@@ -25,15 +20,12 @@ export function PairMatchCard({
   const copy = t.matching.pair;
   const skillList = useSkillList();
   const queryClient = useQueryClient();
-  // The one write in flight; the other button ignores presses until it ends.
   const [pending, setPending] = useState<'accept' | 'decline' | null>(null);
   const [confirming, setConfirming] = useState(false);
   const keepRef = useRef<HTMLButtonElement>(null);
 
   const partner = <PersonName name={match.partner.displayName} removed={match.partner.removed} />;
   const asMentor = match.myRole === 'MENTOR';
-  // §8.11: FORWARD is what the Mentee gains and REVERSE what the Mentor gains,
-  // so each sentence's direction follows the reader's role.
   const sentences: ReactNode[] = [];
   if (match.coverage.forward.length > 0) {
     sentences.push(
@@ -51,7 +43,6 @@ export function PairMatchCard({
       }),
     );
   }
-  // Only the Mentee's Learning Goal earns the bonus (§8.2).
   if (match.goalBonusApplied) sentences.push(asMentor ? format(copy.goalPartners, { partner }) : copy.goalYours);
 
   const ending = endingOf(match.status);
@@ -62,7 +53,6 @@ export function PairMatchCard({
   else if (match.partnerAccepted) progress = format(copy.partnerAccepted, { partner });
   else progress = copy.neitherAccepted;
 
-  // §8.5: accept while MATCHED and not yet accepted; decline while in progress.
   const canAccept = match.status === 'MATCHED' && !match.iAccepted;
   const canDecline = ending === null;
 
@@ -106,8 +96,6 @@ export function PairMatchCard({
             <dt className="text-sm text-ink-muted">{parts.statusLabel}</dt>
             <dd className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-sm text-ink">
               <MatchStatusLabel status={match.status} />
-              {/* A flex item is never narrower than its longest word: without
-              `min-w-0` and `wrap-anywhere`, a 40-character name widens the page. */}
               <span className="min-w-0 max-w-full wrap-anywhere">{progress}</span>
             </dd>
           </div>

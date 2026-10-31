@@ -10,9 +10,6 @@ import { createTestAccount, createTestStaff } from '../harness/accounts';
 const harness = useHarness();
 const actor = (studentId: string) => ({ studentId, sessionHash: null });
 
-// §16.3 category 1: manual history override and unconditional Block exclusion.
-// Frozen coverage, orientation and Mission errors also fail silently: the
-// Match looks ordinary while its explanation or assigned meeting mode lies.
 describe('hand-made Matches through the services', () => {
   it('re-pairs a declined pair and counts declined rows when rotating all six Missions', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
@@ -77,8 +74,6 @@ describe('hand-made Matches through the services', () => {
     await students.setSkills(higher, [docker], [docker]);
     await students.setLearningGoal(lower, docker, 'Learn Docker together.');
 
-    // Both directions have base 50. Only making lower the Mentee earns +10,
-    // so higher must be Mentor despite the usual lower-id tie-break.
     const view = await matching.createHandMadeMatch(admin, [lower.studentId, higher.studentId]);
     expect(view).toMatchObject({
       mentor: { id: higher.studentId }, mentee: { id: lower.studentId },
@@ -108,8 +103,6 @@ describe('hand-made Matches through the services', () => {
     await students.setSkills(learner, [], [skills.get('Docker')!, skills.get('Git')!]);
     await students.setLearningGoal(learner, skills.get('Git')!, 'I want to learn Git.');
 
-    // The Goal is on the learner's list but outside the frozen FORWARD set,
-    // so the +10 depends on the chosen orientation's membership (§8.2).
     const view = await matching.createHandMadeMatch(admin, [learner.studentId, teacher.studentId]);
     expect(view.mentor.id).toBe(teacher.studentId);
     expect(view.coverage.forward.map((skill) => skill.name)).toEqual(['Docker']);

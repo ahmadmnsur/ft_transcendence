@@ -5,8 +5,6 @@ import { createTestAccount } from '../harness/accounts';
 
 const harness = useHarness();
 
-// The SQLSTATE and constraint a failed raw statement reports, whichever layer
-// of the driver carries them.
 function violation(err: unknown): { code?: string; constraint?: string } {
   const e = err as {
     code?: string;
@@ -39,9 +37,6 @@ async function insertRound(closed: boolean): Promise<string> {
   return rows[0].id;
 }
 
-// §4.4 steps 7 and 8, §16.3 row 2. Prisma represents neither index, so a
-// migration that loses one says nothing: without the first, two Rounds can be
-// open at once; without the second, the no-repeats lookup silently scans.
 describe('rounds and matches migration', () => {
   it('creates round_single_open as a unique index over the open Rounds only', async () => {
     expect(await indexDefinition('Round', 'round_single_open')).toEqual([

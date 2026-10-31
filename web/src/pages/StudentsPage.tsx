@@ -19,8 +19,6 @@ import { PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 
-// `/students`' search params: the applied filters, the sort and the page. An
-// absent one is its default, so the address stays short.
 export interface StudentsSearch {
   q?: string;
   teaches?: string;
@@ -38,14 +36,10 @@ function pick<T extends string>(value: unknown, allowed: readonly T[]): T | unde
   return allowed.find((item) => item === value);
 }
 
-// The API checks a Skill id with the same function (`src/shared/uuid.ts`).
 function uuid(value: unknown): string | undefined {
   return typeof value === 'string' && isUuid(value) ? value : undefined;
 }
 
-// §3.5.2: a value the API would refuse is dropped here, so an edited address
-// never sends a failing request and the console stays clean. The router reads
-// `?q=42` as a number, so a number comes back as text.
 export function parseStudentsSearch(search: Record<string, unknown>): StudentsSearch {
   const q = typeof search.q === 'string' || typeof search.q === 'number' ? String(search.q).trim() : '';
   const page = search.page;
@@ -60,7 +54,6 @@ export function parseStudentsSearch(search: Record<string, unknown>): StudentsSe
   };
 }
 
-// The default sort, name A to Z, is left out of the address.
 function sortParams(sort: SearchSort, order: SearchOrder): Pick<StudentsSearch, 'sort' | 'order'> {
   return sort === 'name' && order === 'asc' ? { sort: undefined, order: undefined } : { sort, order };
 }
@@ -69,10 +62,6 @@ const NO_FILTERS = { q: undefined, teaches: undefined, wants: undefined, hasGoal
 
 type Filters = Pick<StudentsSearch, 'q' | 'teaches' | 'wants' | 'hasGoal'>;
 
-// The filters apply together on Search. The form stays mounted across
-// searches, so a search never destroys the control the keyboard is on. When
-// the applied filters change from outside it — the browser's Back and Forward,
-// or the empty state's Clear filters — it adopts them during render, below.
 function FiltersForm({
   applied,
   skills,
@@ -97,8 +86,6 @@ function FiltersForm({
   const [qInvalid, setQInvalid] = useState(false);
   const [lastApplied, setLastApplied] = useState(() => JSON.stringify(applied));
 
-  // Adjusting state when a prop changes: filters that arrived from outside the
-  // form replace what the fields show, during render rather than in an effect.
   const appliedKey = JSON.stringify(applied);
   if (appliedKey !== lastApplied) {
     setLastApplied(appliedKey);
@@ -184,8 +171,6 @@ function FiltersForm({
         onValueChange={setGoal}
       />
       {catalogueFailed ? (
-        // §6.15: without the catalogue the Skill filters offer no Skill, so the
-        // form shows the generic sentence and one retry for the catalogue read.
         <div className="flex min-w-0 flex-col gap-3 sm:col-span-2 lg:col-span-4">
           <Banner tone="danger" title={t.errors.unknown} />
           <Button type="button" variant="secondary" className="self-start" onClick={onRetryCatalogue}>
@@ -205,16 +190,11 @@ function FiltersForm({
 
 const column = createColumnHelper<StudentSearchItem>();
 
-// §6.2, §3.5.1: the Advanced search. Filters, sort and page live in the
-// address; the search term travels in the query string, never in a path
-// (§19 item 19).
 export function StudentsPage(): React.JSX.Element {
   const { t, format, formatNumber, list, errorText } = useI18n();
   const copy = t.people.search;
   const search = useSearch({ from: '/students' });
   const navigate = useNavigate({ from: '/students' });
-  // The form stays mounted, so this ref reaches the Name field from both the
-  // form (focus on an invalid term) and the empty state (focus after Clear).
   const nameRef = useRef<HTMLInputElement>(null);
   const sort = search.sort ?? 'name';
   const order = search.order ?? 'asc';
@@ -230,7 +210,6 @@ export function StudentsPage(): React.JSX.Element {
     void navigate({ search: (previous) => ({ ...previous, ...next }) });
   }
 
-  // A new filter or sort starts again from page 1.
   function applyFilters(next: Filters): void {
     go({ ...next, page: undefined });
   }
@@ -239,9 +218,6 @@ export function StudentsPage(): React.JSX.Element {
     go({ ...sortParams(nextSort, nextOrder), page: undefined });
   }
 
-  // The Name and XP headers sort too. Joined has no column, so the headers
-  // show no sort while it applies; a third press on a header clears its sort
-  // back to the default.
   const sorting: SortingState = sort === 'joined' ? [] : [{ id: sort, desc: order === 'desc' }];
   function onSortingChange(next: SortingState): void {
     const first = next[0];

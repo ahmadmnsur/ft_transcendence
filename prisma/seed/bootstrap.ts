@@ -24,9 +24,6 @@ export type StaffAccountInput = {
   role: StaffRole;
 };
 
-// The bootstrap Admin and Peer Moderator (§14.1), from the validated
-// environment: the boot check's step 1 already holds each password to the
-// password rule.
 export function bootstrapStaff(env: EnvRecord): StaffAccountInput[] {
   return [
     {
@@ -44,9 +41,6 @@ export function bootstrapStaff(env: EnvRecord): StaffAccountInput[] {
   ];
 }
 
-// Sign-up's validation (§6.0.3), which the seed makes itself because it calls
-// past the DTO, so no account is made that no sign-in can match. `label`
-// names the account in the failure without its email or name (§3.9).
 export function assertSignUpFields(
   label: string,
   input: { email: string; password: string; displayName: string },
@@ -60,23 +54,15 @@ export function assertSignUpFields(
   }
 }
 
-// §14.1: a staff account, made the way sign-up makes every account (ADR-0008
-// d12's note of 2026-10-02): NestJS makes the id, Supabase's admin create sets
-// the password, then the `Student` row is written with its role and both name
-// fields through `nameFields`. The seed's bootstrap and the test harness's
-// staff helper share it (§16.2). Nothing is hashed here.
 export async function createStaffAccount(
   input: StaffAccountInput,
   deps: { supabase: SupabaseAuthClient; uow: UnitOfWork },
 ): Promise<{ id: string; email: string }> {
-  // Validated, then the password used trimmed, as sign-up and sign-in use it
-  // (§5.1).
   assertSignUpFields(`the ${input.role} account`, input);
   const id = uuidv7();
   await deps.supabase.adminCreateUser(id, input.password.trim());
   const email = normalizeEmail(input.email);
   try {
-    // The id is passed in Prisma's unchecked shape, as sign-up does (§4.1).
     const operation = { name: 'bootstrap-account', uniqueRefusals: { Student_email_key: EMAIL_TAKEN } };
     await deps.uow.run(operation, async (tx) => {
       const data: Prisma.StudentUncheckedCreateInput = {
@@ -88,8 +74,6 @@ export async function createStaffAccount(
       await tx.student.create({ data });
     });
   } catch (err) {
-    // Like sign-up's losing duplicate (§5.1): only this refusal proves no row
-    // names the Supabase Auth user, which is deleted, best effort.
     if (err instanceof Refusal && err.code === 'email_unavailable') {
       await deps.supabase.adminDeleteUser(id);
     }

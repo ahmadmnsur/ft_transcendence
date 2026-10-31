@@ -4,13 +4,9 @@ import type { SkillView } from '../api/profile';
 import { Banner } from '../design';
 import { useI18n } from '../i18n/context';
 
-// The pieces every Match screen shares: the status label, the Score with its
-// explanation, and the notice an accept or a decline leaves.
 
-// §8.2: a Score is at most 100.
 const SCORE_MAX = 100;
 
-// The colour only repeats what the label says.
 const statusTones: Record<MatchStatus, string> = {
   MATCHED: 'bg-primary-50 text-primary-900',
   ACCEPTED: 'bg-primary-100 text-primary-900',
@@ -20,7 +16,6 @@ const statusTones: Record<MatchStatus, string> = {
   TERMINATED_BY_ADMIN: 'bg-danger-100 text-danger-900',
 };
 
-// §8.8: a Match's status, as a short label.
 export function MatchStatusLabel({ status }: { status: MatchStatus }): React.JSX.Element {
   const { t } = useI18n();
   return (
@@ -30,22 +25,15 @@ export function MatchStatusLabel({ status }: { status: MatchStatus }): React.JSX
   );
 }
 
-// What an ended Match's status means; a Match in progress has no ending.
 export function endingOf(status: MatchStatus): Exclude<MatchStatus, InProgressStatus> | null {
   return isInProgress(status) ? null : status;
 }
 
-// A list of Skill names as one value: `Intl.ListFormat` in the current
-// language, each name isolated (§3.5.5).
 export function useSkillList(): (skills: readonly SkillView[]) => React.ReactElement {
   const { list } = useI18n();
   return (skills) => list(skills.map((skill) => skill.name));
 }
 
-// §8.11: the Compatibility Score with its explanation, or "Matched by an Admin"
-// and no number for a hand-made Match. The number never shows without the
-// sentences, which the caller writes from the frozen coverage, the goal flag
-// and the reader's side. A `<dt>`/`<dd>` pair inside the caller's `<dl>`.
 export function ScoreDetails({ score, sentences }: { score: number | null; sentences: ReactNode[] }): React.JSX.Element {
   const { t, format } = useI18n();
   const copy = t.matching.match;
@@ -70,13 +58,8 @@ export function ScoreDetails({ score, sentences }: { score: number | null; sente
   );
 }
 
-// What an accept or a decline reported, kept as what happened rather than as
-// a text, so it follows a language switch.
 export type MatchNotice = { kind: 'accepted' } | { kind: 'declined' } | { kind: 'failed'; code: unknown };
 
-// The notice of the last accept or decline. It lives on the page, not in the
-// Match's card: after a decline on `/match` the Match is no longer the
-// current one, and its card goes. Focus moves to each new notice.
 export function MatchNoticeBanner({ notice }: { notice: MatchNotice | undefined }): React.JSX.Element | null {
   const { t, errorText } = useI18n();
   const copy = t.matching.pair;

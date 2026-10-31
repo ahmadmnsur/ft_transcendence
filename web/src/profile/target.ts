@@ -26,8 +26,6 @@ import {
 import { SESSION_QUERY_KEY, sessionQueryOptions } from '../api/session';
 import type { UploadOptions } from '../api/upload';
 
-// What the profile cards show and edit (§6.2): the signed-in Student's own
-// profile on `/me`, or another Student's on the Users table (§6.12).
 export interface EditableProfile {
   id: string;
   displayName: string;
@@ -37,17 +35,10 @@ export interface EditableProfile {
   learningGoal: LearningGoalView | null;
 }
 
-// One profile the cards edit: its read, its writes, and how the cache learns
-// what a write left. The cards hold the forms; the target knows whose profile
-// it is and which other views show it.
 export interface ProfileTarget {
-  // `own` speaks to the Student ("your"); `other` speaks about them
-  // ("their"), for an Admin.
   voice: 'own' | 'other';
   profile: EditableProfile | undefined;
-  // The read failed and nothing is cached: the page shows the failure once.
   failed: boolean;
-  // The writes, each answered as its route answers (§6.2, §6.3, §6.12).
   api: {
     updateDetails(patch: { displayName?: string; email?: string }): Promise<{ displayName: string; email: string }>;
     setSkills(input: { teach: string[]; learn: string[] }): Promise<{ goalCleared: boolean }>;
@@ -56,21 +47,10 @@ export interface ProfileTarget {
     uploadAvatar(file: File, options: UploadOptions): Promise<{ avatarUrl: string }>;
     deleteAvatar(): Promise<unknown>;
   };
-  // Puts what a write left into the cached profile at once, after cancelling
-  // a read that may have answered before the write, then drops or reads
-  // again the other views that show it.
   apply(change: Partial<EditableProfile>): Promise<void>;
-  // Reads the profile again: a stopped upload may still have been saved, and
-  // a save is confirmed in the background.
   reread(): void;
 }
 
-// The views besides the profile's own read that show a Student's profile
-// fields. Their public profile is dropped, not just invalidated: an inactive
-// query would render the old values until its background refetch returns, so
-// the next visit loads afresh. The search pages show the name, the avatar
-// and the Skills; the header shows the signed-in Student's own name and
-// avatar (§6.1).
 function refreshOtherViews(
   queryClient: QueryClient,
   studentId: string,
@@ -91,7 +71,6 @@ async function patchCache(queryClient: QueryClient, queryKey: QueryKey, change: 
   );
 }
 
-// `/me`: the signed-in Student's own profile, `GET /api/me`.
 export function useOwnProfileTarget(): ProfileTarget {
   const queryClient = useQueryClient();
   const me = useQuery(meQueryOptions());
@@ -115,10 +94,6 @@ export function useOwnProfileTarget(): ProfileTarget {
   };
 }
 
-// `/admin/users/:studentId`: another Student's profile, edited through the
-// Users table's routes (§6.12). The table shows the name and email too, so it
-// is read again after every write. An Admin may edit their own account here,
-// and then `/me` and the header show the change as well.
 export function useStudentProfileTarget(studentId: string): ProfileTarget {
   const queryClient = useQueryClient();
   const detail = useQuery(adminStudentQueryOptions(studentId));

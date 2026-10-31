@@ -12,9 +12,6 @@ export const progressQueryOptions = () => queryOptions({
   queryKey: PROGRESS_QUERY_KEY, queryFn: () => apiFetch<Progress>('/me/progress'),
 });
 
-// §10.7: `round:closed` reads the signed-in Student's progress again. Cancel first: a read
-// still in flight may have answered before the close committed, and a first read in flight
-// would otherwise be reused.
 export async function readProgressAgain(client: QueryClient): Promise<void> {
   await client.cancelQueries({ queryKey: PROGRESS_QUERY_KEY });
   await client.invalidateQueries({ queryKey: PROGRESS_QUERY_KEY });

@@ -14,8 +14,6 @@ export type AnswerView = {
   likeCount: number;
   likedByMe: boolean;
 };
-// §6.8: the Prompt, then one page of its non-removed answer Posts, read as
-// the feed reads them.
 export type AnswerPage = PostPage & {
   prompt: PromptView;
   live: boolean;

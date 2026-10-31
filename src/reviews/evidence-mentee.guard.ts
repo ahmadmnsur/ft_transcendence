@@ -6,12 +6,6 @@ import { requestActor } from '../core/session.guard';
 import { isUuid } from '../shared/uuid';
 import { reviewMenteeId } from './review-mentee';
 
-// §9.4's pre-check, on both Evidence routes: the actor is the Mentee of this
-// Review's Match, else 403. A route guard runs after the global ones, the
-// upload gate and the session, and before any interceptor, so a refused PUT
-// is refused before Multer reads a byte (§5.4). Pipes run after it, so it
-// answers a malformed id itself, as `UuidParam` would. An unknown Review has
-// no Mentee, so it is 403 too. The transaction checks again.
 @Injectable()
 export class EvidenceMenteeGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}

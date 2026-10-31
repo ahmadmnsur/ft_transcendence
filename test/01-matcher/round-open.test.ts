@@ -20,10 +20,6 @@ function sorted(values: readonly string[]): string[] {
   return [...values].sort();
 }
 
-// §8.2 from ADR-0006's own form, independent of the engine's integer code:
-// coverage cover(n) = 1 − 0.5ⁿ weighted 70/30, rounded half up, plus 10 for
-// the Mentee's Learning Goal, capped at 100. Every term is a short binary
-// fraction, so the floating-point sum is exact and so is the half.
 function expectedScore(forward: number, reverse: number, goalBonus: boolean): number {
   const weighted = 70 * (1 - 0.5 ** forward) + 30 * (1 - 0.5 ** reverse);
   return Math.min(100, Math.floor(weighted + 0.5) + (goalBonus ? 10 : 0));
@@ -33,21 +29,12 @@ function intersect(a: readonly string[], b: readonly string[]): string[] {
   return sorted(a.filter((skill) => b.includes(skill)));
 }
 
-// §16.3 row 1, the service and database half that Round open owns (F.4):
-// what Round open stores must be what the Students' lists say, a pair that
-// already had a Match is never proposed again, and neither is a blocked pair.
-// Round open is atomic, so a regression here shows up only as Scores that
-// lie or pairs that quietly never form.
 describe('Round open through the services', () => {
-  // Twenty Students through Supabase Auth take about four seconds, close to
-  // the five-second default, so this test sets its own limit.
   it('C4: every stored Score is §8.2 of its coverage and goal flag, and names a FORWARD Skill', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
     const students = harness.app.get(StudentsService);
     const matching = harness.app.get(MatchingService);
     const admin = await createTestStaff(harness.app, 'ADMIN');
-    // The category's cohort (§16.3): size 20, seed 42. Each Student's lists
-    // and Learning Goal go through the real Skill and Goal paths.
     const plan = new Map<string, { teach: string[]; learn: string[]; goal: string | null }>();
     for (const generated of generateCohort({ size: 20, seed: 42 })) {
       const account = await createTestAccount(harness.app);
@@ -73,18 +60,14 @@ describe('Round open through the services', () => {
       if (mentor === undefined || mentee === undefined) throw new Error('A Match names a Student outside the cohort.');
       const forward = match.coverage.forward.map((skill) => skill.name);
       const reverse = match.coverage.reverse.map((skill) => skill.name);
-      // The frozen explanation is the two intersections as the lists stood.
       expect(sorted(forward)).toEqual(intersect(mentor.teach, mentee.learn));
       expect(sorted(reverse)).toEqual(intersect(mentee.teach, mentor.learn));
-      // Only the Mentee's Goal earns the bonus, and only inside FORWARD.
       expect(match.goalBonusApplied).toBe(mentee.goal !== null && forward.includes(mentee.goal));
       expect(match.compatibilityScore).toBe(expectedScore(forward.length, reverse.length, match.goalBonusApplied));
       expect(match.handMade).toBe(false);
-      // The explanation names at least one concrete Skill the Mentee gains.
       expect(forward.length).toBeGreaterThanOrEqual(1);
       if (match.goalBonusApplied) goalBonuses += 1;
     }
-    // The cohort exercises the bonus, so the check above covers both branches.
     expect(goalBonuses).toBeGreaterThan(0);
   }, 20_000);
 
@@ -99,7 +82,6 @@ describe('Round open through the services', () => {
     await students.setSkills(actor(mentor.id), [docker], []);
     await students.setSkills(actor(mentee.id), [], [docker]);
 
-    // Round 1 pairs them, the only viable pair, and the Mentee declines.
     expect((await matching.openRound(actor(admin.id))).matchCount).toBe(1);
     const current = await matching.currentMatch(actor(mentee.id));
     if (current.match === null) throw new Error('Round 1 made no Match for the Mentee.');
@@ -107,15 +89,11 @@ describe('Round open through the services', () => {
     await matching.decline(actor(mentee.id), current.match.id);
     await matching.closeRound(actor(admin.id));
 
-    // Round 2: the same lists, but the pair has a Match row, so no Match.
     const opened = await matching.openRound(actor(admin.id));
     expect(opened.matchCount).toBe(0);
     expect(sorted(opened.unmatched.map((student) => student.id))).toEqual(sorted([mentor.id, mentee.id]));
   });
 
-  // §16.3 row 1, ADR-0008 d5: an administrative termination is a Match row
-  // like any other, so the matcher never proposes the pair again, while a
-  // hand-made Match may pair it (§8.6).
   it('never proposes a pair again once a Suspension ended their Match, while a hand-made Match may pair it', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
     const docker = skills.get('Docker') as string;
@@ -128,8 +106,6 @@ describe('Round open through the services', () => {
     await students.setSkills(actor(mentor.id), [docker], []);
     await students.setSkills(actor(mentee.id), [], [docker]);
 
-    // Round 1 pairs them; the Mentor's Suspension ends the Match, and the
-    // reinstatement revives nothing.
     expect((await matching.openRound(actor(admin.id))).matchCount).toBe(1);
     await users.suspend(actor(admin.id), mentor.id);
     await users.reinstate(actor(admin.id), mentor.id);
@@ -137,11 +113,9 @@ describe('Round open through the services', () => {
     expect(history.items.map((item) => item.status)).toEqual(['TERMINATED_BY_ADMIN']);
     await matching.closeRound(actor(admin.id));
 
-    // Round 2: the same lists, but the pair has a Match row, so no Match.
     const opened = await matching.openRound(actor(admin.id));
     expect(opened.matchCount).toBe(0);
     expect(sorted(opened.unmatched.map((student) => student.id))).toEqual(sorted([mentor.id, mentee.id]));
-    // An Admin may still pair them by hand.
     const made = await matching.createHandMadeMatch(actor(admin.id), [mentor.id, mentee.id]);
     expect([made.mentor.id, made.mentee.id, made.status]).toEqual([mentor.id, mentee.id, 'MATCHED']);
   });
@@ -156,11 +130,6 @@ describe('Round open through the services', () => {
       const mentor = await createTestAccount(harness.app);
       const blocked = await createTestAccount(harness.app);
       const other = await createTestAccount(harness.app);
-      // The Mentor can teach both learners; the Block leaves one viable pair.
-      // `blocked` is made before `other`, so its UUIDv7 id is the lower one:
-      // with the Block ignored, most-constrained-first picks it on the tie
-      // (§8.3 step 7) and pairs it with the Mentor. That is what lets this test
-      // catch a matcher that ignores Blocks; keep the order.
       await students.setSkills(actor(mentor.id), [docker], []);
       await students.setSkills(actor(blocked.id), [], [docker]);
       await students.setSkills(actor(other.id), [], [docker]);
