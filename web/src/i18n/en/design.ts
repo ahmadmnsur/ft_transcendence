@@ -18,6 +18,16 @@ export default {
     pageLabel: 'Go to page {page}',
   },
   modal: { close: 'Close dialog' },
+  select: {
+    loading: 'Loading…',
+    noOptions: 'No options to choose from.',
+    noResults: 'No results found',
+    clearSearch: 'Clear search',
+    results: {
+      one: '{count} result',
+      other: '{count} results',
+    },
+  },
   banner: { dismiss: 'Dismiss {title}' },
   roleLabel: 'Admin',
   skillChip: {

@@ -59,8 +59,8 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
   const [focusRequest, setFocusRequest] = useState<{ kind: Kind; chipIndex: number | null } | null>(null);
   const teachBoxRef = useRef<HTMLDivElement>(null);
   const learnBoxRef = useRef<HTMLDivElement>(null);
-  const teachSelectRef = useRef<HTMLSelectElement>(null);
-  const learnSelectRef = useRef<HTMLSelectElement>(null);
+  const teachSelectRef = useRef<HTMLButtonElement>(null);
+  const learnSelectRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   // One lookup per kind, so the repeated `kind === 'teach' ? … : …` choices
   // read as data rather than seven branches.
@@ -68,13 +68,13 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
     teach: teachBoxRef,
     learn: learnBoxRef,
   };
-  const selectRefs: Record<Kind, React.RefObject<HTMLSelectElement | null>> = {
+  const selectRefs: Record<Kind, React.RefObject<HTMLButtonElement | null>> = {
     teach: teachSelectRef,
     learn: learnSelectRef,
   };
-  const copyKeys: Record<Kind, { heading: string; selectLabel: string }> = {
-    teach: { heading: copy.teachHeading, selectLabel: copy.teachSelectLabel },
-    learn: { heading: copy.learnHeading, selectLabel: copy.learnSelectLabel },
+  const copyKeys: Record<Kind, { heading: string; selectLabel: string; search: string }> = {
+    teach: { heading: copy.teachHeading, selectLabel: copy.teachSelectLabel, search: copy.teachSearch },
+    learn: { heading: copy.learnHeading, selectLabel: copy.learnSelectLabel, search: copy.learnSearch },
   };
 
   // The status slot renders only while there is a message; once it renders,
@@ -222,19 +222,17 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
           label={copyKeys[kind].selectLabel}
           hint={hint}
           error={choiceError[kind] ? copy.chooseFirst : undefined}
+          options={available.map((skill) => ({ value: skill.id, label: skillNameText(skill.name) }))}
           value={choice[kind]}
-          onChange={(event) => {
-            setChoice({ ...choice, [kind]: event.target.value });
+          loading={cataloguePending}
+          onValueChange={(skillId) => {
+            setChoice({ ...choice, [kind]: skillId });
             setChoiceError({ ...choiceError, [kind]: false });
           }}
-        >
-          <option value="">{copy.selectPlaceholder}</option>
-          {available.map((skill) => (
-            <option key={skill.id} value={skill.id}>
-              {skillNameText(skill.name)}
-            </option>
-          ))}
-        </Select>
+          placeholder={copy.selectPlaceholder}
+          searchable
+          searchPlaceholder={copyKeys[kind].search}
+        />
         <Button
           variant="secondary"
           className="mt-2 self-start"

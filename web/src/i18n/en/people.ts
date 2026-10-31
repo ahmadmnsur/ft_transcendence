@@ -16,6 +16,7 @@ export default {
     teachesLabel: 'Can teach',
     wantsLabel: 'Wants to learn',
     anySkill: 'Any Skill',
+    skillSearch: 'Search Skills…',
     goalLabel: 'Learning Goal',
     goalAny: 'Any',
     goalYes: 'Has a Learning Goal',

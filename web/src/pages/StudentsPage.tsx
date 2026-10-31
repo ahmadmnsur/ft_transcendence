@@ -134,11 +134,7 @@ function FiltersForm({
     onApply(NO_FILTERS);
   }
 
-  const skillOptions = skills.map((skill) => (
-    <option key={skill.id} value={skill.id}>
-      {isolate(skill.name)}
-    </option>
-  ));
+  const skillOptions = [{ value: '', label: copy.anySkill, separator: true }, ...skills.map((skill) => ({ value: skill.id, label: isolate(skill.name) }))];
 
   return (
     <form
@@ -159,19 +155,34 @@ function FiltersForm({
           if (qInvalid) setQInvalid(!isValidSearchQuery(event.target.value));
         }}
       />
-      <Select label={copy.teachesLabel} value={teaches} onChange={(event) => setTeaches(event.target.value)}>
-        <option value="">{copy.anySkill}</option>
-        {skillOptions}
-      </Select>
-      <Select label={copy.wantsLabel} value={wants} onChange={(event) => setWants(event.target.value)}>
-        <option value="">{copy.anySkill}</option>
-        {skillOptions}
-      </Select>
-      <Select label={copy.goalLabel} value={goal} onChange={(event) => setGoal(event.target.value)}>
-        <option value="">{copy.goalAny}</option>
-        <option value="true">{copy.goalYes}</option>
-        <option value="false">{copy.goalNo}</option>
-      </Select>
+      <Select
+        label={copy.teachesLabel}
+        options={skillOptions}
+        value={teaches}
+        onValueChange={setTeaches}
+        placeholder={copy.anySkill}
+        searchable
+        searchPlaceholder={copy.skillSearch}
+      />
+      <Select
+        label={copy.wantsLabel}
+        options={skillOptions}
+        value={wants}
+        onValueChange={setWants}
+        placeholder={copy.anySkill}
+        searchable
+        searchPlaceholder={copy.skillSearch}
+      />
+      <Select
+        label={copy.goalLabel}
+        options={[
+          { value: '', label: copy.goalAny, separator: true },
+          { value: 'true', label: copy.goalYes },
+          { value: 'false', label: copy.goalNo },
+        ]}
+        value={goal}
+        onValueChange={setGoal}
+      />
       {catalogueFailed ? (
         // §6.15: without the catalogue the Skill filters offer no Skill, so the
         // form shows the generic sentence and one retry for the catalogue read.
@@ -296,20 +307,21 @@ export function StudentsPage(): React.JSX.Element {
           </p>
           <Select
             label={copy.sortLabel}
+            options={[
+              { value: 'name:asc', label: copy.sort.nameAsc },
+              { value: 'name:desc', label: copy.sort.nameDesc },
+              { value: 'xp:desc', label: copy.sort.xpDesc },
+              { value: 'xp:asc', label: copy.sort.xpAsc },
+              { value: 'joined:desc', label: copy.sort.joinedDesc },
+              { value: 'joined:asc', label: copy.sort.joinedAsc },
+            ]}
             value={`${sort}:${order}`}
-            onChange={(event) => {
-              const [nextSort, nextOrder] = event.target.value.split(':');
+            onValueChange={(next) => {
+              const [nextSort, nextOrder] = next.split(':');
               applySort(pick(nextSort, SORTS) ?? 'name', pick(nextOrder, ORDERS) ?? 'asc');
             }}
             className="w-64"
-          >
-            <option value="name:asc">{copy.sort.nameAsc}</option>
-            <option value="name:desc">{copy.sort.nameDesc}</option>
-            <option value="xp:desc">{copy.sort.xpDesc}</option>
-            <option value="xp:asc">{copy.sort.xpAsc}</option>
-            <option value="joined:desc">{copy.sort.joinedDesc}</option>
-            <option value="joined:asc">{copy.sort.joinedAsc}</option>
-          </Select>
+          />
         </div>
         <DataTable
           data={results.data?.items ?? []}

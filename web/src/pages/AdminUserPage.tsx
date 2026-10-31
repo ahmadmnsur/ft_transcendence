@@ -53,7 +53,7 @@ function RoleCard({
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const [status, setStatus] = useState<RoleStatus | undefined>(undefined);
-  const selectRef = useRef<HTMLSelectElement>(null);
+  const selectRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
@@ -128,19 +128,14 @@ function RoleCard({
         <Select
           ref={selectRef}
           label={copy.label}
+          options={ROLES.map((role) => ({ value: role, label: t.admin.roles[role] }))}
           value={choice}
           error={unchanged ? copy.unchanged : undefined}
-          onChange={(event) => {
-            setChoice(ROLES.find((role) => role === event.target.value) ?? student.role);
+          onValueChange={(next) => {
+            setChoice(ROLES.find((role) => role === next) ?? student.role);
             setUnchanged(false);
           }}
-        >
-          {ROLES.map((role) => (
-            <option key={role} value={role}>
-              {t.admin.roles[role]}
-            </option>
-          ))}
-        </Select>
+        />
         <Button type="submit" variant="secondary" loading={pending} className="self-start">
           {pending ? copy.submitting : copy.submit}
         </Button>

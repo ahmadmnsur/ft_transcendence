@@ -36,7 +36,7 @@ export type { ProgressBarProps } from './components/ProgressBar';
 export { RoleLabel } from './components/RoleLabel';
 export type { RoleLabelProps } from './components/RoleLabel';
 export { Select } from './components/Select';
-export type { SelectProps } from './components/Select';
+export type { SelectOption, SelectProps } from './components/Select';
 export { SkillChip } from './components/SkillChip';
 export type { SkillChipProps } from './components/SkillChip';
 export { SkillName, skillNameText } from './components/SkillName';

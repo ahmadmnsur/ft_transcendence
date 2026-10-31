@@ -17,6 +17,20 @@ export default {
     pageLabel: 'الانتقال إلى الصفحة {page}',
   },
   modal: { close: 'إغلاق النافذة' },
+  select: {
+    loading: 'جار التحميل…',
+    noOptions: 'لا توجد خيارات للاختيار.',
+    noResults: 'لا توجد نتائج',
+    clearSearch: 'مسح البحث',
+    results: {
+      zero: 'لا توجد نتائج',
+      one: 'نتيجة واحدة',
+      two: 'نتيجتان',
+      few: '{count} نتائج',
+      many: '{count} نتيجة',
+      other: '{count} نتيجة',
+    },
+  },
   banner: { dismiss: 'إخفاء التنبيه: {title}' },
   roleLabel: 'مسؤول',
   skillChip: {

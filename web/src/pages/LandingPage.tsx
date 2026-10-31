@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { LIMITS } from '@shared/limits';
-import { Checkbox, ChevronDownIcon, SkillName, buttonClasses, skillNameText } from '../design';
+import { Checkbox, ChevronDownIcon, Select, SkillName, buttonClasses, skillNameText } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { ScoreDetails } from '../matching/MatchParts';
@@ -49,27 +49,26 @@ function SkillBlank({
   onChange: (skill: string) => void;
 }): React.JSX.Element {
   return (
-    <span className="relative inline-flex max-w-full items-center border-b-4 border-primary-500 px-0.5 text-primary-700 transition-colors duration-150 hover:border-primary-700 hover:bg-primary-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus">
-      <SkillName
-        key={value}
-        aria-hidden="true"
-        name={value}
-        className="min-w-0 transition-opacity duration-300 ease-out wrap-anywhere starting:opacity-0 motion-reduce:transition-none"
-      />
-      <ChevronDownIcon size="0.5em" strokeWidth={2.5} className="ms-[0.15em] text-primary-500" />
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0 *:bg-surface *:text-base *:font-normal *:text-ink"
-      >
-        {options.map((skill) => (
-          <option key={skill} value={skill}>
-            {skillNameText(skill)}
-          </option>
-        ))}
-      </select>
-    </span>
+    <Select
+      label={label}
+      options={options.map((skill) => ({ value: skill, label: skillNameText(skill) }))}
+      value={value}
+      onValueChange={onChange}
+      trigger={{
+        className:
+          'inline-flex max-w-full cursor-pointer items-center border-b-4 border-primary-500 px-0.5 text-primary-700 transition-colors duration-150 hover:border-primary-700 hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-expanded:border-primary-700 aria-expanded:bg-primary-50',
+        children: (
+          <>
+            <SkillName
+              key={value}
+              name={value}
+              className="min-w-0 transition-opacity duration-300 ease-out wrap-anywhere starting:opacity-0 motion-reduce:transition-none"
+            />
+            <ChevronDownIcon size="0.5em" strokeWidth={2.5} className="ms-[0.15em] text-primary-500" />
+          </>
+        ),
+      }}
+    />
   );
 }
 

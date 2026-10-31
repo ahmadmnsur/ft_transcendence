@@ -157,8 +157,8 @@ function SiteHeader(): React.JSX.Element {
     await goToSignIn();
   }
 
-  function onLanguageChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-    const next = languages.find((l) => l === event.target.value);
+  function onLanguageChange(value: string): void {
+    const next = languages.find((l) => l === value);
     if (next !== undefined) setLanguage(next);
   }
 
@@ -212,16 +212,11 @@ function SiteHeader(): React.JSX.Element {
     <Select
       hideLabel
       label={t.shell.language.label}
+      options={languages.map((l) => ({ value: l, label: languageNames[l], lang: l }))}
       value={language}
-      onChange={onLanguageChange}
+      onValueChange={onLanguageChange}
       className={student !== null ? 'w-32 shrink-0' : 'w-32 shrink-0 max-sm:order-1 max-sm:ms-auto'}
-    >
-      {languages.map((l) => (
-        <option key={l} value={l} lang={l}>
-          {languageNames[l]}
-        </option>
-      ))}
-    </Select>
+    />
   );
 
   if (student === null) {

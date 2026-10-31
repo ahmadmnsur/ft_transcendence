@@ -75,6 +75,8 @@ export default {
     teachSelectLabel: 'Choisissez une Compétence à enseigner',
     learnSelectLabel: 'Choisissez une Compétence à apprendre',
     selectPlaceholder: 'Choisissez une Compétence',
+    teachSearch: 'Rechercher une Compétence à enseigner…',
+    learnSearch: 'Rechercher une Compétence à apprendre…',
     add: 'Ajouter',
     empty: 'Aucune Compétence pour le moment.',
     limitHint: {

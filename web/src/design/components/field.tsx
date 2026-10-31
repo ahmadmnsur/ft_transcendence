@@ -90,13 +90,14 @@ interface FieldShellProps {
   // The label is still read out, but takes no room: for a control whose
   // purpose is clear from its options, as the language switcher's.
   hideLabel?: boolean;
+  labelId?: string;
   children: ReactNode;
 }
 
-export function FieldShell({ label, controlId, hint, error, hintId, errorId, hideLabel = false, className = '', children }: FieldShellProps): React.JSX.Element {
+export function FieldShell({ label, controlId, hint, error, hintId, errorId, hideLabel = false, labelId, className = '', children }: FieldShellProps): React.JSX.Element {
   return (
     <div className={`min-w-0 ${className}`.trim()}>
-      <label htmlFor={controlId} className={hideLabel ? 'sr-only' : 'mb-1 block text-sm font-medium text-ink'}>
+      <label id={labelId} htmlFor={controlId} className={hideLabel ? 'sr-only' : 'mb-1 block text-sm font-medium text-ink'}>
         {label}
       </label>
       {children}
