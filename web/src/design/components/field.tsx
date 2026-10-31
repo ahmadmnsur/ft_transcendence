@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type ChangeEventHandler, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type ChangeEventHandler, type CompositionEventHandler, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
 import { utf8ByteLength } from '@shared/limits';
 
 export type FieldMessage = string | ReactElement;
@@ -124,25 +124,51 @@ function fitting(chars: string[], tail: string, maxBytes: number): number {
   return low;
 }
 
-export function capBytes(
-  maxBytes: number | undefined,
-  onChange: ChangeEventHandler<HTMLInputElement> | undefined,
-): ChangeEventHandler<HTMLInputElement> | undefined {
-  if (maxBytes === undefined) return onChange;
-  return (event) => {
-    const input = event.currentTarget;
-    const { value } = input;
-    if (!fits(value, maxBytes)) {
-      const caret = input.selectionEnd ?? value.length;
-      // Text after the caret that is too long by itself was not typed at the
-      // caret (a script or an autofill set it): the whole value is cut at its end.
-      const cut = fits(value.slice(caret), maxBytes) ? caret : value.length;
-      const chars = [...value.slice(0, cut)];
-      const head = chars.slice(0, fitting(chars, value.slice(cut), maxBytes)).join('');
-      input.value = head + value.slice(cut);
-      if (input.selectionEnd !== null) input.setSelectionRange(head.length, head.length);
-    }
-    onChange?.(event);
+// The value cut to fit, with the caret after the cut, or undefined if it fits.
+function cutToFit(value: string, caret: number, maxBytes: number): { value: string; caret: number } | undefined {
+  if (fits(value, maxBytes)) return undefined;
+  // Text after the caret that is too long by itself was not typed at the
+  // caret (a script or an autofill set it): the whole value is cut at its end.
+  const cut = fits(value.slice(caret), maxBytes) ? caret : value.length;
+  const chars = [...value.slice(0, cut)];
+  const head = chars.slice(0, fitting(chars, value.slice(cut), maxBytes)).join('');
+  return { value: head + value.slice(cut), caret: head.length };
+}
+
+interface CapHandlers {
+  onChange?: ChangeEventHandler<HTMLInputElement>;
+  onCompositionEnd?: CompositionEventHandler<HTMLInputElement>;
+}
+
+export function capBytes(maxBytes: number | undefined, { onChange, onCompositionEnd }: CapHandlers): CapHandlers {
+  if (maxBytes === undefined) return { onChange, onCompositionEnd };
+  return {
+    onChange: (event) => {
+      const input = event.currentTarget;
+      // While a keyboard composes a character (an IME, with the password
+      // shown), its text is not yet what it commits, and is often longer:
+      // it is left alone until it commits, as maxLength leaves it.
+      const composing = event.nativeEvent instanceof globalThis.InputEvent && event.nativeEvent.isComposing;
+      const next = composing ? undefined : cutToFit(input.value, input.selectionEnd ?? input.value.length, maxBytes);
+      if (next) {
+        input.value = next.value;
+        if (input.selectionEnd !== null) input.setSelectionRange(next.caret, next.caret);
+      }
+      onChange?.(event);
+    },
+    onCompositionEnd: (event) => {
+      onCompositionEnd?.(event);
+      // Chrome sends a commit's last input before compositionend, so a commit
+      // past the limit is cut here. The value is set past React's own setter
+      // and announced with an input event, so React sees it change and calls
+      // onChange above, which hands it on.
+      const input = event.currentTarget;
+      const next = cutToFit(input.value, input.selectionEnd ?? input.value.length, maxBytes);
+      if (!next) return;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, next.value);
+      if (input.selectionEnd !== null) input.setSelectionRange(next.caret, next.caret);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    },
   };
 }
 
