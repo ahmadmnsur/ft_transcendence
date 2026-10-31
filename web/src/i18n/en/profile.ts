@@ -82,6 +82,8 @@ export default {
     teachSelectLabel: 'Choose a Skill to teach',
     learnSelectLabel: 'Choose a Skill to learn',
     selectPlaceholder: 'Choose a Skill',
+    teachSearch: 'Search Skills to teach…',
+    learnSearch: 'Search Skills to learn…',
     add: 'Add',
     empty: 'No Skills here yet.',
     limitHint: {

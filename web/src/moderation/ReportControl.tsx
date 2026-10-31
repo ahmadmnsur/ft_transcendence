@@ -59,7 +59,7 @@ function ReportDialog({ target, student, open, onClose }: Props & {
   const [received, setReceived] = useState(false);
   const [failure, setFailure] = useState<{ code: unknown } | undefined>(undefined);
   const pendingRef = useRef(false);
-  const reasonRef = useRef<HTMLSelectElement>(null);
+  const reasonRef = useRef<HTMLButtonElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const receiptRef = useRef<HTMLParagraphElement>(null);
   const trimmed = text.trim();
@@ -134,14 +134,13 @@ function ReportDialog({ target, student, open, onClose }: Props & {
               ref={reasonRef}
               label={copy.reason}
               required
+              options={REPORT_REASONS.map((code) => ({ value: code, label: copy.reasons[code] }))}
               value={reason}
               disabled={pending}
-              onChange={(event) => setReason(event.target.value as ReportReason | '')}
+              onValueChange={(next) => setReason(REPORT_REASONS.find((code) => code === next) ?? '')}
+              placeholder={copy.chooseReason}
               error={attempted && reason === '' ? copy.reasonRequired : undefined}
-            >
-              <option value="">{copy.chooseReason}</option>
-              {REPORT_REASONS.map((code) => <option key={code} value={code}>{copy.reasons[code]}</option>)}
-            </Select>
+            />
             <TextArea
               ref={textRef}
               label={copy.textLabel}

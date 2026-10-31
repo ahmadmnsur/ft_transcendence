@@ -17,6 +17,17 @@ export default {
     pageLabel: 'Aller à la page {page}',
   },
   modal: { close: 'Fermer la fenêtre' },
+  select: {
+    loading: 'Chargement…',
+    noOptions: 'Aucune option à choisir.',
+    noResults: 'Aucun résultat',
+    clearSearch: 'Effacer la recherche',
+    results: {
+      one: '{count} résultat',
+      many: '{count} de résultats',
+      other: '{count} résultats',
+    },
+  },
   banner: { dismiss: 'Masquer « {title} »' },
   roleLabel: 'Admin',
   skillChip: {

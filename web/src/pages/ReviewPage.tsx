@@ -164,14 +164,15 @@ function ReviewForm({ matchId, onSubmitted }: { matchId: string; onSubmitted: (r
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
             />
-            <Select label={copy.rating} value={rating} onChange={(e) => setRating(e.target.value)}>
-              <option value="">{copy.noRating}</option>
-              {ratings.map((value) => (
-                <option key={value} value={value}>
-                  {formatText(copy.ratingValue, { rating: value, max: ratingMax })}
-                </option>
-              ))}
-            </Select>
+            <Select
+              label={copy.rating}
+              options={[
+                { value: '', label: copy.noRating, separator: true },
+                ...ratings.map((value) => ({ value: String(value), label: formatText(copy.ratingValue, { rating: value, max: ratingMax }) })),
+              ]}
+              value={rating}
+              onValueChange={setRating}
+            />
           </div>
         </Card>
         <Card headingLevel={2} title={copy.takeaway} subtitle={copy.takeawayReaders}>

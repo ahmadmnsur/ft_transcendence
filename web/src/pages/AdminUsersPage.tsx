@@ -124,22 +124,18 @@ function FiltersForm({
           if (qInvalid) setQInvalid(!isValidSearchQuery(event.target.value));
         }}
       />
-      <Select label={copy.roleLabel} value={role} onChange={(event) => setRole(event.target.value)}>
-        <option value="">{copy.anyRole}</option>
-        {ROLES.map((item) => (
-          <option key={item} value={item}>
-            {t.admin.roles[item]}
-          </option>
-        ))}
-      </Select>
-      <Select label={copy.statusLabel} value={status} onChange={(event) => setStatus(event.target.value)}>
-        <option value="">{copy.anyStatus}</option>
-        {STUDENT_STATUSES.map((item) => (
-          <option key={item} value={item}>
-            {t.admin.statuses[item]}
-          </option>
-        ))}
-      </Select>
+      <Select
+        label={copy.roleLabel}
+        options={[{ value: '', label: copy.anyRole, separator: true }, ...ROLES.map((item) => ({ value: item, label: t.admin.roles[item] }))]}
+        value={role}
+        onValueChange={setRole}
+      />
+      <Select
+        label={copy.statusLabel}
+        options={[{ value: '', label: copy.anyStatus, separator: true }, ...STUDENT_STATUSES.map((item) => ({ value: item, label: t.admin.statuses[item] }))]}
+        value={status}
+        onValueChange={setStatus}
+      />
       <div className="flex flex-wrap gap-2 sm:col-span-3">
         <Button type="submit">{copy.submit}</Button>
         <Button type="button" variant="secondary" onClick={onClear}>

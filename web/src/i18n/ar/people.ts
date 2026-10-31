@@ -18,6 +18,7 @@ export default {
     teachesLabel: 'يستطيع تعليم',
     wantsLabel: 'يريد تعلم',
     anySkill: 'أي مهارة',
+    skillSearch: 'البحث عن مهارة…',
     goalLabel: 'هدف التعلم',
     goalAny: 'الكل',
     goalYes: 'لديه هدف تعلم',

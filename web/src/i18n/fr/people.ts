@@ -15,6 +15,7 @@ export default {
     teachesLabel: 'Peut enseigner',
     wantsLabel: 'Veut apprendre',
     anySkill: 'Toutes les Compétences',
+    skillSearch: 'Rechercher une Compétence…',
     goalLabel: "Objectif d'apprentissage",
     goalAny: 'Indifférent',
     goalYes: "Avec un Objectif d'apprentissage",

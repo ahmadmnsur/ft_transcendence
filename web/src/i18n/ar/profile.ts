@@ -80,6 +80,8 @@ export default {
     teachSelectLabel: 'اختر مهارة لتعليمها',
     learnSelectLabel: 'اختر مهارة لتعلمها',
     selectPlaceholder: 'اختر مهارة',
+    teachSearch: 'البحث عن مهارة لتعليمها…',
+    learnSearch: 'البحث عن مهارة لتعلمها…',
     add: 'إضافة',
     empty: 'لا توجد مهارات هنا بعد.',
     limitHint: {

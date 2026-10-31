@@ -33,6 +33,17 @@ export function HandMadeMatchForm({ students, references }: {
   }, [notice]);
 
   const valid = first !== second && [first, second].every((id) => students.some((student) => student.id === id));
+  function optionsWithout(other: string): { value: string; label: string }[] {
+    return students
+      .filter((student) => student.id !== other)
+      .map((student) => ({
+        value: student.id,
+        label: formatText(copy.studentOption, {
+          name: personNameValue(student.displayName, student.removed),
+          reference: references.get(student.id) ?? student.id,
+        }),
+      }));
+  }
   function selectedProfile(id: string): React.ReactNode {
     if (!students.some((student) => student.id === id)) return null;
     return (
@@ -80,31 +91,29 @@ export function HandMadeMatchForm({ students, references }: {
           <p className="text-sm text-ink-muted">{copy.identify}</p>
           <div className="grid min-w-0 gap-3 sm:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-2">
-              <Select label={copy.first} value={first} disabled={pending} onChange={(event) => setFirst(event.target.value)}>
-                <option value="">{copy.choose}</option>
-                {students.filter((student) => student.id !== second).map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {formatText(copy.studentOption, {
-                      name: personNameValue(student.displayName, student.removed),
-                      reference: references.get(student.id) ?? student.id,
-                    })}
-                  </option>
-                ))}
-              </Select>
+              <Select
+                label={copy.first}
+                options={optionsWithout(second)}
+                value={first}
+                disabled={pending}
+                onValueChange={setFirst}
+                placeholder={copy.choose}
+                searchable
+                searchPlaceholder={copy.search}
+              />
               {selectedProfile(first)}
             </div>
             <div className="flex min-w-0 flex-col gap-2">
-              <Select label={copy.second} value={second} disabled={pending} onChange={(event) => setSecond(event.target.value)}>
-                <option value="">{copy.choose}</option>
-                {students.filter((student) => student.id !== first).map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {formatText(copy.studentOption, {
-                      name: personNameValue(student.displayName, student.removed),
-                      reference: references.get(student.id) ?? student.id,
-                    })}
-                  </option>
-                ))}
-              </Select>
+              <Select
+                label={copy.second}
+                options={optionsWithout(first)}
+                value={second}
+                disabled={pending}
+                onValueChange={setSecond}
+                placeholder={copy.choose}
+                searchable
+                searchPlaceholder={copy.search}
+              />
               {selectedProfile(second)}
             </div>
           </div>

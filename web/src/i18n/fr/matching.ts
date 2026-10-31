@@ -153,6 +153,7 @@ export default {
     first: 'Premier Étudiant',
     second: 'Deuxième Étudiant',
     choose: 'Choisissez un Étudiant',
+    search: 'Rechercher par nom ou référence…',
     create: 'Créer un Match à la main',
     creating: 'Création…',
     created: 'Le Match à la main a été créé.',

@@ -36,7 +36,7 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
   // Where focus lands once a mode change has rendered: the Select when the
   // form appears, the Edit button when the view returns.
   const [focusTarget, setFocusTarget] = useState<'skill' | 'edit' | null>(null);
-  const skillRef = useRef<HTMLSelectElement>(null);
+  const skillRef = useRef<HTMLButtonElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const editRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
@@ -184,11 +184,13 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
         <Select
           ref={skillRef}
           label={copy.skillLabel}
+          options={learn.map((skill) => ({ value: skill.id, label: skillNameText(skill.name) }))}
           value={skillId}
-          onChange={(event) => {
-            setDraft({ skillId: event.target.value, text });
+          onValueChange={(next) => {
+            setDraft({ skillId: next, text });
             setSkillError(undefined);
           }}
+          placeholder={copy.skillPlaceholder}
           error={
             skillError === undefined
               ? undefined
@@ -196,14 +198,7 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
                 ? copy.chooseSkillError
                 : errorText(skillError)
           }
-        >
-          <option value="">{copy.skillPlaceholder}</option>
-          {learn.map((skill) => (
-            <option key={skill.id} value={skill.id}>
-              {skillNameText(skill.name)}
-            </option>
-          ))}
-        </Select>
+        />
         <TextArea
           ref={textRef}
           label={copy.textLabel}

@@ -181,6 +181,7 @@ export default {
     first: 'First Student',
     second: 'Second Student',
     choose: 'Choose a Student',
+    search: 'Search by name or reference…',
     create: 'Create a hand-made Match',
     creating: 'Creating…',
     created: 'The hand-made Match was created.',
