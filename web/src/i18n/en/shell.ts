@@ -21,6 +21,7 @@ export default {
     signUpLink: 'Sign up',
   },
   language: { label: 'Language' },
+  theme: { toDark: 'Switch to dark theme', toLight: 'Switch to light theme' },
   footer: { privacy: 'Privacy Policy', terms: 'Terms of Service' },
   notFound: {
     name: 'Page not found',

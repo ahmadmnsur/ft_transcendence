@@ -543,14 +543,14 @@ export function Select({
                 className={[
                   'relative flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-base transition-colors duration-150 select-none motion-reduce:transition-none sm:min-h-10 sm:text-sm',
                   option.separator && term === '' ? 'mb-2 after:absolute after:inset-x-3 after:-bottom-1 after:h-px after:bg-line' : '',
-                  option.disabled ? 'cursor-not-allowed text-ink-subtle' : isSelected ? 'cursor-pointer font-medium text-primary-700' : 'cursor-pointer text-ink',
+                  option.disabled ? 'cursor-not-allowed text-ink-subtle' : isSelected ? 'cursor-pointer font-medium text-ink-accent' : 'cursor-pointer text-ink',
                   isSelected ? (isActive ? 'bg-primary-100' : 'bg-primary-50') : isActive ? 'bg-surface-muted' : '',
                   isActive ? 'forced-colors:bg-[Highlight] forced-colors:text-[HighlightText] forced-colors:forced-color-adjust-none' : '',
                   isActive && byKeyboard ? 'outline-2 -outline-offset-2 outline-focus' : '',
                 ].join(' ')}
               >
                 <span className="min-w-0 flex-1 wrap-anywhere">{option.label}</span>
-                {isSelected ? <CheckIcon size={16} className="shrink-0 text-primary-700 forced-colors:text-current" /> : null}
+                {isSelected ? <CheckIcon size={16} className="shrink-0 text-ink-accent forced-colors:text-current" /> : null}
               </li>
             );
           })}

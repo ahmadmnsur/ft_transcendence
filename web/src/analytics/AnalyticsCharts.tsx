@@ -11,7 +11,7 @@ import { isolate } from '../i18n/text';
 type Row = { label: string; value: number | null; demand?: number; supply?: number };
 type Series = { key: 'value'; name: string; color: string };
 
-const PRIMARY = 'var(--color-primary-700)';
+const PRIMARY = 'var(--color-ink-accent)';
 const INK = 'var(--color-ink-muted)';
 const LINE = 'var(--color-line)';
 
@@ -97,7 +97,7 @@ export function AnalyticsBars({ title, description, rows, name, xTitle, unit }: 
               tickFormatter={(value: number) => isolate(formatNumber(value))} tick={{ fill: INK, fontSize: 12 }}
               tickLine={false} axisLine={false} />
             <ReferenceLine y={0} stroke={INK} />
-            <Tooltip content={<ChartTooltip />} reverseDirection={{ x: rtl }} isAnimationActive={false} />
+            <Tooltip content={<ChartTooltip />} cursor={{ className: 'dark:fill-surface-sunken' }} reverseDirection={{ x: rtl }} isAnimationActive={false} />
             <Bar dataKey="value" name={name} fill={PRIMARY} maxBarSize={40} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>

@@ -717,9 +717,9 @@ included (ADR-0020 d6, §3.5.5).
   its own and every form error is PeerConnect's own translated text (ADR-0020 d2).
 - Uploads use `XMLHttpRequest` for `upload.onprogress` (progress indicator, `en.subject.md:546`) and
   send `X-PeerConnect-CSRF: 1`.
-- Browser storage: `localStorage` may hold interface preferences only (e.g. a collapsed panel, or
-  the language choice under `peerconnect.language`, §3.5.5). Never a token, never Student data, never
-  OAuth state (ADR-0018 d5).
+- Browser storage: `localStorage` may hold interface preferences only (e.g. a collapsed panel, the
+  language choice under `peerconnect.language`, §3.5.5, or the theme under `peerconnect.theme`,
+  §3.5.3). Never a token, never Student data, never OAuth state (ADR-0018 d5).
 - **The browser never talks to Supabase.** `web/` has no `@supabase/*` package, and no Supabase URL
   or key reaches the bundle: there is no `VITE_SUPABASE_*` variable (ADR-0003's top note of
   2026-09-30, ADR-0019 d1). Every file the SPA shows comes from PeerConnect's own file routes
@@ -862,6 +862,26 @@ icon set of hand-authored inline SVG React components (no icon package, no CDN).
   close signs, the vertical sort and upload arrows, the star, trophy and user, the speech bubble,
   the flag and the file stay as drawn, and the `Button` spinner keeps turning clockwise. *(Added
   2026-10-24:)* so do the header's menu lines.
+- **A light and a dark theme** *(added 2026-10-31)*. Every colour role has a dark value beside its
+  light one in `tokens.css`, set under `:root[data-theme='dark']` with `color-scheme: dark`, so the
+  browser's own controls and scroll bars turn dark too. Two roles join them: `ink-accent`, the teal
+  of text, icons and chart marks, and `line-accent`, the teal of borders and underlines. In dark,
+  the neutral scale runs from dark to light, and each colour scale's 50–500 steps become dark tints
+  and its 900 a light text, so every tint keeps its text; its 600–800 steps keep their values, so
+  white text on them keeps its ratio. Every text and boundary pair the components use meets WCAG AA
+  in both themes (text 4.5:1, boundaries and the focus ring 3:1).
+  - **How it is chosen.** A first visit follows the computer's setting (`prefers-color-scheme`), and
+    keeps following it while the page is open, until a choice is made. The header's moon or sun
+    button, beside the language switcher, switches the theme and stores the choice under the
+    `localStorage` key `peerconnect.theme`, as `light` or `dark`; any other stored value is
+    ignored. A choice made in one tab reaches the browser's other open tabs at once. Like the
+    language, the choice belongs to the browser, not the account. Signed in below `md`, the switch
+    is an item of the phone menu instead, so the header's line keeps the logo's width.
+  - **No flash.** `web/public/theme.js`, a small script at the top of `web/index.html`, sets
+    `data-theme` on `<html>` before anything is drawn, so a stored choice never shows the other
+    theme first, and the SPA starts from the theme it set. It is served from PeerConnect's own
+    origin, which the CSP's `script-src 'self'` allows (§3.10).
+  - The default avatar has a dark version, and the sun and the moon stay as drawn right to left.
 
 **At least these ≥ 10 reusable components**, each used by at least two screens: `Button`,
 `IconButton`, `TextField`, `TextArea`, `Select` (its label can be hidden visually while screen

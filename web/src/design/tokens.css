@@ -103,6 +103,8 @@
   --color-ink-danger: var(--color-danger-700);
   --color-link: var(--color-primary-700);
   --color-focus: var(--color-primary-600);
+  --color-ink-accent: var(--color-primary-700);
+  --color-line-accent: var(--color-primary-600);
 }
 
 
@@ -122,10 +124,68 @@
 
 @custom-variant arabic (&:lang(ar));
 
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 @layer base {
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --color-neutral-50: #191713;
+    --color-neutral-100: #292621;
+    --color-neutral-200: #37322c;
+    --color-neutral-300: #4a443d;
+    --color-neutral-400: #615a50;
+    --color-neutral-500: #82796c;
+    --color-neutral-600: #a19788;
+    --color-neutral-700: #c0b6a8;
+    --color-neutral-800: #d7d0c6;
+    --color-neutral-900: #ebe7e1;
+    --color-primary-50: #152c2b;
+    --color-primary-100: #123735;
+    --color-primary-200: #0e4643;
+    --color-primary-300: #13625d;
+    --color-primary-400: #1d857f;
+    --color-primary-500: #34a69f;
+    --color-primary-900: #a6e6e0;
+    --color-success-50: #172d22;
+    --color-success-100: #163827;
+    --color-success-200: #164831;
+    --color-success-300: #1e6444;
+    --color-success-400: #2c885e;
+    --color-success-500: #42a878;
+    --color-success-900: #a9e8c6;
+    --color-warning-50: #342413;
+    --color-warning-100: #422b10;
+    --color-warning-200: #55350d;
+    --color-warning-300: #754b10;
+    --color-warning-400: #9e6718;
+    --color-warning-500: #c2832d;
+    --color-warning-900: #f7d69a;
+    --color-danger-50: #39201d;
+    --color-danger-100: #482522;
+    --color-danger-200: #5e2c28;
+    --color-danger-300: #813e39;
+    --color-danger-400: #af564f;
+    --color-danger-500: #d67067;
+    --color-danger-900: #fcc0bb;
+    --color-canvas: #191713;
+    --color-surface: #221f1b;
+    --color-surface-muted: #2b2722;
+    --color-surface-sunken: #34302a;
+    --color-line: #3a3630;
+    --color-line-strong: #8e8578;
+    --color-ink: #ebe7e1;
+    --color-ink-muted: #c4bdb1;
+    --color-ink-subtle: #b3a99c;
+    --color-ink-danger: #f69087;
+    --color-ink-accent: #6dd2ca;
+    --color-link: #6dd2ca;
+    --color-focus: #42c1b9;
+    --color-line-accent: #3caca5;
+  }
+
   :root {
     overflow-wrap: break-word;
-    accent-color: var(--color-primary-700);
+    accent-color: var(--color-ink-accent);
     caret-color: var(--color-focus);
     scrollbar-color: var(--color-line-strong) transparent;
   }
