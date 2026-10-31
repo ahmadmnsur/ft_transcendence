@@ -87,14 +87,28 @@ export default {
   passwordChange: {
     title: 'Mon profil',
     heading: 'Mon profil',
+    rowTitle: 'Mot de passe',
     cardTitle: 'Changer le mot de passe',
-    cardSubtitle: 'Changer votre mot de passe vous déconnecte partout.',
+    cardSubtitle: 'Changer votre mot de passe vous déconnecte partout, y compris sur cet appareil.',
     currentLabel: 'Mot de passe actuel',
     currentEmpty: 'Saisissez votre mot de passe actuel.',
     newLabel: 'Nouveau mot de passe',
     confirmLabel: 'Confirmez le nouveau mot de passe',
     confirmInvalid: 'Les deux nouveaux mots de passe ne correspondent pas.',
-    submit: 'Changer le mot de passe',
-    submitting: 'Modification…',
+    currentVisibility: {
+      showPasswordLabel: 'Afficher le mot de passe actuel',
+      hidePasswordLabel: 'Masquer le mot de passe actuel',
+    },
+    newVisibility: {
+      showPasswordLabel: 'Afficher le nouveau mot de passe',
+      hidePasswordLabel: 'Masquer le nouveau mot de passe',
+    },
+    confirmVisibility: {
+      showPasswordLabel: 'Afficher la confirmation du mot de passe',
+      hidePasswordLabel: 'Masquer la confirmation du mot de passe',
+    },
+    submit: 'Mettre à jour le mot de passe',
+    submitting: 'Mise à jour…',
+    cancel: 'Annuler',
   },
 } as const satisfies Catalogue<'fr', typeof auth>;

@@ -1,5 +1,9 @@
 # The seed drives the real write paths, carries four closed Rounds, and ends idle
 
+> **Annotated 2026-10-31.** `.env.example` now lists names only, and every value it is said below to
+> carry lives in the gitignored `.env`; the fallback's values there carry a `LOCAL_` prefix where
+> they differ from the team project's (ADR-0004's note of 2026-10-31).
+
 > **Annotated 2026-10-12 for the move to Supabase.** Decision 10 carries notes from
 > [Settle how make up and the defense run with Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/101) and [Settle how the seed creates accounts and files on Supabase](https://github.com/ahmadmnsur/ft_transcendence/issues/98) on how the seed runs on
 > Supabase: what a run that writes the fixture empties, its guard, the completion record and its

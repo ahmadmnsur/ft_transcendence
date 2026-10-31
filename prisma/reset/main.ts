@@ -23,7 +23,7 @@ const TARGETS = {
     command: 'make reset-local',
     name: 'the local fallback',
     kind: 'fallback',
-    source: '.env.example',
+    source: ".env's LOCAL_ entries",
     next: 'Boot it again with make local or make dev to seed it; if its stack is still up, run make down before that.',
   },
 } as const;

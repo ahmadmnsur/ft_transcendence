@@ -1,5 +1,5 @@
 x-dev-environment: &pc-dev-environment
-  PUBLIC_ORIGIN: "http://localhost:8081"
+  PUBLIC_ORIGIN: ${LOCAL_DEV_PUBLIC_ORIGIN:-}
   NODE_ENV: development
 
 services:

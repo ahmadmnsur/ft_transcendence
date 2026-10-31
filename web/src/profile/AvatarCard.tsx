@@ -4,6 +4,7 @@ import { Avatar, Banner, Button, Card, FileDrop, Modal } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
+import { revealClass, useDisclosure } from './SettingRow';
 import type { ProfileTarget } from './target';
 
 type Status = { kind: 'saved' } | { kind: 'removed' } | { kind: 'failed'; code: unknown };
@@ -20,6 +21,7 @@ export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Ele
   const controllerRef = useRef<AbortController | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const keepRef = useRef<HTMLButtonElement>(null);
+  const disclosure = useDisclosure();
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -51,6 +53,7 @@ export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Ele
       });
       if (controllerRef.current !== controller) return;
       await target.apply({ avatarUrl: saved.avatarUrl });
+      disclosure.hide(false);
       setStatus({ kind: 'saved' });
     } catch (error) {
       if (controller.signal.aborted) {
@@ -76,6 +79,18 @@ export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Ele
     controller?.abort();
     setUpload(null);
     setRefused(null);
+  }
+
+  function onCancel(): void {
+    onPick(null);
+    disclosure.hide();
+  }
+
+  function onPanelKeyDown(event: React.KeyboardEvent): void {
+    if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
+    if (event.target instanceof Element && event.target.closest('dialog') !== null) return;
+    event.preventDefault();
+    onCancel();
   }
 
   async function onRemove(): Promise<void> {
@@ -105,32 +120,55 @@ export function AvatarCard({ target }: { target: ProfileTarget }): React.JSX.Ele
             )}
           </div>
         ) : null}
-        <div className="flex min-w-0 flex-wrap items-start gap-4">
+        <div className={`flex min-w-0 flex-wrap gap-4 ${disclosure.open ? 'items-start' : 'items-center'}`}>
           <Avatar src={avatarUrl} alt={avatarUrl === null ? copy.defaultAlt : copy.currentAlt} size="xl" loading="eager" />
-          <FileDrop
-            className="min-w-0 flex-1 basis-64"
-            label={copy.fileLabel}
-            accept={[...LIMITS.avatar.mimeTypes]}
-            maxBytes={LIMITS.avatar.maxBytes}
-            value={upload?.file ?? refused?.file ?? null}
-            onChange={onPick}
-            error={refused === null ? undefined : errorText(refused.code)}
-            progress={upload?.progress}
-          />
+          {disclosure.open ? (
+            <div
+              ref={(node) => {
+                disclosure.panelRef.current = node;
+              }}
+              onKeyDown={onPanelKeyDown}
+              className={`flex min-w-0 flex-1 basis-64 flex-col gap-3 ${revealClass}`}
+            >
+              <FileDrop
+                label={copy.fileLabel}
+                accept={[...LIMITS.avatar.mimeTypes]}
+                maxBytes={LIMITS.avatar.maxBytes}
+                value={upload?.file ?? refused?.file ?? null}
+                onChange={onPick}
+                error={refused === null ? undefined : errorText(refused.code)}
+                progress={upload?.progress}
+              />
+              <Button variant="secondary" className="self-start" onClick={onCancel}>
+                {copy.cancel}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex min-w-0 flex-wrap gap-2">
+              <Button
+                ref={disclosure.triggerRef}
+                variant="secondary"
+                onClick={() => {
+                  setStatus(undefined);
+                  disclosure.show();
+                }}
+              >
+                {avatarUrl === null ? copy.upload : copy.change}
+              </Button>
+              {avatarUrl !== null ? (
+                <Button
+                  variant="danger-ghost"
+                  onClick={() => {
+                    setStatus(undefined);
+                    setConfirming(true);
+                  }}
+                >
+                  {copy.remove}
+                </Button>
+              ) : null}
+            </div>
+          )}
         </div>
-        {avatarUrl !== null && upload === null ? (
-          <Button
-            variant="danger-ghost"
-            size="sm"
-            className="self-start"
-            onClick={() => {
-              setStatus(undefined);
-              setConfirming(true);
-            }}
-          >
-            {copy.remove}
-          </Button>
-        ) : null}
       </div>
       <Modal
         open={confirming}

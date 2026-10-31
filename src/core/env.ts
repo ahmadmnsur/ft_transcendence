@@ -185,7 +185,7 @@ export function validateEnv(env: EnvRecord): EnvResult {
   ) {
     return fail(
       'DATABASE_URL',
-      'at host db, user, password and database must match .env.example; delete an old .env or replace it with a copy of .env.example',
+      'at host db, user, password and database must match POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB; set LOCAL_DATABASE_URL in .env to match them',
     );
   }
 

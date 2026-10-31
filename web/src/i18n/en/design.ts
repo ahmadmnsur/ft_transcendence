@@ -32,6 +32,7 @@ export default {
     teach: 'Can teach: {skill}',
     learn: 'Wants to learn: {skill}',
     remove: 'Remove {skill}',
+    unsaved: 'Not saved yet.',
   },
   fileDrop: {
     label: 'Attach a file',

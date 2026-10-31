@@ -3,7 +3,7 @@ import type { Catalogue } from '../types';
 
 export default {
   title: 'Progression', loading: 'Chargement de la progression…', retry: 'Réessayer',
-  level: 'Niveau {level}', totalXp: '{xp} XP au total', levelProgress: '{earned} / {needed} XP',
+  level: 'Niveau {level}', totalXp: '{xp} XP au total', levelProgress: '{earned} / {needed} XP vers le Niveau {next}',
   cap: 'Niveau maximal atteint. Vous continuez à gagner des XP.', earned: '+{xp} XP gagnés',
   badges: 'Badges', noBadges: 'Aucun Badge pour le moment. Consultez les règles pour savoir comment les gagner.',
   newlyAwarded: 'Badges gagnés', awardedAt: 'Gagné le {date}',

@@ -34,6 +34,7 @@ export default {
     teach: 'Peut enseigner : {skill}',
     learn: 'Veut apprendre : {skill}',
     remove: 'Retirer {skill}',
+    unsaved: 'Pas encore enregistrée.',
   },
   fileDrop: {
     label: 'Joindre un fichier',

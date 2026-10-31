@@ -143,6 +143,7 @@ export default {
       teachHeading: 'Compétences à enseigner',
       learnHeading: 'Compétences à apprendre',
       nothingToAdd: 'Toutes les Compétences du catalogue figurent déjà ici.',
+      emptyNudge: "Les Tours apparient les Étudiants selon leurs Compétences, et cet Étudiant n'en a aucune.",
       goalWillClear:
         "L'enregistrement effacera son Objectif d'apprentissage, car sa Compétence ne figure plus dans sa liste d'apprentissage.",
       saved: 'Les Compétences ont été enregistrées.',
@@ -157,6 +158,9 @@ export default {
         "Sa liste d'apprentissage est vide : un Objectif d'apprentissage désigne l'une de ses Compétences.",
       saved: "L'Objectif d'apprentissage a été enregistré.",
       cleared: "L'Objectif d'apprentissage a été effacé.",
+      confirmTitle: "Effacer cet Objectif d'apprentissage ?",
+      confirmBody:
+        "Sa Compétence et sa phrase sont supprimées. L'Étudiant peut définir un nouvel Objectif d'apprentissage à tout moment.",
     },
   },
 } as const satisfies Catalogue<'fr', typeof admin>;

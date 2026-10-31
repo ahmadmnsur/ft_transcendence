@@ -22,10 +22,16 @@ jobs:
       - run: npx tsc --noEmit -p tsconfig.json
       - run: npm --prefix web run build
       - run: npx nest build
+      - name: Write the local .env
+        env:
+          LOCAL_ENV_FILE: ${{ secrets.LOCAL_ENV_FILE }}
+        run: |
+          test -n "$LOCAL_ENV_FILE" || { echo "missing the LOCAL_ENV_FILE repository secret"; exit 1; }
+          printf '%s\n' "$LOCAL_ENV_FILE" > .env
       - name: Check the local Supabase copy
         run: |
           set -e
-          compose=(docker compose -p peerconnect-test --env-file .env.example -f compose.yaml -f compose.dev.yaml -f compose.local.yaml)
+          compose=(docker compose -p peerconnect-test --env-file .env --profile local -f compose.yaml -f compose.local.yaml -f compose.dev.yaml)
           cleanup() {
             status=$?
             "${compose[@]}" down --volumes --remove-orphans || { if [ "$status" -eq 0 ]; then status=1; fi; }

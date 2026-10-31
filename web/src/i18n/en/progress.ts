@@ -6,7 +6,7 @@ export default {
   retry: 'Try again',
   level: 'Level {level}',
   totalXp: '{xp} XP in total',
-  levelProgress: '{earned} / {needed} XP',
+  levelProgress: '{earned} / {needed} XP to Level {next}',
   cap: 'Maximum Level reached. You keep earning XP.',
   earned: '+{xp} XP earned',
   badges: 'Badges',

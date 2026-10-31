@@ -16,7 +16,7 @@ export function Card({ title, subtitle, headingLevel = 3, actions, children, cla
         <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             {title != null ? <Heading className="text-base font-semibold text-ink">{title}</Heading> : null}
-            {subtitle != null ? <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p> : null}
+            {subtitle != null ? <p className="mt-0.5 text-sm text-ink-muted text-pretty">{subtitle}</p> : null}
           </div>
           {actions != null ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
         </div>
