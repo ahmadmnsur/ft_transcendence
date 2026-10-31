@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type ChangeEventHandler, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
+import { utf8ByteLength } from '@shared/limits';
 
 export type FieldMessage = string | ReactElement;
 
@@ -103,23 +104,24 @@ export const controlClass = (invalid: boolean): string =>
   ].join(' ');
 
 // maxLength counts UTF-16 code units, and a password's limit is in UTF-8
-// bytes, so a field given `maxBytes` keeps that limit itself. Like maxLength,
-// an edit that would pass it keeps only the start of what was just typed or
-// pasted, the text before the caret, as much as fits, and nothing says so:
-// the field never holds more, so the limit needs no message.
-const encoder = new TextEncoder();
-const byteLength = (text: string): number => encoder.encode(text).length;
+// bytes, so a field given `maxBytes` keeps that limit itself, measured after
+// trimming as every limit is (§6.0.3). Like maxLength, an edit that would
+// pass it keeps only the start of what was just typed or pasted, the text
+// before the caret, as much as fits, and nothing says so: the field never
+// holds more, so the limit needs no message.
+const fits = (text: string, maxBytes: number): boolean => utf8ByteLength(text.trim()) <= maxBytes;
 
-// The longest start of `text`, in whole code points, that fits in `room` bytes.
-function fitBytes(text: string, room: number): string {
-  let kept = '';
-  let used = 0;
-  for (const char of text) {
-    used += byteLength(char);
-    if (used > room) break;
-    kept += char;
+// How many of `chars` can stand before `tail` and still fit. One more char
+// never makes the trimmed text shorter, so the count is found by halving.
+function fitting(chars: string[], tail: string, maxBytes: number): number {
+  let low = 0;
+  let high = chars.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (fits(chars.slice(0, mid).join('') + tail, maxBytes)) low = mid;
+    else high = mid - 1;
   }
-  return kept;
+  return low;
 }
 
 export function capBytes(
@@ -130,14 +132,14 @@ export function capBytes(
   return (event) => {
     const input = event.currentTarget;
     const { value } = input;
-    if (byteLength(value) > maxBytes) {
+    if (!fits(value, maxBytes)) {
       const caret = input.selectionEnd ?? value.length;
-      const tail = value.slice(caret);
-      const room = maxBytes - byteLength(tail);
       // Text after the caret that is too long by itself was not typed at the
       // caret (a script or an autofill set it): the whole value is cut at its end.
-      const head = room < 0 ? fitBytes(value, maxBytes) : fitBytes(value.slice(0, caret), room);
-      input.value = room < 0 ? head : head + tail;
+      const cut = fits(value.slice(caret), maxBytes) ? caret : value.length;
+      const chars = [...value.slice(0, cut)];
+      const head = chars.slice(0, fitting(chars, value.slice(cut), maxBytes)).join('');
+      input.value = head + value.slice(cut);
       if (input.selectionEnd !== null) input.setSelectionRange(head.length, head.length);
     }
     onChange?.(event);
