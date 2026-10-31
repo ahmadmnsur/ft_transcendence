@@ -12,25 +12,12 @@ export default {
       other: '{count} حرف على الأقل.',
     },
     invalid: {
-      text: 'استخدم {minChars} و{maxBytes}.',
-      parts: {
-        minChars: {
-          zero: '{count} حرف على الأقل',
-          one: 'حرف واحد على الأقل',
-          two: 'حرفان على الأقل',
-          few: '{count} أحرف على الأقل',
-          many: '{count} حرفا على الأقل',
-          other: '{count} حرف على الأقل',
-        },
-        maxBytes: {
-          zero: '{count} بايت على الأكثر',
-          one: 'بايت واحد على الأكثر',
-          two: 'بايتان على الأكثر',
-          few: '{count} بايتات على الأكثر',
-          many: '{count} بايتا على الأكثر',
-          other: '{count} بايت على الأكثر',
-        },
-      },
+      zero: 'استخدم {count} حرف على الأقل.',
+      one: 'استخدم حرف واحد على الأقل.',
+      two: 'استخدم حرفان على الأقل.',
+      few: 'استخدم {count} أحرف على الأقل.',
+      many: 'استخدم {count} حرفا على الأقل.',
+      other: 'استخدم {count} حرف على الأقل.',
     },
   },
   passwordVisibility: {

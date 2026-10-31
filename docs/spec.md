@@ -1742,6 +1742,13 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   Arabic letter counts two bytes or more, with no composition rule (§6.0.3). The SPA refuses a password outside it,
   and the API checks again before it calls Supabase Auth. The Supabase project's own minimum length
   is 8 too.
+
+  > **Updated 2026-10-31**: every password field in the SPA stops taking text at 72 bytes, as a
+  > field's maximum length does, and nothing on the page names that limit: a keystroke or a paste
+  > that would pass it keeps only as much as fits. So the SPA refuses only a password under 8
+  > characters, with *"Use at least 8 characters."*, and the hint under a new password reads *"At
+  > least 8 characters."* The rule does not change, and the API still checks both ends.
+
 - **Sign-up** takes email, password, display name and the acceptance checkbox *"I agree to the Terms
   of Service and have read the Privacy Policy"* (ADR-0018 d12). The checkbox is validated on both
   ends and **not stored**. Email is trimmed and lower-cased; display name 1–40 characters after

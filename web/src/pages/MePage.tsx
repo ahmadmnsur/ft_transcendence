@@ -48,10 +48,7 @@ export function MePage(): React.JSX.Element {
   const confirmRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -189,6 +186,7 @@ export function MePage(): React.JSX.Element {
               label={t.auth.passwordChange.currentLabel}
               type="password"
               autoComplete="current-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               error={
@@ -205,6 +203,7 @@ export function MePage(): React.JSX.Element {
               hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
               type="password"
               autoComplete="new-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               error={newError ? passwordInvalid : undefined}
@@ -214,6 +213,7 @@ export function MePage(): React.JSX.Element {
               label={t.auth.passwordChange.confirmLabel}
               type="password"
               autoComplete="new-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               error={confirmError ? t.auth.passwordChange.confirmInvalid : undefined}

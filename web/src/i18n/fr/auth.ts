@@ -9,19 +9,9 @@ export default {
       other: 'Au moins {count} caractères.',
     },
     invalid: {
-      text: 'Utilisez {minChars} et {maxBytes}.',
-      parts: {
-        minChars: {
-          one: 'au moins {count} caractère',
-          many: 'au moins {count} de caractères',
-          other: 'au moins {count} caractères',
-        },
-        maxBytes: {
-          one: 'au plus {count} octet',
-          many: "au plus {count} d'octets",
-          other: 'au plus {count} octets',
-        },
-      },
+      one: 'Utilisez au moins {count} caractère.',
+      many: 'Utilisez au moins {count} de caractères.',
+      other: 'Utilisez au moins {count} caractères.',
     },
   },
   passwordVisibility: {

@@ -40,10 +40,7 @@ export function SignInPage(): React.JSX.Element {
   const mountedRef = useRef(false);
   const handOffTimerRef = useRef<number | undefined>(undefined);
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -165,6 +162,7 @@ export function SignInPage(): React.JSX.Element {
                 label={t.auth.signIn.passwordLabel}
                 {...t.auth.passwordVisibility}
                 autoComplete="current-password"
+                maxBytes={LIMITS.password.maxBytes}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 error={passwordError === undefined ? undefined : passwordError === 'empty' ? t.auth.signIn.passwordEmpty : passwordInvalid}

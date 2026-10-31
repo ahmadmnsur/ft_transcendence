@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type ChangeEventHandler, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
 
 export type FieldMessage = string | ReactElement;
 
@@ -101,6 +101,48 @@ export const controlClass = (invalid: boolean): string =>
     'disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-muted disabled:text-ink-muted disabled:hover:border-line',
     invalid ? 'border-danger-600 hover:border-danger-700' : 'border-line-strong hover:border-neutral-600',
   ].join(' ');
+
+// maxLength counts UTF-16 code units, and a password's limit is in UTF-8
+// bytes, so a field given `maxBytes` keeps that limit itself. Like maxLength,
+// an edit that would pass it keeps only the start of what was just typed or
+// pasted, the text before the caret, as much as fits, and nothing says so:
+// the field never holds more, so the limit needs no message.
+const encoder = new TextEncoder();
+const byteLength = (text: string): number => encoder.encode(text).length;
+
+// The longest start of `text`, in whole code points, that fits in `room` bytes.
+function fitBytes(text: string, room: number): string {
+  let kept = '';
+  let used = 0;
+  for (const char of text) {
+    used += byteLength(char);
+    if (used > room) break;
+    kept += char;
+  }
+  return kept;
+}
+
+export function capBytes(
+  maxBytes: number | undefined,
+  onChange: ChangeEventHandler<HTMLInputElement> | undefined,
+): ChangeEventHandler<HTMLInputElement> | undefined {
+  if (maxBytes === undefined) return onChange;
+  return (event) => {
+    const input = event.currentTarget;
+    const { value } = input;
+    if (byteLength(value) > maxBytes) {
+      const caret = input.selectionEnd ?? value.length;
+      const tail = value.slice(caret);
+      const room = maxBytes - byteLength(tail);
+      // Text after the caret that is too long by itself was not typed at the
+      // caret (a script or an autofill set it): the whole value is cut at its end.
+      const head = room < 0 ? fitBytes(value, maxBytes) : fitBytes(value.slice(0, caret), room);
+      input.value = room < 0 ? head : head + tail;
+      if (input.selectionEnd !== null) input.setSelectionRange(head.length, head.length);
+    }
+    onChange?.(event);
+  };
+}
 
 interface TextDirectionOptions<E> {
   dir: string | undefined;

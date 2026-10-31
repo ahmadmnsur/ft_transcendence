@@ -62,10 +62,7 @@ export function SignUpPage(): React.JSX.Element {
   const termsRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
 
   const statusBlock =
     status !== undefined ? (
@@ -247,6 +244,7 @@ export function SignUpPage(): React.JSX.Element {
                   hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
                   {...t.auth.passwordVisibility}
                   autoComplete="new-password"
+                  maxBytes={LIMITS.password.maxBytes}
                   value={password}
                   onChange={(event) => {
                     setPassword(event.target.value);
@@ -261,6 +259,7 @@ export function SignUpPage(): React.JSX.Element {
                   label={t.auth.signUp.confirmPasswordLabel}
                   {...t.auth.signUp.confirmPasswordVisibility}
                   autoComplete="new-password"
+                  maxBytes={LIMITS.password.maxBytes}
                   value={confirmPassword}
                   onChange={(event) => {
                     setConfirmPassword(event.target.value);

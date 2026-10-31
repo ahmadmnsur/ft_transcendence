@@ -39,10 +39,7 @@ export function ConfirmWith42Card({
   const handOffTimerRef = useRef<number | undefined>(undefined);
   const shown = me?.fortyTwoConnected === true;
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
 
   useEffect(() => {
     if (failure !== undefined) failureRef.current?.focus();
@@ -166,6 +163,7 @@ export function ConfirmWith42Card({
               hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
               type="password"
               autoComplete="new-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               error={newError ? passwordInvalid : undefined}
@@ -175,6 +173,7 @@ export function ConfirmWith42Card({
               label={t.auth.passwordChange.confirmLabel}
               type="password"
               autoComplete="new-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               error={confirmError ? t.auth.passwordChange.confirmInvalid : undefined}
