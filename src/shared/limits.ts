@@ -39,10 +39,6 @@ const formatPattern = /\p{Cf}/u;
 const JOINER_200C = String.fromCharCode(0x200C);
 const JOINER_200D = String.fromCharCode(0x200D);
 
-// An emoji: a pictograph, a flag letter, a skin tone, the emoji presentation
-// selector U+FE0F or the keycap mark U+20E3 (§5.1's note of 2026-11-01).
-// It also takes a few symbols Unicode counts as pictographs, such as © ® ™
-// ‼ ↔ ▶, and no ASCII character.
 const emojiPattern = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{20E3}]/u;
 
 export function hasEmoji(value: string): boolean {
@@ -92,11 +88,6 @@ export function isValidPassword(password: string): boolean {
   return utf8ByteLength(trimmed) <= LIMITS.password.maxBytes;
 }
 
-// A new password: sign-up's, the password change's, Confirm with 42's, and
-// the staff and seed passwords in `.env`. It also holds no emoji (§5.1's
-// note of 2026-11-01). A current password keeps the rule above, since one
-// set before that note may hold an emoji, and refusing it would lock its
-// Student out.
 export function isValidNewPassword(password: string): boolean {
   return isValidPassword(password) && !hasEmoji(password);
 }
@@ -107,10 +98,6 @@ export function isValidDisplayName(name: string): boolean {
   return !hasForbiddenFormatChars(trimmed) && !hasEmoji(trimmed);
 }
 
-// Why a display name or a new password is invalid, for the sentence under
-// its field: an emoji is named before any other reason, so a value that is
-// also too short still says emoji (§6.0.3's note of 2026-11-01). Undefined
-// when the value is valid.
 export type InvalidReason = 'emoji' | 'invalid';
 
 export function displayNameInvalidReason(name: string): InvalidReason | undefined {

@@ -5,7 +5,6 @@ export interface TextFieldProps extends ComponentProps<'input'> {
   label: string;
   hint?: FieldMessage;
   error?: FieldMessage;
-  // The most UTF-8 bytes the field holds, kept without a message (capBytes).
   maxBytes?: number;
 }
 

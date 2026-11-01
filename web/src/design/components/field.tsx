@@ -103,16 +103,8 @@ export const controlClass = (invalid: boolean): string =>
     invalid ? 'border-danger-600 hover:border-danger-700' : 'border-line-strong hover:border-neutral-600',
   ].join(' ');
 
-// maxLength counts UTF-16 code units, and a password's limit is in UTF-8
-// bytes, so a field given `maxBytes` keeps that limit itself, measured after
-// trimming as every limit is (§6.0.3). Like maxLength, an edit that would
-// pass it keeps only the start of what was just typed or pasted, the text
-// before the caret, as much as fits, and nothing says so: the field never
-// holds more, so the limit needs no message.
 const fits = (text: string, maxBytes: number): boolean => utf8ByteLength(text.trim()) <= maxBytes;
 
-// How many of `chars` can stand before `tail` and still fit. One more char
-// never makes the trimmed text shorter, so the count is found by halving.
 function fitting(chars: string[], tail: string, maxBytes: number): number {
   let low = 0;
   let high = chars.length;
@@ -124,18 +116,11 @@ function fitting(chars: string[], tail: string, maxBytes: number): number {
   return low;
 }
 
-// The value cut to fit, with the caret after the cut, or undefined if it fits.
 function cutToFit(value: string, caret: number, maxBytes: number): { value: string; caret: number } | undefined {
   if (fits(value, maxBytes)) return undefined;
-  // Chrome's input-method path (an on-screen keyboard, the emoji picker) can
-  // put the caret between the two halves of a character outside the BMP in a
-  // hidden password field. The caret moves past the pair, so the cut never
-  // leaves half a character behind.
   const before = value.charCodeAt(caret - 1);
   const after = value.charCodeAt(caret);
   const at = before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff ? caret + 1 : caret;
-  // Text after the caret that is too long by itself was not typed at the
-  // caret (a script or an autofill set it): the whole value is cut at its end.
   const cut = fits(value.slice(at), maxBytes) ? at : value.length;
   const chars = [...value.slice(0, cut)];
   const head = chars.slice(0, fitting(chars, value.slice(cut), maxBytes)).join('');
@@ -152,9 +137,6 @@ export function capBytes(maxBytes: number | undefined, { onChange, onComposition
   return {
     onChange: (event) => {
       const input = event.currentTarget;
-      // While a keyboard composes a character (an IME, with the password
-      // shown), its text is not yet what it commits, and is often longer:
-      // it is left alone until it commits, as maxLength leaves it.
       const composing = event.nativeEvent instanceof globalThis.InputEvent && event.nativeEvent.isComposing;
       const next = composing ? undefined : cutToFit(input.value, input.selectionEnd ?? input.value.length, maxBytes);
       if (next) {
@@ -165,10 +147,6 @@ export function capBytes(maxBytes: number | undefined, { onChange, onComposition
     },
     onCompositionEnd: (event) => {
       onCompositionEnd?.(event);
-      // Chrome sends a commit's last input before compositionend, so a commit
-      // past the limit is cut here. The value is set past React's own setter
-      // and announced with an input event, so React sees it change and calls
-      // onChange above, which hands it on.
       const input = event.currentTarget;
       const next = cutToFit(input.value, input.selectionEnd ?? input.value.length, maxBytes);
       if (!next) return;

@@ -116,8 +116,6 @@ export class PasswordDto {
   @IsValidPasswordDto()
   currentPassword!: string;
 
-  // A new password also refuses emoji. The current one above does not, so a
-  // password set before that rule still signs in and changes (§5.1).
   @IsString()
   @Trimmed()
   @IsValidNewPasswordDto()
