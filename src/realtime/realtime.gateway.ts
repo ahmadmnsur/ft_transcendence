@@ -40,6 +40,19 @@ function dmSendPayload(payload: unknown): { recipientId: string; body: string } 
   return { recipientId, body };
 }
 
+const TYPING_RELAY_MS = 1_000;
+
+type TypingRelay = { at: number; shown: boolean; relayedAt: number };
+
+function dmTypingPayload(payload: unknown): { recipientId: string; typing: boolean } | null {
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return null;
+  const record = payload as Record<string, unknown>;
+  if (Object.keys(record).length !== 2 || !('recipientId' in record) || !('typing' in record)) return null;
+  const { recipientId, typing } = record;
+  if (typeof recipientId !== 'string' || typeof typing !== 'boolean' || !isUuid(recipientId)) return null;
+  return { recipientId: recipientId.toLowerCase(), typing };
+}
+
 type WaitingSocket = { rooms: string[]; held: HeldEvent[] };
 
 function socketSession(socket: Socket): SocketSession | null {
@@ -56,6 +69,7 @@ export class RealtimeGateway
 {
   private server: Server | null = null;
   private readonly waiting = new Map<string, WaitingSocket>();
+  private readonly typing = new Map<string, Map<string, TypingRelay>>();
 
   constructor(
     private readonly moduleRef: ModuleRef,
@@ -143,6 +157,29 @@ export class RealtimeGateway
   handleDisconnect(socket: Socket): void {
     this.waiting.delete(socket.id);
     this.registry.disconnect(socket.id);
+    const session = socketSession(socket);
+    const relayed = this.typing.get(socket.id);
+    this.typing.delete(socket.id);
+    if (session === null || relayed === undefined) return;
+    for (const [recipientId, relay] of relayed) {
+      if (relay.shown) void this.relayTypingStop(session, recipientId, () => true);
+    }
+  }
+
+  private async relayTypingStop(session: SocketSession, recipientId: string, current: () => boolean): Promise<boolean> {
+    try {
+      const messaging = this.moduleRef.get(MessagingService, { strict: false });
+      const peerId = await messaging.typingPeer(
+        { studentId: session.studentId, sessionHash: session.sessionHash },
+        recipientId,
+      );
+      if (peerId === null || !current()) return false;
+      this.publish([studentRoom(peerId)], 'dm:typing', { studentId: session.studentId, typing: false });
+      return true;
+    } catch (err) {
+      this.logger.entry('error', { operation: 'dm:typing', ...errorFields(err) });
+      return false;
+    }
   }
 
   @SubscribeMessage('dm:send')
@@ -162,6 +199,55 @@ export class RealtimeGateway
       return { ok: true, data };
     } catch (err) {
       return this.errorAck(err);
+    }
+  }
+
+  @SubscribeMessage('dm:typing')
+  async dmTyping(socket: Socket, payload: unknown): Promise<void> {
+    const session = socketSession(socket);
+    if (session === null || this.waiting.has(socket.id)) return;
+    const request = dmTypingPayload(payload);
+    if (request === null) return;
+    const { recipientId } = request;
+    const relayed = this.typing.get(socket.id) ?? new Map<string, TypingRelay>();
+    const last = relayed.get(recipientId);
+    if (!request.typing) {
+      if (last === undefined) return;
+      const stopped: TypingRelay = { at: last.at, shown: last.shown, relayedAt: last.relayedAt };
+      relayed.set(recipientId, stopped);
+      if (!last.shown) return;
+      const current = (): boolean => this.typing.get(socket.id)?.get(recipientId) === stopped;
+      if (await this.relayTypingStop(session, recipientId, current)) stopped.shown = false;
+      return;
+    }
+    const now = Date.now();
+    if (last !== undefined && now - last.at < TYPING_RELAY_MS) return;
+    for (const [id, entry] of relayed) {
+      if (!entry.shown && now - entry.at >= TYPING_RELAY_MS) relayed.delete(id);
+    }
+    const relay: TypingRelay = { at: now, shown: last?.shown ?? false, relayedAt: last?.relayedAt ?? 0 };
+    relayed.set(recipientId, relay);
+    this.typing.set(socket.id, relayed);
+    try {
+      const messaging = this.moduleRef.get(MessagingService, { strict: false });
+      const peerId = await messaging.typingPeer(
+        { studentId: session.studentId, sessionHash: session.sessionHash },
+        recipientId,
+      );
+      if (this.typing.get(socket.id)?.get(recipientId) !== relay) return;
+      if (peerId === null) {
+        relayed.delete(recipientId);
+        return;
+      }
+      const refresh = relay.shown;
+      relay.shown = true;
+      const relayedAt = Date.now();
+      if (refresh && relayedAt - relay.relayedAt < TYPING_RELAY_MS) return;
+      relay.relayedAt = relayedAt;
+      this.publish([studentRoom(peerId)], 'dm:typing', { studentId: session.studentId, typing: true });
+    } catch (err) {
+      if (this.typing.get(socket.id)?.get(recipientId) === relay) relayed.delete(recipientId);
+      this.logger.entry('error', { operation: 'dm:typing', ...errorFields(err) });
     }
   }
 

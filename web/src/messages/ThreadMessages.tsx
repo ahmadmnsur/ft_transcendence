@@ -2,24 +2,81 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiProtocolError } from '../api/client';
+import { friendsQueryOptions } from '../api/friends';
 import type { StudentRef } from '../api/profile';
-import { markThreadRead, peerThreadQueryOptions } from '../api/messages';
+import { isDirectMessage, markThreadRead, peerThreadQueryOptions, type DirectMessageView } from '../api/messages';
 import { sessionQueryOptions } from '../api/session';
-import { AlertIcon, Avatar, Button, EmptyState, MessageIcon, PersonName, RoleLabel } from '../design';
+import { AlertIcon, Avatar, Banner, Button, ChevronLeftIcon, EmptyState, MessageIcon, PersonName, RoleLabel } from '../design';
 import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
+import { subscribe } from '../realtime/socket';
+import { OnlineStatus } from '../social/OnlineStatus';
 import { Composer } from './Composer';
+
+const RUN_GAP_MS = 5 * 60_000;
+const ANNOUNCED_CHARS = 140;
+
+interface MessageDay {
+  key: string;
+  date: Date;
+  messages: DirectMessageView[];
+}
+
+function dayKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function byDay(messages: readonly DirectMessageView[]): MessageDay[] {
+  const days: MessageDay[] = [];
+  for (const message of messages) {
+    const date = new Date(message.createdAt);
+    const key = dayKey(date);
+    const last = days.at(-1);
+    if (last !== undefined && last.key === key) last.messages.push(message);
+    else days.push({ key, date, messages: [message] });
+  }
+  return days;
+}
+
+function sameRun(earlier: DirectMessageView | undefined, later: DirectMessageView | undefined): boolean {
+  if (earlier === undefined || later === undefined) return false;
+  if (earlier.senderId !== later.senderId) return false;
+  return Date.parse(later.createdAt) - Date.parse(earlier.createdAt) < RUN_GAP_MS;
+}
+
+function useIncomingMessage(peerId: string): { id: string; body: string } | null {
+  const [incoming, setIncoming] = useState<{ id: string; body: string } | null>(null);
+  useEffect(
+    () =>
+      subscribe('dm:message', (payload) => {
+        if (!isDirectMessage(payload) || payload.senderId !== peerId) return;
+        const text = Array.from(payload.body);
+        const body = text.length > ANNOUNCED_CHARS ? `${text.slice(0, ANNOUNCED_CHARS).join('')}…` : payload.body;
+        setIncoming({ id: payload.id, body });
+      }),
+    [peerId],
+  );
+  return incoming;
+}
 
 const BOTTOM_SLACK_PX = 80;
 
 export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Element {
-  const { t, format, formatText, formatDateTime, personNameValue, errorText } = useI18n();
+  const { t, format, formatText, formatDate, formatTime, personNameValue, errorText } = useI18n();
   const copy = t.messages.page;
   const queryClient = useQueryClient();
   const session = useQuery(sessionQueryOptions());
   const viewerId = session.data?.authenticated === true ? session.data.student.id : null;
   const page = useInfiniteQuery(peerThreadQueryOptions(peerId));
+  const friends = useQuery({ ...friendsQueryOptions(), enabled: viewerId !== null });
+  const friend = friends.data?.items.find((item) => item.student.id === peerId);
+  const incoming = useIncomingMessage(peerId);
+  const [unseen, setUnseen] = useState(false);
+  const [focusEarliest, setFocusEarliest] = useState(false);
+  const daysRef = useRef<HTMLDivElement>(null);
 
   const [markSettles, setMarkSettles] = useState(0);
   const coveredIncomingRef = useRef<ReadonlySet<string> | null>(null);
@@ -58,11 +115,34 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
     function onScroll(): void {
       const distance = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
       atBottomRef.current = distance < BOTTOM_SLACK_PX;
+      if (atBottomRef.current) setUnseen(false);
     }
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(
+    () =>
+      subscribe('dm:message', (payload) => {
+        if (isDirectMessage(payload) && payload.senderId === peerId && !atBottomRef.current) setUnseen(true);
+      }),
+    [peerId],
+  );
+
+  useEffect(() => {
+    if (!focusEarliest || page.hasNextPage || page.isFetchingNextPage) return;
+    setFocusEarliest(false);
+    const active = document.activeElement;
+    if (active !== null && active !== document.body) return;
+    daysRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+  }, [focusEarliest, page.data, page.hasNextPage, page.isFetchingNextPage]);
+
+  function showNewest(): void {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: reduce ? 'auto' : 'smooth' });
+    setUnseen(false);
+  }
 
   const firstMessagesRef = useRef(true);
   useLayoutEffect(() => {
@@ -103,7 +183,7 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
     body = (
       <EmptyState
         icon={<MessageIcon size={24} />}
-        title={formatText(copy.emptyTitle, {
+        title={formatText(first.canSend ? copy.emptyTitle : copy.closedTitle, {
           name: personNameValue(first.peer.displayName, first.peer.removed),
         })}
         description={first.canSend ? copy.emptyDescription : undefined}
@@ -122,43 +202,73 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
     body = (
       <>
         {page.hasNextPage ? (
-          <div>
+          <div className="flex flex-col items-start gap-1">
             <Button
               variant="secondary"
               loading={page.isFetchingNextPage}
-              onClick={() => void page.fetchNextPage()}
+              onClick={() => {
+                void page.fetchNextPage().then((result) => {
+                  if (!result.isError && !result.hasNextPage) setFocusEarliest(true);
+                });
+              }}
+              className="scroll-mt-28"
             >
               {copy.showEarlier}
             </Button>
+            {page.isFetchNextPageError ? (
+              <p role="alert" className="text-xs font-medium text-ink-danger">
+                {errorText(failureCode(page.error))}
+              </p>
+            ) : null}
           </div>
         ) : null}
-        <ol className="flex min-w-0 flex-col gap-2">
-          {messages.map((message) => {
-            const own = viewerId !== null && message.senderId === viewerId;
-            return (
-              <li key={message.id} className={`flex min-w-0 ${own ? 'justify-end' : 'justify-start'}`}>
-                <div className="flex min-w-0 max-w-[85%] flex-col sm:max-w-[33rem]">
-                  <p className="sr-only">
-                    {own ? copy.ownSender : first === undefined ? null : (
-                      <PersonName name={first.peer.displayName} removed={first.peer.removed} />
-                    )}
-                  </p>
-                  <p
-                    dir="auto"
-                    className={`min-w-0 whitespace-pre-wrap break-words text-sm text-ink ${
-                      own ? 'bg-surface-muted' : 'bg-surface'
-                    } rounded-lg border border-line px-3 py-2`}
-                  >
-                    {message.body}
-                  </p>
-                  <p className={`mt-0.5 text-xs text-ink-subtle ${own ? 'text-end' : ''}`}>
-                    {formatDateTime(new Date(message.createdAt))}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        <div ref={daysRef} className="flex min-w-0 flex-col gap-6">
+          {byDay(messages).map((day) => (
+            <div key={day.key} className="flex min-w-0 flex-col gap-3">
+              <h2
+                tabIndex={-1}
+                className="flex items-center gap-3 text-xs font-medium text-ink-muted outline-none before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line"
+              >
+                <time dateTime={day.key}>{formatDate(day.date)}</time>
+              </h2>
+              <ol className="flex min-w-0 flex-col">
+                {day.messages.map((message, index) => {
+                  const own = viewerId !== null && message.senderId === viewerId;
+                  const continues = sameRun(day.messages[index - 1], message);
+                  const runEnds = !sameRun(message, day.messages[index + 1]);
+                  const sentAt = new Date(message.createdAt);
+                  return (
+                    <li
+                      key={message.id}
+                      className={`flex min-w-0 ${own ? 'justify-end' : 'justify-start'} ${
+                        index === 0 ? '' : continues ? 'mt-1' : 'mt-4'
+                      }`}
+                    >
+                      <div className={`flex min-w-0 max-w-[85%] flex-col sm:max-w-[33rem] ${own ? 'items-end' : 'items-start'}`}>
+                        <p className="sr-only">
+                          {own ? copy.ownSender : first === undefined ? null : (
+                            <PersonName name={first.peer.displayName} removed={first.peer.removed} />
+                          )}
+                        </p>
+                        <p
+                          dir="auto"
+                          className={`min-w-0 max-w-full whitespace-pre-wrap break-words text-base text-ink ${
+                            own ? 'bg-surface-muted' : 'bg-surface'
+                          } rounded-lg border border-line px-3 py-2`}
+                        >
+                          {message.body}
+                        </p>
+                        <p className={runEnds ? 'mt-1 text-xs text-ink-muted' : 'sr-only'}>
+                          <time dateTime={message.createdAt}>{formatTime(sentAt)}</time>
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          ))}
+        </div>
       </>
     );
   }
@@ -172,26 +282,54 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
             : formatText(copy.heading, { name: personNameValue(first.peer.displayName, first.peer.removed) })
         }
       />
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <div className="mx-auto flex min-h-[calc(100dvh-var(--header-height,0px)-2rem)] w-full max-w-2xl flex-col gap-6">
         {first !== undefined ? (
-          <header className="flex min-w-0 flex-wrap items-center gap-3">
+          <header className="sticky top-(--header-height) z-30 -mx-4 flex min-w-0 items-center gap-3 border-b border-line bg-canvas px-4 py-3 [@media(max-height:32rem)]:static">
+            <Link
+              to="/messages"
+              title={copy.back}
+              aria-label={copy.back}
+              className="relative -ms-2 inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors duration-150 hover:bg-surface-muted hover:text-ink focus-ring motion-reduce:transition-none pointer-coarse:before:absolute pointer-coarse:before:-inset-0.5"
+            >
+              <ChevronLeftIcon size={20} />
+            </Link>
             <Avatar src={first.peer.removed ? null : first.peer.avatarUrl} alt="" size="md" />
-            <h1 className="min-w-0 flex-1 text-xl font-semibold text-ink wrap-anywhere">
-              {format(copy.heading, { name: <ProfileHeading student={first.peer} /> })}
-            </h1>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <h1 className="min-w-0 text-lg font-semibold text-ink wrap-anywhere sm:text-2xl">
+                {format(copy.heading, { name: <ProfileHeading student={first.peer} /> })}
+              </h1>
+              {friend !== undefined && first.canSend ? <OnlineStatus online={friend.online} /> : null}
+            </div>
             {first.peer.isAdmin && !first.peer.removed ? <RoleLabel /> : null}
           </header>
         ) : (
-          <h1 className="min-w-0 text-xl font-semibold text-ink">{t.messages.title}</h1>
+          <h1 className="min-w-0 text-lg font-semibold text-ink sm:text-2xl">{t.messages.title}</h1>
         )}
         {body}
+        <p role="status" className="sr-only">
+          {incoming !== null && first !== undefined ? (
+            <span key={incoming.id}>
+              {formatText(copy.incoming, {
+                name: personNameValue(first.peer.displayName, first.peer.removed),
+                body: incoming.body,
+              })}
+            </span>
+          ) : null}
+        </p>
         {first !== undefined ? (
           first.canSend ? (
-            <Composer peerId={peerId} />
+            <Composer
+              peerId={peerId}
+              peerName={personNameValue(first.peer.displayName, first.peer.removed)}
+              newMessage={unseen}
+              onShowNewest={showNewest}
+            />
           ) : (
-            <p className="text-sm text-ink-muted">
-              {first.peer.removed ? errorText('student_removed') : errorText('dm_unavailable')}
-            </p>
+            <Banner
+              tone="info"
+              title={first.peer.removed ? errorText('student_removed') : errorText('dm_unavailable')}
+              className="mt-auto"
+            />
           )
         ) : null}
       </div>
@@ -206,7 +344,7 @@ function ProfileHeading({ student }: { student: StudentRef }): React.JSX.Element
     <Link
       to="/students/$studentId"
       params={{ studentId: student.id }}
-      className="rounded font-semibold text-link underline-offset-2 hover:underline focus-ring wrap-anywhere"
+      className="relative z-[1] inline-block max-w-full rounded font-semibold text-link underline-offset-2 hover:underline focus-ring wrap-anywhere pointer-coarse:before:absolute pointer-coarse:before:-inset-x-1 pointer-coarse:before:-inset-y-2.5"
     >
       <PersonName name={student.displayName} removed={false} />
     </Link>

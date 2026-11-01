@@ -127,6 +127,11 @@ on the dev path (the base path opens to the local network only when a member's `
 Supabase Auth returns, which lives only inside that request on the server (§5.1, ADR-0003 d1's
 note); any Compose service beyond the six of §15.1.
 
+> **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+> a typing indicator on a Direct Message page is built (§7.3's note of the same day). It is one
+> bullet of the advanced chat Minor, which stays unclaimed and out of scope: two of its six bullets
+> need a game. Read receipts stay out.
+
 **Out of scope with the move to Supabase** (map #85, ADR-0019): everything Supabase offers beyond
 its three stores, namely its sessions and tokens past one request, its browser client, the Data
 API and row-level security, Realtime (Socket.IO stays), sign-in through outside providers, its
@@ -1711,6 +1716,12 @@ application:**
 > **2026-10-25:** the *Signed out* row also covers the landing page at `/`, which shows no data
 > (§3.5.1's note of 2026-10-25).
 
+> **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+> a new row. *That a Student is writing a Direct Message to another* — that other Student only,
+> while the pair could exchange one, on their open page of the pair's messages; never stored
+> (§7.3's note of the same day, ADR-0018 d4's note). *Presence* stays with accepted Friends: the
+> page of a Direct Message shows a peer's online status only when they are one.
+
 **Removed-row surface rule** (ADR-0008 Consequences, corrected): discovery and participation
 surfaces (search, friend requests, new DMs, new Reports, matching, Leaderboard, friend lists,
 pending-request lists) **exclude** Removed Students; historical relations (Posts, Matches, threads,
@@ -2572,6 +2583,27 @@ privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Con
 > §6.15's retry-exhaustion and Auth-unreachable cases, `busy_retry_later` answers a send while
 > §7.2 step 3's session re-read is pending: no message is written in that window.
 
+> **A second client event, 2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); ADR-0003 d9's note of the same day)** *(uncommitted)*:
+> the heading's "exactly one event" no longer holds. A client may also send **`dm:typing`**,
+> payload exactly `{ recipientId: uuid, typing: boolean }`, with **no acknowledgement**. The
+> gateway drops any other payload, and an event while §7.2 step 3's re-read is pending, without
+> an answer. Otherwise it reads, in one read-only snapshot, what `dm:send` reads: the sender is
+> Active, and the recipient exists, is not the sender, is not Removed and is in no Block with the
+> sender either way. If all hold, it emits `dm:typing { studentId: senderId, typing }` to
+> `student:<recipientId>` only (§7.4); if not, it sends nothing anywhere, so the sender learns
+> nothing about a Block. Nothing is written or stored. The gateway takes at most one
+> `typing: true` per second for each sending socket and recipient, counted as the requests arrive,
+> and does not relay one that only renews dots already shown within a second of the previous relay;
+> one that brings the dots back after a relayed `typing: false` is relayed as soon as it is taken.
+> A `typing: false`, sent or caused by the socket's disconnect, is relayed only after a
+> `typing: true` was, and only after the same read finds the pair still able to exchange a Direct
+> Message. The SPA sends `typing: true` at the
+> first input after a stop, no sooner than a second after its previous one, and again at most every
+> 2 seconds while input continues. It sends `typing: false` when the field empties, a send starts,
+> 1.5 seconds pass without input or the page closes, and nothing while disconnected. It is still
+> true that **nothing a client sends performs a privileged action**, and `dm:send` stays the only
+> write.
+
 ### 7.4 Server → client events (the complete list)
 
 | Event | Room | Payload | Emitted after the commit of | Client reaction |
@@ -2587,6 +2619,17 @@ privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Con
 > time, so `post:created`'s "top of a loaded feed" is the top of a loaded page 1. The Post goes
 > there, page 1 keeps 20 Posts, and its `total` grows by one. Another page takes nothing; its
 > reader sees the Post on page 1, which is read again when opened.
+
+> **A seventh event, 2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); §7.3's note of the same day)** *(uncommitted)*:
+>
+> | Event | Room | Payload | Emitted after the commit of | Client reaction |
+> | --- | --- | --- | --- | --- |
+> | `dm:typing` | `student:<recipient>` | `{ studentId, typing }` | not a DB commit — a relayed `dm:typing` from the writer (§7.3) | on the open page of that pair, show or hide the typing dots; hide them on that Student's `dm:message`, on a disconnect, and 4 seconds after the last `typing: true` |
+>
+> The writer's other tabs do not receive it. `presence:update`'s reaction also covers the page of a
+> Direct Message: its header reads the peer's status from the same cached Friends list
+> (`GET /api/friends`, kept 30 seconds), so the page adds at most that one read, and none when the
+> list was just read.
 
 Round events are content-free invalidation signals (ADR-0010 d7, ADR-0015 d8); no event carries a
 Badge, a Report, a role or any Admin data. **No event is added** for Likes, declines, Reviews,
@@ -2627,6 +2670,12 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > During the grace no friend has been told offline, and a reconnect inside it broadcasts nothing, so a
 > read in that window answers online, as the friends were last told. The transitions and broadcasts
 > above are unchanged, and nothing is stored.
+
+> **Shortened 2026-11-01, decided by Ahmad ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*: the grace timer is **5
+> seconds**, not 20, so a Friend who closes the page shows offline about 5 seconds later. A reload
+> reconnects within 1 to 2 seconds and still broadcasts nothing; a connection that drops for longer
+> than the window shows offline, then online again. A connection lost without closing (a sleeping
+> laptop) is noticed only by Socket.IO's heartbeat, up to 45 seconds later, before the window starts.
 
 ---
 
@@ -3201,6 +3250,11 @@ Student set on the actor still applies. Only the blocker can lift it. The Privac
   /api/messages/threads/:peerId/read`, issued by the SPA when the thread is opened, and sets `read_at`
   only on messages addressed to the opener.
 - **No read receipts**: `read_at` feeds the recipient's unread count and nothing else.
+
+  > **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+  > a **typing indicator** is not a read receipt: it tells the recipient that the sender is writing
+  > to them now, and tells the sender nothing. It goes only to a Student the sender could message,
+  > is never stored, and runs over §7.3's `dm:typing`.
 - History is never deleted or unsent; it stays readable to both participants after a Block or a
   Removal (tombstone). **No application route lets anyone else — any Admin included — read a Direct
   Message.** Whoever can open a copy's database directly can read stored messages: Supabase encrypts
@@ -4650,6 +4704,9 @@ Rules every ticket inherits; a PR breaking one is not done.
 5. Every DB-derived socket event and every forced disconnect runs after commit.
 6. Nothing a client sends over the socket performs a privileged action; `dm:send` is the only client
    event.
+
+   > **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); §7.3's note)** *(uncommitted)*:
+   > `dm:send` and `dm:typing` are the only client events, and `dm:send` is the only one that writes.
 7. The socket admits only `Origin === PUBLIC_ORIGIN`, before session resolution, WebSocket only.
 8. `PUBLIC_ORIGIN` is the only place the origin exists; no hardcoded `https://localhost:8443` or
    `http://localhost:8081` in code. No HSTS.

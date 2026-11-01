@@ -2,7 +2,7 @@ import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { PresenceReader } from '../core/presence-reader';
 import type { RevokeTarget } from '../core/realtime-publisher';
 
-export const PRESENCE_GRACE_MS = 20_000;
+export const PRESENCE_GRACE_MS = 5_000;
 
 export type PresenceTransition = { studentId: string; online: boolean };
 
