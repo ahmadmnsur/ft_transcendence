@@ -3,11 +3,11 @@ import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   LIMITS,
-  hasEmoji,
-  isValidDisplayName,
+  displayNameInvalidReason,
   isValidEmail,
-  isValidNewPassword,
+  newPasswordInvalidReason,
   normalizeEmail,
+  type InvalidReason,
 } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { signup, signup42, fetchSignUpDraft42, signUpDraft42QueryOptions, SIGN_UP_DRAFT_42_QUERY_KEY } from '../api/auth';
@@ -49,8 +49,8 @@ export function SignUpPage(): React.JSX.Element {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [emailError, setEmailError] = useState(false);
-  const [displayNameError, setDisplayNameError] = useState<'emoji' | 'invalid' | undefined>(undefined);
-  const [passwordError, setPasswordError] = useState<'emoji' | 'invalid' | undefined>(undefined);
+  const [displayNameError, setDisplayNameError] = useState<InvalidReason | undefined>(undefined);
+  const [passwordError, setPasswordError] = useState<InvalidReason | undefined>(undefined);
   const [confirmPasswordError, setConfirmPasswordError] = useState<'empty' | 'mismatch' | undefined>(undefined);
   const [termsError, setTermsError] = useState(false);
   const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
@@ -110,8 +110,8 @@ export function SignUpPage(): React.JSX.Element {
     event.preventDefault();
     if (pending) return;
     const nextEmailError = !isValidEmail(email);
-    const nextDisplayNameError = isValidDisplayName(displayName) ? undefined : hasEmoji(displayName) ? 'emoji' : 'invalid';
-    const nextPasswordError = isValidNewPassword(password) ? undefined : hasEmoji(password) ? 'emoji' : 'invalid';
+    const nextDisplayNameError = displayNameInvalidReason(displayName);
+    const nextPasswordError = newPasswordInvalidReason(password);
     const nextConfirmPasswordError = confirmationError(password, confirmPassword);
     const nextTermsError = !acceptTerms;
     setEmailError(nextEmailError);

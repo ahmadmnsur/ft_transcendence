@@ -2227,15 +2227,18 @@ search routes, §6.2 and §6.12 — is the one string whose minimum is 0**: abse
 trimming, it applies no text filter and is never `validation_failed`, so clearing the search box is
 ordinary use (§3.8.2).
 
-> **Updated 2026-11-01** (§5.1's note of the same day; ADR-0003 d3's note): a display name and a
-> new password may not hold an emoji, as `hasEmoji` in `src/shared/limits.ts` defines it, and both
-> ends check it. A current password is checked without that rule (§5.1). A value that holds an
-> emoji is refused under its field with its own sentence, *"A display name can't contain emoji."*
-> or *"A password can't contain emoji."*, even when it is also too short. **A display name saved
-> before this note that holds an emoji keeps showing** wherever names show. The profile form,
-> the Student's own on `/me` and an Admin's on `/admin/users/:studentId`, refuses to save until
-> the emoji is removed, even when only the email changed: it checks the name on every save, though
-> it sends only the fields that changed, and the API checks a display name only when one is sent.
+> **Updated 2026-11-01**, decided by the team in Ahmad's review of
+> [#244](https://github.com/ahmadmnsur/ft_transcendence/pull/244): a display name and a new password
+> may not hold an emoji, as `hasEmoji` in `src/shared/limits.ts` defines it (§5.1's note of the same
+> day lists what it matches), and both ends check it. For the password this is ADR-0003 d3's note of
+> the same day; the display name's rule has no ADR, as its `Cf` rule had none. A current password is
+> checked without that rule (§5.1). A value that holds an emoji is refused under its field with its
+> own sentence, *"A display name can't contain emoji."* or *"A password can't contain emoji."*, even
+> when it is also too short. **A display name saved before this note that holds an emoji keeps
+> showing** wherever names show. The profile form, the Student's own on `/me` and an Admin's on
+> `/admin/users/:studentId`, refuses to save until the emoji is removed, even when only the email
+> changed: it checks the name on every save, though it sends only the fields that changed, and the
+> API checks a display name only when one is sent.
 
 ### 6.1 Configuration, session and authentication
 
@@ -3502,7 +3505,7 @@ into `test/01-matcher/` (§16.3), leaving ADR-0016 d3's module list as it is.
 - `generateCohort({ size: 30, seed: 42, unmatchable: 1 })`. Position *p* = 0…29.
 - Display name `NAMES[p mod 24]`, with a suffix " 2" for *p* ≥ 24; email
   `<NAMES[p mod 24] lower-cased>.<p+1, two digits>@peerconnect.test` (e.g. `karim.01@peerconnect.test`); password
-  `SEED_STUDENT_PASSWORD`, a Supabase Auth password (8 characters to 72 bytes). Created through
+  `SEED_STUDENT_PASSWORD`, a Supabase Auth password (8 characters to 72 bytes, no emoji: §5.1). Created through
   `auth.signup`, so through Supabase's admin create, **strictly in position order**; the seed
   then asserts that `Student.id` order equals position order (the lower-id tie-breaks depend on it).
 - Generator XP is ignored; everyone starts at 0 XP (ADR-0017 d3).
@@ -3919,12 +3922,12 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
 | `HTTP_PORT` | `8080` | Compose interpolation (default `8080`) | |
 | `BIND_ADDRESS` | `127.0.0.1` | Compose interpolation (default `127.0.0.1`) | where the proxy's two base-path ports listen; a member's `.env` sets `0.0.0.0`, with `PUBLIC_ORIGIN` on the laptop's IP, to open `make up` to the local network (ADR-0004 d7's note of 2026-10-25) |
 | `ADMIN_EMAIL` | `admin@peerconnect.test` | seed | |
-| `ADMIN_PASSWORD` | `change-me-admin` | seed | a Supabase Auth password, 8 characters to 72 bytes |
+| `ADMIN_PASSWORD` | `change-me-admin` | seed | a Supabase Auth password, 8 characters to 72 bytes, no emoji (§5.1) |
 | `FT_OAUTH_CLIENT_ID` | *(empty)* | api | 42 dashboard label **UID**; the team application's, in the team `.env` only |
 | `FT_OAUTH_CLIENT_SECRET` | *(empty)* | api | 42 dashboard label **SECRET**; team `.env` only; expires every 28 days (§5.6) |
 | `MODERATOR_EMAIL` | `moderator@peerconnect.test` | seed | |
-| `MODERATOR_PASSWORD` | `change-me-moderator` | seed | 8 characters to 72 bytes |
-| `SEED_STUDENT_PASSWORD` | `change-me-student` | seed | shared by the thirty seeded Students; 8 characters to 72 bytes |
+| `MODERATOR_PASSWORD` | `change-me-moderator` | seed | 8 characters to 72 bytes, no emoji (§5.1) |
+| `SEED_STUDENT_PASSWORD` | `change-me-student` | seed | shared by the thirty seeded Students; 8 characters to 72 bytes, no emoji (§5.1) |
 | `SUPABASE_URL` | `http://api-gw:8000` | api | Team `.env`: `https://<ref>.supabase.co`; only `https:` names the team project |
 | `SUPABASE_PUBLISHABLE_KEY` | the fallback's | api (the password grant), api-gw | Team `.env`: the project's publishable key |
 | `SUPABASE_SECRET_KEY` | the fallback's | api (admin create, update and delete; Storage), api-gw | Team `.env`: a secret key. It opens every account and file, so only the `api` uses it, and it is never committed or sent to the browser |

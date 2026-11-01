@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { hasEmoji, isValidDisplayName, isValidEmail, normalizeEmail, LIMITS } from '@shared/limits';
+import { displayNameInvalidReason, isValidEmail, normalizeEmail, LIMITS, type InvalidReason } from '@shared/limits';
 import { ApiRefusalError } from '../api/client';
 import { Banner, Button, Card, TextField } from '../design';
 import { useI18n } from '../i18n/context';
@@ -14,7 +14,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
   const copy = target.voice === 'own' ? t.profile.details : { ...t.profile.details, ...t.admin.cards.details };
   const profile = target.profile;
   const [draft, setDraft] = useState<{ displayName: string; email: string } | null>(null);
-  const [nameError, setNameError] = useState<'emoji' | 'invalid' | undefined>(undefined);
+  const [nameError, setNameError] = useState<InvalidReason | undefined>(undefined);
   const [emailError, setEmailError] = useState<'invalid' | 'email_unavailable' | undefined>(undefined);
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const [pending, setPending] = useState(false);
@@ -42,7 +42,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending) return;
-    const nextNameError = isValidDisplayName(displayName) ? undefined : hasEmoji(displayName) ? 'emoji' : 'invalid';
+    const nextNameError = displayNameInvalidReason(displayName);
     const nextEmailError = isValidEmail(email) ? undefined : 'invalid';
     setNameError(nextNameError);
     setEmailError(nextEmailError);

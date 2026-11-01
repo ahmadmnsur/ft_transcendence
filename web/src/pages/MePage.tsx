@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { LIMITS, hasEmoji, isValidNewPassword, isValidPassword } from '@shared/limits';
+import { LIMITS, isValidPassword, newPasswordInvalidReason, type InvalidReason } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { changePassword } from '../api/auth';
 import { configQueryOptions } from '../api/config';
@@ -39,7 +39,7 @@ export function MePage(): React.JSX.Element {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [currentError, setCurrentError] = useState<'empty' | 'invalid' | undefined>(undefined);
-  const [newError, setNewError] = useState<'emoji' | 'invalid' | undefined>(undefined);
+  const [newError, setNewError] = useState<InvalidReason | undefined>(undefined);
   const [confirmError, setConfirmError] = useState(false);
   const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
   const [pending, setPending] = useState(false);
@@ -76,8 +76,8 @@ export function MePage(): React.JSX.Element {
     if (pending) return;
     const nextCurrentError: 'empty' | 'invalid' | undefined =
       currentPassword === '' ? 'empty' : isValidPassword(currentPassword) ? undefined : 'invalid';
-    const nextNewError = isValidNewPassword(newPassword) ? undefined : hasEmoji(newPassword) ? 'emoji' : 'invalid';
-    const nextConfirmError = nextNewError !== undefined || confirmPassword.trim() !== newPassword.trim();
+    const nextNewError = newPasswordInvalidReason(newPassword);
+    const nextConfirmError = confirmPassword.trim() !== newPassword.trim();
     setCurrentError(nextCurrentError);
     setNewError(nextNewError);
     setConfirmError(nextConfirmError);
