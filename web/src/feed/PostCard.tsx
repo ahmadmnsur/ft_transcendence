@@ -93,7 +93,7 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
       {unavailable ? null : (
         <div className="flex flex-wrap items-center gap-2">
           <Button ref={likeRef} variant="secondary" size="sm" aria-pressed={post.likedByMe} loading={pending} onClick={() => void toggle()}>
-            <HeartIcon filled={post.likedByMe} className={`me-1.5 inline-block align-text-bottom ${post.likedByMe ? 'text-primary-600' : ''}`} />
+            <HeartIcon filled={post.likedByMe} className={`me-1.5 inline-block align-text-bottom ${post.likedByMe ? 'text-primary-600 dark:text-ink-accent' : ''}`} />
             {copy.like}
           </Button>
           {post.likeCount === 0 ? (

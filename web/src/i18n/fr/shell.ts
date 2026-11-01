@@ -22,6 +22,7 @@ export default {
     signUpLink: "S'inscrire",
   },
   language: { label: 'Langue' },
+  theme: { toDark: 'Passer au thème sombre', toLight: 'Passer au thème clair' },
   footer: { privacy: 'Politique de confidentialité', terms: "Conditions d'utilisation" },
   notFound: {
     name: 'Page introuvable',

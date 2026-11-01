@@ -648,6 +648,7 @@ member who built a part.
 | **Suspension and Removal** | From the Users table, an Admin suspends, reinstates or removes a Student. | Ahmad |
 | **Learning Analytics** | `/admin/analytics`: the most wanted and most offered Skills, the gaps between them, completion per Round and how Matches ended, with charts and plain sentences. | Ahmad |
 | **Three languages, right to left** | English, French and Arabic everywhere, chosen in the header; Arabic laid out right to left. | Hussein, and every member for their own slices' text |
+| **Light and dark themes** | A dark theme beside the light one. It follows the computer's setting until a person picks one with the header's moon or sun button. | Hussein |
 | **Design system** | The palette, type scale, icons and reusable components every page is built from, in all three languages. | Ahmad, Hussein (French, Arabic and right to left) |
 | **App shell** | Routes and their guards, the layout, the header with its bar, account menu and Admin tools page, and the API client. | Ahmad (shell), Kamel (header) |
 | **Landing page and name** | What a signed-out visitor sees at `/`, and the name 21 Beirut with its logo. | Ahmad |
@@ -788,8 +789,9 @@ Prompt answer, and a `/rules` page show them.
 
 **Design system (Minor).** *Why:* three developers building pages in parallel need the same parts.
 *How:* the project's own palette, type scale and icon set, and more than ten reusable components,
-in three languages and both directions. They are in [`web/src/design/`](web/src/design/), and
-[`docs/spec.md`](docs/spec.md) section 3.5.3 describes them.
+in three languages, both directions and a light and a dark theme. They are in
+[`web/src/design/`](web/src/design/), and [`docs/spec.md`](docs/spec.md) section 3.5.3 describes
+them.
 
 **File upload (Minor).** *Why:* avatars, and Evidence of what was learned. *How:* avatars (PNG or
 JPEG) and Evidence (PDF, PNG or JPEG), checked in the browser and again on the server by decoding
@@ -915,7 +917,8 @@ Round's number.
   (2026-10-18); the Privacy Policy and the Terms in French and Arabic (2026-10-26).
 - **Features**: profiles, Skill lists and the Learning Goal (2026-10-17); Blocks (2026-10-19);
   avatars and the Storage buckets, and the Post table (2026-10-20); the feed and Likes
-  (2026-10-21); Reports (2026-10-22); live reactions to new Posts, Rounds and Matches (2026-10-24).
+  (2026-10-21); Reports (2026-10-22); live reactions to new Posts, Rounds and Matches (2026-10-24);
+  the dark theme (2026-10-31).
 - **Seed**: the four Prompts and their answers, and the demo Student and Badge checks (2026-10-23).
 - **Legal pages**: corrected against the merged code for the sign-off (2026-10-25).
 - **Fixes**: the health checks' start period, the password hint, the header kept at the top while

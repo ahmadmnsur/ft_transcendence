@@ -100,7 +100,7 @@ export const controlClass = (invalid: boolean): string =>
     'placeholder:text-ink-subtle',
     'transition-colors duration-150 focus-ring',
     'disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-muted disabled:text-ink-muted disabled:hover:border-line',
-    invalid ? 'border-danger-600 hover:border-danger-700' : 'border-line-strong hover:border-neutral-600',
+    invalid ? 'border-danger-600 hover:border-danger-700 dark:hover:border-danger-500' : 'border-line-strong hover:border-neutral-600',
   ].join(' ');
 
 const fits = (text: string, maxBytes: number): boolean => utf8ByteLength(text.trim()) <= maxBytes;

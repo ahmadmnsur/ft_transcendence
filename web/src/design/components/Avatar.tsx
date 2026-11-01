@@ -1,5 +1,7 @@
 import { useState, type ComponentProps } from 'react';
 import defaultAvatarUrl from '../assets/default-avatar.svg';
+import defaultAvatarDarkUrl from '../assets/default-avatar-dark.svg';
+import { useTheme } from '../theme/context';
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -18,8 +20,10 @@ const dims: Record<AvatarSize, string> = {
 };
 
 export function Avatar({ src, alt, size = 'md', onError, loading = 'lazy', className = '', ...rest }: AvatarProps): React.JSX.Element {
+  const { theme } = useTheme();
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const resolved = src && src !== failedSrc ? src : defaultAvatarUrl;
+  const fallbackUrl = theme === 'dark' ? defaultAvatarDarkUrl : defaultAvatarUrl;
+  const resolved = src && src !== failedSrc ? src : fallbackUrl;
   return (
     <img
       {...rest}

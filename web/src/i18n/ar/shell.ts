@@ -22,6 +22,7 @@ export default {
     signUpLink: 'إنشاء حساب',
   },
   language: { label: 'اللغة' },
+  theme: { toDark: 'التبديل إلى الوضع الداكن', toLight: 'التبديل إلى الوضع الفاتح' },
   footer: { privacy: 'سياسة الخصوصية', terms: 'شروط الاستخدام' },
   notFound: {
     name: 'الصفحة غير موجودة',

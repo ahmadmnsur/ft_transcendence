@@ -37,7 +37,7 @@ function SkillBlank({
       onValueChange={onChange}
       trigger={{
         className:
-          'inline-flex max-w-full cursor-pointer items-center border-b-4 border-primary-500 px-0.5 text-primary-700 transition-colors duration-150 hover:border-primary-700 hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-expanded:border-primary-700 aria-expanded:bg-primary-50',
+          'inline-flex max-w-full cursor-pointer items-center border-b-4 border-primary-500 px-0.5 text-ink-accent transition-colors duration-150 hover:border-ink-accent hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-expanded:border-ink-accent aria-expanded:bg-primary-50',
         children: (
           <>
             <SkillName
@@ -221,9 +221,9 @@ export function LandingPage(): React.JSX.Element {
           </h2>
           <ol className="mt-8 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((step, index) => (
-              <li key={step.title} className="min-w-0 border-t-2 border-primary-600 pt-4">
+              <li key={step.title} className="min-w-0 border-t-2 border-line-accent pt-4">
                 <h3 className="text-lg font-semibold text-ink">
-                  <span aria-hidden="true" className="me-2 text-primary-700 tabular-nums">
+                  <span aria-hidden="true" className="me-2 text-ink-accent tabular-nums">
                     {formatNumber(index + 1)}
                   </span>
                   {step.title}
@@ -257,11 +257,11 @@ export function LandingPage(): React.JSX.Element {
               <h2 id="landing-prompts" className="text-2xl font-semibold text-balance sm:text-3xl">
                 {copy.prompts.heading}
               </h2>
-              <p className="mt-4 text-lg text-pretty text-primary-100">{copy.prompts.body}</p>
+              <p className="mt-4 text-lg text-pretty text-primary-100 dark:text-primary-900">{copy.prompts.body}</p>
             </div>
             <figure className="min-w-0 border-t border-primary-600 pt-8 lg:border-t-0 lg:border-s lg:ps-12 lg:pt-0">
               <p className="text-2xl font-semibold text-balance sm:text-3xl">{copy.prompts.exampleQuestion}</p>
-              <figcaption className="mt-4 text-sm font-medium text-primary-200">{copy.prompts.exampleLabel}</figcaption>
+              <figcaption className="mt-4 text-sm font-medium text-primary-200 dark:text-primary-900">{copy.prompts.exampleLabel}</figcaption>
             </figure>
           </div>
         </section>

@@ -7,7 +7,7 @@ import { logout } from './api/auth';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from './api/session';
 import { useI18n } from './i18n/context';
 import { languageNames, languages } from './i18n/language';
-import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, PersonName, SearchIcon, Select, buttonClasses } from './design';
+import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, MoonIcon, PersonName, SearchIcon, Select, SunIcon, buttonClasses, useTheme } from './design';
 import { RealtimeConnection } from './realtime/connection';
 import { MessageUpdates } from './messages/MessageUpdates';
 import { RoundUpdates } from './matching/RoundUpdates';
@@ -30,9 +30,9 @@ function activeOptions(to: string): { exact: boolean; includeSearch: false } {
 }
 
 const barLinkClass =
-  'inline-flex items-center whitespace-nowrap rounded-t-lg border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors duration-150 hover:text-ink focus-ring aria-[current=page]:border-primary-600 aria-[current=page]:text-primary-700';
+  'inline-flex items-center whitespace-nowrap rounded-t-lg border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors duration-150 hover:text-ink focus-ring aria-[current=page]:border-line-accent aria-[current=page]:text-ink-accent';
 const panelItemClass =
-  'block w-full rounded-lg px-3 py-2 text-start text-sm text-ink transition-colors duration-150 hover:bg-surface-muted focus-ring pointer-coarse:py-3 aria-[current=page]:bg-primary-50 aria-[current=page]:font-medium aria-[current=page]:text-primary-700';
+  'block w-full rounded-lg px-3 py-2 text-start text-sm text-ink transition-colors duration-150 hover:bg-surface-muted focus-ring pointer-coarse:py-3 aria-[current=page]:bg-primary-50 aria-[current=page]:font-medium aria-[current=page]:text-ink-accent';
 const MD_QUERY = '(width >= 48rem)';
 const headerClass = 'sticky top-0 z-40 border-b border-line bg-surface';
 
@@ -56,6 +56,7 @@ function followHeaderHeight(header: HTMLElement | null): (() => void) | undefine
 function SiteHeader(): React.JSX.Element {
   const { t, language, setLanguage } = useI18n();
   const copy = t.shell.header;
+  const { theme, setTheme } = useTheme();
   const { data: session } = useQuery(sessionQueryOptions());
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -114,6 +115,12 @@ function SiteHeader(): React.JSX.Element {
     await goToSignIn();
   }
 
+  const dark = theme === 'dark';
+  const themeLabel = dark ? t.shell.theme.toLight : t.shell.theme.toDark;
+  function onThemeToggle(): void {
+    setTheme(dark ? 'light' : 'dark');
+  }
+
   function onLanguageChange(value: string): void {
     const next = languages.find((l) => l === value);
     if (next !== undefined) setLanguage(next);
@@ -140,7 +147,7 @@ function SiteHeader(): React.JSX.Element {
   const brandLink = (
     <Link to="/" className="inline-flex h-9 min-w-0 items-center rounded-lg focus-ring">
       <svg role="img" aria-label={BRAND} viewBox="0.8 10 274 72.3" fill="currentColor" className="h-9 w-auto max-w-full">
-        <g className="text-primary-700 forced-colors:text-[LinkText]">
+        <g className="text-ink-accent forced-colors:text-[LinkText]">
           <path d="M29.2 43.1 49 26H86V30.4L0.9 81H96V65H59.1L102 39.6V10H43L18.8 30.9Z" />
           <path d="M122 35 143 14H156V82H137V38L122 52Z" />
         </g>
@@ -163,7 +170,7 @@ function SiteHeader(): React.JSX.Element {
       options={languages.map((l) => ({ value: l, label: languageNames[l], lang: l }))}
       value={language}
       onValueChange={onLanguageChange}
-      className={student !== null ? 'w-32 shrink-0' : 'w-32 shrink-0 max-sm:order-1 max-sm:ms-auto'}
+      className={student !== null ? 'w-32 shrink-0' : 'w-32 shrink-0 max-sm:order-1'}
     />
   );
 
@@ -180,6 +187,9 @@ function SiteHeader(): React.JSX.Element {
               {copy.signUpLink}
             </Link>
           </nav>
+          <IconButton label={themeLabel} size="sm" onClick={onThemeToggle} className="max-sm:order-1 max-sm:ms-auto">
+            {dark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+          </IconButton>
           {languageSwitcher}
         </div>
       </header>
@@ -265,10 +275,16 @@ function SiteHeader(): React.JSX.Element {
                   </li>
                 ))}
               </ul>
+              <button type="button" onClick={onThemeToggle} className={panelItemClass}>
+                {themeLabel}
+              </button>
               {signOut}
             </div>
           </div>
         </nav>
+        <IconButton label={themeLabel} size="sm" onClick={onThemeToggle} className="max-md:hidden">
+          {dark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+        </IconButton>
         {languageSwitcher}
       </div>
       <nav aria-label={copy.navLabel} className="mx-auto hidden w-full max-w-6xl px-4 pt-1 md:block">

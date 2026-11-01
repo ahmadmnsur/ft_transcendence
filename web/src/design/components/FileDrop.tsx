@@ -233,9 +233,9 @@ export function FileDrop({
           className={[
             'flex w-full min-w-0 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors duration-150 focus-ring',
             dragging
-              ? 'border-primary-600 bg-primary-50'
+              ? 'border-line-accent bg-primary-50'
               : shownError
-                ? 'border-danger-600 bg-surface hover:border-danger-700 hover:bg-canvas'
+                ? 'border-danger-600 bg-surface hover:border-danger-700 hover:bg-canvas dark:hover:border-danger-500'
                 : 'border-line-strong bg-surface hover:border-neutral-600 hover:bg-canvas',
           ].join(' ')}
         >
@@ -257,7 +257,7 @@ export function FileDrop({
           role="group"
           aria-labelledby={labelId}
           aria-describedby={shownError ? errorId : undefined}
-          className={`min-w-0 rounded-xl border p-3 ${dragging ? 'border-primary-600 bg-primary-50' : shownError ? 'border-danger-600 bg-surface' : 'border-line bg-surface'}`}
+          className={`min-w-0 rounded-xl border p-3 ${dragging ? 'border-line-accent bg-primary-50' : shownError ? 'border-danger-600 bg-surface' : 'border-line bg-surface'}`}
         >
           <div className="flex min-w-0 flex-wrap items-center gap-3">
             {isImage && url && url !== brokenUrl ? (

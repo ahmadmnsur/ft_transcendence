@@ -41,4 +41,8 @@ export { TextArea } from './components/TextArea';
 export type { TextAreaProps } from './components/TextArea';
 export { TextField } from './components/TextField';
 export type { TextFieldProps } from './components/TextField';
+export { ThemeProvider, useTheme } from './theme/context';
+export type { ThemeState } from './theme/context';
+export { initialTheme } from './theme/theme';
+export type { Theme } from './theme/theme';
 export * from './icons';
