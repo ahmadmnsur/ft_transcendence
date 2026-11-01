@@ -80,8 +80,8 @@ describe('Remove Student and the Reports on them', () => {
           resolvedBy: ref(admin, true),
           resolvedAt: REMOVED_AT.toISOString(),
           reports: [
-            expect.objectContaining({ reason: 'HARASSMENT', text: 'Rude in the thread.', reporter: ref(reporter) }),
             expect.objectContaining({ reason: 'SPAM', reporter: ref(admin, true) }),
+            expect.objectContaining({ reason: 'HARASSMENT', text: 'Rude in the thread.', reporter: ref(reporter) }),
           ],
         },
       ],
