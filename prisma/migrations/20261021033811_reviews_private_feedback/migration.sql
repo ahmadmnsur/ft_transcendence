@@ -1,3 +1,4 @@
+-- CreateTable
 CREATE TABLE "PrivateFeedback" (
     "id" UUID NOT NULL,
     "review_id" UUID NOT NULL,
@@ -9,9 +10,12 @@ CREATE TABLE "PrivateFeedback" (
     CONSTRAINT "PrivateFeedback_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateIndex
 CREATE UNIQUE INDEX "PrivateFeedback_review_id_key" ON "PrivateFeedback"("review_id");
 
+-- AddForeignKey
 ALTER TABLE "PrivateFeedback" ADD CONSTRAINT "PrivateFeedback_review_id_fkey" FOREIGN KEY ("review_id") REFERENCES "Review"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;
 
+-- §4.4 step 5: NULL means no rating; a supplied rating is 1–5.
 ALTER TABLE "PrivateFeedback" ADD CONSTRAINT "private_feedback_rating_range"
   CHECK (rating IS NULL OR rating BETWEEN 1 AND 5);

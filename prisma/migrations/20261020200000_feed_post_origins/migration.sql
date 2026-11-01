@@ -1,3 +1,4 @@
+-- CreateTable
 CREATE TABLE "Review" (
     "id" UUID NOT NULL,
     "match_id" UUID NOT NULL,
@@ -8,6 +9,7 @@ CREATE TABLE "Review" (
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
 CREATE TABLE "ReflectionPrompt" (
     "id" UUID NOT NULL,
     "question" TEXT NOT NULL,
@@ -17,6 +19,7 @@ CREATE TABLE "ReflectionPrompt" (
     CONSTRAINT "ReflectionPrompt_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
 CREATE TABLE "Post" (
     "id" UUID NOT NULL,
     "author_id" UUID NOT NULL,
@@ -30,28 +33,42 @@ CREATE TABLE "Post" (
     CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateIndex
 CREATE UNIQUE INDEX "Review_match_id_key" ON "Review"("match_id");
 
+-- CreateIndex
 CREATE UNIQUE INDEX "ReflectionPrompt_publication_order_key" ON "ReflectionPrompt"("publication_order");
 
+-- CreateIndex
 CREATE UNIQUE INDEX "Post_review_id_key" ON "Post"("review_id");
 
+-- CreateIndex
 CREATE INDEX "Post_created_at_id_idx" ON "Post"("created_at" DESC, "id" DESC);
 
+-- CreateIndex
 CREATE INDEX "Post_author_id_idx" ON "Post"("author_id");
 
+-- CreateIndex
 CREATE INDEX "Post_answer_round_id_idx" ON "Post"("answer_round_id");
 
+-- CreateIndex
 CREATE UNIQUE INDEX "Post_prompt_id_author_id_key" ON "Post"("prompt_id", "author_id");
 
+-- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_match_id_fkey" FOREIGN KEY ("match_id") REFERENCES "Match"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;
 
+-- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;
 
+-- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_prompt_id_fkey" FOREIGN KEY ("prompt_id") REFERENCES "ReflectionPrompt"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;
 
+-- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_review_id_fkey" FOREIGN KEY ("review_id") REFERENCES "Review"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;
 
+-- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_answer_round_id_fkey" FOREIGN KEY ("answer_round_id") REFERENCES "Round"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;
 
+-- §4.4 step 1: a Post has exactly one origin, a Prompt answer or a Review's
+-- Public Takeaway: never both, never neither.
 ALTER TABLE "Post" ADD CONSTRAINT post_exactly_one_origin CHECK ((prompt_id IS NULL) <> (review_id IS NULL));

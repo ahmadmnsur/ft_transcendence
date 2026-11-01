@@ -1,5 +1,7 @@
+-- CreateEnum
 CREATE TYPE "Badge" AS ENUM ('FIRST_MENTOR', 'KNOWLEDGE_SHARER', 'CONSISTENT_LEARNER');
 
+-- CreateTable
 CREATE TABLE "BadgeAward" (
     "student_id" UUID NOT NULL,
     "badge" "Badge" NOT NULL,
@@ -8,4 +10,5 @@ CREATE TABLE "BadgeAward" (
     CONSTRAINT "BadgeAward_pkey" PRIMARY KEY ("student_id","badge")
 );
 
+-- AddForeignKey
 ALTER TABLE "BadgeAward" ADD CONSTRAINT "BadgeAward_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE RESTRICT;

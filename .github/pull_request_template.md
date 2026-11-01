@@ -1,5 +1,8 @@
 ## What and why
 
+<!-- What changed and why, in plain words: this becomes the commit on main.
+     "Closes #N" for the ticket it delivers. Anything deliberately left out. -->
+
 ## Checklist
 
 - [ ] Branch `<type>/<slice>-<short>` off `main`, rebased onto latest `main`
@@ -7,6 +10,8 @@
 - [ ] **One review completed** by another member — requesting one is not a review
 
 ## Done
+
+<!-- Every box ticked = the ticket is done (ADR-0016). Tick only what is true. -->
 
 - [ ] **Suite green** (`npx vitest run`) — *n/a* only until the first `test/<NN>-<category>/*.test.ts` exists (§16.8)
 - [ ] **Every acceptance criterion** of the ticket met
@@ -16,6 +21,11 @@
 - [ ] **Three languages** — if this adds or changes text the SPA shows, it is in English, French and Arabic with `CONTEXT.md`'s words, and `npm --prefix web run build` passes (`CONTRIBUTING.md` → Text ships in three languages)
 
 ## Schema gate
+
+<!-- Yes if this touches prisma/** (seed: prisma/seed/**, prisma/fixtures/**; resets: prisma/reset/**),
+     prisma.config.ts, supabase/**, src/files/buckets.ts (the Storage buckets' settings) or any
+     compose*.yaml, or adds any file matching /prisma.config*,
+     /prisma7.config*, /.config/prisma* (ADR-0005 d5, d6). Moving or renaming one of these is Yes too. -->
 
 - [ ] **No** — round-robin review
 - [ ] **Yes** — Kamel reviews (Ahmad if Kamel authored it or is blocked >24h), and:
@@ -32,6 +42,9 @@
   - [ ] A gated file moved or renamed → the gate list here, in `CONTRIBUTING.md` and in `.coderabbit.yaml` updated
 
 ## Clean-clone boot
+
+<!-- Required if this touches prisma/**, prisma.config.ts, a Compose file, a Dockerfile, supabase/** other than
+     its Markdown files, or .env.example (ADR-0004 d8, ADR-0016 d5). -->
 
 - [ ] **n/a**
 - [ ] **Verified in two separate fresh clones**, each starting with no `peerconnect` containers or volumes:
