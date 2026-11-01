@@ -39,6 +39,16 @@ const formatPattern = /\p{Cf}/u;
 const JOINER_200C = String.fromCharCode(0x200C);
 const JOINER_200D = String.fromCharCode(0x200D);
 
+// An emoji: a pictograph, a flag letter, a skin tone, the emoji presentation
+// selector U+FE0F or the keycap mark U+20E3 (§6.0.3's note of 2026-11-01).
+// It also takes a few symbols Unicode counts as pictographs, such as © ® ™
+// ‼ ↔ ▶, and no ASCII character.
+const emojiPattern = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{20E3}]/u;
+
+export function hasEmoji(value: string): boolean {
+  return emojiPattern.test(value);
+}
+
 export function hasControlChars(value: string, allowNewline: boolean): boolean {
   for (const ch of value) {
     if (allowNewline && ch === '\n') continue;
@@ -82,9 +92,19 @@ export function isValidPassword(password: string): boolean {
   return utf8ByteLength(trimmed) <= LIMITS.password.maxBytes;
 }
 
+// A new password: sign-up's, the password change's, Confirm with 42's, and
+// the staff and seed passwords in `.env`. It also holds no emoji (§5.1's
+// note of 2026-11-01). A current password keeps the rule above, since one
+// set before that note may hold an emoji, and refusing it would lock its
+// Student out.
+export function isValidNewPassword(password: string): boolean {
+  return isValidPassword(password) && !hasEmoji(password);
+}
+
 export function isValidDisplayName(name: string): boolean {
   if (!isValidText(name, LIMITS.displayName, false)) return false;
-  return !hasForbiddenFormatChars(name.trim());
+  const trimmed = name.trim();
+  return !hasForbiddenFormatChars(trimmed) && !hasEmoji(trimmed);
 }
 
 export function isValidSearchQuery(q: string): boolean {

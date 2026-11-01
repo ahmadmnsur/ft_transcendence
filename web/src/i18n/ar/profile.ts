@@ -64,6 +64,7 @@ export default {
       many: 'أدخل اسم عرض من {minChars} إلى {count} حرفا.',
       other: 'أدخل اسم عرض من {minChars} إلى {count} حرف.',
     },
+    displayNameEmoji: 'لا يمكن أن يحتوي اسم العرض على رموز تعبيرية.',
     emailLabel: 'البريد الإلكتروني',
     emailHint: 'يستخدم فقط لتسجيل الدخول. لا يظهر أبدا للطلاب الآخرين.',
     emailInvalid: 'أدخل بريدا إلكترونيا صالحا.',

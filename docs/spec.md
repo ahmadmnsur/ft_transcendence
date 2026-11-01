@@ -315,7 +315,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0002 d9 | Prompt answer with no open Round earns XP, not Streak; Round attribution at the answer's serialization point. |
 | ADR-0003 d1 | Opaque session id in one HttpOnly, Secure, SameSite=Lax cookie; no JWT; the cookie also carries the OAuth pre-authentication attempt. A password check through Supabase Auth's password grant returns a JWT that lives only inside that request on the server: used once to sign its Supabase Auth session out, never stored, logged or sent to the browser (d1's notes of 2026-09-30 and 2026-10-02). |
 | ADR-0003 d2 | Single origin for bundle, API and socket. |
-| ADR-0003 d3 | Replaced (d3's note of 2026-10-02): Supabase Auth keeps each password, bcrypt at cost 10; a password is 8 characters to 72 UTF-8 bytes, no composition rule, checked in the SPA and again in the API; PeerConnect hashes and stores no password. |
+| ADR-0003 d3 | Replaced (d3's note of 2026-10-02): Supabase Auth keeps each password, bcrypt at cost 10; a password is 8 characters to 72 UTF-8 bytes, no composition rule, checked in the SPA and again in the API; PeerConnect hashes and stores no password. A new password holds no emoji; a current one is checked without that rule (d3's note of 2026-11-01). |
 | ADR-0003 d4 | 30-day sliding expiry, renewed only when `expires_at` is more than an hour old; `Max-Age` derived from `expires_at`. |
 | ADR-0003 d5 | Session row holds id, student_id, expires_at; role and sanction flags read from `Student` on every request; sanctioned resolution fails. Resolving a session reads PeerConnect's tables only and never calls Supabase Auth (d5's note). |
 | ADR-0003 d6 | Logout deletes one session; password change, Suspension, Removal delete all; role change deletes none. Only the password change writes to Supabase Auth: check the current password, delete every session, admin update, delete every session again, `password_version` raised each time (d6's note of 2026-10-02); after Confirm with 42 the check is skipped (note of 2026-10-08). |
@@ -1739,7 +1739,8 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   Supabase Auth unreachable → `busy_retry_later` (503), never a credentials refusal (ADR-0003 d10's
   note of 2026-10-02).
 - **The password rule**: at least 8 characters and at most 72 bytes in UTF-8, so an accented or
-  Arabic letter counts two bytes or more, with no composition rule (§6.0.3). The SPA refuses a password outside it,
+  Arabic letter counts two bytes or more, with no composition rule (§6.0.3), except that a new
+  password holds no emoji (the note of 2026-11-01 below). The SPA refuses a password outside it,
   and the API checks again before it calls Supabase Auth. The Supabase project's own minimum length
   is 8 too.
 
@@ -1747,7 +1748,20 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   > trimming, as a field's maximum length does, and nothing on the page names that limit: a
   > keystroke or a paste that would pass it keeps only as much as fits. So the refusal names only
   > the 8 characters, *"Use at least 8 characters."*, and the hint under a new password reads *"At
-  > least 8 characters."* The rule does not change, and the API still checks both ends.
+  > least 8 characters."* The length rule does not change, and the API still checks both ends.
+
+  > **Updated 2026-11-01** (ADR-0003 d3's note of the same day): a **new** password may not hold an
+  > emoji. That is sign-up's password, the password change's new one, the one set after Confirm
+  > with 42 (§5.6 C), and the staff and seed passwords the boot check reads from `.env` (§15.4). An
+  > emoji is a character that `hasEmoji` in `src/shared/limits.ts` matches: a pictograph
+  > (`Extended_Pictographic`, which also takes a few symbols such as © ® ™ ‼ ↔ ▶), a flag letter
+  > (`Regional_Indicator`), a skin tone U+1F3FB–U+1F3FF, U+FE0F or the keycap mark U+20E3. No ASCII
+  > character is one. A **current** password is checked without that rule: at sign-in, by Connect
+  > 42 and Disconnect 42, and as the password change's current password. A password set before this
+  > note may hold an emoji, and refusing it there would lock its Student out with no way left to
+  > change it. A new password that holds an emoji is refused with *"A password can't contain
+  > emoji."*, even when it is also too short; any other refusal still reads *"Use at least 8
+  > characters."*
 
 - **Sign-up** takes email, password, display name and the acceptance checkbox *"I agree to the Terms
   of Service and have read the Privacy Policy"* (ADR-0018 d12). The checkbox is validated on both
@@ -2192,8 +2206,8 @@ loudly, as 404s and redirects, and has no check of its own (ADR-0016 d7).
 | Field | Limit |
 | --- | --- |
 | email | trimmed, lower-cased, ≤ 254, one `@`, non-empty local and domain parts |
-| password | at least 8 characters and at most 72 bytes in UTF-8, so an accented or Arabic letter counts two bytes or more; no composition rule (§5.1, ADR-0003 d3's note) |
-| display name | 1–40 characters, no control characters, no Unicode format characters (`Cf`) except U+200C and U+200D (§3.5) |
+| password | at least 8 characters and at most 72 bytes in UTF-8, so an accented or Arabic letter counts two bytes or more; no composition rule, except that a new password holds no emoji (§5.1, ADR-0003 d3's notes) |
+| display name | 1–40 characters, no control characters, no Unicode format characters (`Cf`) except U+200C and U+200D, no emoji (§3.5; the note of 2026-11-01 below) |
 | Skill lists | each 0–15 distinct catalogue ids |
 | Learning Goal sentence | 1–200 |
 | Direct Message | 1–2000 |
@@ -2212,6 +2226,16 @@ control characters other than a newline in multi-line fields are rejected. **Sea
 search routes, §6.2 and §6.12 — is the one string whose minimum is 0**: absent, or empty after
 trimming, it applies no text filter and is never `validation_failed`, so clearing the search box is
 ordinary use (§3.8.2).
+
+> **Updated 2026-11-01** (§5.1's note of the same day; ADR-0003 d3's note): a display name and a
+> new password may not hold an emoji, as `hasEmoji` in `src/shared/limits.ts` defines it, and both
+> ends check it. A current password is checked without that rule (§5.1). A value that holds an
+> emoji is refused under its field with its own sentence, *"A display name can't contain emoji."*
+> or *"A password can't contain emoji."*, even when it is also too short. **A display name saved
+> before this note that holds an emoji keeps showing** wherever names show. The profile form,
+> the Student's own on `/me` and an Admin's on `/admin/users/:studentId`, refuses to save until
+> the emoji is removed, even when only the email changed: it checks the name on every save, though
+> it sends only the fields that changed, and the API checks a display name only when one is sent.
 
 ### 6.1 Configuration, session and authentication
 
@@ -3934,7 +3958,8 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
   secret value, and exits 1. Step 1 checks that the `api`'s entries are non-empty (all but the
   OAuth pair and the fallback's nine
   signing secrets and keys, which the `api` never reads), that `PUBLIC_ORIGIN` is a bare origin,
-  that the staff and seed passwords meet the password rule (§5.1), and that `DATABASE_URL` carries
+  that the staff and seed passwords meet the rule for a new password (§5.1, and its note of
+  2026-11-01), and that `DATABASE_URL` carries
   no query parameter except its TLS settings, the names that start with `ssl` and
   `uselibpqcompat`, on both targets (ADR-0004 d8's note of 2026-10-18). node-postgres reads every
   parameter and takes the user, password, host and port from one before the URL's own, so any

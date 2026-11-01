@@ -55,6 +55,7 @@ export default {
       one: 'Enter a display name of {minChars}–{count} character.',
       other: 'Enter a display name of {minChars}–{count} characters.',
     },
+    displayNameEmoji: "A display name can't contain emoji.",
     emailLabel: 'Email',
     emailHint: 'Used only to sign in. Never shown to other Students.',
     emailInvalid: 'Enter a valid email address.',

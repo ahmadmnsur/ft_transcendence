@@ -19,6 +19,7 @@ export default {
       many: 'استخدم {count} حرفا على الأقل.',
       other: 'استخدم {count} حرف على الأقل.',
     },
+    emoji: 'لا يمكن أن تحتوي كلمة المرور على رموز تعبيرية.',
   },
   passwordVisibility: {
     showPasswordLabel: 'إظهار كلمة المرور',
@@ -63,6 +64,7 @@ export default {
       many: 'أدخل اسم عرض من {minChars} إلى {count} حرفا.',
       other: 'أدخل اسم عرض من {minChars} إلى {count} حرف.',
     },
+    displayNameEmoji: 'لا يمكن أن يحتوي اسم العرض على رموز تعبيرية.',
     passwordLabel: 'كلمة المرور',
     confirmPasswordLabel: 'أكد كلمة المرور',
     confirmPasswordEmpty: 'أدخل كلمة المرور مرة أخرى.',

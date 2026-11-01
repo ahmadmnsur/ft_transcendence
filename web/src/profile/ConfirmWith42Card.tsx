@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LIMITS, isValidPassword } from '@shared/limits';
+import { LIMITS, hasEmoji, isValidNewPassword } from '@shared/limits';
 import { ApiRefusalError } from '../api/client';
 import { setPasswordAfter42, start42 } from '../api/auth';
 import { fetchSession } from '../api/session';
@@ -27,7 +27,7 @@ export function ConfirmWith42Card({
   const { data: me } = useQuery(meQueryOptions());
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [newError, setNewError] = useState(false);
+  const [newError, setNewError] = useState<'emoji' | 'invalid' | undefined>(undefined);
   const [confirmError, setConfirmError] = useState(false);
   const [failure, setFailure] = useState<{ code: unknown } | undefined>(undefined);
   const [pending, setPending] = useState<'confirm' | 'set' | null>(null);
@@ -87,12 +87,12 @@ export function ConfirmWith42Card({
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (pending !== null) return;
-    const nextNewError = !isValidPassword(newPassword);
-    const nextConfirmError = nextNewError || confirmPassword.trim() !== newPassword.trim();
+    const nextNewError = isValidNewPassword(newPassword) ? undefined : hasEmoji(newPassword) ? 'emoji' : 'invalid';
+    const nextConfirmError = nextNewError !== undefined || confirmPassword.trim() !== newPassword.trim();
     setNewError(nextNewError);
     setConfirmError(nextConfirmError);
     setFailure(undefined);
-    if (nextNewError) {
+    if (nextNewError !== undefined) {
       newRef.current?.focus();
       return;
     }
@@ -166,7 +166,13 @@ export function ConfirmWith42Card({
               maxBytes={LIMITS.password.maxBytes}
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              error={newError ? passwordInvalid : undefined}
+              error={
+                newError === undefined
+                  ? undefined
+                  : newError === 'emoji'
+                    ? t.auth.password.emoji
+                    : passwordInvalid
+              }
             />
             <TextField
               ref={confirmRef}

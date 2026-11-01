@@ -127,9 +127,16 @@ function fitting(chars: string[], tail: string, maxBytes: number): number {
 // The value cut to fit, with the caret after the cut, or undefined if it fits.
 function cutToFit(value: string, caret: number, maxBytes: number): { value: string; caret: number } | undefined {
   if (fits(value, maxBytes)) return undefined;
+  // Chrome's input-method path (an on-screen keyboard, the emoji picker) can
+  // put the caret between the two halves of a character outside the BMP in a
+  // hidden password field. The caret moves past the pair, so the cut never
+  // leaves half a character behind.
+  const before = value.charCodeAt(caret - 1);
+  const after = value.charCodeAt(caret);
+  const at = before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff ? caret + 1 : caret;
   // Text after the caret that is too long by itself was not typed at the
   // caret (a script or an autofill set it): the whole value is cut at its end.
-  const cut = fits(value.slice(caret), maxBytes) ? caret : value.length;
+  const cut = fits(value.slice(at), maxBytes) ? at : value.length;
   const chars = [...value.slice(0, cut)];
   const head = chars.slice(0, fitting(chars, value.slice(cut), maxBytes)).join('');
   return { value: head + value.slice(cut), caret: head.length };

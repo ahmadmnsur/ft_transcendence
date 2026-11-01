@@ -3,9 +3,10 @@ import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   LIMITS,
+  hasEmoji,
   isValidDisplayName,
   isValidEmail,
-  isValidPassword,
+  isValidNewPassword,
   normalizeEmail,
 } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
@@ -48,8 +49,8 @@ export function SignUpPage(): React.JSX.Element {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [emailError, setEmailError] = useState(false);
-  const [displayNameError, setDisplayNameError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState<'emoji' | 'invalid' | undefined>(undefined);
+  const [passwordError, setPasswordError] = useState<'emoji' | 'invalid' | undefined>(undefined);
   const [confirmPasswordError, setConfirmPasswordError] = useState<'empty' | 'mismatch' | undefined>(undefined);
   const [termsError, setTermsError] = useState(false);
   const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
@@ -109,8 +110,8 @@ export function SignUpPage(): React.JSX.Element {
     event.preventDefault();
     if (pending) return;
     const nextEmailError = !isValidEmail(email);
-    const nextDisplayNameError = !isValidDisplayName(displayName);
-    const nextPasswordError = !isValidPassword(password);
+    const nextDisplayNameError = isValidDisplayName(displayName) ? undefined : hasEmoji(displayName) ? 'emoji' : 'invalid';
+    const nextPasswordError = isValidNewPassword(password) ? undefined : hasEmoji(password) ? 'emoji' : 'invalid';
     const nextConfirmPasswordError = confirmationError(password, confirmPassword);
     const nextTermsError = !acceptTerms;
     setEmailError(nextEmailError);
@@ -121,9 +122,9 @@ export function SignUpPage(): React.JSX.Element {
     setStatus(undefined);
     const firstInvalid = nextEmailError
       ? emailRef
-      : nextDisplayNameError
+      : nextDisplayNameError !== undefined
         ? displayNameRef
-        : nextPasswordError
+        : nextPasswordError !== undefined
           ? passwordRef
           : nextConfirmPasswordError !== undefined
             ? confirmPasswordRef
@@ -230,12 +231,14 @@ export function SignUpPage(): React.JSX.Element {
                   value={displayName}
                   onChange={(event) => setTypedDisplayName(event.target.value)}
                   error={
-                    displayNameError
-                      ? format(t.auth.signUp.displayNameInvalid, {
-                          count: LIMITS.displayName.maxChars,
-                          minChars: LIMITS.displayName.minChars,
-                        })
-                      : undefined
+                    displayNameError === undefined
+                      ? undefined
+                      : displayNameError === 'emoji'
+                        ? t.auth.signUp.displayNameEmoji
+                        : format(t.auth.signUp.displayNameInvalid, {
+                            count: LIMITS.displayName.maxChars,
+                            minChars: LIMITS.displayName.minChars,
+                          })
                   }
                 />
                 <PasswordField
@@ -252,7 +255,13 @@ export function SignUpPage(): React.JSX.Element {
                       setConfirmPasswordError(confirmationError(event.target.value, confirmPassword));
                     }
                   }}
-                  error={passwordError ? passwordInvalid : undefined}
+                  error={
+                    passwordError === undefined
+                      ? undefined
+                      : passwordError === 'emoji'
+                        ? t.auth.password.emoji
+                        : passwordInvalid
+                  }
                 />
                 <PasswordField
                   ref={confirmPasswordRef}

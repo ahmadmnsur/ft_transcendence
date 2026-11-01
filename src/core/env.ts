@@ -1,4 +1,4 @@
-import { isValidPassword } from '../shared/limits';
+import { isValidNewPassword } from '../shared/limits';
 
 export type EnvRecord = Record<string, string | undefined>;
 
@@ -134,10 +134,10 @@ export function validateEnv(env: EnvRecord): EnvResult {
   }
 
   for (const name of PASSWORD_VARS) {
-    if (!isValidPassword(env[name] as string)) {
+    if (!isValidNewPassword(env[name] as string)) {
       return fail(
         name,
-        'must be 8 characters to 72 bytes in UTF-8 after trimming, with no control characters',
+        'must be 8 characters to 72 bytes in UTF-8 after trimming, with no control characters and no emoji',
       );
     }
   }
