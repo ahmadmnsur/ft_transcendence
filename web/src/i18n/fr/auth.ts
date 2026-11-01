@@ -9,20 +9,11 @@ export default {
       other: 'Au moins {count} caractères.',
     },
     invalid: {
-      text: 'Utilisez {minChars} et {maxBytes}.',
-      parts: {
-        minChars: {
-          one: 'au moins {count} caractère',
-          many: 'au moins {count} de caractères',
-          other: 'au moins {count} caractères',
-        },
-        maxBytes: {
-          one: 'au plus {count} octet',
-          many: "au plus {count} d'octets",
-          other: 'au plus {count} octets',
-        },
-      },
+      one: 'Utilisez au moins {count} caractère.',
+      many: 'Utilisez au moins {count} de caractères.',
+      other: 'Utilisez au moins {count} caractères.',
     },
+    emoji: "Un mot de passe ne peut pas contenir d'émojis.",
   },
   passwordVisibility: {
     showPasswordLabel: 'Afficher le mot de passe',
@@ -62,6 +53,7 @@ export default {
       many: "Saisissez un nom d'affichage de {minChars}–{count} de caractères.",
       other: "Saisissez un nom d'affichage de {minChars}–{count} caractères.",
     },
+    displayNameEmoji: "Un nom d'affichage ne peut pas contenir d'émojis.",
     passwordLabel: 'Mot de passe',
     confirmPasswordLabel: 'Confirmez le mot de passe',
     confirmPasswordEmpty: 'Saisissez à nouveau votre mot de passe.',

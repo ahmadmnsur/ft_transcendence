@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { LIMITS, isValidPassword } from '@shared/limits';
+import { LIMITS, isValidPassword, newPasswordInvalidReason, type InvalidReason } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { changePassword } from '../api/auth';
 import { configQueryOptions } from '../api/config';
@@ -39,7 +39,7 @@ export function MePage(): React.JSX.Element {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [currentError, setCurrentError] = useState<'empty' | 'invalid' | undefined>(undefined);
-  const [newError, setNewError] = useState(false);
+  const [newError, setNewError] = useState<InvalidReason | undefined>(undefined);
   const [confirmError, setConfirmError] = useState(false);
   const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
   const [pending, setPending] = useState(false);
@@ -48,10 +48,7 @@ export function MePage(): React.JSX.Element {
   const confirmRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -79,8 +76,8 @@ export function MePage(): React.JSX.Element {
     if (pending) return;
     const nextCurrentError: 'empty' | 'invalid' | undefined =
       currentPassword === '' ? 'empty' : isValidPassword(currentPassword) ? undefined : 'invalid';
-    const nextNewError = !isValidPassword(newPassword);
-    const nextConfirmError = nextNewError || confirmPassword.trim() !== newPassword.trim();
+    const nextNewError = newPasswordInvalidReason(newPassword);
+    const nextConfirmError = confirmPassword.trim() !== newPassword.trim();
     setCurrentError(nextCurrentError);
     setNewError(nextNewError);
     setConfirmError(nextConfirmError);
@@ -89,7 +86,7 @@ export function MePage(): React.JSX.Element {
       currentRef.current?.focus();
       return;
     }
-    if (nextNewError) {
+    if (nextNewError !== undefined) {
       newRef.current?.focus();
       return;
     }
@@ -189,6 +186,7 @@ export function MePage(): React.JSX.Element {
               label={t.auth.passwordChange.currentLabel}
               type="password"
               autoComplete="current-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               error={
@@ -205,15 +203,23 @@ export function MePage(): React.JSX.Element {
               hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
               type="password"
               autoComplete="new-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              error={newError ? passwordInvalid : undefined}
+              error={
+                newError === undefined
+                  ? undefined
+                  : newError === 'emoji'
+                    ? t.auth.password.emoji
+                    : passwordInvalid
+              }
             />
             <TextField
               ref={confirmRef}
               label={t.auth.passwordChange.confirmLabel}
               type="password"
               autoComplete="new-password"
+              maxBytes={LIMITS.password.maxBytes}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               error={confirmError ? t.auth.passwordChange.confirmInvalid : undefined}

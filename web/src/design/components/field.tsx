@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type AriaAttributes, type ChangeEventHandler, type CompositionEventHandler, type InputEvent, type ReactElement, type ReactNode, type Ref, type RefCallback } from 'react';
+import { utf8ByteLength } from '@shared/limits';
 
 export type FieldMessage = string | ReactElement;
 
@@ -101,6 +102,60 @@ export const controlClass = (invalid: boolean): string =>
     'disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-muted disabled:text-ink-muted disabled:hover:border-line',
     invalid ? 'border-danger-600 hover:border-danger-700' : 'border-line-strong hover:border-neutral-600',
   ].join(' ');
+
+const fits = (text: string, maxBytes: number): boolean => utf8ByteLength(text.trim()) <= maxBytes;
+
+function fitting(chars: string[], tail: string, maxBytes: number): number {
+  let low = 0;
+  let high = chars.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (fits(chars.slice(0, mid).join('') + tail, maxBytes)) low = mid;
+    else high = mid - 1;
+  }
+  return low;
+}
+
+function cutToFit(value: string, caret: number, maxBytes: number): { value: string; caret: number } | undefined {
+  if (fits(value, maxBytes)) return undefined;
+  const before = value.charCodeAt(caret - 1);
+  const after = value.charCodeAt(caret);
+  const at = before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff ? caret + 1 : caret;
+  const cut = fits(value.slice(at), maxBytes) ? at : value.length;
+  const chars = [...value.slice(0, cut)];
+  const head = chars.slice(0, fitting(chars, value.slice(cut), maxBytes)).join('');
+  return { value: head + value.slice(cut), caret: head.length };
+}
+
+interface CapHandlers {
+  onChange?: ChangeEventHandler<HTMLInputElement>;
+  onCompositionEnd?: CompositionEventHandler<HTMLInputElement>;
+}
+
+export function capBytes(maxBytes: number | undefined, { onChange, onCompositionEnd }: CapHandlers): CapHandlers {
+  if (maxBytes === undefined) return { onChange, onCompositionEnd };
+  return {
+    onChange: (event) => {
+      const input = event.currentTarget;
+      const composing = event.nativeEvent instanceof globalThis.InputEvent && event.nativeEvent.isComposing;
+      const next = composing ? undefined : cutToFit(input.value, input.selectionEnd ?? input.value.length, maxBytes);
+      if (next) {
+        input.value = next.value;
+        if (input.selectionEnd !== null) input.setSelectionRange(next.caret, next.caret);
+      }
+      onChange?.(event);
+    },
+    onCompositionEnd: (event) => {
+      onCompositionEnd?.(event);
+      const input = event.currentTarget;
+      const next = cutToFit(input.value, input.selectionEnd ?? input.value.length, maxBytes);
+      if (!next) return;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, next.value);
+      if (input.selectionEnd !== null) input.setSelectionRange(next.caret, next.caret);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    },
+  };
+}
 
 interface TextDirectionOptions<E> {
   dir: string | undefined;

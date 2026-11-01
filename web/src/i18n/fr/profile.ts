@@ -59,6 +59,7 @@ export default {
       many: "Saisissez un nom d'affichage de {minChars}–{count} de caractères.",
       other: "Saisissez un nom d'affichage de {minChars}–{count} caractères.",
     },
+    displayNameEmoji: "Un nom d'affichage ne peut pas contenir d'émojis.",
     emailLabel: 'E-mail',
     emailHint: 'Utilisé uniquement pour vous connecter. Jamais visible par les autres Étudiants.',
     emailInvalid: 'Saisissez une adresse e-mail valide.',

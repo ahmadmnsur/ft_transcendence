@@ -110,6 +110,16 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > the Supabase project's own minimum length is set to 8 too. PeerConnect no longer hashes or
    > stores a password: `Student.password_hash` goes, and `@node-rs/argon2` with it.
 
+   > **No emoji in a new password, 2026-11-01, decided by the team in Ahmad's review of
+   > [feat: refuse emoji in a display name or a new password, and stop password fields at 72 bytes](https://github.com/ahmadmnsur/ft_transcendence/pull/244).**
+   > "No composition rule" above keeps one exception: a **new** password may not hold an emoji.
+   > That is the password set at sign-up, by the password change, after Confirm with 42, and the
+   > staff and seed passwords in `.env`. A **current** password is checked without that rule: at
+   > sign-in, by Connect 42, by Disconnect 42 and as the password change's current password. A
+   > password set before this note may hold an emoji, and refusing it there would lock its Student
+   > out with no way left to change it. The frontend and the API both check both rules (spec §5.1's
+   > note of 2026-11-01, §6.0.3).
+
 4. **Sliding expiry, 30 days of inactivity, renewed lazily.** `expires_at` is only rewritten
    when it is more than an hour old, so an authenticated request is not also a database
    write. Cookie `Max-Age` is derived from `expires_at`, keeping the browser-side and

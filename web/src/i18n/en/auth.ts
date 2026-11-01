@@ -3,13 +3,8 @@ import type { EnGroup } from '../types';
 export default {
   password: {
     hint: { one: 'At least {count} character.', other: 'At least {count} characters.' },
-    invalid: {
-      text: 'Use {minChars} and {maxBytes}.',
-      parts: {
-        minChars: { one: 'at least {count} character', other: 'at least {count} characters' },
-        maxBytes: { one: 'at most {count} byte', other: 'at most {count} bytes' },
-      },
-    },
+    invalid: { one: 'Use at least {count} character.', other: 'Use at least {count} characters.' },
+    emoji: "A password can't contain emoji.",
   },
   passwordVisibility: {
     showPasswordLabel: 'Show password',
@@ -47,6 +42,7 @@ export default {
       one: 'Enter a display name of {minChars}–{count} character.',
       other: 'Enter a display name of {minChars}–{count} characters.',
     },
+    displayNameEmoji: "A display name can't contain emoji.",
     passwordLabel: 'Password',
     confirmPasswordLabel: 'Confirm password',
     confirmPasswordEmpty: 'Enter your password again.',

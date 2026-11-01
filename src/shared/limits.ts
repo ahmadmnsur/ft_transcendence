@@ -39,6 +39,12 @@ const formatPattern = /\p{Cf}/u;
 const JOINER_200C = String.fromCharCode(0x200C);
 const JOINER_200D = String.fromCharCode(0x200D);
 
+const emojiPattern = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{20E3}]/u;
+
+export function hasEmoji(value: string): boolean {
+  return emojiPattern.test(value);
+}
+
 export function hasControlChars(value: string, allowNewline: boolean): boolean {
   for (const ch of value) {
     if (allowNewline && ch === '\n') continue;
@@ -82,9 +88,26 @@ export function isValidPassword(password: string): boolean {
   return utf8ByteLength(trimmed) <= LIMITS.password.maxBytes;
 }
 
+export function isValidNewPassword(password: string): boolean {
+  return isValidPassword(password) && !hasEmoji(password);
+}
+
 export function isValidDisplayName(name: string): boolean {
   if (!isValidText(name, LIMITS.displayName, false)) return false;
-  return !hasForbiddenFormatChars(name.trim());
+  const trimmed = name.trim();
+  return !hasForbiddenFormatChars(trimmed) && !hasEmoji(trimmed);
+}
+
+export type InvalidReason = 'emoji' | 'invalid';
+
+export function displayNameInvalidReason(name: string): InvalidReason | undefined {
+  if (isValidDisplayName(name)) return undefined;
+  return hasEmoji(name) ? 'emoji' : 'invalid';
+}
+
+export function newPasswordInvalidReason(password: string): InvalidReason | undefined {
+  if (isValidNewPassword(password)) return undefined;
+  return hasEmoji(password) ? 'emoji' : 'invalid';
 }
 
 export function isValidSearchQuery(q: string): boolean {

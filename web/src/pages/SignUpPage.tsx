@@ -3,10 +3,11 @@ import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   LIMITS,
-  isValidDisplayName,
+  displayNameInvalidReason,
   isValidEmail,
-  isValidPassword,
+  newPasswordInvalidReason,
   normalizeEmail,
+  type InvalidReason,
 } from '@shared/limits';
 import { ApiProtocolError, ApiRefusalError } from '../api/client';
 import { signup, signup42, fetchSignUpDraft42, signUpDraft42QueryOptions, SIGN_UP_DRAFT_42_QUERY_KEY } from '../api/auth';
@@ -48,8 +49,8 @@ export function SignUpPage(): React.JSX.Element {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [emailError, setEmailError] = useState(false);
-  const [displayNameError, setDisplayNameError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState<InvalidReason | undefined>(undefined);
+  const [passwordError, setPasswordError] = useState<InvalidReason | undefined>(undefined);
   const [confirmPasswordError, setConfirmPasswordError] = useState<'empty' | 'mismatch' | undefined>(undefined);
   const [termsError, setTermsError] = useState(false);
   const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
@@ -62,10 +63,7 @@ export function SignUpPage(): React.JSX.Element {
   const termsRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
 
   const statusBlock =
     status !== undefined ? (
@@ -112,8 +110,8 @@ export function SignUpPage(): React.JSX.Element {
     event.preventDefault();
     if (pending) return;
     const nextEmailError = !isValidEmail(email);
-    const nextDisplayNameError = !isValidDisplayName(displayName);
-    const nextPasswordError = !isValidPassword(password);
+    const nextDisplayNameError = displayNameInvalidReason(displayName);
+    const nextPasswordError = newPasswordInvalidReason(password);
     const nextConfirmPasswordError = confirmationError(password, confirmPassword);
     const nextTermsError = !acceptTerms;
     setEmailError(nextEmailError);
@@ -124,9 +122,9 @@ export function SignUpPage(): React.JSX.Element {
     setStatus(undefined);
     const firstInvalid = nextEmailError
       ? emailRef
-      : nextDisplayNameError
+      : nextDisplayNameError !== undefined
         ? displayNameRef
-        : nextPasswordError
+        : nextPasswordError !== undefined
           ? passwordRef
           : nextConfirmPasswordError !== undefined
             ? confirmPasswordRef
@@ -233,12 +231,14 @@ export function SignUpPage(): React.JSX.Element {
                   value={displayName}
                   onChange={(event) => setTypedDisplayName(event.target.value)}
                   error={
-                    displayNameError
-                      ? format(t.auth.signUp.displayNameInvalid, {
-                          count: LIMITS.displayName.maxChars,
-                          minChars: LIMITS.displayName.minChars,
-                        })
-                      : undefined
+                    displayNameError === undefined
+                      ? undefined
+                      : displayNameError === 'emoji'
+                        ? t.auth.signUp.displayNameEmoji
+                        : format(t.auth.signUp.displayNameInvalid, {
+                            count: LIMITS.displayName.maxChars,
+                            minChars: LIMITS.displayName.minChars,
+                          })
                   }
                 />
                 <PasswordField
@@ -247,6 +247,7 @@ export function SignUpPage(): React.JSX.Element {
                   hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
                   {...t.auth.passwordVisibility}
                   autoComplete="new-password"
+                  maxBytes={LIMITS.password.maxBytes}
                   value={password}
                   onChange={(event) => {
                     setPassword(event.target.value);
@@ -254,13 +255,20 @@ export function SignUpPage(): React.JSX.Element {
                       setConfirmPasswordError(confirmationError(event.target.value, confirmPassword));
                     }
                   }}
-                  error={passwordError ? passwordInvalid : undefined}
+                  error={
+                    passwordError === undefined
+                      ? undefined
+                      : passwordError === 'emoji'
+                        ? t.auth.password.emoji
+                        : passwordInvalid
+                  }
                 />
                 <PasswordField
                   ref={confirmPasswordRef}
                   label={t.auth.signUp.confirmPasswordLabel}
                   {...t.auth.signUp.confirmPasswordVisibility}
                   autoComplete="new-password"
+                  maxBytes={LIMITS.password.maxBytes}
                   value={confirmPassword}
                   onChange={(event) => {
                     setConfirmPassword(event.target.value);

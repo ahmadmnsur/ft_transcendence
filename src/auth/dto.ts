@@ -13,6 +13,7 @@ import {
 import {
   isValidDisplayName,
   isValidEmail,
+  isValidNewPassword,
   isValidPassword,
   normalizeEmail,
 } from '../shared/limits';
@@ -40,6 +41,7 @@ export function sharedValidator(
 
 export const IsValidEmailDto = sharedValidator('isValidEmail', isValidEmail);
 export const IsValidPasswordDto = sharedValidator('isValidPassword', isValidPassword);
+export const IsValidNewPasswordDto = sharedValidator('isValidNewPassword', isValidNewPassword);
 export const IsValidDisplayNameDto = sharedValidator('isValidDisplayName', isValidDisplayName);
 
 export function Trimmed(): PropertyDecorator {
@@ -56,7 +58,7 @@ export class SignupDto {
 
   @IsString()
   @Trimmed()
-  @IsValidPasswordDto()
+  @IsValidNewPasswordDto()
   password!: string;
 
   @IsString()
@@ -104,7 +106,7 @@ export class Disconnect42Dto {
 export class Password42Dto {
   @IsString()
   @Trimmed()
-  @IsValidPasswordDto()
+  @IsValidNewPasswordDto()
   newPassword!: string;
 }
 
@@ -116,6 +118,6 @@ export class PasswordDto {
 
   @IsString()
   @Trimmed()
-  @IsValidPasswordDto()
+  @IsValidNewPasswordDto()
   newPassword!: string;
 }

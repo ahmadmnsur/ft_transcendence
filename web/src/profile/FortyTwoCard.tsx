@@ -28,10 +28,7 @@ export function FortyTwoCard({
   const mountedRef = useRef(false);
   const handOffTimerRef = useRef<number | undefined>(undefined);
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -158,6 +155,7 @@ export function FortyTwoCard({
           label={t.auth.passwordChange.currentLabel}
           {...t.auth.passwordVisibility}
           autoComplete="current-password"
+          maxBytes={LIMITS.password.maxBytes}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           error={
