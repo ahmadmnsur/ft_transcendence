@@ -6,7 +6,7 @@ import { CloseIcon } from '../icons/CloseIcon';
 import { SearchIcon } from '../icons/SearchIcon';
 import { useI18n } from '../../i18n/context';
 import { Button } from './Button';
-import { FieldShell, controlClass, useField, type FieldMessage } from './field';
+import { FieldShell, controlClass, useField, type ControlSize, type FieldMessage } from './field';
 
 export interface SelectOption {
   value: string;
@@ -36,6 +36,7 @@ interface SelectBaseProps {
   id?: string;
   ref?: Ref<HTMLButtonElement>;
   className?: string;
+  size?: ControlSize;
   trigger?: SelectTrigger;
 }
 
@@ -116,6 +117,7 @@ export function Select({
   id,
   ref,
   className,
+  size,
   trigger,
 }: SelectProps): React.JSX.Element {
   const { t, formatText } = useI18n();
@@ -428,7 +430,7 @@ export function Select({
         if (event.key === ' ') event.preventDefault();
       }}
       onBlur={leave}
-      className={trigger ? trigger.className : `${controlClass(Boolean(error))} flex items-center gap-2 text-start enabled:cursor-pointer`}
+      className={trigger ? trigger.className : `${controlClass(Boolean(error), size)} flex items-center gap-2 text-start enabled:cursor-pointer`}
     >
       {trigger ? (
         trigger.children
