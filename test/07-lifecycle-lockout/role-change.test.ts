@@ -38,8 +38,6 @@ async function activeAdmins(): Promise<number> {
     .student.count({ where: { role: 'ADMIN', suspendedAt: null, removedAt: null } });
 }
 
-// Two held operations, released in the order given; both promises are
-// returned settled.
 async function stage(
   names: readonly [string, string],
   start: () => [Promise<string>, Promise<string>],
@@ -56,12 +54,6 @@ async function stage(
   return [await runs[0], await runs[1]];
 }
 
-// §12.7, §3.6.3 *Eligibility vs Match creation* (ADR-0008 d2), §16.3 row 7.
-// A role change writes the role alone and reads nothing a Match creation
-// writes, while the creation reads every candidate's role inside its own
-// transaction. So whichever commits first, the creation is serialized before
-// the role change: it acts on the role it read, and a Match it made stays
-// with the promoted Student (§10.8).
 describe('a role change against Match creation', () => {
   async function pair(targetRole: 'STUDENT' | 'ADMIN') {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
@@ -70,8 +62,6 @@ describe('a role change against Match creation', () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const target = targetRole === 'ADMIN' ? await createTestStaff(harness.app, 'ADMIN') : await createTestAccount(harness.app);
     const learner = await createTestAccount(harness.app);
-    // The target teaches what the learner wants: a Match of Score 35 while
-    // the target is a candidate (§8.2).
     await students.setSkills(actor(target.id), [docker], []);
     await students.setSkills(actor(learner.id), [], [docker]);
     return { admin: actor(admin.id), target: target.id, learner: learner.id };
@@ -111,7 +101,6 @@ describe('a role change against Match creation', () => {
     const round = await harness.app.get(PrismaService).round.findFirstOrThrow({ select: { id: true } });
     const detail = await matching.getRound(admin, round.id);
     expect(detail.matches).toEqual([]);
-    // Derived now, the unmatched list already counts the demoted Student.
     expect(detail.unmatched?.map((student) => student.id).sort()).toEqual([learner, target].sort());
   });
 
@@ -123,8 +112,6 @@ describe('a role change against Match creation', () => {
     expect(opened.unmatched.map((student) => student.id)).toEqual([learner]);
   });
 
-  // An open Round with nobody matched: the learner lists no Skill while it
-  // opens, then wants what the target teaches.
   async function emptyOpenRound(admin: Actor, learner: string): Promise<void> {
     const students = harness.app.get(StudentsService);
     const docker = (await harness.app.get(PrismaService).skill.findFirstOrThrow({ where: { name: 'Docker' } })).id;
@@ -157,9 +144,6 @@ describe('a role change against Match creation', () => {
     expect(await matchesOf(target)).toBe(1);
   });
 
-  // The creation refuses a non-candidate at its reads, before its
-  // checkpoint, so the two orders are the demotion held after its reads
-  // while the creation runs whole, and the demotion committed first.
   it('demotion held while a hand-made creation reads the Admin: the creation refuses, the demotion commits', async () => {
     const { admin, target, learner } = await pair('ADMIN');
     await emptyOpenRound(admin, learner);
@@ -189,18 +173,12 @@ describe('a role change against Match creation', () => {
   });
 });
 
-// §12.7, ADR-0008 d9 and its contract: two Admins demoting each other have
-// one serial order. The first to commit demotes the other, who is no longer
-// an Admin when their retry re-reads their own role, so at least one active
-// Admin always remains.
 describe('two Admins demoting each other', () => {
   it.each([0, 1] as const)('released %s first: exactly one demotion commits', async (first) => {
     const a = await createTestStaff(harness.app, 'ADMIN');
     const b = await createTestStaff(harness.app, 'ADMIN');
     const users = harness.app.get(AdminUsersService);
 
-    // One at a time, so arrival index 0 is A's demotion of B and index 1 is
-    // B's of A; both have read before either writes.
     harness.barriers.arm('role-change');
     const byA = outcome(users.changeRole(actor(a.id), b.id, 'STUDENT'));
     await harness.barriers.waitFor('role-change', 1);
@@ -221,9 +199,6 @@ describe('two Admins demoting each other', () => {
   });
 });
 
-// §12.7's common reads and §16.3 row 7's "a Removed row refuses every
-// mutation": the Users table's edits and role change refuse a Removed target
-// and write nothing, and an Admin never changes their own role.
 describe('the Users-table refusals', () => {
   it('refuses every edit and the role change on a Removed target, with the row unchanged', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
@@ -268,8 +243,6 @@ describe('the Users-table refusals', () => {
   it('writes the role alone: the target keeps every session and signs in as the new role on the next request', async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const student = await createTestAccount(harness.app);
-    // Nonzero XP and Streak, so a role change that also reset either would
-    // show in the row below.
     await harness.app.get(UnitOfWork).run('fixture-progress', async (tx) => {
       await tx.student.update({ where: { id: student.id }, data: { xp: 200, streak: 3 } });
     });
@@ -286,7 +259,6 @@ describe('the Users-table refusals', () => {
     expect(changed.status).toBe(200);
     expect(changed.body).toEqual({ ok: true, data: { role: 'ADMIN' } });
 
-    // The Student row has no `updatedAt`: only `role` may differ.
     expect(await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).toEqual({ ...before, role: 'ADMIN' });
     expect(await prisma.session.count({ where: { studentId: student.id } })).toBe(sessions);
     expect(harness.recorder.events).toEqual([]);

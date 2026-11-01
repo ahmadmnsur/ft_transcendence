@@ -8,18 +8,11 @@ import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { LandingPage } from './LandingPage';
 
-// `/`: the feed for a signed-in Student, the landing page for a signed-out
-// visitor (§3.5.1's note of 2026-10-25). The route's probe fills the session
-// query, so this read only picks the page; the feed's API still refuses a
-// signed-out request.
 export function HomePage(): React.JSX.Element {
   const { data: session } = useQuery(sessionQueryOptions());
   return session?.authenticated === true ? <FeedPage /> : <LandingPage />;
 }
 
-// §3.5.1, §6.9: the feed. Every non-removed Post, newest first, with its
-// Likes, 20 a page (§6.0.1). A new Post joins page 1, at the top, when
-// `post:created` arrives (`feed/FeedUpdates.tsx`, §7.4).
 function FeedPage(): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.feed;

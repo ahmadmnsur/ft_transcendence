@@ -40,9 +40,6 @@ async function avatarToken(studentId: string): Promise<string | null> {
   return row?.token ?? null;
 }
 
-// §16.3 row 8's Storage checks (ADR-0016 d1's note of 2026-10-05), on the
-// suite's own buckets (§16.2). A file is checked by its name, never by a
-// count: the bucket keeps the files of earlier tests.
 describe('avatar files in Storage', () => {
   it('(1) deletes the old file after a replace, and the file after a delete', async () => {
     const account = await createTestAccount(harness.app);
@@ -52,7 +49,6 @@ describe('avatar files in Storage', () => {
     const newToken = tokenOf(second.body.data.avatarUrl);
     expect(newToken).not.toBe(oldToken);
     expect(await avatarToken(account.id)).toBe(newToken);
-    // The replaced file goes after commit, without holding the response (§3.7).
     await eventually(async () => {
       const names = await fileNames();
       expect(names.has(oldToken)).toBe(false);
@@ -72,12 +68,8 @@ describe('avatar files in Storage', () => {
     const account = await createTestAccount(harness.app);
     const before = await fileNames();
     harness.barriers.arm('avatar-save');
-    // `then` sends the request now; it waits at the barrier until released.
     const pending = putAvatar(nginx.baseUrl, account.cookie, makePng()).then((response) => response);
     await harness.barriers.waitFor('avatar-save', 1);
-    // While the first attempt is held after its reads: the Student is
-    // suspended, and a row written beside it makes that attempt's write
-    // conflict, so the retry reads the suspension and is refused.
     const conflicting = randomUUID();
     await prisma.student.update({ where: { id: account.id }, data: { suspendedAt: new Date() } });
     await prisma.avatar.create({
@@ -102,12 +94,10 @@ describe('avatar files in Storage', () => {
     const oldToken = tokenOf(first.body.data.avatarUrl);
     const before = await fileNames();
     harness.barriers.arm('avatar-save');
-    // `then` sends the request now; it waits at the barrier until released.
     const pending = putAvatar(nginx.baseUrl, account.cookie, makePng({ width: 8, height: 8 })).then(
       (response) => response,
     );
     await harness.barriers.waitFor('avatar-save', 1);
-    // The save is held inside its transaction while the clock moves.
     harness.clock.advance(31 * 60 * 1000);
     harness.barriers.release('avatar-save');
     harness.barriers.disarm('avatar-save');
@@ -126,18 +116,15 @@ describe('avatar files in Storage', () => {
   it('(3) deletes the files no row names once over an hour old, across pages, and keeps the rest', async () => {
     const account = await createTestAccount(harness.app);
     const named = tokenOf((await putAvatar(nginx.baseUrl, account.cookie, makePng())).body.data.avatarUrl);
-    // Files no row names, older than the youngest below.
     for (let i = 0; i < 5; i += 1) {
       await storage().upload(BUCKET, randomUUID(), makePng(), 'image/png');
     }
-    // Two Evidence files just as old, one a row names and one no row names.
     const pair = await reviewedMatch(harness.app);
     const namedEvidence: string = (
       await putEvidence(nginx.baseUrl, pair.mentee.cookie, pair.reviewId, await makeValidPdf())
     ).body.data.token;
     const strayEvidence = randomUUID();
     await storage().upload(TEST_BUCKETS.evidence, strayEvidence, makePdf(), 'application/pdf');
-    // The newest file, which the clock below makes exactly an hour old.
     const youngest = randomUUID();
     await storage().upload(BUCKET, youngest, makePng(), 'image/png');
     const listed = await storage().listAll(BUCKET);
@@ -145,15 +132,12 @@ describe('avatar files in Storage', () => {
     if (youngestAt === undefined) throw new Error('the youngest file is not listed');
     harness.clock.stopAt(new Date(youngestAt.getTime() + CLEANUP_MIN_AGE_MS));
 
-    // Two files a page, so the bucket takes several pages.
     expect(listed.length).toBeGreaterThanOrEqual(7);
     await harness.app.get(FileCleanup).run(2);
 
     const left = await fileNames();
     expect(left.has(named)).toBe(true);
     expect(left.has(youngest)).toBe(true);
-    // Every file listed: gone exactly when no row names it and it is more
-    // than an hour old, so a run that skipped a page fails here.
     for (const file of listed) {
       const stale = file.name !== named && file.createdAt.getTime() < youngestAt.getTime();
       expect(left.has(file.name)).toBe(!stale);
@@ -166,7 +150,6 @@ describe('avatar files in Storage', () => {
   it('(4) creates both buckets, private with their caps and types, and sets back changed settings', async () => {
     const client = storage();
     const prefix = `t08-${randomUUID().slice(0, 8)}`;
-    // Names no bucket has yet, so the step meets them as on an empty Supabase.
     const buckets: FileBuckets = { avatars: `${prefix}-avatars`, evidence: `${prefix}-evidence` };
     try {
       expect(await ensureBuckets(client, buckets)).toEqual({
@@ -175,7 +158,6 @@ describe('avatar files in Storage', () => {
       });
       await expectBucketSettings(client, buckets);
 
-      // One made public, the other given another cap and types: both set back.
       await client.updateBucket(buckets.avatars, { public: true, fileSizeLimit: 10, allowedMimeTypes: ['image/gif'] });
       await client.updateBucket(buckets.evidence, { public: false, fileSizeLimit: 1, allowedMimeTypes: ['application/pdf'] });
       expect(await ensureBuckets(client, buckets)).toEqual({
@@ -190,8 +172,6 @@ describe('avatar files in Storage', () => {
   });
 });
 
-// Removes an empty bucket this file made, so a run inside `make dev` leaves
-// none behind. Best effort; nothing else in the suite deletes a bucket.
 async function deleteBucket(name: string): Promise<void> {
   const config = new AppConfig();
   const key = config.supabaseSecretKey;
@@ -202,11 +182,9 @@ async function deleteBucket(name: string): Promise<void> {
     );
     await response.body?.cancel();
   } catch {
-    // Best effort.
   }
 }
 
-// Each bucket private, with its kind's cap and types (§9.8).
 async function expectBucketSettings(client: SupabaseStorageClient, buckets: FileBuckets): Promise<void> {
   for (const kind of FILE_KINDS) {
     const settings = await client.getBucket(buckets[kind]);

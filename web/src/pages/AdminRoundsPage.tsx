@@ -17,8 +17,6 @@ import { PageTitle } from '../layout';
 import { UnmatchedCard } from '../matching/UnmatchedCard';
 import { failureCode } from '../profile/failure';
 
-// What the last open or close reported, kept as what happened rather than as
-// a text, so it follows a language switch.
 type Notice =
   | { kind: 'opened'; result: OpenRoundResult }
   | { kind: 'closed'; number: number; lapsed: number }
@@ -26,24 +24,17 @@ type Notice =
 
 const column = createColumnHelper<AdminRoundSummary>();
 
-// §3.5.1, §6.13, §8.4, §8.7, §8.9: `/admin/rounds`, an Admin's page for the
-// matching cycle. The current Round with its Close button and its unmatched
-// Students, or Open when none is open, then every Round so far with its
-// counts per status. Both writes ask first: neither can be undone.
 export function AdminRoundsPage(): React.JSX.Element {
   const { t, format, formatText, formatNumber, formatDateTime, errorText } = useI18n();
   const copy = t.matching.rounds;
   const queryClient = useQueryClient();
   const rounds = useQuery(adminRoundsQueryOptions());
   const current = rounds.data?.items.find((round) => round.closedAt === null);
-  // The open Round's unmatched list comes from its own read, the one its page
-  // makes, so both show the same list.
   const currentDetail = useQuery({ ...adminRoundQueryOptions(current?.id ?? ''), enabled: current !== undefined });
   const [pending, setPending] = useState<'open' | 'close' | null>(null);
   const [confirming, setConfirming] = useState<'open' | 'close' | null>(null);
   const [notice, setNotice] = useState<Notice | undefined>(undefined);
   const noticeRef = useRef<HTMLDivElement>(null);
-  // Each dialog starts on its safe button.
   const keepClosedRef = useRef<HTMLButtonElement>(null);
   const keepOpenRef = useRef<HTMLButtonElement>(null);
 

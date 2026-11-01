@@ -14,15 +14,8 @@ import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 import { ReportedTarget, ReportRows } from './ReportedTarget';
 
-// What the last action answered, kept as data so its sentence follows the
-// language switcher (§3.5.5): the action and what it wrote, or the code it
-// was refused with.
 type Notice = { kind: 'resolved'; action: GroupAction; resolution: Resolution } | { kind: 'failed'; code: unknown };
 
-// One open group and its two actions, each confirmed first: an action is
-// final and resolves every Report the group holds (§12.5). The answer goes
-// to the queue's notice, which outlives the card: a resolved group leaves the
-// queue when it is read again.
 function QueueGroupCard({
   group,
   admin,
@@ -36,7 +29,6 @@ function QueueGroupCard({
   const copy = t.moderation;
   const queryClient = useQueryClient();
   const actions: readonly GroupAction[] = group.target.kind === 'POST' ? POST_GROUP_ACTIONS : STUDENT_GROUP_ACTIONS;
-  // The action stays set while its dialog closes, so the dialog keeps its text.
   const [confirming, setConfirming] = useState(false);
   const [chosen, setChosen] = useState<GroupAction>('DISMISS');
   const [pending, setPending] = useState(false);
@@ -45,7 +37,6 @@ function QueueGroupCard({
   const { target, count } = group;
   const name = target.kind === 'STUDENT' ? personNameValue(target.student.displayName, target.student.removed) : '';
 
-  // The chosen action is one of this kind's own (`actions` above).
   function description(action: GroupAction): string {
     return target.kind === 'POST'
       ? formatText(copy.actions.confirmBody.post[action as PostGroupAction], { count })
@@ -67,7 +58,6 @@ function QueueGroupCard({
       pendingRef.current = false;
       setPending(false);
     }
-    // Null: another Student signed in meanwhile, and nothing is shown.
     if (resolution === null) return;
     setConfirming(false);
     onDone({ kind: 'resolved', action, resolution });
@@ -135,9 +125,6 @@ function NoticeBanner({ notice, onDismiss }: { notice: Notice; onDismiss: () => 
   );
 }
 
-// §12.4: the open groups the reader may see, oldest first. A Peer Moderator
-// gets Post groups without reporters; an Admin gets both kinds, with them.
-// What the reader may see is the server's decision alone; this only shows it.
 export function ModerationQueue({ admin }: { admin: boolean }): React.JSX.Element {
   const { t, errorText } = useI18n();
   const copy = t.moderation;
@@ -146,12 +133,10 @@ export function ModerationQueue({ admin }: { admin: boolean }): React.JSX.Elemen
   const noticeRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  // The card that held focus may leave the queue, so the answer takes it.
   useEffect(() => {
     if (notice !== null) noticeRef.current?.focus();
   }, [notice]);
 
-  // The notice's dismiss button goes with it, so focus moves to the queue.
   function dismissNotice(): void {
     setNotice(null);
     bodyRef.current?.focus();

@@ -10,17 +10,6 @@ function setCookies(headers: Record<string, string | string[] | undefined>): str
   return [headers['set-cookie'] ?? []].flat().join(';');
 }
 
-// §16.3 row 12, second check: a completed password change leaves no session
-// the old password opened. A sign-in with the old password racing the change
-// ends refused or signed out in every staged order: held at its own
-// transaction's checkpoint, at each of the change's two sign-out
-// checkpoints, and run whole while the change is held at the named pause
-// `password-change:admin-update` between its first sign-out and Supabase's
-// admin update.
-//
-// Each test disarms its barrier when it releases the staged arrival, so the
-// later arrivals of the closing checks pass straight through instead of
-// being held until the test times out.
 describe('a sign-in with the old password racing a password change', () => {
   async function changeRequest(cookie: string, currentPassword: string) {
     return harness
@@ -34,8 +23,6 @@ describe('a sign-in with the old password racing a password change', () => {
     return harness.post('/api/auth/login').send({ email, password }).then((res) => res);
   }
 
-  // After each order: no `Session` the old password opened survives, the old
-  // password is refused and the new one is accepted.
   async function expectChangedOver(account: TestAccount): Promise<void> {
     const prisma = harness.app.get(PrismaService);
     expect(await prisma.session.findMany({ where: { studentId: account.id } })).toEqual([]);
@@ -58,7 +45,6 @@ describe('a sign-in with the old password racing a password change', () => {
     body: unknown;
   }): void {
     expect(change.body).toMatchObject({ ok: true });
-    // Step 4 and step 6 each signed the Student out; the cookie is cleared.
     expect(setCookies(change.headers)).toContain('Max-Age=0');
   }
 
@@ -104,8 +90,6 @@ describe('a sign-in with the old password racing a password change', () => {
     const changing = changeRequest(account.cookie, account.password);
     await harness.barriers.waitFor('password-change:second-sign-out', 1);
 
-    // Step 5 already set the new password at Supabase, so the old one is
-    // refused there.
     const racing = await signIn(account.email, account.password);
     expect(racing.body).toMatchObject({ ok: false, error: { code: 'password_incorrect' } });
 
@@ -121,8 +105,6 @@ describe('a sign-in with the old password racing a password change', () => {
     const changing = changeRequest(account.cookie, account.password);
     await harness.barriers.waitFor('password-change:admin-update', 1);
 
-    // Step 4 committed, but the old password still works at Supabase, so the
-    // sign-in opens a session — which step 6 then deletes.
     const racing = await signIn(account.email, account.password);
     expect(racing.status).toBe(201);
 

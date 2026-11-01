@@ -21,35 +21,18 @@ import { OwnProgressCard } from '../progress/ProgressCard';
 
 const meSearch = getRouteApi('/me');
 
-// `/me` (§3.5.1, §6.2): the avatar, profile, Skills and Learning Goal cards
-// above the password-change form under a clear heading. On success the
-// Student is signed out everywhere, so the page clears the session query and
-// returns to `/sign-in` with a notice. Any failure other than a refusal
-// re-probes the session first: signed out returns with the neutral notice,
-// still signed in stays on the form with the failure's sentence (§5.1).
 export function MePage(): React.JSX.Element {
   const { t, format, errorText } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  // The hidden username field below carries the signed-in Student's email.
   const { data: session } = useQuery(sessionQueryOptions());
-  // §6.2: the three profile cards share the own-profile read; its failure is
-  // shown once here, above them, not three times inside them.
   const { data: me, isError: meError, refetch: refetchMe } = useQuery(meQueryOptions());
   const profile = useOwnProfileTarget();
-  // §5.6 B: the 42 card appears only when the config says 42 is enabled; the
-  // callback's outcomes arrive as the `oauth` search param.
   const { data: config } = useQuery(configQueryOptions());
   const { oauth } = meSearch.useSearch();
-  // The callback's outcome is kept in state, the way SignInPage keeps its
-  // `oauth-failed` status: the same effect strips `oauth`, so a banner tied
-  // to the param would vanish on the next render. It stays until the
-  // Student acts or leaves the page.
   const [oauthNotice, setOauthNotice] = useState<'connected' | 'in_use' | 'failed' | undefined>(
     undefined,
   );
-  // §5.6 C: `confirmed` is no banner up here: it opens the new-password form
-  // on the Confirm with 42 card, until the permission is used or gone.
   const [confirmed42, setConfirmed42] = useState(false);
   const username = session?.authenticated === true ? session.student.email : '';
   const [currentPassword, setCurrentPassword] = useState('');
@@ -70,24 +53,16 @@ export function MePage(): React.JSX.Element {
     maxBytes: LIMITS.password.maxBytes,
   });
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, as with the field errors above.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
-  // §5.6 B: the callback's outcome moves into the state above once, then
-  // only `oauth` is taken out of the URL by replacing the history entry, so
-  // a refresh of the cleaned URL never repeats it. `connected` reaches a
-  // browser whose cached profile still says not connected, so its query is
-  // refreshed beside the read.
   useEffect(() => {
     if (oauth === undefined) return;
     if (oauth === 'connected') void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
     if (oauth === 'confirmed') setConfirmed42(true);
     else setOauthNotice(oauth);
     void navigate({ to: '/me', search: {}, replace: true }).catch(() => {
-      // The URL stays as it is if the replacement fails; the notice shows.
     });
   }, [oauth, navigate, queryClient]);
 
@@ -128,17 +103,9 @@ export function MePage(): React.JSX.Element {
       await signOutAndGo('password-changed');
     } catch (error) {
       if (error instanceof ApiRefusalError) {
-        // A 200 refusal: nothing changed and the Student is still signed in,
-        // so the form stays with the refusal's sentence and no probe runs.
         setStatus({ code: error.code });
         return;
       }
-      // Anything else — a protocol failure, or a dropped connection after a
-      // successful update — may have signed the Student out (§5.1 accepts
-      // that crash state): the session probe decides. Signed out always
-      // takes the neutral notice, since a lost answer may already have set
-      // the new password; still signed in, or a failed probe, stays on the
-      // form with the failure's sentence.
       let signedOut = true;
       try {
         signedOut = !(await fetchSession()).authenticated;
@@ -185,8 +152,6 @@ export function MePage(): React.JSX.Element {
             />
           ) : null}
           {me === undefined && meError ? (
-            // §6.15: one generic sentence and one retry for the failed read,
-            // above the cards, which then keep their titles and empty bodies.
             <div className="flex min-w-0 flex-col gap-2">
               <Banner tone="danger" title={t.errors.unknown} />
               <Button variant="secondary" className="self-start" onClick={() => void refetchMe()}>

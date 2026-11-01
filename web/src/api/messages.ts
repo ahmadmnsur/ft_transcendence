@@ -89,7 +89,6 @@ function threadSyncKey(peerId: string) {
   return [...MESSAGES_QUERY_KEY, 'sync', peerId] as const;
 }
 
-// Query owns this bookkeeping, so clearing a session drops it with its messages.
 function threadSync(queryClient: QueryClient, peerId: string): ThreadSync {
   return queryClient.getQueryData<ThreadSync>(threadSyncKey(peerId)) ?? { touches: 0, countedIds: [] };
 }
@@ -120,7 +119,6 @@ function threadRow(queryClient: QueryClient, peerId: string): ThreadView | undef
   return cached?.pages.flatMap((page) => page.items).find((item) => item.peer.id === peerId);
 }
 
-// A concurrent event or list read can outlive the mark: re-read rather than guess its count.
 function showThreadRead(
   queryClient: QueryClient,
   peerId: string,
@@ -163,7 +161,6 @@ function updateThreadRows(
   });
 }
 
-// Cancel first: invalidation alone can reuse a request made before the event committed.
 async function readAgain(queryClient: QueryClient, queryKey: readonly unknown[]): Promise<void> {
   await queryClient.cancelQueries({ queryKey });
   await queryClient.invalidateQueries({ queryKey });
@@ -228,7 +225,6 @@ function addToThreadCache(
   }
   const first = data.pages[0];
   const index = first.items.findIndex((item) => isNewerMessage(message, item));
-  // Leave an older arrival to its own cursor page instead of inserting it twice.
   if (index === -1 && first.nextCursor !== null) {
     void readAgain(queryClient, queryKey);
     return false;

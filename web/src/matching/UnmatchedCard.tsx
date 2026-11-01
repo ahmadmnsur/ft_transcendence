@@ -6,15 +6,12 @@ import { StudentLink } from '../profile/StudentLink';
 import { HandMadeMatchForm } from './HandMadeMatchForm';
 import { candidateReferences } from './candidate-references';
 
-// §8.9: the open Round's unmatched Students, which the API derives when read
-// and never stores. On `/admin/rounds` and on the open Round's own page.
 export function UnmatchedCard({
   students,
   roundId,
   error,
   onRetry,
 }: {
-  // Undefined while the Round's read is pending.
   students: StudentRef[] | undefined;
   roundId: string;
   error?: unknown;

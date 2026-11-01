@@ -34,7 +34,6 @@ function insertReport(
             'OTHER', ${state}::"ReportState", ${resolvedById}::uuid, ${resolvedAt}::timestamptz)`;
 }
 
-// The adapter preserves the index name separately from the raw error message.
 function uniqueViolation(err: unknown): { code?: string; constraint?: string } {
   const e = err as {
     code?: string;
@@ -48,8 +47,6 @@ function uniqueViolation(err: unknown): { code?: string; constraint?: string } {
   return { code: e.code, constraint: e.constraint };
 }
 
-// §4.4 steps 2–4, §16.3 row 2: the database holds these rules even when a
-// caller bypasses the service, and future migrations must retain them.
 describe('reports migration', () => {
   it('keeps all three CHECKs by name and definition', async () => {
     const rows = await harness.app.get(PrismaService).$queryRaw<Array<{ name: string; definition: string }>>`

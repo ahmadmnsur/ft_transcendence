@@ -87,7 +87,6 @@ it('commits one immutable Review, Private Feedback and public Takeaway under dup
   expect(posts.map(({ authorId, body }) => ({ authorId, body }))).toEqual([
     { authorId: mentee.studentId, body: input.publicTakeaway },
   ]);
-  // This request starts after commit, reaching the COMPLETED status refusal.
   await expect(reviews.submitReview(mentee, id, input)).rejects.toMatchObject({
     code: 'already_reviewed',
   });
@@ -125,12 +124,8 @@ it('commits one immutable Review, Private Feedback and public Takeaway under dup
   expect(JSON.stringify(harness.recorder.events)).not.toContain(mentor.studentId);
 });
 
-// §3.6.3 *Review vs terminal transitions* (ADR-0002 d5; ADR-0008 d5's note of
-// 2026-09-22): the sanctions are held on the Mentor, so the Mentee's Review
-// still reads an Active actor and only the Match decides.
 type Accepted = Awaited<ReturnType<typeof acceptedMatch>>;
 
-// Each terminal transition: its checkpoint, the run, and the status it leaves.
 const TERMINAL = {
   close: { checkpoint: 'round.close', status: 'LAPSED', run: (m: Accepted) => m.matching.closeRound(m.admin) },
   decline: { checkpoint: 'match.decline', status: 'DECLINED', run: (m: Accepted) => m.matching.decline(m.mentor, m.id) },
@@ -179,8 +174,6 @@ for (const competing of ['close', 'decline', 'suspend', 'remove'] as const) {
       expect(detail.privateFeedback === null).toBe(first !== 'review');
       const count = first === 'review' ? 1 : 0;
       expect(await storedCounts(id)).toEqual({ reviews: count, feedback: count, posts: count });
-      // A Review first pays both, and a later sanction keeps what it paid.
-      // The Users table reads a sanctioned Mentor, who has no session.
       expect(await users.getUser(admin, mentor.studentId)).toMatchObject({ xp: count * 80, badges: count ? [{ badge: 'FIRST_MENTOR' }] : [] });
       const progress = async (studentId: string) => harness.get('/api/me/progress').set('Cookie', await openTestSession(harness.app, { id: studentId }));
       expect((await progress(mentee.studentId)).body.data).toMatchObject({ xp: count * 120, badges: [] });
@@ -206,13 +199,9 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   expect((await post(adminCookie)).status).toBe(404);
   expect((await harness.get(`/api/matches/${id}`).set('Cookie', adminCookie)).status).toBe(404);
   expect((await harness.get(`/api/admin/matches/${id}`).set('Cookie', moderator.cookie)).status).toBe(403);
-  // The Mentor already holds 200 XP, so the 80 the Review pays crosses into
-  // Level 2: a Level computed from anything but the stored XP shows 1 (ADR-0016).
   await harness.app.get(UnitOfWork).run('fixture-xp', async (tx) => {
     await tx.student.update({ where: { id: mentor.studentId }, data: { xp: 200 } });
   });
-  // Both are promoted through the Users table while their Match is in
-  // progress; it still completes through its ordinary path (§10.8, §12.7).
   const users = harness.app.get(AdminUsersService);
   await users.changeRole(admin, mentee.studentId, 'ADMIN');
   await users.changeRole(admin, mentor.studentId, 'ADMIN');
@@ -223,9 +212,6 @@ it('keeps the three readerships separate, including promotion and a Removed auth
   expect((await harness.get('/api/me').set('Cookie', menteeAccount.cookie)).body.data).toMatchObject({
     role: 'ADMIN', xp: 120, level: 1, badges: [],
   });
-  // The Level and the Badge stay on the profile, the public one and the
-  // Users table's, and only the Leaderboard and its pin leave the new
-  // Admins out (§10.8).
   expect((await harness.get(`/api/students/${mentor.studentId}`).set('Cookie', outsider.cookie)).body.data).toMatchObject({
     student: { id: mentor.studentId, isAdmin: true },
     profile: { xp: 280, level: 2, badges: [{ badge: 'FIRST_MENTOR' }] },
@@ -234,7 +220,6 @@ it('keeps the three readerships separate, including promotion and a Removed auth
     role: 'ADMIN', xp: 280, level: 2, badges: [{ badge: 'FIRST_MENTOR' }],
   });
   const board = await harness.get('/api/leaderboard').set('Cookie', outsider.cookie);
-  // Zero XP each, so ties break by id: the outsider was made first.
   expect(board.body.data.top.map((row: { student: { id: string } }) => row.student.id)).toEqual([outsider.id, moderator.id]);
   for (const cookie of [mentorAccount.cookie, menteeAccount.cookie]) {
     expect((await harness.get('/api/leaderboard').set('Cookie', cookie)).body.data.me).toBeNull();
@@ -259,7 +244,6 @@ it('keeps the three readerships separate, including promotion and a Removed auth
     });
   }
   expect((await reviews.listFeedbackReceived(mentor, 2, 1)).items).toEqual([]);
-  // Removal preserves the testimony but replaces the author's identity.
   await harness.app.get(UnitOfWork).run('fixture-removal', async (tx, ctx) => {
     await tx.student.update({ where: { id: mentee.studentId }, data: { removedAt: ctx.now } });
   });
@@ -371,7 +355,6 @@ it('validates nested Review text and optional integer rating before writing anyt
       learningOutcome: { learned: '  ف'.repeat(2000) + '  ', canNowDo: '  It works.\nA plan.  ' },
       privateFeedback: noRating,
     });
-  // The outcome above is too long after trimming; no characters are silently truncated.
   expect(response.status).toBe(400);
   const valid = await harness
     .post(`/api/matches/${id}/review`)
@@ -394,7 +377,6 @@ it('pages every received feedback newest first, including equal timestamps, with
   const second = await matching.createHandMadeMatch(admin, [mentor.studentId, mentee.studentId]);
   await matching.accept(mentor, second.id);
   await matching.accept(mentee, second.id);
-  // Orientation can change when progress is added later; submit as the actual Mentee.
   const secondMentee = { studentId: second.mentee.id, sessionHash: null };
   expect(secondMentee.studentId).toBe(mentee.studentId);
   await reviews.submitReview(secondMentee, second.id, {

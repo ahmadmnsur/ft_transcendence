@@ -9,12 +9,6 @@ import { MatchNoticeBanner, type MatchNotice } from '../matching/MatchParts';
 import { PairMatchCard } from '../matching/PairMatchCard';
 import { failureCode } from '../profile/failure';
 
-// §3.5.1: `/match`, the signed-in Student's Match in the open Round — partner,
-// role, the Compatibility Score with its explanation, the Mission, accept and
-// decline. With no open Round, or no Match in it, it says which. Both reads
-// run again whenever the page opens or a Round opens or closes; a ready Match
-// refreshes the Match read (§7.4, `matching/RoundUpdates.tsx`). A partner's
-// answer still sends no event.
 export function MatchPage(): React.JSX.Element {
   const { t, formatText, errorText } = useI18n();
   const copy = t.matching.current;

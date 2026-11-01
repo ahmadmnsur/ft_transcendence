@@ -1,6 +1,3 @@
-// §6.15: the codes both ends share. Protocol failures keep their HTTP
-// status; refusals are answered 200 with ok: false. Plain types only, so
-// this file compiles under both tsconfigs.
 export type ErrorCode =
   | 'validation_failed'
   | 'unauthenticated'
@@ -12,8 +9,6 @@ export type ErrorCode =
   | 'internal_error'
   | 'busy_retry_later';
 
-// The refusals a correctly built UI can reach in normal use. Answered
-// 200 with ok: false, except dm_unavailable, which is a socket ack (§7.3).
 export type RefusalCode =
   | 'no_account'
   | 'account_removed'

@@ -14,18 +14,11 @@ import {
   generateNginxConfig,
 } from './nginx';
 
-// The suite only ever runs against the local fallback; a team or unknown target
-// would let a stray `.env` point the harness at real data (§16.2). A query
-// parameter other than a TLS setting is refused too, as the boot check's step 1
-// refuses it (§15.4), because pg could take the user, password, host or port
-// from it instead of the URL's own. Any scheme but postgresql: or postgres: is refused
-// too, because pg reads a socket: URL's path as a socket directory.
 function assertFallback(env: EnvRecord): void {
   let databaseUrl: URL | undefined;
   try {
     databaseUrl = new URL(env['DATABASE_URL'] ?? '');
   } catch {
-    // An unset or unparseable URL is left to the refusals below.
   }
   if (
     databaseUrl !== undefined &&
@@ -52,8 +45,6 @@ function assertFallback(env: EnvRecord): void {
   );
 }
 
-// nginx is only validated here; the upload category starts the real binary
-// (§16.2). A missing binary fails the suite rather than skipping.
 async function validateNginx(): Promise<void> {
   assertNginxAvailable();
   const prefix = await mkdtemp(join(tmpdir(), 'peerconnect-nginx-check-'));
@@ -69,8 +60,6 @@ async function validateNginx(): Promise<void> {
   }
 }
 
-// The Prisma CLI reads DATABASE_URL through prisma.config.ts; the test URL is
-// passed explicitly so generate and deploy never touch the development database.
 function runPrisma(args: string[], databaseUrl: string): void {
   const result = spawnSync('npx', ['prisma', ...args, '--config', 'prisma.config.ts'], {
     cwd: process.cwd(),
@@ -85,20 +74,11 @@ function runPrisma(args: string[], databaseUrl: string): void {
 }
 
 export default async function setup(): Promise<void> {
-  // (a) Refuse anything that is not the local fallback, before any connection.
   assertFallback(process.env);
-  // (b) The nginx binary must exist and accept the harness's generated config.
   await validateNginx();
-  // (c) Drop and recreate the derived test database; the development database
-  // is never touched.
   const testUrl = await recreateTestDatabase(process.env);
-  // (d) The generated client is gitignored (§3.2); a fresh clone has none.
   runPrisma(['generate'], testUrl);
   runPrisma(['migrate', 'deploy'], testUrl);
-  // (e) Every worker inherits the test URL before PrismaService is constructed.
   process.env.DATABASE_URL = testUrl;
-  // (f) The suite's own buckets, made by the seed's bucket step with their
-  // names passed in, so a run never lists or deletes a developer's files
-  // (§16.2).
   await ensureBuckets(new SupabaseStorageClient(new AppConfig()), TEST_BUCKETS);
 }

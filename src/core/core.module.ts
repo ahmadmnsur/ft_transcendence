@@ -22,8 +22,6 @@ import { SupabaseStorageClient } from './supabase-storage';
 import { ThrottleStore } from './throttle';
 import { CheckpointHook, UnitOfWork } from './uow';
 
-// The machinery every slice uses. Global, so a slice's module injects these
-// without importing it.
 @Global()
 @Module({
   controllers: [ConfigController],
@@ -67,12 +65,6 @@ import { CheckpointHook, UnitOfWork } from './uow';
   ],
 })
 export class CoreModule {
-  // What the app imports: the socket gateway implements RealtimePublisher,
-  // and the Presence registry implements PresenceReader. The dynamic
-  // providers are inserted after the decorator's, so they replace the no-op
-  // and the offline reader for every module that injects the ports —
-  // AuthModule and SocialModule included — while a plain `imports:
-  // [CoreModule]` (the seed) keeps both (§3.7, §7.4, §7.6).
   static forApp(): DynamicModule {
     return {
       module: CoreModule,

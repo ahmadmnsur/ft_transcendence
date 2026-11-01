@@ -13,7 +13,6 @@ export type AnswerView = {
 };
 export type AnswerPage = { prompt: PromptView; live: boolean; answeredByMe: boolean; items: AnswerView[]; total: number };
 
-// A Prompt's answer pages, per Prompt id and page. A Like writes into them too.
 export const PROMPT_ANSWERS_QUERY_KEY = ['prompts', 'answers'] as const;
 
 export const livePromptQueryOptions = () => queryOptions({

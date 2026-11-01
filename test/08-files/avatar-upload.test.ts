@@ -26,8 +26,6 @@ import { startNginx, type NginxHarness } from '../harness/nginx';
 const harness = useHarness();
 let nginx: NginxHarness;
 
-// §16.3 row 8 runs through nginx with the production `api.conf`, so an
-// upload crosses the same body limit as in production (§16.2).
 beforeAll(async () => {
   nginx = await startNginx(harness.port);
 }, 30_000);
@@ -54,8 +52,6 @@ async function avatarRow(studentId: string): Promise<{ token: string; mime: stri
   });
 }
 
-// §16.3 row 8: exact byte caps, server-side byte validation, type spoofing,
-// Avatar PDFs, a failed replacement left atomic, and the upload CSRF gate.
 describe('avatar acceptance through nginx', () => {
   it('stores an Avatar of exactly 2,097,152 bytes, PNG or JPEG', async () => {
     const storage = harness.app.get(SupabaseStorageClient);
@@ -138,8 +134,6 @@ describe('avatar acceptance through nginx', () => {
     expect(Buffer.compare(await storage.download(TEST_BUCKETS.avatars, token), png)).toBe(0);
   });
 
-  // §5.4: the gate runs before Multer. Each body here would otherwise be
-  // refused file_too_large, so a 403 shows nothing parsed it.
   const badGates: Array<[string, { origin?: string | null; csrf?: string | null }]> = [
     ['no Origin', { origin: null }],
     ['a null Origin', { origin: 'null' }],
@@ -166,8 +160,6 @@ describe('avatar acceptance through nginx', () => {
   });
 });
 
-// §6.12: an Admin's avatar routes run the owner's checks on the target
-// Student's row, and only an Admin reaches them.
 describe("an Admin's avatar edit through nginx", () => {
   it("stores the upload on the target's row, refuses an oversized file, and deletes the row", async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');

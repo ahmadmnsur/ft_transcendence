@@ -11,9 +11,7 @@ import type {
   StatusCounts,
 } from './views';
 
-// The reads every Match view is built from, and the Round-number rule.
 
-// §4.3.9: a Round's number is its 1-based position by (opened_at, id).
 export async function roundNumberOf(tx: PrismaTx, round: { id: string; openedAt: Date }): Promise<number> {
   return tx.round.count({
     where: {
@@ -22,16 +20,11 @@ export async function roundNumberOf(tx: PrismaTx, round: { id: string; openedAt:
   });
 }
 
-// Every Round's number by id, for a read that shows Matches from several
-// Rounds. A cohort runs a handful of Rounds, so one read of all of them is
-// cheaper than a count per row.
 export async function roundNumbers(tx: PrismaTx): Promise<Map<string, number>> {
   const rounds = await tx.round.findMany({ orderBy: [{ openedAt: 'asc' }, { id: 'asc' }], select: { id: true } });
   return new Map(rounds.map((round, index) => [round.id, index + 1]));
 }
 
-// A Match with its frozen explanation by Skill name and its Round's position
-// keys. The people it names are read apart, by `readPeople`.
 export const MATCH_SELECT = {
   id: true,
   status: true,
@@ -54,10 +47,6 @@ export type MatchRow = Prisma.MatchGetPayload<{ select: typeof MATCH_SELECT }>;
 
 type PersonRow = Prisma.StudentGetPayload<{ select: typeof STUDENT_REF_SELECT }>;
 
-// The people some Match rows name, as StudentRef fields (§6.0.1: never an
-// email), by id. A second query rather than three relations on the Match:
-// Prisma 7.10 fetches three or more relations of one row at once, which on a
-// transaction's single connection makes pg 8.23 log a deprecation warning.
 export type People = Map<string, PersonRow>;
 
 export async function readPeople(tx: PrismaTx, rows: readonly MatchRow[]): Promise<People> {
@@ -71,7 +60,6 @@ export async function readPeople(tx: PrismaTx, rows: readonly MatchRow[]): Promi
   return new Map(people.map((person) => [person.id, person]));
 }
 
-// The foreign keys guarantee every id a Match names has its row.
 function personRef(people: People, id: string): StudentRef {
   const person = people.get(id);
   if (person === undefined) throw new Error(`Match names a Student that was not read: ${id}`);
@@ -86,8 +74,6 @@ function coverageOf(row: MatchRow): CoverageView {
   return coverage;
 }
 
-// §6.6: the Match as `studentId`, its Mentor or its Mentee, reads it. The
-// caller has checked that `studentId` is one of the pair.
 export function toMatchView(row: MatchRow, people: People, studentId: string, roundNumber: number): MatchView {
   const asMentor = row.mentorId === studentId;
   return {
@@ -106,7 +92,6 @@ export function toMatchView(row: MatchRow, people: People, studentId: string, ro
   };
 }
 
-// §6.13: the same Match with both participants named, for an Admin.
 export function toAdminMatchView(row: MatchRow, people: People, roundNumber: number): AdminMatchView {
   return {
     id: row.id,
@@ -125,8 +110,6 @@ export function toAdminMatchView(row: MatchRow, people: People, roundNumber: num
   };
 }
 
-// One row of a Round's Matches for an Admin: the pair, the status, the Score
-// or hand-made, the Mission (§6.13).
 export const ROUND_MATCH_SELECT = {
   id: true,
   status: true,
@@ -150,9 +133,6 @@ export function toAdminRoundMatch(row: RoundMatchRow): AdminRoundMatch {
   };
 }
 
-// §6.12: every Match a Student was in, on either side and in every status,
-// for the Users table's detail; newest first, as the Student's own history
-// orders them (§6.6). Only Admins reach it (§4.6).
 export async function readStudentMatches(tx: PrismaTx, studentId: string): Promise<AdminStudentMatch[]> {
   const rows = await tx.match.findMany({
     where: { OR: [{ mentorId: studentId }, { menteeId: studentId }] },
@@ -164,7 +144,6 @@ export async function readStudentMatches(tx: PrismaTx, studentId: string): Promi
   return rows.map((row) => ({ ...toAdminRoundMatch(row), roundNumber: numbers.get(row.roundId) ?? 0 }));
 }
 
-// Every status at zero, so a count a Round lacks still reads 0.
 export function emptyCounts(): StatusCounts {
   return Object.fromEntries(MATCH_STATUSES.map((status) => [status, 0])) as StatusCounts;
 }

@@ -3,7 +3,6 @@ import type { PrismaService } from '../../src/core/prisma.service';
 import type { PromptsService } from '../../src/prompts/prompts.service';
 import { SeedFailure } from './failure';
 
-// §14.4's publication order also fixes which Prompt is live at the end.
 export const PROMPT_QUESTIONS = [
   'Describe how you handled a conflict at work or in a team project.',
   'What is a mistake that taught you something important?',
@@ -11,7 +10,6 @@ export const PROMPT_QUESTIONS = [
   'What technology are you currently learning, and why?',
 ] as const;
 
-// §14.5: fixed sentences chosen by position, independent of generated ids.
 const STUDENT_ANSWERS = [
   [
     'Two of us wanted different libraries for the same feature. We each built a small spike, ' +
@@ -42,7 +40,6 @@ const STUDENT_ANSWERS = [
   ],
 ] as const;
 
-// The Peer Moderator has no position: one sentence per Prompt.
 const PEER_MODERATOR_ANSWERS = [
   'Two peers once argued over who had built what in a shared project. I asked each to list their own commits, ' +
     'and the list settled it faster than any discussion.',
@@ -51,8 +48,6 @@ const PEER_MODERATOR_ANSWERS = [
   'Be kind in your evaluations. The person in front of you is learning the same way you are.',
 ] as const;
 
-// §14.5 steps a and b, in Round order. Prompt 3's two parity groups answer
-// in separate Rounds, while the Peer Moderator answers it only once.
 const ROUND_PROMPTS = [
   { prompt: 1, publish: false, excludedRemainder: 0, parity: null, peerModerator: true },
   { prompt: 2, publish: true, excludedRemainder: 1, parity: null, peerModerator: true },
@@ -62,9 +57,7 @@ const ROUND_PROMPTS = [
 
 export type PromptStepResult = { prompt: number; published: boolean; answered: number; skipped: number };
 export type PromptScript = {
-  // §14.4 steps 3 and 6: Prompt 1 before Round 1, Prompt 4 after Round 4's close.
   publish(prompt: number): Promise<void>;
-  // §14.5 steps a and b, called right after Round `round` opens.
   afterOpen(round: number): Promise<PromptStepResult>;
 };
 
@@ -103,7 +96,6 @@ export function promptScript(
         planned.push({ studentId: peerModeratorId, sentence: PEER_MODERATOR_ANSWERS[plan.prompt - 1] });
       }
 
-      // §14.5: sanctions at this Round's answer step determine who is skipped.
       const inactive = await prisma.student.findMany({
         where: {
           id: { in: planned.map((answer) => answer.studentId) },

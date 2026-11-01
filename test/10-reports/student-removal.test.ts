@@ -43,10 +43,6 @@ async function auditOf(account: TestAccount): Promise<{ items: Array<Record<stri
 
 const REMOVED_AT = new Date('2026-10-22T12:00:00.000Z');
 
-// §12.7's Remove row, §12.5's guard scope and §12.6 (ADR-0011 d10), §16.3
-// row 10: Remove Student actions every open Report on the Student in its own
-// transaction, a row the removing Admin filed included, and the resolved
-// audit then decides who sees the batch. Suspension resolves nothing.
 describe('Remove Student and the Reports on them', () => {
   it('actions every open row at once, the removing Admin’s own included; the audit hides the batch from that Admin only', async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
@@ -59,7 +55,6 @@ describe('Remove Student and the Reports on them', () => {
     await fileTestReport(harness.app, admin.id, { studentId: target.id }, 'SPAM');
     const users = harness.app.get(AdminUsersService);
 
-    // Suspension leaves both open (ADR-0011 d10).
     await users.suspend(actor(admin.id), target.id);
     expect((await rowsOn(target.id)).map((row) => row.state)).toEqual(['OPEN', 'OPEN']);
 
@@ -70,7 +65,6 @@ describe('Remove Student and the Reports on them', () => {
       { reporterId: reporter.id, state: 'ACTIONED', resolvedById: admin.id, resolvedAt: REMOVED_AT },
       { reporterId: admin.id, state: 'ACTIONED', resolvedById: admin.id, resolvedAt: REMOVED_AT },
     ]);
-    // Nothing is left for the queue, and a group resolution finds nothing.
     expect(await outcome(harness.app.get(ModerationService).resolveStudentGroup(actor(other.id), target.id, 'DISMISS'))).toBe(
       'already_resolved',
     );
@@ -95,10 +89,6 @@ describe('Remove Student and the Reports on them', () => {
     });
   });
 
-  // §12.2, §3.6.3 *Report group resolution*: filing reads the target's
-  // `removed_at`, the Removal reads the open rows, so they have one serial
-  // order. Filing first, the row joins the batch; Removal first, the filing
-  // is refused.
   it.each([0, 1] as const)('against a filing, released %s first', async (first) => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const target = await createTestAccount(harness.app);

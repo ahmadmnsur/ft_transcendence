@@ -10,20 +10,15 @@ import { IconButton } from './IconButton';
 import { Modal } from './Modal';
 import { ProgressBar } from './ProgressBar';
 
-// The file types the server accepts; Avatar takes the two images, Evidence all three.
 export type FileType = 'image/png' | 'image/jpeg' | 'application/pdf';
 
-// A file already on the server, such as saved Evidence.
 export interface StoredFile {
   name: string;
   type: FileType;
   size?: number;
-  // Where the file can be read, for the image or PDF preview.
   previewUrl?: string;
 }
 
-// A problem the checks found, kept as data so its text is written in the
-// language shown when it renders.
 type Problem =
   | { kind: 'empty' }
   | { kind: 'type'; extension: string }
@@ -33,14 +28,8 @@ type Problem =
 export interface FileDropProps {
   accept: Array<FileType>;
   maxBytes: number;
-  // What the field shows. The caller owns it: set it to the File passed to
-  // onChange, to the stored record after an upload, or to null to empty it.
-  // A new value or error replaces the size and type message; to clear that
-  // message without either, as a form reset does, give FileDrop a new key.
   value: File | StoredFile | null;
-  // A file that passed the checks below, or null when the user removes it.
   onChange: (file: File | null) => void;
-  // The caller's own error, such as the server refusing the upload.
   error?: string;
   progress?: number;
   label?: string;
@@ -63,16 +52,12 @@ function typeOfExtension(extension: string): FileType | undefined {
   return (Object.keys(fileTypes) as Array<FileType>).find((type) => fileTypes[type].extensions.includes(extension));
 }
 
-// A picked file's type: its extension when the name has one; a name without
-// one makes no claim, so the type the browser declared decides.
 function typeOfFile(file: File): FileType | undefined {
   const extension = extensionOf(file.name);
   if (extension) return typeOfExtension(extension);
   return file.type in fileTypes ? (file.type as FileType) : undefined;
 }
 
-// A file size in the current language: bytes, then kilobytes rounded to a
-// whole number, then megabytes to one decimal, as Intl writes each unit.
 function formatBytes(formatNumber: I18n['formatNumber'], bytes: number): string {
   const size = (unit: string, value: number, digits: number): string =>
     formatNumber(value, { style: 'unit', unit, unitDisplay: 'short', maximumFractionDigits: digits });
@@ -81,8 +66,6 @@ function formatBytes(formatNumber: I18n['formatNumber'], bytes: number): string 
   return size('megabyte', bytes / (1024 * 1024), 1);
 }
 
-// Stored files compare by content: a screen may build the record afresh on
-// every render, and that is not a new value.
 function sameValue(a: File | StoredFile | null, b: File | StoredFile | null): boolean {
   if (a === b) return true;
   if (!a || !b || a instanceof File || b instanceof File) return false;
@@ -110,7 +93,6 @@ export function FileDrop({
   const dropRef = useRef<HTMLButtonElement>(null);
   const replaceRef = useRef<HTMLButtonElement>(null);
   const keepRef = useRef<HTMLButtonElement>(null);
-  // Set when the user picks or removes a file, since either swaps the control they were on.
   const moveFocus = useRef(false);
   const baseId = `filedrop-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const labelId = `${baseId}-label`;
@@ -118,12 +100,8 @@ export function FileDrop({
   const hintId = `${baseId}-hint`;
   const errorId = `${baseId}-error`;
   const [checkError, setCheckError] = useState<Problem | null>(null);
-  // Removing a stored file deletes it on the server, so it is confirmed first;
-  // a picked file that is not saved yet is removed at once.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [objectUrl, setObjectUrl] = useState<{ file: File; url: string } | null>(null);
-  // A preview that failed to load, such as a picked file named .png whose
-  // bytes are no image: the file icon shows instead of a broken image.
   const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [lastProps, setLastProps] = useState({ value, error });
@@ -133,10 +111,6 @@ export function FileDrop({
   const isImage = valueType === 'image/png' || valueType === 'image/jpeg';
   const isPdf = valueType === 'application/pdf';
 
-  // A new value or error from the caller replaces the size and type message,
-  // so the latest problem is the one shown. A new value also ends a pending
-  // confirm: the confirm asks about the file it was opened for, and that file
-  // is gone.
   if (!sameValue(lastProps.value, value) || lastProps.error !== error) {
     if (!sameValue(lastProps.value, value)) setConfirmingDelete(false);
     setLastProps({ value, error });
@@ -144,9 +118,6 @@ export function FileDrop({
   }
   const shownError = checkError ? problemText(checkError) : error;
 
-  // The only place object URLs are created or revoked. Only a picked image
-  // gets one: the page's security policy frames same-origin URLs only, so a PDF
-  // previews once it is stored and has a file URL.
   const pickedImage = value instanceof File && isImage;
   useEffect(() => {
     if (!(value instanceof File) || !pickedImage) {
@@ -158,8 +129,6 @@ export function FileDrop({
     return () => URL.revokeObjectURL(url);
   }, [value, pickedImage]);
 
-  // After a pick or a remove, the control the user was on is gone; focus goes
-  // to the one that replaced it, unless it has already moved elsewhere.
   useEffect(() => {
     if (!moveFocus.current) return;
     moveFocus.current = false;
@@ -168,10 +137,6 @@ export function FileDrop({
     (value ? replaceRef.current : dropRef.current)?.focus();
   }, [value]);
 
-  // The server's file checks, repeated here for quick feedback: not empty, an
-  // accepted type, a declared type that agrees with the extension, and the size
-  // cap. Only the server reads the bytes, so it still has the last word, and a
-  // file that claims no type at all (no extension, nothing declared) is left to it.
   function check(candidate: File): Problem | null {
     if (candidate.size === 0) return { kind: 'empty' };
     const extension = extensionOf(candidate.name);
@@ -201,7 +166,6 @@ export function FileDrop({
     }
     const size = formatBytes(formatNumber, problem.size);
     const limit = formatBytes(formatNumber, maxBytes);
-    // Rounding can print both as the same number, so a file just over the cap says so.
     return size === limit ? format(t.design.fileDrop.justOverLimit, { limit }) : format(t.design.fileDrop.overLimit, { size, limit });
   }
 
@@ -226,8 +190,6 @@ export function FileDrop({
   function onDrop(event: DragEvent<HTMLDivElement>): void {
     event.preventDefault();
     setDragging(false);
-    // The confirm names the file it was opened for: while it is open a drop
-    // takes nothing, so that file cannot be swapped before it is answered.
     if (confirmingDelete) return;
     const candidate = event.dataTransfer.files?.[0];
     if (candidate) take(candidate);
@@ -237,8 +199,6 @@ export function FileDrop({
   if (value instanceof File) url = objectUrl?.file === value ? objectUrl.url : undefined;
   else url = value?.previewUrl;
 
-  // A progress bar's value is not read out as it changes, so the upload is
-  // announced in quarter steps through a status region that stays mounted.
   const step = progress !== undefined && Number.isFinite(progress) ? Math.min(Math.max(Math.floor(progress / 25) * 25, 0), 100) : undefined;
   const uploadStatus =
     value && step !== undefined ? format(t.design.fileDrop.uploading, { fileName: value.name, progress: formatNumber(step / 100, { style: 'percent' }) }) : null;
@@ -249,8 +209,6 @@ export function FileDrop({
       className={`min-w-0 ${className}`.trim()}
       onDragOver={(event) => {
         event.preventDefault();
-        // While the confirm is open drops are refused, but the default is
-        // still prevented so the browser does not open the file in the tab.
         if (confirmingDelete) {
           event.dataTransfer.dropEffect = 'none';
           return;
@@ -285,7 +243,6 @@ export function FileDrop({
             <UploadIcon size={24} />
           </span>
           <span id={actionId} className="text-sm text-ink">
-            {/* A phone cannot drag a file, so a touch screen is only offered the picker. */}
             <span className="pointer-coarse:hidden">
               {format(t.design.fileDrop.drop, { browse: <span className="font-semibold text-link underline underline-offset-2">{t.design.fileDrop.browse}</span> })}
             </span>
@@ -359,7 +316,6 @@ export function FileDrop({
         aria-hidden="true"
         onChange={(event) => {
           const candidate = event.target.files?.[0];
-          // Cleared at once so picking the same file again still fires a change.
           event.target.value = '';
           if (candidate) take(candidate);
         }}

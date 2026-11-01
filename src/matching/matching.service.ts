@@ -44,13 +44,7 @@ import type {
   OpenRoundResult,
 } from './views';
 
-// §3.4's `matching` module: `Round`, `Match` and `MatchSkillCoverage`. A
-// write method takes an Actor and runs in exactly one `uow.run`; a read
-// method runs outside the Unit of Work, in one read-only snapshot when it
-// reads more than once (§3.6.2).
 
-// The Match, if `studentId` is its Mentor or its Mentee. To anyone else it does
-// not exist: 404, an Admin outside the pair included (§6.6, §8.5).
 function asParticipant<T extends { mentorId: string; menteeId: string }>(row: T | null, studentId: string): T {
   if (row === null || (row.mentorId !== studentId && row.menteeId !== studentId)) {
     throw new ApiError('not_found');
@@ -74,12 +68,7 @@ export class MatchingService {
     private readonly publisher: RealtimePublisher,
   ) {}
 
-  // §8.6: the same orientation as the matcher, with no history check or
-  // floor. The deciding reads share the insert's SSI transaction, so close,
-  // eligibility changes and competing creations have one serial order.
   async createHandMadeMatch(actor: Actor, studentIds: readonly [string, string]): Promise<AdminMatchView> {
-    // Keep the first attempt's Round across retries: close first refuses
-    // creation rather than moving it into a later Round (ADR-0002 d7).
     let firstRoundId: string | undefined;
     return this.uow.run('match-handmade', async (tx, ctx) => {
       await readActiveAdmin(tx, actor.studentId);
@@ -135,12 +124,6 @@ export class MatchingService {
     });
   }
 
-  // §8.4. One SSI transaction reads the actor, whether a Round is open, every
-  // candidate with Skills, Goal and XP, every Match pair and every Block pair,
-  // then writes the Round, its Matches and their coverage rows together: no
-  // Round without its Matches (ADR-0002 d3). Zero Matches is legal. Two opens
-  // racing: one commits, the other retries, reads the open Round and is
-  // refused, with `round_single_open` as the backstop.
   async openRound(actor: Actor): Promise<OpenRoundResult> {
     return this.uow.run(
       { name: 'round-open', uniqueRefusals: { round_single_open: ROUND_ALREADY_OPEN } },
@@ -149,8 +132,6 @@ export class MatchingService {
         const open = await tx.round.findFirst({ where: { closedAt: null }, select: { id: true } });
         if (open !== null) throw roundAlreadyOpen();
         const pool = await readCandidates(tx);
-        // §8.3: every pair with any Match row, any Round, any status, either
-        // orientation; every pair with a Block either way.
         const history = await tx.match.findMany({ select: { mentorId: true, menteeId: true } });
         const blocks = await tx.block.findMany({ select: { blockerId: true, blockedId: true } });
         await ctx.checkpoint('round.open');
@@ -161,7 +142,6 @@ export class MatchingService {
           blocked: blocks.map((row): UnorderedPair => [row.blockerId, row.blockedId]),
         });
         const round = await tx.round.create({ data: { openedAt: ctx.now }, select: { id: true, openedAt: true } });
-        // In selection order, so each Match takes its index's Mission (§8.10).
         for (const item of output) {
           await tx.match.create({
             data: {
@@ -199,9 +179,6 @@ export class MatchingService {
     );
   }
 
-  // §8.7: close, lapse, whole-Round Streak evaluation and Consistent Learner
-  // commit together. Reviews, Prompt answers and eligibility changes racing
-  // this close land in one serial order with it (§3.6.3).
   async closeRound(actor: Actor): Promise<CloseRoundResult> {
     return this.uow.run('round-close', async (tx, ctx) => {
       await readActiveAdmin(tx, actor.studentId);
@@ -214,8 +191,6 @@ export class MatchingService {
       const students = await tx.student.findMany({
         select: { id: true, role: true, suspendedAt: true, removedAt: true, streak: true },
       });
-      // Removed answers still qualify. Reading this predicate before closing
-      // also orders an overlapping answer against the close under SSI.
       const answers = await tx.post.findMany({
         where: { answerRoundId: round.id, promptId: { not: null } }, select: { authorId: true },
       });
@@ -238,14 +213,6 @@ export class MatchingService {
     });
   }
 
-  // §8.5, §8.8. Only the pair: anyone else gets 404. On a MATCHED Match it
-  // records the actor's acceptance, and the second acceptance makes it
-  // ACCEPTED; an acceptance already recorded is the current state again. Any
-  // other status is `match_not_pending`. The role is not read: a Match made
-  // before the actor's promotion stays theirs to accept (ADR-0008 d2). Two
-  // acceptances racing write one row, so one retries and makes the
-  // transition. No event: the pair reads the new status on the next load
-  // (§7.4). The view is read after the commit.
   async accept(actor: Actor, matchId: string): Promise<MatchDetailView> {
     await this.uow.run('match-accept', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
@@ -271,10 +238,6 @@ export class MatchingService {
     return this.getMatch(actor, matchId);
   }
 
-  // §8.5, §8.8. Only the pair: anyone else gets 404. MATCHED or ACCEPTED
-  // becomes DECLINED, naming who declined; anything else is
-  // `match_not_in_progress`. Both Students are unmatched again (derived), and
-  // nothing searches for a replacement (ADR-0002 d8). No event.
   async decline(actor: Actor, matchId: string): Promise<MatchDetailView> {
     await this.uow.run('match-decline', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
@@ -292,8 +255,6 @@ export class MatchingService {
     return this.getMatch(actor, matchId);
   }
 
-  // §6.6's `GET /api/rounds/current`. `actor` is the signed-in viewer the read
-  // is for (§3.4); the answer does not vary by viewer.
   async currentRound(actor: Actor): Promise<CurrentRound> {
     return this.uow.readOnly(async (tx) => {
       const round = await tx.round.findFirst({ where: { closedAt: null }, select: { id: true, openedAt: true } });
@@ -302,10 +263,6 @@ export class MatchingService {
     });
   }
 
-  // §6.6's `GET /api/matches/current`: the actor's standing Match in the open
-  // Round, or null — after a decline the actor is unmatched again. At most
-  // one Match per Student per Round stands (§4.3.10); newest first all the
-  // same, so a read never depends on that holding.
   async currentMatch(actor: Actor): Promise<CurrentMatch> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.match.findFirst({
@@ -323,9 +280,6 @@ export class MatchingService {
     });
   }
 
-  // §6.6's `GET /api/matches?page`: the actor's own Matches, every status,
-  // newest first. Only the pair reads a Match (§4.6), so this is the only list
-  // of them a Student sees. A page past the last reads no rows.
   async history(actor: Actor, page: number, pageSize: number): Promise<MatchHistoryPage> {
     const where = { OR: [{ mentorId: actor.studentId }, { menteeId: actor.studentId }] };
     return this.uow.readOnly(async (tx) => {
@@ -348,9 +302,6 @@ export class MatchingService {
     });
   }
 
-  // §6.6's `GET /api/matches/:id`: the pair only, whatever their current role;
-  // anyone else, an Admin outside the pair included, gets 404. Admins read
-  // every Match through `getAdminMatch`.
   async getMatch(actor: Actor, matchId: string): Promise<MatchDetailView> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.match.findUnique({ where: { id: matchId }, select: MATCH_SELECT });
@@ -363,9 +314,6 @@ export class MatchingService {
     });
   }
 
-  // §6.13's `GET /api/admin/rounds`: every Round, newest first, with its
-  // number, times and how many of its Matches are in each status. Only
-  // Admins reach it (the role guard); `actor` is that Admin.
   async listRounds(actor: Actor): Promise<{ items: AdminRoundSummary[] }> {
     return this.uow.readOnly(async (tx) => {
       const rounds = await tx.round.findMany({
@@ -391,9 +339,6 @@ export class MatchingService {
     });
   }
 
-  // §6.13's `GET /api/admin/rounds/:id`: the Round's Matches in creation
-  // order — the matcher's selection order, then hand-made ones — and, for the
-  // open Round only, its unmatched Students (§8.9). Unknown → 404.
   async getRound(actor: Actor, roundId: string): Promise<AdminRoundDetail> {
     return this.uow.readOnly(async (tx) => {
       const round = await tx.round.findUnique({
@@ -419,8 +364,6 @@ export class MatchingService {
     });
   }
 
-  // §6.13's `GET /api/admin/matches/:id`: any Match, both participants
-  // named. Unknown → 404.
   async getAdminMatch(actor: Actor, matchId: string): Promise<AdminMatchDetailView> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.match.findUnique({ where: { id: matchId }, select: MATCH_SELECT });

@@ -29,30 +29,17 @@ import {
 } from '../shared/limits';
 import { isUuid } from '../shared/uuid';
 
-// §6.2's DTOs validate §6.0.3 through the shared validators, so the client
-// pre-check and the server enforce the same limits. The display-name and email
-// validators, the trim transform and the validator factory are the auth DTOs',
-// reused rather than copied.
 
-// The Learning Goal sentence has no auth validator of its own: build one from
-// `isValidLearningGoalText` exactly as the auth module builds its own.
 export const IsValidLearningGoalTextDto = sharedValidator(
   'isValidLearningGoalText',
   isValidLearningGoalText,
 );
 
-// Search `q` is 0–60 characters after trimming (§6.0.3), checked by the same
-// function as the client's pre-check.
 export const IsValidSearchQueryDto = sharedValidator('isValidSearchQuery', isValidSearchQuery);
 
-// A Skill id in the search's query string, checked by the same function as the
-// SPA's search params.
 export const IsUuidDto = sharedValidator('isUuid', isUuid);
 
 export class UpdateProfileDto {
-  // Both optional: a body with neither returns the unchanged profile. An
-  // absent field is skipped, while a present `null` fails `@IsString` and is a
-  // 400 `validation_failed`, never a 500 (§6.15).
   @ValidateIf((_dto, value) => value !== undefined)
   @IsString()
   @Trimmed()
@@ -69,8 +56,6 @@ export class UpdateProfileDto {
 }
 
 export class SkillsDto {
-  // Each list is 0–15 distinct catalogue ids; a Skill may be on both (§6.0.3,
-  // §6.2). Errors here are the global pipe's `validation_failed`.
   @IsArray()
   @ArrayMaxSize(LIMITS.skillList.maxItems)
   @ArrayUnique()
@@ -99,26 +84,19 @@ export type SearchSort = (typeof SEARCH_SORTS)[number];
 export const SEARCH_ORDERS = ['asc', 'desc'] as const;
 export type SearchOrder = (typeof SEARCH_ORDERS)[number];
 
-// A query string carries only strings: turn exactly `true`/`false` into
-// booleans and leave anything else for the validator to refuse.
 function QueryBoolean(): PropertyDecorator {
   return Transform(({ value }: { value: unknown }) =>
     value === 'true' ? true : value === 'false' ? false : value,
   );
 }
 
-// `GET /api/students` (§6.2; paging §6.0.1). Every field is optional; an absent one
-// keeps its default. The global pipe refuses an unknown parameter, and a
-// repeated one arrives as an array and fails its validator.
 export class SearchStudentsQueryDto {
-  // Absent, or empty after trimming, is no name filter (§6.0.3).
   @IsOptional()
   @IsString()
   @Trimmed()
   @IsValidSearchQueryDto()
   q?: string;
 
-  // A Skill id each. An id outside the catalogue matches nobody.
   @IsOptional()
   @IsUuidDto()
   teaches?: string;

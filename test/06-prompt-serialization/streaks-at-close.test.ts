@@ -26,7 +26,6 @@ it('evaluates the whole Round once, freezes sanctions, and retains dated Badges 
   const suspended = await createTestAccount(harness.app);
   const removed = await createTestAccount(harness.app);
   const inactive = await createTestAccount(harness.app);
-  // Existing Streaks let one close cross the threshold for each earning path.
   await prisma.student.updateMany({ where: { id: { not: inactive.id } }, data: { streak: 2 } });
   const skills = await insertCatalogue(harness.app.get(UnitOfWork));
   const skillId = skills.get('Docker')!;
@@ -36,7 +35,6 @@ it('evaluates the whole Round once, freezes sanctions, and retains dated Badges 
   const completed = (await matching.currentMatch(actor(mentee.id))).match!;
   await matching.accept(actor(mentor.id), completed.id);
   await matching.accept(actor(mentee.id), completed.id);
-  // Promotion keeps the pre-existing Match and does not freeze Streak.
   await prisma.student.update({ where: { id: mentor.id }, data: { role: 'ADMIN' } });
   await harness.app.get(ReviewsService).submitReview(actor(mentee.id), completed.id, {
     learningOutcome: { learned: 'How a container works.', canNowDo: 'Run an isolated service.' },
@@ -53,7 +51,6 @@ it('evaluates the whole Round once, freezes sanctions, and retains dated Badges 
     await prompts.answer(actor(account.id), prompt.id, 'A lesson from the Round.');
   }
   await prisma.post.updateMany({ where: { authorId: moderator.id }, data: { removedAt: new Date() } });
-  // The real sanctions, through the Users table (§12.7).
   const users = harness.app.get(AdminUsersService);
   await users.suspend(actor(admin.id), suspended.id);
   await users.remove(actor(admin.id), removed.id);
@@ -102,7 +99,6 @@ it('evaluates the whole Round once, freezes sanctions, and retains dated Badges 
       { awardedAt: closedAt },
     ]);
   }
-  // Reinstatement does not replay the skipped Rounds; only fresh activity counts.
   await users.reinstate(actor(admin.id), suspended.id);
   expect((await prisma.student.findUniqueOrThrow({ where: { id: suspended.id } })).streak).toBe(2);
   await matching.openRound(actor(admin.id));

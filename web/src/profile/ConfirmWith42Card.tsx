@@ -9,14 +9,6 @@ import { Banner, Button, Card, TextField } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 
-// §5.6 C: recovery through Confirm with 42 on `/me`, shown only while a 42
-// account is connected. Confirm with 42 hands the browser to 42, the way
-// Connect 42 does, and asks for no password; the callback's answer comes
-// back as `/me?oauth=confirmed`, which the page passes in as `confirmed`.
-// Then the card is the new-password form: set within ten minutes, once, it
-// signs the Student out everywhere, like the password change. Once sent,
-// the permission is used or gone, so a failure that leaves the Student
-// signed in takes the card back to Confirm with 42 with its sentence.
 export function ConfirmWith42Card({
   confirmed,
   onAction,
@@ -25,12 +17,8 @@ export function ConfirmWith42Card({
   className,
 }: {
   confirmed: boolean;
-  // Called at the start of a Confirm with 42, so the page retires the
-  // `/me?oauth=…` notice shown above the cards.
   onAction?: () => void;
-  // The permission is used or gone: the page sets `confirmed` back.
   onConfirmedEnd: () => void;
-  // Signed out everywhere: the page clears its queries and goes to sign-in.
   onSignedOut: (notice: 'password-changed' | 'password-change-unknown') => Promise<void>;
   className?: string;
 }): React.JSX.Element | null {
@@ -41,8 +29,6 @@ export function ConfirmWith42Card({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newError, setNewError] = useState(false);
   const [confirmError, setConfirmError] = useState(false);
-  // A new object each time, so the focus effect below runs again for a
-  // repeated message.
   const [failure, setFailure] = useState<{ code: unknown } | undefined>(undefined);
   const [pending, setPending] = useState<'confirm' | 'set' | null>(null);
   const newRef = useRef<HTMLInputElement>(null);
@@ -62,15 +48,10 @@ export function ConfirmWith42Card({
     if (failure !== undefined) failureRef.current?.focus();
   }, [failure]);
 
-  // Back from 42 with the permission, the form is below the fold: focus
-  // moves to its notice, which brings it into view and reads it out.
   useEffect(() => {
     if (shown && confirmed) noticeRef.current?.focus();
   }, [shown, confirmed]);
 
-  // Late responses never act on a page that is gone, and a page restored
-  // from the back/forward cache (Back from 42's page) frees the button, as
-  // FortyTwoCard does for Connect 42.
   useEffect(() => {
     mountedRef.current = true;
     function onPageShow(event: PageTransitionEvent): void {
@@ -128,15 +109,10 @@ export function ConfirmWith42Card({
       await onSignedOut('password-changed');
     } catch (error) {
       if (error instanceof ApiRefusalError && error.code === 'confirmation_required') {
-        // Still signed in, and the permission is used or gone.
         setFailure({ code: error.code });
         resetForm();
         return;
       }
-      // Anything else may have signed the Student out (§5.1): the session
-      // probe decides, as on the password change. A lost race
-      // (`password_incorrect`) is among them: the change that won already
-      // deleted every session.
       let signedOut = true;
       try {
         signedOut = !(await fetchSession()).authenticated;
@@ -175,8 +151,6 @@ export function ConfirmWith42Card({
             <div ref={noticeRef} tabIndex={-1} className="rounded-lg focus-ring">
               <Banner tone="success" title={copy.confirmedNotice} />
             </div>
-            {/* The hidden username field carries the signed-in Student's
-                email, so a password manager saves the right account. */}
             <input
               type="text"
               autoComplete="username"

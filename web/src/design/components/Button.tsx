@@ -29,8 +29,6 @@ export function Button({
   className = '',
   ...rest
 }: ButtonProps): React.JSX.Element {
-  // A loading or aria-disabled button stays focusable, so a keyboard user who
-  // pressed it keeps their place; it only ignores presses, form submits included.
   const inactive = loading || rest['aria-disabled'] === true || rest['aria-disabled'] === 'true';
   return (
     <button

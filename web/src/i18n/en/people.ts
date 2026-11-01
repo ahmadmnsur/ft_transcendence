@@ -1,14 +1,11 @@
 import type { EnGroup } from '../types';
 
-// A Removed Student's name, which the SPA shows in place of the API's
-// English displayName, and `/students`, the Advanced search (§6.2).
 export default {
   tombstone: 'Former student',
   search: {
     title: 'Students',
     filtersLabel: 'Search Students',
     nameLabel: 'Name',
-    // §6.0.3: the search term is at most 60 characters.
     nameInvalid: {
       one: 'Enter up to {count} character.',
       other: 'Enter up to {count} characters.',
@@ -23,7 +20,6 @@ export default {
     goalNo: 'No Learning Goal',
     submit: 'Search',
     clear: 'Clear filters',
-    // The Skill catalogue's failed read, retried on its own (§6.15).
     retry: 'Try again',
     sortLabel: 'Sort by',
     sort: {

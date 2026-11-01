@@ -24,14 +24,8 @@ import { useBlockControl } from '../social/BlockControl';
 import { useFriendControl } from '../social/useFriendControl';
 import { OwnProgressCard, ProgressCard } from '../progress/ProgressCard';
 
-// The shape the API's ParseUUIDPipe accepts (§6.0.1). A malformed id is
-// known here, so no request is sent for it and the console stays clean
-// (§3.5.2, §3.8.2).
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// §6.5, §7.3: the link to this Student's page on `/messages`, where the
-// composer sends. ProfileActions shows it to a signed-in viewer, never on
-// their own profile or for a Removed Student, who can receive nothing (§4.6).
 function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.Element {
   const { t } = useI18n();
   return (
@@ -45,12 +39,6 @@ function DirectMessageControl({ student }: { student: StudentRef }): React.JSX.E
   );
 }
 
-// §6.4, §6.5, §12.2: a profile's actions, none on the viewer's own profile.
-// First, each on a line of its own, what just happened and where things stand:
-// the friend control's status and note, then the Block control's. Then one row:
-// the friend request buttons and the Direct Message link, then Report and Block,
-// together at the row's end, wrapping as one. Statuses and notes come before the
-// buttons in the page as on screen, so reading and Tab follow the eye.
 function ProfileActions({ student }: { student: StudentRef }): React.JSX.Element | null {
   const { data: session } = useQuery(sessionQueryOptions());
   const friend = useFriendControl(student);
@@ -84,8 +72,6 @@ function ProfileActions({ student }: { student: StudentRef }): React.JSX.Element
   );
 }
 
-// §6.2: the Student's non-removed Posts, newest first, with their Likes, 20
-// a page (§6.0.1).
 function StudentPosts({ studentId }: { studentId: string }): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.feed.profile;
@@ -107,28 +93,16 @@ function StudentPosts({ studentId }: { studentId: string }): React.JSX.Element {
   );
 }
 
-// §6.2, §4.6: any signed-in Student's profile. A Removed Student renders as
-// the tombstone: the API's `displayName` is ignored, the avatar falls back
-// to the bundled default, and no Skills, Goal, numbers or Posts show. A
-// malformed id is answered here without a request; a 404 from the API is
-// this page's not-found state; any other failure shows the generic sentence
-// (§3.8.2, §6.15). Never an email.
 export function StudentPage(): React.JSX.Element {
   const { t, personNameText } = useI18n();
   const copy = t.profile.student;
   const session = useQuery(sessionQueryOptions()).data;
   const { studentId } = useParams({ from: '/students/$studentId' });
   const wellFormedId = UUID_PATTERN.test(studentId);
-  // The query is disabled for a malformed id: the not-found state below
-  // answers it without a request.
   const { data, error, isError, refetch } = useQuery({
     ...studentQueryOptions(studentId),
     enabled: wellFormedId,
   });
-  // The friend and Block controls read the viewer's own Friends, requests
-  // and Blocks. Starting those reads beside the profile's, rather than once
-  // the profile shows, keeps the controls from appearing late and moving the
-  // page.
   useQuery({ ...blocksQueryOptions(), enabled: wellFormedId });
   useQuery({ ...friendsQueryOptions(), enabled: wellFormedId });
   useQuery({ ...friendRequestsQueryOptions(), enabled: wellFormedId });
@@ -154,8 +128,6 @@ export function StudentPage(): React.JSX.Element {
         </>
       );
     }
-    // The name is not known yet; the brand title holds until it is, and the
-    // page says it is loading instead of staying blank on a slow link.
     return (
       <>
         <PageTitle />
@@ -178,12 +150,9 @@ export function StudentPage(): React.JSX.Element {
             <Avatar src={removed ? null : student.avatarUrl} alt="" size="xl" />
             <h1 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold text-ink wrap-anywhere">
               <PersonName name={student.displayName} removed={removed} />
-              {/* §12.8: the Admin label, and never any other role. */}
               {student.isAdmin && !removed ? <RoleLabel /> : null}
             </h1>
           </div>
-          {/* Keyed by the Student, so a status or an open dialog never
-          carries over to the next profile. */}
           <ProfileActions key={student.id} student={student} />
         </header>
         {removed || profile === null ? (

@@ -1,12 +1,8 @@
 @import 'tailwindcss';
 @import './design/tokens.css';
 
-/* The left-or-right check, scripts/physical-scan.mjs, names physical classes in its comments,
-   so Tailwind does not read it. */
 @source not '../scripts';
 
-/* The header stays at the top of the window, and `SiteHeader` (layout.tsx) sets its height as
-   `--header-height`: whatever the browser scrolls into view stops below the header. */
 html {
   scroll-padding-top: var(--header-height, 0px);
 }

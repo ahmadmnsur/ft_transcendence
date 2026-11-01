@@ -7,25 +7,15 @@ import { NAMES, generateCohort } from '../fixtures/cohort';
 import { assertSignUpFields } from './bootstrap';
 import { SeedFailure } from './failure';
 
-// §14.3: the generator's options for the thirty Students, and for the Peer
-// Moderator's lists.
 const COHORT_OPTIONS = { size: 30, seed: 42, unmatchable: 1 } as const;
 const PEER_MODERATOR_OPTIONS = { size: 1, seed: 4242 } as const;
 
-// The gap Skill G. No seeded Student lists it but X, who teaches it, and Y,
-// who wants it, so X's Block of Y leaves it covered by no Match (ADR-0017 d8's
-// note of 2026-09-23). X and Y are reserved positions.
 export const GAP_SKILL = 'Valgrind';
 export const X_POSITION = 1;
 export const Y_POSITION = 2;
 
-// §14.3's reserved positions: 0, the unmatchable Student, then X and Y.
-// They stay Active candidates, so none of them is the demo Student.
 export const RESERVED_POSITIONS: readonly number[] = [0, X_POSITION, Y_POSITION];
 
-// The Student at position p, as the seed will make it: Skills by name, the
-// Goal as its Skill's name. The generator's XP is dropped, so everyone starts
-// at 0 XP.
 export type PlannedStudent = {
   position: number;
   email: string;
@@ -43,8 +33,6 @@ function goalSentence(skill: string): string {
   return `I want to get comfortable with ${skill} for my next project.`;
 }
 
-// The cohort in position order (§14.3). A generated Goal is kept when it is
-// still on its LEARN list and is not G, which Y's list holds again.
 export function cohortPlan(): PlannedStudent[] {
   return generateCohort(COHORT_OPTIONS).map((generated, position) => {
     const name = NAMES[position % NAMES.length];
@@ -64,20 +52,15 @@ export function cohortPlan(): PlannedStudent[] {
   });
 }
 
-// The thirty emails, which §14.9's guard counts as the seed's own.
 export function cohortEmails(): string[] {
   return cohortPlan().map((planned) => planned.email);
 }
 
-// Through sign-up itself, strictly in position order (§14.3), so NestJS makes
-// the ids in that order. Returns them in position order.
 export async function signUpCohort(
   cohort: readonly PlannedStudent[],
   env: EnvRecord,
   auth: AuthService,
 ): Promise<string[]> {
-  // The boot check's step 1 already holds it to the password rule; sign-up
-  // uses it trimmed, as the DTO hands it on (§5.1).
   const password = (env['SEED_STUDENT_PASSWORD'] as string).trim();
   const ids: string[] = [];
   for (const planned of cohort) {
@@ -89,8 +72,6 @@ export async function signUpCohort(
   return ids;
 }
 
-// §14.3, §4.1: later slices break ties by the lower id, which must mean the
-// lower position, so the order is read back from the database itself.
 export async function assertIdOrder(
   prisma: PrismaService,
   cohort: readonly PlannedStudent[],
@@ -113,8 +94,6 @@ function skillId(skillIds: ReadonlyMap<string, string>, name: string): string {
   return id;
 }
 
-// One Student's lists through `students.setSkills`, as that Student. The
-// Skill-list path takes ids (§6.2).
 async function setLists(
   students: StudentsService,
   studentId: string,
@@ -125,9 +104,6 @@ async function setLists(
   await students.setSkills({ studentId, sessionHash: null }, toIds(lists.teach), toIds(lists.learn));
 }
 
-// Each Student's lists, then the Goal through `students.setLearningGoal`, as
-// that Student (§14.3). `ids` are in position order. Returns the number of
-// Goals set.
 export async function setCohortLists(
   cohort: readonly PlannedStudent[],
   ids: readonly string[],
@@ -139,7 +115,6 @@ export async function setCohortLists(
     const studentId = ids[planned.position];
     await setLists(students, studentId, planned, skillIds);
     if (planned.goal === null) continue;
-    // The DTO's rule for the sentence, which the seed checks itself (§6.2).
     const sentence = goalSentence(planned.goal);
     if (!isValidLearningGoalText(sentence)) {
       throw new SeedFailure(`position ${planned.position}'s Learning Goal sentence breaks its rule`);
@@ -154,8 +129,6 @@ export async function setCohortLists(
   return goals;
 }
 
-// The Peer Moderator's lists: the one Student of their own seed, with G
-// removed and no Goal (§14.3). Returns each list's length.
 export async function setPeerModeratorLists(
   peerModeratorId: string,
   skillIds: ReadonlyMap<string, string>,

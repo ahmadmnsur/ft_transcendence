@@ -8,7 +8,6 @@ export function QueryInteger(): PropertyDecorator {
   );
 }
 
-// §6.0.1: shared table paging; an absent field keeps its default.
 export class PageQueryDto {
   @IsOptional()
   @QueryInteger()

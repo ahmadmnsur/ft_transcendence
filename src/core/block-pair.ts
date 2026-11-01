@@ -1,6 +1,5 @@
 import type { Prisma } from '../generated/prisma/client';
 
-// A Block refuses the pair in either direction, whoever set it.
 export function blockPair(a: string, b: string): Prisma.BlockWhereInput {
   return {
     OR: [

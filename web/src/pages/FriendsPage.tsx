@@ -4,8 +4,6 @@ import { BlocksCard } from '../social/BlocksCard';
 import { FriendRequestsCard } from '../social/FriendRequestsCard';
 import { FriendsCard } from '../social/FriendsCard';
 
-// §3.5.1: `/friends`, the signed-in Student's own page: their Friends with
-// Presence, their incoming and outgoing friend requests, and their Blocks.
 export function FriendsPage(): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.social.friends;

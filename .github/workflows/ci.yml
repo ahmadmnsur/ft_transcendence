@@ -35,8 +35,6 @@ jobs:
           "${compose[@]}" down --volumes --remove-orphans
           "${compose[@]}" build api
           "${compose[@]}" up -d db auth storage api-gw
-          # Steps 4-7 in one dev container (§16.4). Step 6: the second seed run must
-          # find the first one's record, log "seed already complete" and exit 0.
           "${compose[@]}" run --rm api sh -c '
             set -e
             npx prisma migrate deploy --config prisma.config.ts

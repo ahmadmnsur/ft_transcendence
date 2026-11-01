@@ -36,7 +36,6 @@ function Answer({ label, value }: { label: string; value: string }): React.JSX.E
 
 export interface ReviewRecordProps extends ReviewDetail {
   matchId: string;
-  // Whether the reader is the Match's Mentee, who alone writes the Evidence.
   evidenceEditable: boolean;
 }
 

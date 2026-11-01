@@ -23,7 +23,5 @@ import landing from './landing';
 
 const ar = { shell, legal, auth, errors, people, profile, design, social, messages, matching, prompts, reviews, feed, progress, leaderboard, reports, admin, analytics, moderation, landing };
 
-// Every key, plural form and placeholder English has, nothing English does
-// not, no empty text and no vowel mark in its own Arabic.
 export const arChecked: Checked<'ar', typeof ar, typeof en> = true;
 export default ar;

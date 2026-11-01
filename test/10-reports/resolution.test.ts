@@ -25,8 +25,6 @@ async function outcome(work: Promise<unknown>): Promise<string> {
   }
 }
 
-// Two held operations, released in the order given; both settle before this
-// returns (§3.6.4).
 async function stage(
   names: readonly [string, string],
   start: () => [Promise<string>, Promise<string>],
@@ -56,7 +54,6 @@ async function rowsOn(target: { postId: string } | { reportedStudentId: string }
   });
 }
 
-// A Post by a fresh author with two open Reports, one minute apart.
 async function reportedPost(): Promise<{ postId: string; author: TestAccount; reporters: [TestAccount, TestAccount] }> {
   const author = await createTestAccount(harness.app);
   const first = await createTestAccount(harness.app);
@@ -71,7 +68,6 @@ async function reportedPost(): Promise<{ postId: string; author: TestAccount; re
 
 const RESOLVED_AT = new Date('2026-10-22T12:00:00.000Z');
 
-// §12.5, §3.6.3 *Report group resolution*, §16.3 row 10.
 describe('resolving a report group', () => {
   it.each([
     ['DISMISS', 'REMOVE_POST'],
@@ -93,9 +89,6 @@ describe('resolving a report group', () => {
     harness.barriers.release('moderation.resolve');
     expect(await second).toBe('already_resolved');
 
-    // A losing removal never removes the Post; a winning one is never
-    // rewritten to DISMISSED. Every row of the batch shares state, resolver
-    // and time.
     expect(await removedAt(postId)).toEqual(winner === 'REMOVE_POST' ? RESOLVED_AT : null);
     const state = winner === 'REMOVE_POST' ? 'ACTIONED' : 'DISMISSED';
     expect(await rowsOn({ postId })).toEqual(
@@ -119,7 +112,6 @@ describe('resolving a report group', () => {
     await fileTestReport(harness.app, first.id, { postId });
     harness.clock.stopAt(dismissedAt);
     expect(await moderation.resolvePostGroup(actor(admin.id), postId, 'DISMISS')).toEqual({ state: 'DISMISSED', count: 1 });
-    // §12.2: a later filing by another reporter opens a new group.
     harness.clock.stopAt(new Date('2026-10-22T11:00:00.000Z'));
     await fileTestReport(harness.app, second.id, { postId });
     harness.clock.stopAt(new Date('2026-10-22T11:01:00.000Z'));
@@ -133,7 +125,6 @@ describe('resolving a report group', () => {
       { reporterId: second.id, state: 'ACTIONED', resolvedById: moderator.id, resolvedAt: RESOLVED_AT },
       { reporterId: third.id, state: 'ACTIONED', resolvedById: moderator.id, resolvedAt: RESOLVED_AT },
     ]);
-    // Nothing is left open: a second action finds no group.
     expect(await outcome(moderation.resolvePostGroup(actor(admin.id), postId, 'DISMISS'))).toBe('already_resolved');
   });
 
@@ -173,11 +164,6 @@ describe('resolving a report group', () => {
     }
   });
 
-  // §12.2: a Dismiss leaves the Post reportable. Held after their reads,
-  // the dismissal read no row of the filing, so whichever commits first the
-  // serial order is dismissal then filing: the late Report opens a new group.
-  // A Report filed before the dismissal reads joins its batch, as the first
-  // test's two rows do.
   it.each([
     ['the filing commits first', 0],
     ['the dismissal commits first', 1],
@@ -207,8 +193,6 @@ describe('resolving a report group', () => {
     ]);
   });
 
-  // §12.5, ADR-0011 d7: the Block guard is evaluated at the action's
-  // serialization point, never from the queue the moderator read.
   describe('a Block racing a Peer Moderator action', () => {
     it('a Block in place before the action reads refuses it conflict_of_interest, the queue read before notwithstanding', async () => {
       const moderation = harness.app.get(ModerationService);
@@ -273,8 +257,6 @@ describe('resolving a report group', () => {
     });
   });
 
-  // ADR-0011 d9: an Admin never resolves a complaint about themselves or
-  // their own complaint; another Admin can.
   it.each([
     ['a Post they wrote', 'own-post'],
     ['their own Student row', 'own-row'],
@@ -304,8 +286,6 @@ describe('resolving a report group', () => {
     expect((await rowsOn(target)).every((row) => row.state === 'ACTIONED' && row.resolvedById === other.id)).toBe(true);
   });
 
-  // ADR-0008 d10: an Admin's guard is self-interest alone, so a Block either
-  // way with the author or a reporter refuses nothing.
   it.each([
     ['the Admin blocked a reporter', 'admin-blocks'],
     ['the author blocked the Admin', 'author-blocks'],
@@ -333,10 +313,6 @@ describe('resolving a report group', () => {
     await harness.post(postGroup).set('Cookie', moderator.cookie).send({ action: 'ACTION' }).expect(400);
     await harness.post(studentGroup).set('Cookie', admin.cookie).send({ action: 'REMOVE_POST' }).expect(400);
 
-    // §16.3 row 10: a stale queue read, then a demotion, grants nothing. The
-    // request stops at the route guard, and a demotion can also commit after
-    // the guard's read, so the direct call checks the role the action
-    // re-reads in its own transaction (§12.5).
     await harness.get('/api/moderation/queue').set('Cookie', moderator.cookie).expect(200);
     await harness.app.get(AdminUsersService).changeRole(actor(admin.id), moderator.id, 'STUDENT');
     await harness.post(postGroup).set('Cookie', moderator.cookie).send({ action: 'REMOVE_POST' }).expect(403);
@@ -349,7 +325,6 @@ describe('resolving a report group', () => {
     expect(again.body).toMatchObject({ ok: false, error: { code: 'already_resolved' } });
     const actioned = await harness.post(studentGroup).set('Cookie', admin.cookie).send({ action: 'ACTION' }).expect(200);
     expect(actioned.body).toEqual({ ok: true, data: { state: 'ACTIONED', count: 1 } });
-    // `ACTION` applies no sanction (§12.5): the Student stays Active.
     const row = await harness.app.get(PrismaService).student.findUniqueOrThrow({ where: { id: author.id } });
     expect([row.suspendedAt, row.removedAt]).toEqual([null, null]);
   });

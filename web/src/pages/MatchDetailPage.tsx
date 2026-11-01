@@ -12,10 +12,6 @@ import { PairMatchCard } from '../matching/PairMatchCard';
 import { failureCode } from '../profile/failure';
 import { ReviewRecord } from '../reviews/ReviewRecord';
 
-// §3.5.1, §6.6: `/matches/:matchId`, one of the reader's own Matches. Only its
-// pair reads it: the API answers 404 to anyone else, an Admin outside the
-// pair included, and that is this page's not-found state. A malformed id is
-// answered here without a request (§3.5.2).
 export function MatchDetailPage(): React.JSX.Element {
   const { t, format, formatText, errorText } = useI18n();
   const copy = t.matching.detail;

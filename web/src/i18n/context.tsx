@@ -22,8 +22,6 @@ import {
 } from './text';
 import type { Language } from './types';
 
-// French and Arabic laid over English, built once: a missing or empty text
-// shows in English instead of breaking a screen.
 const dictionaries = {
   en,
   fr: over(en, fr),
@@ -39,8 +37,6 @@ export interface I18n {
   list: (items: readonly Value[], options?: ListOptions) => ReactElement;
   listText: (items: readonly (string | number)[], options?: ListOptions) => string;
   personNameText: (name: string, removed: boolean) => string;
-  // A name as a value for `format` or `formatText`, which isolate every value
-  // themselves: the display name, or the tombstone for a Removed Student.
   personNameValue: (name: string, removed: boolean) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
   formatDate: (date: Date | number) => string;
@@ -54,8 +50,6 @@ const Context = createContext<I18n | null>(null);
 export function LanguageProvider({ initial, children }: { initial: Language; children: ReactNode }): React.JSX.Element {
   const [language, setLanguageState] = useState<Language>(initial);
 
-  // The page's lang and dir change in the same commit as the text, so a
-  // switch needs no reload.
   useLayoutEffect(() => {
     applyLanguage(language);
   }, [language]);

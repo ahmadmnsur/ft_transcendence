@@ -12,16 +12,11 @@ export type TestAccount = {
   email: string;
   password: string;
   displayName: string;
-  // A ready `Cookie` header for the account's first session.
   cookie: string;
 };
 
 let counter = 0;
 
-// A Student made through this ticket's sign-up code: Supabase admin create,
-// then the `Student` and its `Session` (§16.2). Bypasses the throttle like
-// the seed does: the helpers never cross the HTTP boundary (§5.5). Supabase
-// Auth users outlive the truncation between tests, so every email is unique.
 export async function createTestAccount(
   app: INestApplication,
   overrides: Partial<Pick<TestAccount, 'email' | 'password' | 'displayName'>> = {},
@@ -41,9 +36,6 @@ export async function createTestAccount(
   return { id: created.student.id, email, password, displayName, cookie: sessionCookieHeader(created.token) };
 }
 
-// A staff account made through the seed's own bootstrap function: Supabase
-// admin create, then the `Student` with its role (§14.1, §16.2). Its first
-// session is opened like `openTestSession`'s, with no password check.
 export async function createTestStaff(
   app: INestApplication,
   role: StaffRole,
@@ -61,9 +53,6 @@ export async function createTestStaff(
   return { id: created.id, email: created.email, password, displayName, cookie };
 }
 
-// A session for an existing account, opened by the code sign-in runs after
-// Supabase accepts the password: no real password check (§16.2). Returns a
-// ready `Cookie` header.
 export async function openTestSession(
   app: INestApplication,
   account: Pick<TestAccount, 'id'>,

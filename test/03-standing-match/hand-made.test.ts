@@ -29,7 +29,6 @@ it('admits only one of two creations sharing a Student, with no losing Match or 
   const two = matching.createHandMadeMatch(admin, [second.studentId, shared.studentId]);
   const settled = Promise.allSettled([one, two]);
   await harness.barriers.waitFor('match.handmade', 2);
-  // Neither uncommitted attempt may have announced a Match.
   expect(harness.recorder.events).toEqual([]);
   harness.barriers.disarm('match.handmade');
   harness.barriers.releaseAll('match.handmade');

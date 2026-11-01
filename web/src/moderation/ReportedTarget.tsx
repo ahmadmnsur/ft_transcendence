@@ -3,9 +3,6 @@ import type { GroupTarget, QueueReport } from '../api/moderation';
 import { useI18n } from '../i18n/context';
 import { StudentLink } from '../profile/StudentLink';
 
-// What a group or a resolved batch is about (§12.4, §12.6): a Post with its
-// author, origin, time and text, or a Student. An Admin also gets the
-// Student's Users-table page, where the sanctions are (§12.7).
 export function ReportedTarget({ target, admin }: { target: GroupTarget; admin: boolean }): React.JSX.Element {
   const { t, format, formatDateTime } = useI18n();
   if (target.kind === 'STUDENT') {
@@ -58,16 +55,12 @@ export function ReportedTarget({ target, admin }: { target: GroupTarget; admin: 
   );
 }
 
-// A group's Reports, oldest first: the reason, when it was filed and the
-// reporter's words. The reporter is named only where the API sent one, which
-// it does for an Admin alone (ADR-0011 d9).
 export function ReportRows({ reports }: { reports: QueueReport[] }): React.JSX.Element {
   const { t, format, formatDateTime } = useI18n();
   const copy = t.moderation;
   return (
     <ul aria-label={copy.queue.reportsLabel} className="flex flex-col divide-y divide-line border-t border-line">
       {reports.map((report, index) => (
-        // A group's rows never reorder while it shows, so their place keys them.
         <li key={index} className="flex min-w-0 flex-col gap-1 py-3">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-medium text-ink">{t.reports.reasons[report.reason]}</span>

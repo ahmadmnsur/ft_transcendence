@@ -16,8 +16,6 @@ import { PromptsModule } from './prompts/prompts.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 
-// The schedule is provided here, not in FilesModule, so only the `api` runs
-// the cleanup: the seed imports StudentsModule, and with it FilesModule.
 @Module({
   imports: [
     CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule,

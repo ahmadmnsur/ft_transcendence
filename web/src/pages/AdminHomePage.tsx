@@ -2,9 +2,6 @@ import { Link } from '@tanstack/react-router';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 
-// §3.5.1: `/admin`, the header's one Admin link. Each Admin page is a tile
-// named by its own title, so the header stays the same however many Admin
-// pages there are.
 export function AdminHomePage(): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.admin.home;

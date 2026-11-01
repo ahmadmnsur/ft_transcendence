@@ -5,9 +5,6 @@ import { createTestAccount } from '../harness/accounts';
 
 const harness = useHarness();
 
-// §16.3 row 12, first check: a sanction is told only after the right
-// password. With a wrong one the answer is `password_incorrect`, never the
-// sanction's code; with the right one, the sanction's own code.
 describe('sanctions are told only after the right password', () => {
   it('a Suspended Student gets password_incorrect for a wrong password, account_suspended for the right one', async () => {
     const account = await createTestAccount(harness.app);

@@ -6,8 +6,6 @@ import { PrismaService } from '../core/prisma.service';
 import { SupabaseStorageClient } from '../core/supabase-storage';
 import { FileBuckets } from './buckets';
 
-// §3.4's `files` module: serving the files. Every read passes through here,
-// so no byte is reachable without a session (ADR-0009 d3).
 @Injectable()
 export class FilesService {
   constructor(
@@ -16,11 +14,6 @@ export class FilesService {
     private readonly buckets: FileBuckets,
   ) {}
 
-  // §6.3, §9.8 Reading: any signed-in Student may read any avatar. The row by
-  // its token, then the whole file from the `avatars` bucket under the row's
-  // own token. An unknown token is 404; a row whose file Storage cannot give
-  // throws, so it answers 500 internal_error, logged, never 404. `actor` is
-  // the viewer the read is for (§3.4).
   async readAvatar(actor: Actor, token: string): Promise<{ bytes: Buffer; mime: string }> {
     const row = await this.prisma.avatar.findUnique({
       where: { token },
@@ -31,12 +24,6 @@ export class FilesService {
     return { bytes, mime: row.mime };
   }
 
-  // §6.3, §9.4 Read, §9.8 Reading: Evidence by its token, for the Mentor and
-  // Mentee of the one Match reached through its Review, whatever their role,
-  // or anyone whose current role is ADMIN, as the session guard read it for
-  // this request (§3.4); anyone else is 403, a Peer Moderator outside that
-  // pair included (ADR-0009 d4). An unknown token is 404. Then the whole file
-  // from the `evidence` bucket, as for an avatar.
   async readEvidence(
     actor: Actor,
     role: RequestAuth['role'],

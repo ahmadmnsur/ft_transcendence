@@ -15,10 +15,6 @@ import { StudentLink } from '../profile/StudentLink';
 
 const column = createColumnHelper<AdminRoundMatch>();
 
-// §3.5.1, §6.13: `/admin/rounds/:roundId`, one Round for an Admin — its
-// Matches in creation order (pair, status, hand-made or not, Mission), and
-// while it is open, its unmatched Students (§8.9). An unknown Round is the
-// not-found state; a malformed id is answered without a request (§3.5.2).
 export function AdminRoundPage(): React.JSX.Element {
   const { t, format, formatText, formatDateTime, personNameValue, errorText } = useI18n();
   const copy = t.matching.round;
@@ -39,9 +35,6 @@ export function AdminRoundPage(): React.JSX.Element {
         header: copy.columns.mentee,
         cell: ({ row }) => <StudentLink student={row.original.mentee} />,
       }),
-      // No Score column: a Score never shows without its explanation sentence
-      // (§8.11), which the Match's own page gives. A hand-made Match says so
-      // under its status.
       column.display({
         id: 'status',
         header: copy.columns.status,
@@ -61,9 +54,6 @@ export function AdminRoundPage(): React.JSX.Element {
       }),
       column.display({
         id: 'view',
-        // Read by screen readers only. The `relative` wrapper keeps the
-        // absolutely placed `sr-only` text inside the table's scroll frame,
-        // so it never widens the page at 360 px.
         header: () => (
           <span className="relative">
             <span className="sr-only">{copy.view}</span>

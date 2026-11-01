@@ -9,15 +9,8 @@ import { StudentLink } from '../profile/StudentLink';
 import { EndFriendshipDialog } from './EndFriendshipDialog';
 import { OnlineStatus } from './OnlineStatus';
 
-// What the status Banner says, kept as what happened rather than as a text,
-// so it follows a language switch: whose Friendship ended, or a failure's
-// code.
 type Status = { kind: 'ended'; student: StudentRef } | { kind: 'failed'; code: unknown };
 
-// §6.4, §7.6, §11.1: the signed-in Student's accepted Friends on `/friends`,
-// each with their Presence, live from `presence:update`, and End Friendship.
-// Nobody else sees this list (§4.6). The page reads it again when it opens,
-// so a request the other Student accepted meanwhile shows.
 export function FriendsCard(): React.JSX.Element {
   const { t, formatText, personNameValue, errorText } = useI18n();
   const actions = t.social.actions;
@@ -25,23 +18,15 @@ export function FriendsCard(): React.JSX.Element {
   const copy = t.social.friendList;
   const queryClient = useQueryClient();
   const friends = useQuery({ ...friendsQueryOptions(), refetchOnMount: 'always' });
-  // The Friend the confirm dialog is open for, and whether its End is in
-  // flight. The dialog stays open until the End settles, so no other row can
-  // be pressed meanwhile.
   const [confirming, setConfirming] = useState<StudentRef | null>(null);
   const [pending, setPending] = useState(false);
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, since the ended row and its button are gone.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
-  // A Friendship ended elsewhere, by the other Student or a Block, can leave
-  // the list while the dialog is open; the dialog then closes, since
-  // confirming could only be refused.
   const confirmingListed =
     confirming !== null && (friends.data?.items.some((item) => item.student.id === confirming.id) ?? false);
   useEffect(() => {
@@ -95,8 +80,6 @@ export function FriendsCard(): React.JSX.Element {
                   <OnlineStatus online={friend.online} />
                 </div>
               </div>
-              {/* The accessible name adds the Friend's name after the visible
-              text. */}
               <Button
                 variant="secondary"
                 size="sm"

@@ -12,28 +12,18 @@ import {
 } from './session-cookie';
 import { UnitOfWork } from './uow';
 
-// What resolving a session reads: the role fresh on every request, so a role
-// change takes effect on the next request with no session change (ADR-0003
-// d5–d6). Email and display name come along in the same query: the session
-// route and the password change's throttle key need them (§5.3).
 export type ActiveSession = {
   studentId: string;
   sessionHash: string;
   role: Role;
   email: string;
   displayName: string;
-  // The Student's Avatar row's token, or null, for `GET /api/session`'s
-  // `avatarUrl` (§6.1).
   avatar: { token: string } | null;
   expiresAt: Date;
 };
 
 export type SessionCookieSetter = { setHeader(name: string, value: string | string[]): unknown };
 
-// One query, `Session` JOIN `Student`, `WHERE s.id = $1 AND s.expires_at >
-// now`: resolving a session reads PeerConnect's tables only and never calls
-// Supabase Auth (§5.3). Shared by the guard, the session route and the
-// already-signed-in check.
 @Injectable()
 export class SessionResolver {
   constructor(
@@ -43,13 +33,6 @@ export class SessionResolver {
     private readonly logger: AppLogger,
   ) {}
 
-  // The active session for a cookie token, or null for no row, an expired
-  // row, a Suspended or a Removed Student.
-  //
-  // One `$queryRaw` JOIN, not `findFirst` plus `include`: Prisma runs the
-  // latter as two statements, and §5.3 wants one query reading `student_id`,
-  // the role and the flags. `$2` is the Clock's now, so expiry compares
-  // against the same instant the caller reasons about.
   async resolveActive(token: string): Promise<ActiveSession | null> {
     if (token === '') return null;
     const now = this.clock.now();
@@ -85,18 +68,9 @@ export class SessionResolver {
     };
   }
 
-  // Lazy renewal on any authenticated request, when `expires_at < now + 30
-  // d − 1 h` (§5.2): one UPDATE through the Unit of Work, and the cookie is
-  // re-set only when it affects exactly one row, so a renewal can never
-  // resurrect a concurrently revoked session. Never fails the request. The
-  // cookie keeps its token; only the expiry moves. The cookie's `Max-Age` is
-  // derived from the `expires_at` the UPDATE wrote, not from a second clock
-  // read.
   async renewIfStale(session: ActiveSession, token: string, response: SessionCookieSetter): Promise<void> {
     const now = this.clock.now();
     if (session.expiresAt.getTime() >= now.getTime() + SESSION_RENEW_AFTER_MS) return;
-    // A failed renewal never fails the request: it is logged, no cookie is
-    // set, and the request goes on with the session the guard resolved.
     let written: { updated: number; expiresAt: Date };
     try {
       written = await this.uow.run('session-renewal', (tx, ctx) => {

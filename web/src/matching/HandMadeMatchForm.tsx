@@ -9,8 +9,6 @@ import { failureCode } from '../profile/failure';
 
 type Notice = { matchId: string } | { code: unknown };
 
-// Mounted with the Round's key by UnmatchedCard: moving to a different Round
-// starts a fresh selection. Refetched candidates may invalidate either choice.
 export function HandMadeMatchForm({ students, references }: {
   students: StudentRef[];
   references: ReadonlyMap<string, string>;

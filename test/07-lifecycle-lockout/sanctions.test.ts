@@ -32,8 +32,6 @@ async function outcome(work: Promise<unknown>): Promise<string> {
   }
 }
 
-// An Admin, the target and a learner who wants what the target teaches
-// (§8.2: Score 35), before any Round opens.
 async function unmatchedPair(): Promise<{ admin: TestAccount; target: TestAccount; learner: TestAccount }> {
   const skills = await insertCatalogue(harness.app.get(UnitOfWork));
   const docker = skills.get('Docker') as string;
@@ -46,7 +44,6 @@ async function unmatchedPair(): Promise<{ admin: TestAccount; target: TestAccoun
   return { admin, target, learner };
 }
 
-// The same three, and an open Round that matched the target and the learner.
 async function matchedPair(): Promise<{ admin: TestAccount; target: TestAccount; learner: TestAccount; matchId: string }> {
   const pair = await unmatchedPair();
   const matching = harness.app.get(MatchingService);
@@ -56,7 +53,6 @@ async function matchedPair(): Promise<{ admin: TestAccount; target: TestAccount;
   return { ...pair, matchId: match.id };
 }
 
-// §12.7's Suspend row, §5.8, §8.8.
 describe('Suspend', () => {
   it.each(['MATCHED', 'ACCEPTED'] as const)(
     'flags the target, ends their %s Match as TERMINATED_BY_ADMIN, deletes every Session and resolves no Report',
@@ -89,9 +85,7 @@ describe('Suspend', () => {
       expect(await prisma.session.count({ where: { studentId: target.id } })).toBe(0);
       expect(harness.recorder.events).toEqual([{ event: 'revokeSessions', args: [{ studentId: target.id }] }]);
       expect(await prisma.report.findMany({ select: { state: true } })).toEqual([{ state: 'OPEN' }]);
-      // The old cookie no longer signs anyone in (§5.3).
       expect((await harness.get('/api/me').set('Cookie', target.cookie)).status).toBe(401);
-      // The partner keeps their own sessions.
       expect((await harness.get('/api/me').set('Cookie', learner.cookie)).status).toBe(200);
     },
   );
@@ -110,7 +104,6 @@ describe('Suspend', () => {
   });
 });
 
-// §12.7's Remove row, §9.8, §12.5's guard scope (ADR-0011 d10).
 describe('Remove', () => {
   it('flags the target, ends their Match, deletes their Sessions and Avatar, and actions every open Report on them', async () => {
     const { admin, target, learner, matchId } = await matchedPair();
@@ -119,8 +112,6 @@ describe('Remove', () => {
     const token = tokenOf(upload.body.data.avatarUrl);
     const storage = harness.app.get(SupabaseStorageClient);
     expect((await storage.listAll(TEST_BUCKETS.avatars)).map((file) => file.name)).toContain(token);
-    // Two open Reports on the target, one filed by the removing Admin, and
-    // one on the learner, which the Removal leaves open.
     await fileTestReport(harness.app, learner.id, { studentId: target.id });
     await fileTestReport(harness.app, admin.id, { studentId: target.id });
     await fileTestReport(harness.app, target.id, { studentId: learner.id });
@@ -147,7 +138,6 @@ describe('Remove', () => {
       { state: 'OPEN' },
     ]);
     expect(harness.recorder.events).toEqual([{ event: 'revokeSessions', args: [{ studentId: target.id }] }]);
-    // The avatar's file goes after commit, without holding the response.
     await eventually(async () => {
       expect((await storage.listAll(TEST_BUCKETS.avatars)).map((file) => file.name)).not.toContain(token);
     });
@@ -169,8 +159,6 @@ describe('Remove', () => {
   });
 });
 
-// §12.7's common reads (ADR-0008 d9): an Admin never sanctions themselves,
-// and an unknown Student is not found.
 describe('the common reads', () => {
   it('refuses every sanction on the Admin’s own account, writing nothing', async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
@@ -185,13 +173,11 @@ describe('the common reads', () => {
     expect(await prisma.student.findUniqueOrThrow({ where: { id: admin.id } })).toEqual(before);
     const unknown = '0199a3d0-0000-7000-8000-000000000000';
     expect(await outcome(users.suspend(actor(admin.id), unknown))).toBe('not_found');
-    // A Student is refused at the route, before the service (§5.3).
     const student = await createTestAccount(harness.app);
     expect((await harness.post(`/api/admin/students/${admin.id}/suspend`).set('Cookie', student.cookie).send({})).status).toBe(403);
   });
 });
 
-// §12.7's Reinstate row: the flag is cleared and nothing is revived.
 describe('Reinstate', () => {
   it('clears the flag; the terminated Match stays terminated and no session comes back', async () => {
     const { admin, target, matchId } = await matchedPair();
@@ -211,7 +197,6 @@ describe('Reinstate', () => {
     expect((await prisma.match.findUniqueOrThrow({ where: { id: matchId } })).status).toBe('TERMINATED_BY_ADMIN');
     expect(await prisma.session.count({ where: { studentId: target.id } })).toBe(0);
     expect(harness.recorder.events).toEqual([]);
-    // Signing in again works: a fresh session resolves.
     const cookie = await openTestSession(harness.app, target);
     expect((await harness.get('/api/me').set('Cookie', cookie)).status).toBe(200);
   });
@@ -233,8 +218,6 @@ function sanction(kind: Sanction, adminId: string, targetId: string): Promise<un
   return kind === 'suspend' ? users.suspend(actor(adminId), targetId) : users.remove(actor(adminId), targetId);
 }
 
-// Two held operations, released in the order given; both promises are
-// returned settled.
 async function stage(
   names: readonly [string, string],
   start: () => [Promise<string>, Promise<string>],
@@ -257,11 +240,6 @@ async function matchesOf(studentId: string): Promise<Array<{ status: string }>> 
     .match.findMany({ where: { OR: [{ mentorId: studentId }, { menteeId: studentId }] }, select: { status: true } });
 }
 
-// §3.6.3 *Eligibility vs Match creation* (ADR-0008 d2 and d5's note of
-// 2026-09-21), §16.3 row 7: a sanction reads the target's in-progress
-// Matches and a creation reads the target's flags, so the two have one serial
-// order, and a committed sanction never leaves or creates an in-progress
-// Match for the target.
 describe.each(['suspend', 'remove'] as const)('%s against Match creation', (kind) => {
   const checkpoint = `student.${kind}`;
 
@@ -277,17 +255,12 @@ describe.each(['suspend', 'remove'] as const)('%s against Match creation', (kind
     );
 
     expect([sanctioned, opened]).toEqual(['ok', 'ok']);
-    // Sanction first: the Round leaves the target out. Round open first: the
-    // sanction's retry reads the new Match and terminates it.
     expect(await matchesOf(target)).toEqual(first === 0 ? [] : [{ status: 'TERMINATED_BY_ADMIN' }]);
     const round = await harness.app.get(PrismaService).round.findFirstOrThrow({ select: { id: true } });
     const detail = await matching.getRound(actor(admin), round.id);
-    // Derived now: the learner is unmatched either way, the target never.
     expect(detail.unmatched?.map((student) => student.id)).toEqual([learner]);
   });
 
-  // An open Round with nobody matched: the learner lists no Skill while it
-  // opens, then wants what the target teaches.
   async function emptyOpenRound(admin: string, learner: string): Promise<void> {
     const students = harness.app.get(StudentsService);
     const docker = (await harness.app.get(PrismaService).skill.findFirstOrThrow({ where: { name: 'Docker' } })).id;
@@ -308,17 +281,11 @@ describe.each(['suspend', 'remove'] as const)('%s against Match creation', (kind
       first,
     );
 
-    // Sanction first: the creation's retry finds no candidate. Creation
-    // first: the sanction's retry terminates the new Match.
     expect([sanctioned, created]).toEqual(['ok', first === 0 ? 'not_a_candidate' : 'ok']);
     expect(await matchesOf(target)).toEqual(first === 0 ? [] : [{ status: 'TERMINATED_BY_ADMIN' }]);
   });
 });
 
-// §12.7, ADR-0008 d9 and §16.3 row 7: two Admins suspending or removing each
-// other have one serial order. The first to commit takes the other out of
-// the active Admins, so their retry re-reads their own flags and is refused,
-// and at least one active Admin always remains.
 describe('two Admins sanctioning each other', () => {
   const pairs = [
     ['suspend', 'suspend'],
@@ -332,7 +299,6 @@ describe('two Admins sanctioning each other', () => {
       const b = await createTestStaff(harness.app, 'ADMIN');
       const names = [`student.${byA}`, `student.${byB}`] as const;
       for (const name of new Set(names)) harness.barriers.arm(name);
-      // One at a time, so each name's arrival order is known.
       const runA = outcome(sanction(byA, a.id, b.id));
       await harness.barriers.waitFor(names[0], 1);
       const runB = outcome(sanction(byB, b.id, a.id));
@@ -360,9 +326,6 @@ describe('two Admins sanctioning each other', () => {
   }
 });
 
-// §4.3.1 (*"a Removed row accepts no update of any column"*), §4.5, §16.3 row
-// 7: after a real Removal, every writer of the Student row refuses and writes
-// nothing, and the email refuses sign-up.
 describe('a Removed row', () => {
   it('refuses every mutation of it, from the Users table and from its owner, and its email refuses sign-up', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
@@ -379,8 +342,6 @@ describe('a Removed row', () => {
     const owner = actor(target.id);
     const png = { buffer: makePng(), originalname: 'avatar.png', mimetype: 'image/png' };
 
-    // The Users table: `student_removed` for every edit, the role and every
-    // sanction (§12.7).
     for (const write of [
       () => users.editUser(actor(admin.id), target.id, { displayName: 'After' }),
       () => users.editUser(actor(admin.id), target.id, { email: 'new@peerconnect.test' }),
@@ -396,8 +357,6 @@ describe('a Removed row', () => {
     ]) {
       expect(await outcome(write())).toBe('student_removed');
     }
-    // The owner's own writes, as a constructed actor, since every session is
-    // gone: `unauthenticated` (§3.4).
     for (const write of [
       () => students.updateOwnProfile(owner, { displayName: 'After' }),
       () => students.setSkills(owner, [docker], []),
@@ -410,8 +369,6 @@ describe('a Removed row', () => {
     expect(await prisma.student.findUniqueOrThrow({ where: { id: target.id } })).toEqual(before);
     expect(await prisma.studentSkill.count({ where: { studentId: target.id } })).toBe(1);
 
-    // The email stays burned (§4.3.1), and sign-in tells of the Removal only
-    // after the right password (§5.1).
     const signup = await harness
       .post('/api/auth/signup')
       .send({ email: target.email, password: 'another-password-1', displayName: 'Someone Else', acceptTerms: true });
@@ -420,9 +377,6 @@ describe('a Removed row', () => {
     expect(login.body).toMatchObject({ ok: false, error: { code: 'account_removed' } });
   });
 
-  // §5.1 step 6: a password change writes the row at both sign-outs, so a
-  // Removal can land between them. The second sign-out then writes nothing to
-  // the row, and still deletes every session.
   it('a password change held between its two sign-outs writes nothing on a row Removed meanwhile', async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const target = await createTestAccount(harness.app);
@@ -442,10 +396,6 @@ describe('a Removed row', () => {
   });
 });
 
-// §4.6's Removed-row surface rule (§3.8.2), over the surfaces built so far,
-// after a real Removal: discovery and participation leave the Student out,
-// historical relations show the tombstone with the default avatar, and the
-// Users table keeps the row, view-only.
 describe('the surface rule after a Removal', () => {
   const tombstone = (id: string) => ({ id, displayName: 'Former student', avatarUrl: null, isAdmin: false, removed: true });
 
@@ -463,14 +413,11 @@ describe('the surface rule after a Removal', () => {
       await tx.student.update({ where: { id: target.id }, data: { xp: 300 } });
     });
     const get = (path: string, cookie = viewer.cookie) => harness.get(path).set('Cookie', cookie);
-    // Before: the target is found, ranked and named.
     expect((await get(`/api/students?q=${encodeURIComponent(target.displayName)}`)).body.data.total).toBe(1);
     expect((await get('/api/leaderboard')).body.data.top[0].student.id).toBe(target.id);
 
     await harness.app.get(AdminUsersService).remove(actor(admin.id), target.id);
 
-    // Discovery and participation: search, the Leaderboard, friend lists,
-    // pending requests, new friend requests, new DMs and new Reports.
     expect((await get(`/api/students?q=${encodeURIComponent(target.displayName)}`)).body.data).toEqual({ items: [], total: 0 });
     expect((await get('/api/leaderboard')).body.data.top.map((row: { student: { id: string } }) => row.student.id)).not.toContain(target.id);
     expect((await get('/api/friends')).body.data).toEqual({ items: [] });
@@ -484,7 +431,6 @@ describe('the surface rule after a Removal', () => {
       (await harness.post('/api/reports').set('Cookie', viewer.cookie).send({ studentId: target.id, reason: 'SPAM' })).body,
     ).toMatchObject({ ok: false, error: { code: 'report_target_invalid' } });
 
-    // Historical relations: the profile, the Post, the Match and the thread.
     expect((await get(`/api/students/${target.id}`)).body.data).toEqual({ student: tombstone(target.id), profile: null });
     const feed = (await get('/api/feed')).body.data.items as Array<{ id: string; author: unknown }>;
     expect(feed.find((item) => item.id === postId)?.author).toEqual(tombstone(target.id));
@@ -493,7 +439,6 @@ describe('the surface rule after a Removal', () => {
     const threads = (await get('/api/messages/threads')).body.data.items as Array<{ peer: unknown; canSend: boolean }>;
     expect(threads).toEqual([expect.objectContaining({ peer: tombstone(target.id), canSend: false })]);
 
-    // The Users table: the row stays, named, Removed, with the default avatar.
     const rows = (await get('/api/admin/students?status=REMOVED', admin.cookie)).body.data;
     expect(rows).toEqual({
       items: [{ id: target.id, displayName: target.displayName, email: target.email, role: 'STUDENT', status: 'REMOVED', avatarUrl: null }],

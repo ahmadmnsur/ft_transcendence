@@ -2,8 +2,6 @@ import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { ModerationQueue } from '../moderation/ModerationQueue';
 
-// `/moderation` (§3.5.1): a Peer Moderator's queue of open Post groups. There
-// is no resolved history here (ADR-0011 d7).
 export function ModerationPage(): React.JSX.Element {
   const { t } = useI18n();
   const copy = t.moderation;

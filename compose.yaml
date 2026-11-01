@@ -27,7 +27,6 @@ services:
       - ./supabase/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro,Z
     env_file: *pc-fallback-env-file
     environment:
-      # Supabase's image creates its initial superuser from POSTGRES_USER, which stays supabase_admin here while .env.example keeps postgres for the api role.
       POSTGRES_USER: supabase_admin
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: 5432
@@ -77,8 +76,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
-      # A first boot from empty volumes runs Auth's own migrations before it answers;
-      # a normal boot is still healthy at its first passing check.
       start_period: 60s
     logging: *pc-logging
 
@@ -108,7 +105,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
-      # Storage migrates its own schema on a first boot too, as Auth does.
       start_period: 60s
     logging: *pc-logging
 
@@ -149,11 +145,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
-      # A seed that writes its fixture on the team project takes minutes (§14.9);
-      # a normal boot is still healthy within one interval of the api answering.
       start_period: 900s
     restart: "no"
-    # The boot chain runs as PID 1, which ignores SIGTERM without a handler; an init forwards it.
     init: true
     logging: *pc-logging
 
@@ -165,7 +158,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    # Loopback unless a member's .env sets BIND_ADDRESS, which opens the site to the local network.
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-8443}:8443"
       - "${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:8080"

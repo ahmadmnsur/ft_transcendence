@@ -9,8 +9,6 @@ import { connectionConfig } from './database-connection';
 // would otherwise open up to 10.
 export const POOL_MAX = 5;
 
-// The one Prisma client, through the pg driver adapter (§3.3). Its `log`
-// option stays empty: Prisma's own logs can carry query values (§3.9).
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
   constructor() {

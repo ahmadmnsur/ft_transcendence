@@ -31,7 +31,6 @@ it('the third Prompt answer counts removed Posts and duplicate submissions pay a
     });
     expect((await send()).body.error.code).toBe('already_answered');
     if (count === 1) {
-      // The moderation path joins later; removal keeps the earning event.
       await harness.app.get(PrismaService).post.updateMany({ where: { authorId: student.id }, data: { removedAt: new Date() } });
     }
   }
@@ -109,8 +108,6 @@ it.each(['answer', 'publication'] as const)('overlapping publication and answer,
   harness.barriers.release(first === 'answer' ? 'prompt.publish' : 'prompt.answer');
   expect((await publication).status).toBe(201);
   const result = await answer;
-  // Overlapping transactions may choose either legal serialization order,
-  // regardless of their response order (§3.6.3, ADR-0007 d1).
   if (result.body.ok) expect(result.status).toBe(201);
   else expect(result.body.error.code).toBe('prompt_not_live');
   const stored = await harness.get(path).set('Cookie', student.cookie);
@@ -146,7 +143,6 @@ it.each(['answer', 'close'] as const)('%s commits first: answer attribution and 
     streaksIncremented: first === 'answer' ? 1 : 0, streaksReset: first === 'answer' ? 0 : 1,
     consistentLearnerAwarded: 0,
   });
-  // The Round attribution has no public read; inspect this persistence invariant directly.
   const posts = await prisma.post.findMany({ where: { authorId: student.id } });
   expect(posts).toHaveLength(1);
   expect(posts[0].answerRoundId).toBe(first === 'answer' ? opened.body.data.round.id : null);

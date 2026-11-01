@@ -24,8 +24,6 @@ async function auditOf(account: TestAccount, query = ''): Promise<{ items: Array
   return response.body.data;
 }
 
-// §12.6, §16.3 row 10: the resolved audit reads resolution batches, never
-// single rows, and hides a batch whole from an Admin it concerns.
 describe('the resolved audit', () => {
   it('lists each batch newest first, with its target, state, resolver, time and every row with its reporter', async () => {
     const moderation = harness.app.get(ModerationService);
@@ -69,7 +67,6 @@ describe('the resolved audit', () => {
         { reporter: ref(second), reason: 'OTHER', text: null, createdAt: '2026-10-22T11:31:00.000Z' },
       ],
     };
-    // The Post's text stays readable here once it is removed (§12.6).
     const removal = {
       target: { kind: 'POST', post: { ...post, removed: true } },
       state: 'ACTIONED',

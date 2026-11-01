@@ -3,11 +3,7 @@ WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY web/ ./
-# The `@shared` alias resolves to web/'s parent, so the shared constants are
-# copied to the same relative path inside this stage.
 COPY src/shared/ /src/shared/
-# The legal pages import docs/legal/ through a relative `?raw` import, so the
-# Markdown is copied to the same relative path inside this stage.
 COPY docs/legal/ /docs/legal/
 RUN npm run build
 

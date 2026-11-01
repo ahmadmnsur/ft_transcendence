@@ -28,8 +28,6 @@ export const analyticsQueryOptions = () => queryOptions({
   refetchOnReconnect: false,
 });
 
-// §13.4: a Round signal reads Analytics again. Cancel first, since a read
-// still in flight may have answered before the change committed.
 export async function readAnalyticsAgain(client: QueryClient): Promise<void> {
   await client.cancelQueries({ queryKey: ANALYTICS_QUERY_KEY });
   await client.invalidateQueries({ queryKey: ANALYTICS_QUERY_KEY });

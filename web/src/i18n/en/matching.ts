@@ -1,9 +1,6 @@
 import type { InProgressStatus, MatchStatus, Mission } from '@shared/matches';
 import type { EnGroup } from '../types';
 
-// §4.2, ADR-0012 d4: the six Mission sentences, keyed by the stored code. A
-// rewording, or a translation, may never make a code describe another mode of
-// meeting (ADR-0012 d1's notes).
 const missions = {
   TECHNICAL_CONCEPT: 'Work through a technical concept together.',
   PROJECT_PROBLEM: 'Walk through how one of you solved a project problem.',
@@ -13,7 +10,6 @@ const missions = {
   ADVICE: 'Share advice about a project or learning path.',
 } as const satisfies Record<Mission, string>;
 
-// §8.8: each Match status as a short label.
 const statuses = {
   MATCHED: 'Matched',
   ACCEPTED: 'Accepted',
@@ -23,8 +19,6 @@ const statuses = {
   TERMINATED_BY_ADMIN: 'Ended by an Admin',
 } as const satisfies Record<MatchStatus, string>;
 
-// What an ended Match's status means, shown under it. A Match in progress
-// shows who has accepted instead.
 const endings = {
   COMPLETED: 'The Mentee submitted the Review.',
   LAPSED: 'The Round closed before this Match was completed.',
@@ -32,29 +26,21 @@ const endings = {
   TERMINATED_BY_ADMIN: 'An Admin ended this Match.',
 } as const satisfies Record<Exclude<MatchStatus, InProgressStatus>, string>;
 
-// `/match`, `/matches`, `/matches/:matchId` and the Admin's `/admin/rounds`,
-// `/admin/rounds/:roundId` and `/admin/matches/:matchId` (§3.5.1, §6.6,
-// §6.13, §8.11). A failed read or write shows the errors area's sentence for
-// its code, and a Removed Student's name is people's tombstone.
 export default {
   missions,
   statuses,
   endings,
-  // The parts of a Match both its pair and Admins see.
   match: {
     roundNumber: 'Round {number}',
     statusLabel: 'Status',
     missionLabel: 'Mission',
     scoreLabel: 'Compatibility Score',
-    // The Score is never shown without its explanation sentence (§8.11).
     scoreValue: '{score} out of {max}',
-    // §8.11: a hand-made Match has no Score and shows this instead.
     handMade: 'Matched by an Admin',
     mentorLabel: 'Mentor',
     menteeLabel: 'Mentee',
     retry: 'Try again',
   },
-  // A Match as one of its pair reads it (§6.6, §8.11).
   pair: {
     youAreMentor: 'You are the Mentor.',
     youAreMentee: 'You are the Mentee.',
@@ -72,10 +58,6 @@ export default {
     declining: 'Declining…',
     accepted: 'You accepted this Match.',
     declined: 'You declined this Match.',
-    // §8.5: a decline is final, and nothing searches for a replacement
-    // (ADR-0002 d8). No later Round's matching proposes the pair again
-    // (§8.3), though an Admin's hand-made Match may (§8.6), so the promise is
-    // about Rounds alone.
     declineConfirm: {
       title: 'Decline this Match with {partner}?',
       body: 'You will both be unmatched in Round {number}, and nothing looks for a new Match for you. No later Round pairs you two again automatically.',
@@ -83,7 +65,6 @@ export default {
       confirm: 'Decline Match',
     },
   },
-  // `/match`: the signed-in Student's Match in the open Round.
   current: {
     title: 'Your Match',
     loading: 'Loading your Match…',
@@ -93,7 +74,6 @@ export default {
     noMatchDescription: 'Matching pairs Students when a Round opens, from the Skills they can teach and want to learn.',
     historyLink: 'Your Match history',
   },
-  // `/matches`: the signed-in Student's own Matches, every status.
   history: {
     title: 'Match history',
     caption: 'Your Matches',
@@ -103,20 +83,17 @@ export default {
       role: 'Your role',
       status: 'Status',
     },
-    // Each row's link; its accessible name starts with the visible text.
     view: 'View',
     viewNamed: 'View your Match in Round {number}',
     emptyTitle: 'You have no Matches yet.',
     emptyDescription: 'A Match is made when an Admin opens a Round.',
     currentLink: 'Your Match in the open Round',
   },
-  // `/matches/:matchId`.
   detail: {
     title: 'Match in Round {number}',
     loading: 'Loading this Match…',
     historyLink: 'Back to your Match history',
   },
-  // `/admin/rounds`: opening and closing Rounds, and every Round so far.
   rounds: {
     title: 'Rounds',
     loading: 'Loading the Rounds…',
@@ -131,14 +108,12 @@ export default {
     close: 'Close Round {number}',
     closing: 'Closing…',
     viewRound: 'View Round {number}',
-    // §8.4: matching runs once, at open, over every candidate (§8.1).
     openConfirm: {
       title: 'Open a new Round?',
       body: 'Matching runs at once over every Student who lists a Skill and is not an Admin, suspended or removed. An open Round stays until an Admin closes it.',
       cancel: 'Cancel',
       confirm: 'Open Round',
     },
-    // §8.7: close is irreversible, and a lapsed Match pays nothing.
     closeConfirm: {
       title: 'Close Round {number}?',
       body: 'Every Match still in progress lapses and earns nothing. A closed Round can never be opened again.',
@@ -166,7 +141,6 @@ export default {
     stillOpen: 'Open',
     emptyTitle: 'No Round has been opened yet.',
   },
-  // §8.9: the open Round's unmatched Students, derived when read.
   unmatched: {
     title: 'Unmatched Students',
     subtitle: 'Candidates with no Match standing in this Round, worked out when the page loads.',
@@ -187,7 +161,6 @@ export default {
     created: 'The hand-made Match was created.',
     view: 'View Match',
   },
-  // `/admin/rounds/:roundId`: one Round's Matches.
   round: {
     title: 'Round {number}',
     loading: 'Loading this Round…',
@@ -204,7 +177,6 @@ export default {
     emptyTitle: 'This Round has no Matches.',
     roundsLink: 'All Rounds',
   },
-  // `/admin/matches/:matchId`: any Match, both participants named.
   adminMatch: {
     mentorTeachesMentee: '{mentor} can teach {mentee} {skills}.',
     menteeTeachesMentor: '{mentee} can teach {mentor} {skills}.',

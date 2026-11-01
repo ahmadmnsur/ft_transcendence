@@ -45,9 +45,6 @@ export class ReviewsController {
     return this.reviews.listFeedbackReceived(requestActor(request), query.page, query.pageSize);
   }
 
-  // `PUT /api/reviews/:reviewId/evidence` (§9.4): multipart field `file`.
-  // UploadCsrfGuard, the session guard and the Mentee pre-check run before
-  // FileUpload's Multer reads the body.
   @Put('reviews/:reviewId/evidence')
   @UseGuards(EvidenceMenteeGuard)
   @UseInterceptors(FileUpload(LIMITS.evidence.maxBytes))
@@ -59,7 +56,6 @@ export class ReviewsController {
     return this.evidence.putEvidence(requestActor(request), reviewId, file);
   }
 
-  // `DELETE /api/reviews/:reviewId/evidence` (§9.4): `{}`, idempotent.
   @Delete('reviews/:reviewId/evidence')
   @UseGuards(EvidenceMenteeGuard)
   deleteEvidence(

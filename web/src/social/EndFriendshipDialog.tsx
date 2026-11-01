@@ -3,9 +3,6 @@ import type { StudentRef } from '../api/profile';
 import { Button, Modal } from '../design';
 import { useI18n } from '../i18n/context';
 
-// §11.1: ending a Friendship asks first, on the profile and on `/friends`
-// alike, since only a new request restores it. Focus starts on the safe
-// button, and the dialog cannot be dismissed while the request is in flight.
 export function EndFriendshipDialog({
   student,
   pending,

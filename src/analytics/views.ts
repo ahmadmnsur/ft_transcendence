@@ -6,7 +6,6 @@ export type SkillInsight = SkillDemand & SkillSupply;
 export type SkillGap = SkillInsight & { gap: number };
 export type Completion = { completed: number; total: number; rate: number | null };
 
-// §13.1: community aggregates only, with no Student identity or stored snapshot.
 export type AnalyticsView = {
   skills: { mostRequested: SkillDemand[]; mostAvailable: SkillSupply[]; gap: SkillGap[] };
   insights: { gap: SkillInsight[]; uncovered: SkillInsight[] };

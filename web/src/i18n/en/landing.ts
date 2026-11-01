@@ -1,10 +1,6 @@
 import type { EnGroup } from '../types';
 
-// `/` for a signed-out visitor: what PeerConnect is, before signing in
-// (§3.5.1's note of 2026-10-25). It shows no data; the example Match uses an
-// invented name and says so.
 export default {
-  // {learn} and {teach} are the two Skill choices, set inside the sentence.
   question: 'I want to learn {learn} and I can teach {teach}.',
   learnLabel: 'A Skill you want to learn',
   teachLabel: 'A Skill you can teach',
@@ -13,15 +9,9 @@ export default {
   example: {
     label: 'Example, with an invented name',
     title: 'Your Match in Round {number}',
-    // The heading's name for assistive technology, which carries the
-    // example label the eye reads on the tag above it.
     heading: 'Example, with an invented name: your Match in Round {number}',
-    // The invented Student of the example Match.
     partner: 'Maya',
-    // {skill} is the Skill picked to learn.
     goalLabel: '{skill} is my Learning Goal',
-    // §8.3 step 4: a pair's Match runs in the direction that scores higher;
-    // on equal Scores a fixed rule picks the Mentor.
     mentorWhy: '{partner} teaches your Learning Goal, so the Match scores higher with {partner} as your Mentor.',
     mentorTie: 'Without a Learning Goal, both directions score the same, and a fixed rule picks the Mentor.',
   },
@@ -52,8 +42,6 @@ export default {
   grow: {
     heading: 'One XP pool, ten Levels, three Badges',
     body: 'Reviews and Prompt answers feed the same XP, and your Level comes from it. A Badge, once earned, is never taken away. The Leaderboard ranks Students by XP.',
-    // What earns each Badge, told to a visitor; the rules page keeps the
-    // full conditions.
     badges: {
       FIRST_MENTOR: 'The first time a Mentee submits a Review of a Match where you were the Mentor.',
       KNOWLEDGE_SHARER: 'For answering three Reflection Prompts.',

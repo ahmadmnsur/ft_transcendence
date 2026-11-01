@@ -11,15 +11,11 @@ export type ReviewedMatch = {
   reviewId: string;
   mentor: TestAccount;
   mentee: TestAccount;
-  // The Admin who opened the Round, outside the pair.
   admin: TestAccount;
 };
 
 const actor = (studentId: string) => ({ studentId, sessionHash: null });
 
-// A COMPLETED Match, made through the services: an Admin opens a Round that
-// pairs a Mentor teaching Docker with a Mentee learning it, both accept, and
-// the Mentee submits the Review (§9.2). The Round stays open.
 export async function reviewedMatch(app: INestApplication): Promise<ReviewedMatch> {
   const matching = app.get(MatchingService);
   const students = app.get(StudentsService);

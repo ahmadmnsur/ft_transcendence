@@ -3,10 +3,7 @@ import { apiFetch } from './client';
 import type { StudentRef } from './profile';
 import { writeAsSignedIn } from './session';
 
-// §6.4's Friends routes, with the exact wire shapes the API returns.
 
-// One accepted Friend and whether they are online now (§7.6). A Removed
-// Student never appears (§11.1).
 export interface FriendView {
   student: StudentRef;
   online: boolean;
@@ -16,8 +13,6 @@ export interface FriendList {
   items: FriendView[];
 }
 
-// One pending request from the signed-in Student's side: `student` is the
-// other party. `createdAt` is an ISO 8601 timestamp.
 export interface FriendRequestView {
   id: string;
   student: StudentRef;
@@ -29,7 +24,6 @@ export interface FriendRequestLists {
   outgoing: FriendRequestView[];
 }
 
-// §7.4's `presence:update` payload.
 export interface PresenceUpdate {
   studentId: string;
   online: boolean;
@@ -46,10 +40,6 @@ export async function fetchFriendRequests(): Promise<FriendRequestLists> {
   return apiFetch<FriendRequestLists>('/friends/requests');
 }
 
-// Two lists, read by a profile's friend control and by `/friends`, so both
-// always agree. Briefly cached like the Blocks: the profile page starts the
-// reads and the control reads them a moment later without a second request,
-// and every write here updates the cached copies at once.
 export function friendsQueryOptions() {
   return queryOptions({ queryKey: FRIENDS_QUERY_KEY, queryFn: fetchFriends, staleTime: 30_000 });
 }
@@ -62,9 +52,6 @@ export function friendRequestsQueryOptions() {
   });
 }
 
-// A refusal (`friend_request_unavailable`, `friendship_exists`,
-// `request_not_pending`, `not_friends`, `student_removed`,
-// `self_action_forbidden`) is a typed 200 (§6.15).
 async function postFriendRequest(studentId: string): Promise<FriendRequestView> {
   return apiFetch<FriendRequestView>('/friends/requests', { method: 'POST', body: { studentId } });
 }
@@ -97,9 +84,6 @@ async function deleteFriendship(studentId: string): Promise<Record<string, never
   });
 }
 
-// Reads one list again from now. A read still in flight may have answered
-// before a change, so it is cancelled first: a refetch of a list that has no
-// data yet would otherwise be handed that same read.
 async function readAgain(queryClient: QueryClient, queryKey: readonly string[]): Promise<void> {
   await queryClient.cancelQueries({ queryKey });
   await queryClient.invalidateQueries({ queryKey });
@@ -110,13 +94,6 @@ function readListsAgain(queryClient: QueryClient): void {
   void readAgain(queryClient, FRIEND_REQUESTS_QUERY_KEY);
 }
 
-// After a write, the one list it changed takes its result at once, and is
-// then read again: another write may have changed the same pair while this
-// one's answer was on its way (a Block deleting the request just sent, say),
-// and the server orders Friends by name with a collation the browser does not
-// have. A read still in flight read the list before the write, so it is
-// cancelled first. A list with no data yet is only read again: its first read
-// may be the one in flight, and cancelling it alone would leave it loading.
 async function updateList<D>(
   queryClient: QueryClient,
   queryKey: readonly string[],
@@ -142,10 +119,6 @@ function updateRequests(
   return updateList(queryClient, FRIEND_REQUESTS_QUERY_KEY, update);
 }
 
-// Every write as the screens use it. Its answer updates the lists it changed;
-// a failure reads both lists again, since the server may hold something else
-// (the other Student answered, cancelled or blocked first, or another tab
-// acted), and is rethrown for the screen to show.
 function friendsWrite<T>(
   queryClient: QueryClient,
   send: () => Promise<T>,
@@ -173,8 +146,6 @@ export async function sendFriendRequest(queryClient: QueryClient, studentId: str
   );
 }
 
-// The new Friend joins the list at once, at its end until the list is read
-// again in the server's order.
 export async function acceptFriendRequest(queryClient: QueryClient, requestId: string): Promise<void> {
   await friendsWrite(
     queryClient,
@@ -214,9 +185,6 @@ export async function endFriendship(queryClient: QueryClient, studentId: string)
   );
 }
 
-// §11.2: a Block deletes the pair's Friendship row, pending or accepted, so
-// both cached lists drop that Student once the Block is made. The caller has
-// already checked that the Block is the signed-in Student's own.
 export async function dropFromFriendLists(queryClient: QueryClient, studentId: string): Promise<void> {
   await Promise.all([
     updateFriends(queryClient, (list) => ({ items: list.items.filter((item) => item.student.id !== studentId) })),
@@ -233,14 +201,6 @@ export function isPresenceUpdate(value: unknown): value is PresenceUpdate {
   return typeof update.studentId === 'string' && typeof update.online === 'boolean';
 }
 
-// §7.4's client reaction to `presence:update`: the cached Friends list takes
-// the new status. An update about a Student the list does not hold means the
-// lists are out of date (the other Student accepted a request in their own
-// tab, say): both are read again, so the request leaves Sent as the other
-// Student joins the Friends. A Friends read in flight may have answered
-// before the change, so it is cancelled and made again instead, even a first
-// read with no data yet; whether its answer holds the Student is not known
-// yet, so the requests are read again with it.
 export function applyPresence(queryClient: QueryClient, update: PresenceUpdate): void {
   if (queryClient.getQueryState(FRIENDS_QUERY_KEY)?.fetchStatus === 'fetching') {
     readListsAgain(queryClient);

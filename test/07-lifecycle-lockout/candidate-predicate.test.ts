@@ -14,11 +14,6 @@ function actor(studentId: string): Actor {
   return { studentId, sessionHash: null };
 }
 
-// §8.1, §16.3 row 7: a candidate lists at least one Skill, is not an Admin,
-// and is neither Suspended nor Removed.
-// Nothing else says so when the predicate slips: an Admin who teaches what a
-// Student wants would simply be matched, and a Skill-less Student would sit on
-// the unmatched list as if the matcher had failed them.
 describe('the candidate predicate', () => {
   it('leaves out an Admin, whatever Skills they list, and a Student with no Skill', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
@@ -28,8 +23,6 @@ describe('the candidate predicate', () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const learner = await createTestAccount(harness.app);
     await createTestAccount(harness.app);
-    // The Admin teaches what the learner wants: a Match of Score 35 if Admins
-    // were candidates (§8.2).
     await students.setSkills(actor(admin.id), [docker], []);
     await students.setSkills(actor(learner.id), [], [docker]);
 
@@ -37,7 +30,6 @@ describe('the candidate predicate', () => {
 
     expect(opened.matchCount).toBe(0);
     expect(opened.unmatched.map((student) => student.id)).toEqual([learner.id]);
-    // §8.9: the open Round's unmatched list, derived when read, agrees.
     const round = await matching.getRound(actor(admin.id), opened.round.id);
     expect(round.matches).toEqual([]);
     expect(round.unmatched?.map((student) => student.id)).toEqual([learner.id]);
@@ -62,8 +54,6 @@ describe('the candidate predicate', () => {
     expect(round.matches.map((match) => [match.mentor.id, match.mentee.id])).toEqual([[moderator.id, learner.id]]);
   });
 
-  // §8.1, §12.7: a Suspension or a Removal, through the Users table, takes a
-  // Student out of the pool, and a reinstatement puts them back.
   it('leaves out a Suspended and a Removed Student, and takes a reinstated one back', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
     const docker = skills.get('Docker') as string;
@@ -74,7 +64,6 @@ describe('the candidate predicate', () => {
     const suspended = await createTestAccount(harness.app);
     const removed = await createTestAccount(harness.app);
     const learner = await createTestAccount(harness.app);
-    // Both sanctioned Students teach what the learner wants (§8.2: Score 35).
     await students.setSkills(actor(suspended.id), [docker], []);
     await students.setSkills(actor(removed.id), [docker], []);
     await students.setSkills(actor(learner.id), [], [docker]);
@@ -85,8 +74,6 @@ describe('the candidate predicate', () => {
     expect(opened.matchCount).toBe(0);
     expect(opened.unmatched.map((student) => student.id)).toEqual([learner.id]);
 
-    // Reinstated while the Round is open: back in the pool, so unmatched now
-    // and a hand-made Match may pair them; the Removed Student never.
     await users.reinstate(actor(admin.id), suspended.id);
     const round = await matching.getRound(actor(admin.id), opened.round.id);
     expect(round.unmatched?.map((student) => student.id).sort()).toEqual([learner.id, suspended.id].sort());

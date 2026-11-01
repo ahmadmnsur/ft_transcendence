@@ -7,14 +7,9 @@ import type { SocialService } from '../../src/social/social.service';
 import { RESERVED_POSITIONS } from './cohort';
 import { SeedFailure } from './failure';
 
-// §14.4 step 5's first three parts (§14.6, ADR-0017 d9): the social graph,
-// the Likes and the two Direct Message threads, each one call to a service
-// method as the Student who acts.
 
 export type ActiveMember = { id: string; position: number; role: Role };
 
-// The cohort's Active Students in position order (§14.6). S and R already
-// carry their sanction flags by §14.4 step 5.
 export async function activeCohort(
   prisma: PrismaService,
   cohortIds: readonly string[],
@@ -31,8 +26,6 @@ export async function activeCohort(
   });
 }
 
-// §14.6's eligible Students, in position order: the Active STUDENTs other
-// than D, S, R and the reserved positions.
 export function eligibleStudents(active: readonly ActiveMember[], demoId: string): string[] {
   return active
     .filter((member) => member.role === 'STUDENT' && member.id !== demoId &&
@@ -40,17 +33,12 @@ export function eligibleStudents(active: readonly ActiveMember[], demoId: string
     .map((member) => member.id);
 }
 
-// §14.6's count: 30 − 3 reserved − D, S, R. The graph and the threads take
-// 23 of them, each once, and leave one for the report fixtures.
 const ELIGIBLE_STUDENTS = 24;
 
-// §14.6's result, X's Block of Y included.
 const GRAPH_COUNTS = { acceptedFriendships: 12, pendingRequests: 2, blocks: 2 } as const;
 
-// Thread B's two messages to D, which D never reads.
 const UNREAD_FOR_DEMO = 2;
 
-// Request, then accept (§14.6).
 async function befriend(social: SocialService, requesterId: string, addresseeId: string): Promise<void> {
   const request = await social.requestFriend({ studentId: requesterId, sessionHash: null }, addresseeId);
   await social.acceptFriend({ studentId: addresseeId, sessionHash: null }, request.id);
@@ -58,15 +46,10 @@ async function befriend(social: SocialService, requesterId: string, addresseeId:
 
 export type SocialGraph = {
   firstFriendId: string;
-  // The eligible Students the graph did not take, in order.
   remaining: string[];
   counts: { acceptedFriendships: number; pendingRequests: number; blocks: number };
 };
 
-// §14.6's graph, in its order over the eligible Students: D with the next
-// six; six pairs among the next twelve; P requests, Q accepts, then P blocks
-// Q; two pending requests into D's inbox. The graph's counts are read back
-// and must be §14.6's.
 export async function seedSocialGraph(
   social: SocialService,
   prisma: PrismaService,
@@ -110,9 +93,6 @@ export async function seedSocialGraph(
   return { firstFriendId: demoFriends[0], remaining: eligible.slice(taken), counts };
 }
 
-// §14.6: seeded Posts in creation order, k = 0, 1, …; Post k is liked by
-// the first (k mod 7) Active Students by position other than its author.
-// `active` is in position order.
 export async function seedLikes(
   feed: FeedService,
   prisma: PrismaService,
@@ -133,7 +113,6 @@ export async function seedLikes(
   return { posts: posts.length, likes };
 }
 
-// Thread A alternates, D first; thread B is one message from D, then two to D.
 const THREAD_A = [
   'Hi! Are you free to go over the evaluation sheet together before Friday?',
   'Sure, Thursday afternoon works for me. Shall we meet on the second floor?',
@@ -149,15 +128,12 @@ const THREAD_B_TO_DEMO = [
 ] as const;
 
 async function send(messaging: MessagingService, senderId: string, recipientId: string, body: string): Promise<void> {
-  // The socket's rule for the body, which the seed checks itself (§7.3).
   if (!isValidText(body, LIMITS.directMessage, true)) {
     throw new SeedFailure('a seeded Direct Message breaks its rule');
   }
   await messaging.send({ studentId: senderId, sessionHash: null }, recipientId, body);
 }
 
-// Thread B's Student: the first of `remaining` who is neither D's Friend nor
-// in a Block with D, either way.
 async function threadBPeer(prisma: PrismaService, demoId: string, remaining: readonly string[]): Promise<string> {
   const friendships = await prisma.friendship.findMany({
     where: { status: 'ACCEPTED', OR: [{ requesterId: demoId }, { addresseeId: demoId }] },
@@ -178,11 +154,6 @@ async function threadBPeer(prisma: PrismaService, demoId: string, remaining: rea
   return peerId;
 }
 
-// §14.6's two threads. A: D and D's first Friend, four alternating
-// messages, both marked read. B: D and the next eligible Student who is
-// neither D's Friend nor in a Block with D; one from D, two to D, and only
-// the other side marks read. `remaining` is the graph's own. D's unread
-// count is read back and must be thread B's two.
 export async function seedDirectMessages(
   messaging: MessagingService,
   prisma: PrismaService,

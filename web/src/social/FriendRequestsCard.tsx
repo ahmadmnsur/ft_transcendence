@@ -15,17 +15,10 @@ import { StudentLink } from '../profile/StudentLink';
 
 type Action = 'accept' | 'decline' | 'cancel';
 
-// What the status Banner says, kept as what happened rather than as a text,
-// so it follows a language switch: which answer was given to whose request,
-// or which answer failed with which code.
 type Status =
   | { kind: 'done'; action: Action; student: StudentRef }
   | { kind: 'failed'; action: Action; code: unknown };
 
-// §6.4, §11.1: the signed-in Student's pending requests on `/friends`. Those
-// received can be accepted or declined, those sent cancelled. Only the two
-// parties see a request (§4.6). The page reads them again when it opens, so a
-// request sent, cancelled or declined by the other Student meanwhile shows.
 export function FriendRequestsCard(): React.JSX.Element {
   const { t, formatText, formatDate, personNameValue, errorText } = useI18n();
   const actions = t.social.actions;
@@ -35,14 +28,10 @@ export function FriendRequestsCard(): React.JSX.Element {
     action === 'accept' && code === 'friend_request_unavailable' ? friendActions.acceptUnavailable : errorText(code);
   const queryClient = useQueryClient();
   const requests = useQuery({ ...friendRequestsQueryOptions(), refetchOnMount: 'always' });
-  // The one request whose answer is in flight, and which answer; every other
-  // button is disabled until it ends, so no press is dropped unseen.
   const [pending, setPending] = useState<{ id: string; action: Action } | null>(null);
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const statusRef = useRef<HTMLDivElement>(null);
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, since the answered row and its buttons are gone.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
@@ -63,9 +52,6 @@ export function FriendRequestsCard(): React.JSX.Element {
     }
   }
 
-  // One row's button. While it is in flight its visible text names that
-  // state, and its accessible name is that text; otherwise the accessible
-  // name adds the Student's name after the visible text.
   function actionButton(request: FriendRequestView, action: Action): React.JSX.Element {
     const name = personNameValue(request.student.displayName, request.student.removed);
     const inFlight = pending?.id === request.id && pending.action === action;

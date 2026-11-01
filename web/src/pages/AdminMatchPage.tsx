@@ -12,11 +12,6 @@ import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 import { ReviewRecord } from '../reviews/ReviewRecord';
 
-// §3.5.1, §6.13: `/admin/matches/:matchId`, any Match for an Admin, with both
-// participants named — where the pair's own view names one side's partner.
-// The explanation is written in the third person from the same frozen
-// coverage and goal flag (§8.11). An unknown Match is the not-found state; a
-// malformed id is answered without a request (§3.5.2).
 export function AdminMatchPage(): React.JSX.Element {
   const { t, format, formatText, errorText } = useI18n();
   const parts = t.matching.match;
@@ -66,8 +61,6 @@ export function AdminMatchPage(): React.JSX.Element {
   }
   if (data.goalBonusApplied) sentences.push(format(copy.goal, { mentee }));
 
-  // Who has accepted, and who declined. A declined Match names its decliner in
-  // place of the generic ending.
   const ending = endingOf(data.status);
   const notes: ReactNode[] = [
     format(data.mentorAccepted ? copy.accepted : copy.notAccepted, { name: mentor }),
@@ -110,7 +103,6 @@ export function AdminMatchPage(): React.JSX.Element {
               <dd className="mt-1 flex min-w-0 flex-col items-start gap-1 text-sm text-ink">
                 <MatchStatusLabel status={data.status} />
                 {notes.map((note, index) => (
-                  // A name may be one 40-character word, which must wrap here.
                   <span key={index} className="min-w-0 max-w-full wrap-anywhere">
                     {note}
                   </span>

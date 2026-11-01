@@ -4,9 +4,6 @@ import type { StudentStatus } from '@shared/student-status';
 import type { Badge } from './progress';
 import { apiFetch } from './client';
 
-// §6.2's profile routes, with the exact wire shapes the API returns. The
-// SPA defines its own view types rather than importing the server's: the
-// shapes are the contract, not the server's file.
 export interface SkillView {
   id: string;
   name: string;
@@ -22,8 +19,6 @@ export interface SkillsView {
   learn: SkillView[];
 }
 
-// §6.0.1: `isAdmin` is true only for an ADMIN, and `removed` renders the
-// tombstone whatever `displayName` says (§4.6).
 export interface StudentRef {
   id: string;
   displayName: string;
@@ -34,10 +29,6 @@ export interface StudentRef {
 
 export type { StudentStatus };
 
-// `GET /api/me` and `PATCH /api/me`'s result: the only shape with the email
-// (§4.6). `avatarUrl` is the avatar's file route, or null for the bundled
-// default (§6.0.1). `fortyTwoConnected` says whether a 42 account is
-// connected — never the 42 id itself (§6.2).
 export interface OwnProfile {
   id: string;
   displayName: string;
@@ -56,10 +47,8 @@ export interface OwnProfile {
   fortyTwoConnected: boolean;
 }
 
-// `GET /api/students/:id`: never an email, for any viewer (§4.6).
 export interface PublicProfile {
   student: StudentRef;
-  // Null exactly when the Student is Removed (§4.6).
   profile: null | {
     skills: SkillsView;
     learningGoal: LearningGoalView | null;
@@ -72,7 +61,6 @@ export interface PublicProfile {
   };
 }
 
-// One row of `GET /api/students` (§6.2): never an email (§4.6).
 export interface StudentSearchItem {
   student: StudentRef;
   skills: SkillsView;
@@ -88,7 +76,6 @@ export interface StudentSearchPage {
 export type SearchSort = 'name' | 'xp' | 'joined';
 export type SearchOrder = 'asc' | 'desc';
 
-// What the search sends; an absent filter is no filter (§6.2).
 export interface StudentSearchParams {
   q?: string;
   teaches?: string;
@@ -103,15 +90,12 @@ export interface StudentSearchParams {
 export const ME_QUERY_KEY = ['me'] as const;
 export const SKILLS_QUERY_KEY = ['skills'] as const;
 
-// Every search page's key starts with this, so a write can invalidate them
-// all at once.
 export const STUDENT_SEARCH_QUERY_KEY = ['students', 'search'] as const;
 
 export function studentQueryKey(id: string): readonly ['students', string] {
   return ['students', id] as const;
 }
 
-// Reads (§6.2).
 export async function fetchMe(): Promise<OwnProfile> {
   return apiFetch<OwnProfile>('/me');
 }
@@ -124,7 +108,6 @@ export async function fetchStudent(id: string): Promise<PublicProfile> {
   return apiFetch<PublicProfile>(`/students/${encodeURIComponent(id)}`);
 }
 
-// The search term goes in the query string, never in the path (§19 item 19).
 export async function searchStudents(params: StudentSearchParams): Promise<StudentSearchPage> {
   const query = new URLSearchParams();
   if (params.q !== undefined) query.set('q', params.q);
@@ -138,8 +121,6 @@ export async function searchStudents(params: StudentSearchParams): Promise<Stude
   return apiFetch<StudentSearchPage>(`/students?${query.toString()}`);
 }
 
-// Writes (§6.2). `PATCH` takes only the fields that changed; the server
-// answers a refusal (such as `email_unavailable`) as a typed 200.
 export async function updateProfile(input: { displayName?: string; email?: string }): Promise<OwnProfile> {
   return apiFetch<OwnProfile>('/me', { method: 'PATCH', body: input });
 }
@@ -156,11 +137,6 @@ export async function clearLearningGoal(): Promise<Record<string, never>> {
   return apiFetch<Record<string, never>>('/me/learning-goal', { method: 'DELETE', body: {} });
 }
 
-// One query key per screen state (§3.5.2: all server state through Query).
-// The own-profile query is briefly cached like the session, and every write
-// to it updates the cached copy at once; the catalogue is a fixed seed, so
-// it caches the longest; a Student's profile is always re-read on the next
-// visit.
 export function meQueryOptions() {
   return queryOptions({
     queryKey: ME_QUERY_KEY,
@@ -184,9 +160,6 @@ export function studentQueryOptions(id: string) {
   });
 }
 
-// One query per search. While the next page loads, the previous page's data
-// stays, so the table's loading skeleton keeps as many rows as it showed and
-// its total never drops to zero in between.
 export function studentSearchQueryOptions(params: StudentSearchParams) {
   return queryOptions({
     queryKey: [...STUDENT_SEARCH_QUERY_KEY, params] as const,

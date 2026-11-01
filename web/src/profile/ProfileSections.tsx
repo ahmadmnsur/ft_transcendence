@@ -1,12 +1,7 @@
 import type { LearningGoalView, SkillView } from '../api/profile';
 import { SkillChip, SkillName } from '../design';
 
-// A profile's Skills and Learning Goal, read-only: on `/students/:studentId`,
-// and on the Users table's detail of a Removed account, which nothing may
-// change (§6.12).
 
-// One of a Student's two Skill lists, read-only: a chip without a remove
-// button, or the sentence saying the list is empty.
 export function SkillSection({
   title,
   empty,
@@ -36,8 +31,6 @@ export function SkillSection({
   );
 }
 
-// The Learning Goal: its Skill and the sentence the Student wrote, which keeps
-// its own direction (§3.5.2), or the sentence saying there is none.
 export function GoalSection({
   title,
   empty,

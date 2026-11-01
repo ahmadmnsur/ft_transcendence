@@ -6,7 +6,6 @@ export type Candidate = {
   level: number;
 };
 
-// Order inside the tuple is irrelevant.
 export type UnorderedPair = readonly [string, string];
 
 export type MatcherInput = {

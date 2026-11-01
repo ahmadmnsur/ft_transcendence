@@ -12,8 +12,6 @@ import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 
-// `/admin/users`' search params: the applied filters, the sort and the page.
-// An absent one is its default, so the address stays short.
 export interface AdminUsersSearch {
   q?: string;
   role?: Role;
@@ -30,9 +28,6 @@ function pick<T extends string>(value: unknown, allowed: readonly T[]): T | unde
   return allowed.find((item) => item === value);
 }
 
-// §3.5.2: a value the API would refuse is dropped here, so an edited address
-// never sends a failing request and the console stays clean. The router reads
-// `?q=42` as a number, so a number comes back as text.
 export function parseAdminUsersSearch(search: Record<string, unknown>): AdminUsersSearch {
   const q = typeof search.q === 'string' || typeof search.q === 'number' ? String(search.q).trim() : '';
   const page = search.page;
@@ -50,10 +45,6 @@ type Filters = Pick<AdminUsersSearch, 'q' | 'role' | 'status'>;
 
 const NO_FILTERS = { q: undefined, role: undefined, status: undefined } as const;
 
-// The filters apply together on Search. The form stays mounted across
-// searches, so a search never destroys the control the keyboard is on; filters
-// that change from outside it (Back, Forward, the empty state's Clear filters)
-// are adopted during render, below.
 function FiltersForm({
   applied,
   queryRef,
@@ -71,8 +62,6 @@ function FiltersForm({
   const [qInvalid, setQInvalid] = useState(false);
   const [lastApplied, setLastApplied] = useState(() => JSON.stringify(applied));
 
-  // Adjusting state when a prop changes: filters that arrived from outside the
-  // form replace what the fields show, during render rather than in an effect.
   const appliedKey = JSON.stringify(applied);
   if (appliedKey !== lastApplied) {
     setLastApplied(appliedKey);
@@ -148,10 +137,6 @@ function FiltersForm({
 
 const column = createColumnHelper<AdminStudentRow>();
 
-// §3.5.1, §6.12: the Users table — every account with its name, email, role
-// and status, Removed ones included — searched by name or email and filtered
-// by role and status. Filters, sort and page live in the address; the search
-// term travels in the query string, never in a path (§19 item 19).
 export function AdminUsersPage(): React.JSX.Element {
   const { t, format, errorText } = useI18n();
   const copy = t.admin.users;
@@ -171,13 +156,10 @@ export function AdminUsersPage(): React.JSX.Element {
     void navigate({ search: (previous) => ({ ...previous, ...next }) });
   }
 
-  // A new filter or sort starts again from page 1.
   function applyFilters(next: Filters): void {
     go({ ...next, page: undefined });
   }
 
-  // The Name and Email headers sort; a third press on a header clears its
-  // sort back to the default, name A to Z, which the address leaves out.
   const sorting: SortingState = [{ id: sort, desc: order === 'desc' }];
   function onSortingChange(next: SortingState): void {
     const first = next[0];
@@ -192,8 +174,6 @@ export function AdminUsersPage(): React.JSX.Element {
       column.accessor('displayName', {
         id: 'name',
         header: copy.columns.name,
-        // An Admin reads every account under its own name, a Removed one
-        // included (§4.6).
         cell: ({ row }) => (
           <Link
             to="/admin/users/$studentId"
@@ -207,7 +187,6 @@ export function AdminUsersPage(): React.JSX.Element {
       }),
       column.accessor('email', {
         header: copy.columns.email,
-        // An address reads left to right on every page.
         cell: (info) => (
           <bdi dir="ltr" className="wrap-anywhere">
             {info.getValue()}

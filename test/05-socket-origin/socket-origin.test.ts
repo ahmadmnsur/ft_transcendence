@@ -9,11 +9,6 @@ import { useHarness } from '../harness/app';
 
 const harness = useHarness();
 
-// §16.3 row 5, the whole category: §7.2 step 1's byte-equal Origin gate —
-// exact accepted, absent, `null` and mismatched refused, each with a real
-// valid session and each leaving its row untouched — §7.2 step 2's
-// `unauthorized`, and §7.1's WebSocket-only transport, refused on HTTP and
-// unable to connect as a client transport.
 describe('socket origin admission', () => {
   it('accepts the exact Origin with a valid session', async () => {
     const account = await createTestAccount(harness.app);
@@ -36,8 +31,6 @@ describe('socket origin admission', () => {
     const origin = publicOrigin();
     const url = new URL(origin);
     const otherPort = `${url.protocol}//${url.hostname}:${Number(url.port === '' ? 80 : url.port) + 1}`;
-    // Byte-equality (§7.2 step 1): a trailing slash and different case are
-    // mismatches too, not spellings of the origin.
     for (const mismatched of [otherPort, `${origin}/`, origin.toUpperCase()]) {
       await expectRefused(account, mismatched);
     }
@@ -61,7 +54,6 @@ describe('socket origin admission', () => {
       transports: ['polling'],
     });
     expect(outcome.connected).toBe(false);
-    // The server refused the request; this is not the client's own timeout.
     expect(outcome.message).not.toBe('timeout');
   });
 
@@ -83,11 +75,6 @@ type Handshake = { connected: boolean; message: string | null };
 
 const opened: Socket[] = [];
 
-// The Node client's `extraHeaders` are sent verbatim, so `Origin` and `Cookie`
-// reach the server exactly as given — which is what makes the gate's
-// byte-equality testable from here (§7.1: the cookie travels with the
-// handshake; there is no token). `forceNew` keeps each attempt on its own
-// connection, and `reconnection: false` makes one refusal final.
 function handshake(options: {
   origin?: string;
   cookie?: string;
@@ -111,9 +98,6 @@ function handshake(options: {
   });
 }
 
-// A refused handshake still used a valid session: it must not connect, must
-// fail at the Origin gate rather than the session middleware, and must leave
-// the session row exactly as it found it (§7.2 step 1, criterion 2).
 async function expectRefused(account: TestAccount, origin: string | undefined): Promise<void> {
   const before = await sessionExpiry(account.cookie);
   expect(before).not.toBeNull();
@@ -125,8 +109,6 @@ async function expectRefused(account: TestAccount, origin: string | undefined): 
   expect(await sessionExpiry(account.cookie)).toBe(before);
 }
 
-// The row's `expires_at`, found through the same hash the server reads (§5.3):
-// no renewal may rewrite it on a handshake.
 async function sessionExpiry(cookie: string): Promise<string | null> {
   const token = cookie.slice(`${SESSION_COOKIE_NAME}=s.`.length);
   const row = await harness.app

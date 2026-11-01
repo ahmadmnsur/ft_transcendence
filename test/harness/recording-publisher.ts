@@ -2,9 +2,6 @@ import { RealtimePublisher, type RevokeTarget } from '../../src/core/realtime-pu
 
 export type RecordedEvent = { event: string; args: unknown[] };
 
-// The harness's stand-in for the socket gateway: it records every call the
-// Unit of Work flushes after commit, in order, so a test can assert exactly
-// which events a request produced (§3.7, §16.2).
 export class RecordingRealtimePublisher extends RealtimePublisher {
   readonly events: RecordedEvent[] = [];
 

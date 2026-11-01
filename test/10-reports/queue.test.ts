@@ -24,8 +24,6 @@ function targetIds(items: Awaited<ReturnType<typeof queueOf>>): string[] {
   return items.map((group) => group.target.post?.id ?? group.target.student?.id ?? '');
 }
 
-// §12.4, §16.3 row 10: who sees which open group. A group is hidden whole,
-// never filtered down to the rows a reader may see.
 describe('the moderation queue', () => {
   it('shows a Peer Moderator only eligible open Post groups, oldest open row first, never a reporter', async () => {
     const prisma = harness.app.get(PrismaService);
@@ -41,8 +39,6 @@ describe('the moderation queue', () => {
     await fileTestReport(harness.app, first.id, { postId: later }, 'HARASSMENT');
     at('2026-10-22T10:00:00.000Z');
     await fileTestReport(harness.app, second.id, { postId: earlier }, 'OTHER', 'Off topic.');
-    // None of these reaches a Peer Moderator: a Student group, a resolved
-    // group, their own Post, and a group holding a row they filed.
     await fileTestReport(harness.app, first.id, { studentId: author.id });
     const resolved = await createTestPost(harness.app, author.id);
     await fileTestReport(harness.app, second.id, { postId: resolved });
@@ -117,8 +113,6 @@ describe('the moderation queue', () => {
 
     const moderatorQueue = await queueOf(moderator);
     expect(targetIds(moderatorQueue)).toEqual([visible]);
-    // ADR-0008 d10: an Admin sits outside the participation graph, and the
-    // hidden groups stay open for them.
     expect(targetIds(await queueOf(admin))).toEqual([visible, reporterBlocked, reporterBlocks, authorBlocked]);
   });
 
@@ -161,8 +155,6 @@ describe('the moderation queue', () => {
         ],
       },
     ]);
-    // ADR-0011 d9: every other Admin reads them all, the first Admin's own
-    // row named with its reporter.
     const otherQueue = await queueOf(other);
     expect(targetIds(otherQueue)).toEqual([ownPost, admin.id, filedIn, author.id, open, reported.id]);
     expect(otherQueue[2]).toMatchObject({

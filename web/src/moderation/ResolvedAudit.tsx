@@ -11,32 +11,19 @@ function batchKey(batch: ResolvedBatch): string {
   return `${targetKey(batch.target)}|${batch.resolvedBy.id}|${batch.resolvedAt}|${batch.state}`;
 }
 
-// §12.6: an Admin's resolved audit, one entry per resolution, newest first:
-// what it was about, who resolved it and when, and every Report it closed
-// with its reporter. A batch about the viewing Admin or holding their Report
-// is left out by the server. A page past the last one, such as an old address,
-// moves to the last one once this page's own answer has been read.
 export function ResolvedAudit({ page, onPageChange }: { page: number; onPageChange: (page: number) => void }): React.JSX.Element {
   const { t, format, formatText, formatDateTime, errorText } = useI18n();
   const copy = t.moderation;
   const audit = useQuery(resolvedAuditQueryOptions(page));
   const lastPage = audit.data === undefined ? 1 : countPages({ total: audit.data.total, pageSize: RESOLVED_PAGE_SIZE });
   const pastLast = page > lastPage;
-  // Neither the previous page's answer, shown while this one loads, nor a
-  // cached copy of this page being read again, or waiting to retry its read,
-  // moves the address: either may be older and count fewer pages than there
-  // are.
   const correctingPage = audit.isSuccess && !audit.isPlaceholderData && audit.fetchStatus === 'idle' && pastLast;
-  // Until then no batch shows under this page's number, and the pager stays,
-  // keeping focus on the page chosen.
   const loading = audit.isPlaceholderData || pastLast;
   const settlePage = useEffectEvent((next: number) => onPageChange(next));
   useEffect(() => {
     if (correctingPage) settlePage(lastPage);
   }, [correctingPage, lastPage]);
 
-  // The resolver carries the Admin label like any Admin another Student sees
-  // (§12.8).
   function heading(batch: ResolvedBatch): React.ReactNode {
     const resolver = batch.resolvedBy;
     const name = (

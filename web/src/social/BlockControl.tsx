@@ -8,16 +8,8 @@ import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
 import type { ControlParts } from './parts';
 
-// What the status Banner says, kept as what happened rather than as a text,
-// so it follows a language switch: a Block, its lifting, or a failure's code.
 type Status = { kind: 'blocked' } | { kind: 'unblocked' } | { kind: 'failed'; code: unknown };
 
-// §6.4, §11.2–§11.3, ADR-0011 d13: Block and Unblock on profiles and in the report dialog. It
-// shows once the viewer's own Blocks have loaded, never on the viewer's own
-// profile, and a Removed Student offers only the lifting of a Block set
-// before the Removal. Blocking asks first, since it ends any Friendship;
-// lifting restores nothing and asks nothing. A profile lays out its parts;
-// the report dialog shows them as BlockControl, below.
 export function useBlockControl(student: StudentRef): ControlParts | null {
   const { t, formatText, personNameValue, errorText } = useI18n();
   const actions = t.social.actions;
@@ -32,15 +24,10 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
   const cancelRef = useRef<HTMLButtonElement>(null);
   const blocked = blocks.data?.items.some((item) => item.student.id === student.id) ?? false;
 
-  // The status slot renders only while there is a message; once it renders,
-  // focus moves to it, since the button that was pressed is replaced.
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
   }, [status]);
 
-  // A Block made elsewhere, in another tab, can reach the list while the
-  // dialog is open; the dialog then closes, since confirming could only be
-  // refused.
   useEffect(() => {
     if (blocked) setConfirming(false);
   }, [blocked]);
@@ -69,12 +56,8 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
     };
   }
 
-  // A Removed Student the viewer has not blocked offers no action, so the
-  // control has no parts at all.
   if (!blocked && student.removed && status === undefined) return null;
 
-  // A refusal such as `student_removed` means the profile on screen is out
-  // of date too, so it is read again beside the list.
   function onFailure(error: unknown): void {
     void queryClient.invalidateQueries({ queryKey: studentQueryKey(student.id) });
     setStatus({ kind: 'failed', code: failureCode(error) });
@@ -108,8 +91,6 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
     }
   }
 
-  // A Removed Student can get no friend request, so lifting their Block
-  // gives no advice about one.
   const unblockedText = student.removed ? actions.unblockedRemoved : actions.unblocked;
 
   return {
@@ -127,9 +108,6 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
         </div>
       ),
     note: blocked ? <p className="text-sm text-ink-muted">{copy.blockedNote}</p> : null,
-    // Keyed, so Block never turns into Unblock in place: when the confirmation
-    // closes because a Block came from elsewhere, focus does not come back to
-    // Unblock.
     buttons: blocked ? (
       <Button key="unblock" variant="secondary" size="sm" loading={pending} onClick={() => void onUnblock()}>
         {pending ? actions.unblocking : actions.unblock}
@@ -178,8 +156,6 @@ export function useBlockControl(student: StudentRef): ControlParts | null {
   };
 }
 
-// Block and Unblock in the report dialog (§12.2), as one column: the status,
-// then the note beside its button.
 export function BlockControl({ student }: { student: StudentRef }): React.JSX.Element | null {
   const parts = useBlockControl(student);
   if (parts === null) return null;

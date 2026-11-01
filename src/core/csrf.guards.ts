@@ -6,9 +6,6 @@ import { ApiError } from './errors';
 
 const MUTATIONS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
-// Exactly the three multipart upload routes (§5.4, ADR-0009 d3), as route
-// patterns with parameter names dropped. Only their PUT uploads; their DELETE
-// stays JSON.
 const UPLOAD_ROUTES = new Set(
   ['me/avatar', 'admin/students/:/avatar', 'reviews/:/evidence'].map((route) => `/${API_PREFIX}/${route}`),
 );
@@ -22,13 +19,10 @@ function isUpload(request: Request): boolean {
   );
 }
 
-// The media type of the body, without parameters, lower-cased.
 function mediaType(request: Request): string {
   return (request.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
 }
 
-// Every mutation outside the upload routes carries Content-Type
-// application/json, which a cross-site form cannot send (§5.4).
 @Injectable()
 export class JsonMutationGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
@@ -40,9 +34,6 @@ export class JsonMutationGuard implements CanActivate {
   }
 }
 
-// An upload carries Origin byte-equal to PUBLIC_ORIGIN and X-PeerConnect-CSRF: 1,
-// else 403; then a multipart body, else 415 (§3.8.2, ADR-0009). Guards run
-// before interceptors, so this refuses before Multer parses anything (§5.4).
 @Injectable()
 export class UploadCsrfGuard implements CanActivate {
   constructor(private readonly config: AppConfig) {}

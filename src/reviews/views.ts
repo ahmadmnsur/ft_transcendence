@@ -14,8 +14,6 @@ export type PrivateFeedbackView = {
   createdAt: string;
 };
 
-// §9.3, §9.4: Evidence metadata, on the Match detail routes and as the PUT's
-// result. The file itself is read at `/api/files/evidence/<token>`.
 export type EvidenceView = { token: string; mime: string; size: number; filename: string };
 
 export type ReviewDetail = {

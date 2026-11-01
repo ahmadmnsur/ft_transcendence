@@ -7,8 +7,6 @@ import { applyLanguage, initialLanguage } from './i18n/language';
 import { queryClient } from './queryClient';
 import { router } from './router';
 
-// lang and dir are right before the first render; the provider keeps them in
-// step with the text on each switch.
 const language = initialLanguage();
 applyLanguage(language);
 

@@ -1,9 +1,3 @@
-// Copied from `prototypes/compatibility-score/compatibility-score-PROTOTYPE.html` on branch
-// `prototype/compatibility-score`, which stays frozen: `mulberry32` and `levelOf` from just
-// above its `COHORT GENERATOR` block, the rest from the block itself. Every random draw must
-// stay in the prototype's order so `generateCohort({ size: 20, seed: 42 })` reproduces the
-// measured cohort.
-
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return function (): number {
@@ -14,7 +8,6 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-/* ---- Level is derived from XP alone, never accumulated alongside it (CONTEXT.md) ---- */
 export function levelOf(xp: number): number {
   return Math.min(10, 1 + Math.floor(xp / 250));
 }
@@ -46,7 +39,6 @@ export const SKILLS: readonly string[] = [
   'Nginx',
 ];
 
-/* Skills nobody in a generated cohort can teach — used to manufacture an unmatchable Student. */
 export const RARE_SKILLS: readonly string[] = [
   'Quantum Computing',
   'FPGA Design',
@@ -85,7 +77,6 @@ export type CohortStudent = {
   name: string;
   canTeach: string[];
   wantsToLearn: string[];
-  // `undefined` when the Student wants no Skill, which the default options never produce.
   learningGoal: string | null | undefined;
   xp: number;
 };
@@ -122,7 +113,6 @@ export function generateCohort({
     const learningGoal =
       rnd() < 0.6 ? wantsToLearn[Math.floor(rnd() * wantsToLearn.length)] : null;
     const xp = Math.floor(rnd() * 2500);
-    // Prototype `mentorReputation` draw: field dropped, draw kept so every later draw matches.
     rnd();
     students.push({
       id: 's' + i,
@@ -133,9 +123,6 @@ export function generateCohort({
       xp,
     });
   }
-  // The first `unmatchable` Students get wants that no generated Student can teach, since
-  // `RARE_SKILLS` never enter a `canTeach` list. Their own `canTeach` is kept, so they can
-  // still mentor.
   for (let i = 0; i < unmatchable && i < students.length; i++) {
     students[i].wantsToLearn = RARE_SKILLS.slice(0, 2);
     students[i].learningGoal = RARE_SKILLS[0];

@@ -13,11 +13,6 @@ import { StudentLink } from '../profile/StudentLink';
 
 const column = createColumnHelper<MatchView>();
 
-// §3.5.1, §6.6: `/matches`, the signed-in Student's own Matches, every status,
-// newest first. No profile lists Matches (§4.6): this is the only list of
-// them, and only its owner sees it. The table is not sorted by the reader.
-// It shows no Score: a Score never shows without its explanation sentence
-// (§8.11), which each Match's own page gives.
 export function MatchesPage(): React.JSX.Element {
   const { t, formatText, formatNumber, errorText } = useI18n();
   const copy = t.matching.history;
@@ -52,9 +47,6 @@ export function MatchesPage(): React.JSX.Element {
       }),
       column.display({
         id: 'view',
-        // Read by screen readers only. The `relative` wrapper keeps the
-        // absolutely placed `sr-only` text inside the table's scroll frame,
-        // so it never widens the page at 360 px.
         header: () => (
           <span className="relative">
             <span className="sr-only">{copy.view}</span>

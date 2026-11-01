@@ -1,44 +1,13 @@
 import { Worker } from 'node:worker_threads';
 
-// §9.5 step 4's PDF load, off the API's thread (§9.5's note of 2026-10-22).
-// pdf-lib 1.17.1 inflates each object stream and cross-reference stream
-// whole while it loads, with no cap and without yielding, so a PDF of a few
-// megabytes could ask for gigabytes: the thread every request waits on held
-// meanwhile, then the process out of memory. So each load runs in its own
-// worker thread, one at a time, and finds no page when:
-// - its decoders together would allocate more than `maxDecodedBytes` over
-//   the whole load, memory the worker shares with the API, counted before
-//   pdf-lib allocates it: a chain of filters on one stream holds a buffer
-//   for each filter, and an LZW filter also holds four fixed dictionary
-//   arrays its constructor allocates, and every one counts;
-// - the worker's heap passes `maxHeapMb`;
-// - the load is still running `timeoutMs` after its worker started; the
-//   wait for an earlier load does not count.
 export type PdfCheckLimits = { timeoutMs: number; maxDecodedBytes: number; maxHeapMb: number };
 
-// 32 MiB is nine times the most any of 122 real PDFs under 5 MiB needed
-// (3.55 MiB), and twice a generated PDF of 20,500 pages with every object in
-// one object stream (16.5 MiB).
 export const PDF_CHECK_LIMITS: PdfCheckLimits = {
   timeoutMs: 5_000,
   maxDecodedBytes: 32 * 1024 * 1024,
   maxHeapMb: 256,
 };
 
-// The worker, as source rather than a file of its own, so it runs the same
-// from `src/` under Vitest and from `dist/` in the image. Two allocations in
-// pdf-lib's own copy are charged to one budget, each before it is made:
-// - every decoder grows its output buffer through
-//   `DecodeStream.prototype.ensureBuffer`, doubling from its minimum until
-//   the request fits;
-// - an LZW decoder allocates four fixed dictionary arrays in its
-//   constructor, outside that method (4096 entries of 1, 2, 2 and 1 bytes).
-//   `LZWDecode` is wrapped so each decoder's dictionary is charged before it
-//   is built, so a chain of them is refused at construction, before the
-//   memory is taken (§9.5's note of 2026-10-22, from PR #206's review).
-// The load's options are §9.5's; `Fastest` stops pdf-lib yielding, since the
-// worker has nothing else to answer. A load that throws, or one pdf-lib
-// recovers after the budget ran out, posts 0 pages.
 const PDF_WORKER = `
 const { parentPort, workerData } = require('node:worker_threads');
 const { PDFDocument, ParseSpeeds } = require(workerData.pdfLib);
@@ -62,8 +31,6 @@ DecodeStream.prototype.ensureBuffer = function (requested) {
   }
   return ensureBuffer.call(this, requested);
 };
-// The four dictionary arrays an LZW constructor allocates: 4096 entries of
-// 1, 2, 2 and 1 bytes. decode.js reads \`.default\` late, so the wrap takes.
 const OriginalLzw = lzwModule.default;
 const LZW_DICTIONARY_BYTES = 4096 * (1 + 2 + 2 + 1);
 lzwModule.default = function (stream, maybeLength, earlyChange) {
@@ -84,13 +51,8 @@ lzwModule.default = function (stream, maybeLength, earlyChange) {
 })();
 `;
 
-// The run before this one, so runs go one at a time: two loads never share
-// the process's memory and CPU at once.
 let previous: Promise<unknown> = Promise.resolve();
 
-// Runs `source` in a worker thread given `workerData`, after every earlier
-// run, and answers what it posts first, or null when it posts nothing: it
-// threw, passed `maxHeapMb`, or was stopped at `timeoutMs`.
 export function runInWorker<T>(
   source: string,
   workerData: unknown,
@@ -118,7 +80,6 @@ function runNow<T>(
       answer = message;
       void worker.terminate();
     });
-    // A throw or the heap limit: the run answers nothing, and the API goes on.
     worker.on('error', () => undefined);
     worker.once('exit', () => {
       clearTimeout(timer);
@@ -127,8 +88,6 @@ function runNow<T>(
   });
 }
 
-// The pages pdf-lib finds in `bytes` within `limits`, or 0 when it finds
-// none, refuses the file, or a limit stops it.
 export async function pdfPageCount(bytes: Buffer, limits: PdfCheckLimits = PDF_CHECK_LIMITS): Promise<number> {
   const pages = await runInWorker<number>(
     PDF_WORKER,

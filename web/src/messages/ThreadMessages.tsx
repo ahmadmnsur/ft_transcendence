@@ -11,18 +11,8 @@ import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 import { Composer } from './Composer';
 
-// The distance from the bottom of the page under which the viewer counts as
-// sitting on the newest message.
 const BOTTOM_SLACK_PX = 80;
 
-// §6.5, §7.3, §7.4: one peer's page at `/messages/$peerId`. The pair's
-// messages run from the earliest to the newest, read from the server in
-// pages going back; the composer sends over §7.3's `dm:send`, and the page
-// marks itself read whenever an incoming message its loaded pages hold is
-// not covered by the pair's last mark (§11.4: `read_at` is private, so the
-// only thing its own marking may ever do is zero its own counts). A Removed
-// Student's page shows the tombstone and no way to write, and a Block
-// standing between the pair closes the page the same way.
 export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Element {
   const { t, format, formatText, formatDateTime, personNameValue, errorText } = useI18n();
   const copy = t.messages.page;
@@ -31,33 +21,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
   const viewerId = session.data?.authenticated === true ? session.data.student.id : null;
   const page = useInfiniteQuery(peerThreadQueryOptions(peerId));
 
-  // The page's marks, keyed on what the loaded pages hold. The first runs
-  // once the data is in, whether or not that data holds a message to the
-  // viewer — one older than the first pages may still be unread, and the
-  // mark covers the pair, not the window the data fetched — and the next
-  // runs whenever a message to the viewer the pair's last mark did not
-  // cover is in the loaded pages: a message that lands in the open page as
-  // the reaction's event (§7.4), and the ones the shell's refetch after a
-  // reconnect (§7.5) brings from while the socket was down.
-  //
-  // The key is the set of incoming ids, not the newest one: `created_at` is
-  // set when a sending transaction starts, so an older message can be
-  // reported after a newer one, and then the newest id still names the same
-  // message while the latecomer sits unmarked. The ref holds the incoming
-  // ids the last successful mark covered — `null` until a mark has
-  // succeeded — so a page whose loaded messages hold nothing to the viewer
-  // still marks once, and every mark after the first is asked for by an id
-  // that mark was never sent with. A mark that failed changes that ref on
-  // nothing, and `dataUpdatedAt` is in the dependencies beside `data` for
-  // it: a read that answers with the same messages keeps the same `data`,
-  // so only its fresh timestamp asks this effect to send the mark again.
-  //
-  // At most one mark is in flight: a change of the data while one runs
-  // skips the effect, and the skip is remembered in a ref. The mark's
-  // settle — answered or failed — clears that ref and asks the effect once
-  // more, so the ids that arrived in flight are read whatever the settle
-  // was. A failure with no change skipped during it asks for nothing, so
-  // a failing mark waits for the next change instead of retrying itself.
   const [markSettles, setMarkSettles] = useState(0);
   const coveredIncomingRef = useRef<ReadonlySet<string> | null>(null);
   const markInFlightRef = useRef(false);
@@ -78,17 +41,11 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
     markInFlightRef.current = true;
     void markThreadRead(queryClient, peerId).then((marked) => {
       if (marked) {
-        // The mark covers the ids the pages held when it was sent, and
-        // the ids the marks before it covered stay covered.
         const nowCovered = new Set(coveredIncomingRef.current);
         for (const id of incoming) nowCovered.add(id);
         coveredIncomingRef.current = nowCovered;
       }
       markInFlightRef.current = false;
-      // A change skipped while the mark was in flight is checked now,
-      // whatever the answer was: a success goes after the ids it skipped
-      // over, a failure sends this same mark again. With no change
-      // skipped, a failure checks nothing and waits for the next one.
       if (changeWhileInFlightRef.current) {
         changeWhileInFlightRef.current = false;
         setMarkSettles((settles) => settles + 1);
@@ -96,10 +53,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
     });
   }, [markSettles, page.data, page.dataUpdatedAt, peerId, queryClient, viewerId]);
 
-  // Whether the viewer sits on the newest message, watched on the window's
-  // scroll: an unread message arriving in an open page is marked and shown
-  // right away, and the page follows as long as the viewer kept the newest
-  // on screen.
   const atBottomRef = useRef(true);
   useEffect(() => {
     function onScroll(): void {
@@ -111,9 +64,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // The first messages land at the newest, as the page opens onto; later
-  // additions follow only while the viewer already sat at the end, so
-  // reading an earlier page is never yanked away from.
   const firstMessagesRef = useRef(true);
   useLayoutEffect(() => {
     const rendered = page.data?.pages.reduce((sum, one) => sum + one.items.length, 0) ?? 0;
@@ -124,8 +74,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
     firstMessagesRef.current = false;
   }, [page.data]);
 
-  // A profile that is gone is the route's not-found page, decided without
-  // showing the thread (§6.5); any other failure is its own sentence.
   if (page.isError && page.error instanceof ApiProtocolError && page.error.status === 404) {
     return <NotFoundPage />;
   }
@@ -133,9 +81,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
   const loaded = page.data;
   const first = loaded?.pages[0];
 
-  // The name a received message shows for its sender, in the sr-only line
-  // ahead of its body: the peer's name, the tombstone for a Removed one.
-  // The viewer's own messages say "You" instead.
 
   let body: React.ReactNode;
   if (loaded === undefined) {
@@ -165,12 +110,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
       />
     );
   } else {
-    // Pages are stored newest first, so the display runs them back: the
-    // earliest on top, the newest at the bottom, where the composer sits.
-    // A message can still sit in the cache twice — the late one and the
-    // read it came with can end up on different pages — so the ids are
-    // deduped as a guard, the first occurrence kept, and no two list items
-    // share a key.
     const shownIds = new Set<string>();
     const messages = loaded.pages
       .flatMap((one) => one.items)
@@ -199,10 +138,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
             return (
               <li key={message.id} className={`flex min-w-0 ${own ? 'justify-end' : 'justify-start'}`}>
                 <div className="flex min-w-0 max-w-[85%] flex-col sm:max-w-[33rem]">
-                  {/* The sender in text ahead of the body: the alignment and
-                  the background colour say it to a sighted viewer only, so a
-                  screen reader gets the words, and the time after reads as
-                  before. */}
                   <p className="sr-only">
                     {own ? copy.ownSender : first === undefined ? null : (
                       <PersonName name={first.peer.displayName} removed={first.peer.removed} />
@@ -264,9 +199,6 @@ export function ThreadMessages({ peerId }: { peerId: string }): React.JSX.Elemen
   );
 }
 
-// The heading's name, on its own for the page's heading to hold: a Student
-// whose profile still exists carries the link to it, and a Removed one's
-// tombstone links to nothing (§4.6).
 function ProfileHeading({ student }: { student: StudentRef }): React.JSX.Element {
   return student.removed ? (
     <PersonName name={student.displayName} removed />

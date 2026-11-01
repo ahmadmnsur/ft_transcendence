@@ -28,33 +28,22 @@ import type {
   StudentSearchPage,
 } from './views';
 
-// §3.4's `students` module: `Student` profile fields, `StudentSkill` and the
-// Learning Goal. A write method takes an Actor and runs in exactly one
-// `uow.run`; a read method runs outside the Unit of Work.
 
-// §6.2: the own profile adds the email (never another Student's, §4.6) and
-// whether a 42 account is connected — the boolean `fortyTwoConnected`, never
-// the 42 id itself (§6.2).
 const OWN_PROFILE_SELECT = {
   ...PROFILE_SELECT,
   email: true,
   fortyTwoId: true,
 } as const satisfies Prisma.StudentSelect;
 
-// A search row reads the StudentRef fields, XP and the Skill rows: no Goal,
-// no Streak, never the email (§6.2, §4.6).
 const SEARCH_SELECT = {
   ...STUDENT_REF_SELECT,
   xp: true,
   studentSkills: PROFILE_SELECT.studentSkills,
 } as const satisfies Prisma.StudentSelect;
 
-// The row shapes come from the selects, so they cannot drift from what the
-// query reads.
 type OwnProfileRow = Prisma.StudentGetPayload<{ select: typeof OWN_PROFILE_SELECT }>;
 type SearchRow = Prisma.StudentGetPayload<{ select: typeof SEARCH_SELECT }>;
 
-// What `search` filters, sorts and pages by; the DTO fills the defaults.
 export type StudentSearchQuery = {
   q?: string;
   teaches?: string;
@@ -85,7 +74,6 @@ function toOwnProfile(row: OwnProfileRow): OwnProfile {
 
 function toPublicProfile(row: ProfileRow): PublicProfile {
   const student = toStudentRef(row);
-  // §4.6: a Removed Student is the tombstone with no profile.
   if (row.removedAt !== null) return { student, profile: null };
   return {
     student,
@@ -99,8 +87,6 @@ function toPublicProfile(row: ProfileRow): PublicProfile {
   };
 }
 
-// §6.2: Removed Students never match; Suspended Students and Admins do. Each
-// Skill filter needs a row of its own kind for that Skill.
 function searchWhere(query: StudentSearchQuery): Prisma.StudentWhereInput {
   const and: Prisma.StudentWhereInput[] = [{ removedAt: null }];
   const name = nameSearchWhere(query.q);
@@ -117,8 +103,6 @@ function searchWhere(query: StudentSearchQuery): Prisma.StudentWhereInput {
   return { AND: and };
 }
 
-// `sort=name` is a plain order on `displayName`: the column's `und-x-icu`
-// collation makes every stack sort names alike (§4.3.1).
 const SEARCH_ORDER_BY: Record<SearchSort, (order: SearchOrder) => Prisma.StudentOrderByWithRelationInput> = {
   name: (order) => ({ displayName: order }),
   xp: (order) => ({ xp: order }),
@@ -141,8 +125,6 @@ export class StudentsService {
     private readonly uow: UnitOfWork,
   ) {}
 
-  // §6.2: the catalogue, by name. `actor` is the signed-in viewer the read is
-  // for (§3.4); the catalogue does not vary by viewer yet.
   async listSkills(actor: Actor): Promise<{ items: SkillView[] }> {
     const items = await this.prisma.skill.findMany({
       orderBy: { name: 'asc' },
@@ -151,30 +133,21 @@ export class StudentsService {
     return { items };
   }
 
-  // §6.2: own profile; the only profile route that returns the email.
   async getOwnProfile(actor: Actor): Promise<OwnProfile> {
     return this.readOwnProfile(actor.studentId);
   }
 
   private async readOwnProfile(studentId: string): Promise<OwnProfile> {
-    // The row and its Skill rows are several reads; `readOnly` keeps them one
-    // consistent snapshot (§3.6.2).
     return this.uow.readOnly(async (tx) => {
       const row = await tx.student.findUnique({
         where: { id: studentId },
         select: OWN_PROFILE_SELECT,
       });
-      // The guard already resolved this actor; a row lost since never returns a
-      // profile. NEVER an email beyond this route (§4.6).
       if (row === null) throw new ApiError('unauthenticated');
       return toOwnProfile(row);
     });
   }
 
-  // §6.2: a public profile; never an email, for any viewer, the owner
-  // included; never the role beyond `isAdmin` (§4.6). A Suspended Student is
-  // shown normally. `actor` is the signed-in viewer the read is for (§3.4);
-  // the profile does not vary by viewer yet.
   async getProfile(actor: Actor, id: string): Promise<PublicProfile> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.student.findUnique({ where: { id }, select: PROFILE_SELECT });
@@ -183,11 +156,6 @@ export class StudentsService {
     });
   }
 
-  // §6.2's Advanced search. The count and the page are two reads, so
-  // `readOnly` keeps them one snapshot; ties break `id ASC`, so a row never
-  // moves between pages. A page past the last match reads no rows. `actor` is
-  // the signed-in viewer the read is for (§3.4); the results do not vary by
-  // viewer yet.
   async search(actor: Actor, query: StudentSearchQuery): Promise<StudentSearchPage> {
     const where = searchWhere(query);
     return this.uow.readOnly(async (tx) => {
@@ -205,8 +173,6 @@ export class StudentsService {
     });
   }
 
-  // §6.2's `PATCH /api/me`. One SSI transaction; the profile is read after
-  // commit so the response reflects the committed row.
   async updateOwnProfile(
     actor: Actor,
     input: { displayName?: string; email?: string },
@@ -227,7 +193,6 @@ export class StudentsService {
     return this.readOwnProfile(actor.studentId);
   }
 
-  // §6.2's `PUT /api/me/skills`.
   async setSkills(actor: Actor, teach: string[], learn: string[]): Promise<{ goalCleared: boolean }> {
     return this.uow.run('skills-update', async (tx, ctx) => {
       const actorRow = await readActiveActor(tx, actor.studentId);
@@ -242,7 +207,6 @@ export class StudentsService {
     });
   }
 
-  // §6.2's `PUT /api/me/learning-goal`.
   async setLearningGoal(actor: Actor, skillId: string, text: string): Promise<LearningGoalView> {
     return this.uow.run('learning-goal-set', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
@@ -252,7 +216,6 @@ export class StudentsService {
     });
   }
 
-  // §6.2's `DELETE /api/me/learning-goal`: clears both columns, idempotent.
   async clearLearningGoal(actor: Actor): Promise<Record<string, never>> {
     await this.uow.run('learning-goal-clear', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);

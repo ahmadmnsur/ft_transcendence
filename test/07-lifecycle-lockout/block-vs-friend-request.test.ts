@@ -11,8 +11,6 @@ function actor(studentId: string): Actor {
   return { studentId, sessionHash: null };
 }
 
-// What a service call ended with: its value, or the code of the refusal it
-// threw.
 async function outcome(work: Promise<unknown>): Promise<'ok' | string> {
   try {
     await work;
@@ -24,8 +22,6 @@ async function outcome(work: Promise<unknown>): Promise<'ok' | string> {
   }
 }
 
-// The pair's rows once both operations ended: a Block and a Friendship row
-// must never both be there (§11.2, §3.6.3).
 async function pairRows(a: string, b: string): Promise<{ blocks: number; friendships: number }> {
   const prisma = harness.app.get(PrismaService);
   const pair = [
@@ -41,9 +37,6 @@ async function pairRows(a: string, b: string): Promise<{ blocks: number; friends
   return { blocks, friendships };
 }
 
-// Holds `requester`'s friend request to `target` and a Block between the same
-// pair, set by `blocker`, after their reads and before their writes, then
-// lets `first` through to its commit before the other (§3.6.4).
 async function race(
   requester: string,
   target: string,
@@ -68,9 +61,6 @@ async function race(
   return { block: await block, request: await request };
 }
 
-// §16.3 row 7: a Block and a new friend request between the same pair have
-// one serial order. Block first, the request is refused; request first, the
-// Block deletes it. Either way no Block sits beside a Friendship row.
 describe('Block vs friend request', () => {
   it('Block first: the request is refused friend_request_unavailable', async () => {
     const a = await createTestAccount(harness.app);
