@@ -13,6 +13,7 @@ export const Public = (): MethodDecorator & ClassDecorator => SetMetadata(PUBLIC
 export type RequestAuth = Actor & Pick<ActiveSession, 'role' | 'email'>;
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       auth?: RequestAuth;
