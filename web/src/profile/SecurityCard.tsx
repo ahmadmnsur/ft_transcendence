@@ -7,6 +7,8 @@ import { BRAND } from '../layout';
 import { FortyTwoRow } from './FortyTwoRow';
 import { PasswordRow } from './PasswordRow';
 
+type Row = 'password' | 'fortyTwo';
+
 export function SecurityCard({
   username,
   fortyTwoEnabled,
@@ -25,7 +27,14 @@ export function SecurityCard({
   const { t, formatText } = useI18n();
   const copy = t.profile.security;
   const { data: me } = useQuery(meQueryOptions());
-  const [activeRow, setActiveRow] = useState<'password' | 'fortyTwo' | null>(null);
+  const [activeRow, setActiveRow] = useState<Row | null>(null);
+  const [busyRow, setBusyRow] = useState<Row | null>(null);
+  const recovery = fortyTwoEnabled && me?.fortyTwoConnected === true;
+  const recovering = recovery && confirmed42At !== null;
+
+  function reportBusy(row: Row): (busy: boolean) => void {
+    return (busy) => setBusyRow((current) => (busy ? row : current === row ? null : current));
+  }
 
   return (
     <Card title={copy.title} subtitle={formatText(copy.subtitle, { brand: BRAND })} headingLevel={2}>
@@ -33,18 +42,22 @@ export function SecurityCard({
         <PasswordRow
           username={username}
           onSignedOut={onSignedOut}
-          recovery={fortyTwoEnabled && me?.fortyTwoConnected === true}
+          recovery={recovery}
           confirmedAt={confirmed42At}
           onConfirmedEnd={onConfirmedEnd}
           onAction={onNoticeRetire}
           otherActive={activeRow === 'fortyTwo'}
           onOpen={() => setActiveRow('password')}
+          held={busyRow === 'fortyTwo'}
+          onBusyChange={reportBusy('password')}
         />
         {fortyTwoEnabled ? (
           <FortyTwoRow
             onAction={onNoticeRetire}
             otherActive={activeRow === 'password'}
             onOpen={() => setActiveRow('fortyTwo')}
+            held={busyRow === 'password' || recovering}
+            onBusyChange={reportBusy('fortyTwo')}
           />
         ) : null}
       </div>

@@ -16,10 +16,14 @@ export function FortyTwoRow({
   onAction,
   otherActive,
   onOpen,
+  held,
+  onBusyChange,
 }: {
   onAction?: () => void;
   otherActive: boolean;
   onOpen: () => void;
+  held: boolean;
+  onBusyChange: (busy: boolean) => void;
 }): React.JSX.Element {
   const { t, format, formatText, errorText } = useI18n();
   const copy = t.profile.fortyTwo;
@@ -38,10 +42,7 @@ export function FortyTwoRow({
   const mountedRef = useRef(false);
   const handOffTimerRef = useRef<number | undefined>(undefined);
 
-  const passwordInvalid = format(t.auth.password.invalid, {
-    minChars: LIMITS.password.minChars,
-    maxBytes: LIMITS.password.maxBytes,
-  });
+  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
   const passwordError = currentPasswordError(password);
 
   useEffect(() => {
@@ -78,7 +79,15 @@ export function FortyTwoRow({
     disclosure.hide(false);
   }, [yieldToOther]);
 
+  const busy = pending !== null;
+  useEffect(() => {
+    if (!busy) return;
+    onBusyChange(true);
+    return () => onBusyChange(false);
+  }, [busy]);
+
   function onShow(): void {
+    if (held) return;
     setStatus(undefined);
     onOpen();
     disclosure.show();
@@ -231,7 +240,7 @@ export function FortyTwoRow({
       }
       action={
         disclosure.open ? null : (
-          <Button ref={disclosure.triggerRef} variant="secondary" onClick={onShow}>
+          <Button ref={disclosure.triggerRef} variant="secondary" aria-disabled={held || undefined} onClick={onShow}>
             {connected ? copy.disconnect : copy.connect}
           </Button>
         )
@@ -253,9 +262,6 @@ export function FortyTwoRow({
           <p id={introId} className="text-sm text-ink">
             {connected ? copy.disconnectIntro : formatText(copy.connectIntro, { brand: BRAND })}
           </p>
-          {/* The hidden username field carries the signed-in Student's email,
-              like MePage's password form's, so a password manager fills the
-              right account. */}
           <input
             type="text"
             autoComplete="username"
@@ -270,6 +276,7 @@ export function FortyTwoRow({
             label={t.auth.passwordChange.currentLabel}
             {...t.auth.passwordChange.currentVisibility}
             autoComplete="current-password"
+            maxBytes={LIMITS.password.maxBytes}
             aria-describedby={introId}
             value={password}
             onChange={(event) => {

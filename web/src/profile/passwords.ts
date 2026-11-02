@@ -1,4 +1,4 @@
-import { isValidPassword } from '@shared/limits';
+import { isValidPassword, newPasswordInvalidReason, type InvalidReason } from '@shared/limits';
 
 export type CurrentPasswordError = 'empty' | 'invalid' | undefined;
 
@@ -10,9 +10,9 @@ export function currentPasswordError(password: string): CurrentPasswordError {
 export function newPasswordErrors(
   newPassword: string,
   confirmPassword: string,
-): { newError: boolean; confirmError: boolean } {
+): { newError: InvalidReason | undefined; confirmError: boolean } {
   return {
-    newError: !isValidPassword(newPassword),
+    newError: newPasswordInvalidReason(newPassword),
     confirmError: confirmPassword.trim() !== newPassword.trim(),
   };
 }

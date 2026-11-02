@@ -34,7 +34,7 @@ export function LearningGoalCard({ target, learnPickerId }: { target: ProfileTar
   const learn = profile?.skills.learn ?? [];
   const goal = profile?.learningGoal ?? null;
   const dirty =
-    editing && draft !== null && (draft.skillId !== (goal?.skill.id ?? '') || draft.text !== (goal?.text ?? ''));
+    editing && draft !== null && (draft.skillId !== (goal?.skill.id ?? '') || draft.text.trim() !== (goal?.text ?? ''));
   useUnsavedChanges(dirty);
 
   useEffect(() => {

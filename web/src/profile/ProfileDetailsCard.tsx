@@ -25,7 +25,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
   const dirty =
     draft !== null &&
     profile !== undefined &&
-    (draft.displayName !== profile.displayName || draft.email !== profile.email);
+    (draft.displayName.trim() !== profile.displayName || normalizeEmail(draft.email) !== profile.email);
   useUnsavedChanges(dirty);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
   function onDiscard(): void {
     if (pending) return;
     setDraft(null);
-    setNameError(false);
+    setNameError(undefined);
     setEmailError(undefined);
     setStatus(undefined);
     nameRef.current?.focus();
