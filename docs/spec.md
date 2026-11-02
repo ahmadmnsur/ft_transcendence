@@ -2320,8 +2320,10 @@ ordinary use (§3.8.2).
 > counts one and a family emoji counts each of its code points. The SPA counts the field as typed
 > and the API counts it after trimming, so the SPA is never looser than the API. The search box
 > inside a long dropdown, which filters on the client and sends nothing, stops at the 60 characters
-> of Search `q` without that sentence, since nothing it holds is kept. A Direct Message saved before
-> this note keeps its whole text: it still shows, and can still be marked read (§4.3.8's note).
+> of Search `q` without that sentence, since nothing it holds is kept. A password field also cuts
+> without it, at 72 bytes, as §5.1's note of 2026-10-31 has it: nothing on the page names that
+> limit. A Direct Message saved before this note keeps its whole text: it still shows, and can
+> still be marked read (§4.3.8's note).
 
 > **Updated 2026-11-01**, decided by the team in Ahmad's review of
 > [#244](https://github.com/ahmadmnsur/ft_transcendence/pull/244): a display name and a new password

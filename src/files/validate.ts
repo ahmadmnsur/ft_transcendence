@@ -229,7 +229,7 @@ function evidenceFilename(originalName: string, format: Format): string {
   const max = LIMITS.evidence.filenameMaxChars;
   if (characters.length <= max) return name;
   const dot = characters.lastIndexOf('.');
-  const extension = dot > 0 ? characters.slice(dot) : [];
+  const extension = dot > 0 && characters.length - dot < max ? characters.slice(dot) : [];
   return [...characters.slice(0, max - extension.length), ...extension].join('');
 }
 
