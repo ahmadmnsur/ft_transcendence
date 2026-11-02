@@ -3361,6 +3361,11 @@ resolves the whole group.
 
 One `REPEATABLE READ READ ONLY` transaction; groups ordered by their oldest open row.
 
+> **Changed 2026-11-01** (#251, at Ahmad's request): groups are ordered by their **newest** open
+> row, newest first, and each group lists its rows newest first, `id` descending breaking a tie on
+> `created_at`. Oldest first put a Report filed today at the bottom of `/admin/reports`.
+> `/moderation` reads the same endpoint and follows. Who sees which group does not change.
+
 - **Peer Moderator** — only open groups whose target is a non-removed Post, and **the whole group is
   absent** if: the moderator authored the Post; or the moderator filed any open row in it; or a Block
   exists **in either direction** between the moderator and the Post's author or **any** open reporter
@@ -3411,6 +3416,9 @@ with the target (the Post body even if removed; the Student as `StudentRef`), th
 the time, and every row's reporter, reason, text and time. A batch targeting the viewing Admin or their
 Post, or containing any row the viewing Admin filed, is hidden from that Admin. Peer Moderators have no
 access.
+
+> **Changed 2026-11-01** (#251): each batch lists its rows newest first, like the queue (§12.4's
+> note). The batches themselves stay newest first.
 
 ### 12.7 Sanctions and roles — the Users-table actions (`ADMIN`)
 

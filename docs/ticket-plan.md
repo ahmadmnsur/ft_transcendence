@@ -1833,6 +1833,10 @@ behaviour-free ticket after Rounds.
 - **Acceptance criteria:**
   1. `GET /api/moderation/queue` runs in one `REPEATABLE READ READ ONLY` transaction, with groups
      ordered by their oldest open row (§12.4).
+
+     > **Changed 2026-11-01** (#251): groups are ordered by their newest open row, newest first,
+     > and every group and resolved batch lists its rows newest first (spec §12.4's note).
+
      - A **Peer Moderator** sees only groups whose target is a non-removed Post. A whole group is
        hidden when they authored the Post, filed an open row in it, or have a Block in either
        direction with the author or any open reporter. Each row shows reason, text and time,

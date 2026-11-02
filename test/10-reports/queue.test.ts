@@ -25,7 +25,7 @@ function targetIds(items: Awaited<ReturnType<typeof queueOf>>): string[] {
 }
 
 describe('the moderation queue', () => {
-  it('shows a Peer Moderator only eligible open Post groups, oldest open row first, never a reporter', async () => {
+  it('shows a Peer Moderator only eligible open Post groups, newest open row first, never a reporter', async () => {
     const prisma = harness.app.get(PrismaService);
     const moderator = await createTestStaff(harness.app, 'PEER_MODERATOR');
     const author = await createTestAccount(harness.app);
@@ -70,8 +70,8 @@ describe('the moderation queue', () => {
             target: { kind: 'POST', post: post(earlier, 'Earlier group.') },
             count: 2,
             reports: [
-              { reason: 'SPAM', text: 'Copied from a forum.', createdAt: '2026-10-22T09:00:00.000Z' },
               { reason: 'OTHER', text: 'Off topic.', createdAt: '2026-10-22T10:00:00.000Z' },
+              { reason: 'SPAM', text: 'Copied from a forum.', createdAt: '2026-10-22T09:00:00.000Z' },
             ],
           },
           {
@@ -113,7 +113,7 @@ describe('the moderation queue', () => {
 
     const moderatorQueue = await queueOf(moderator);
     expect(targetIds(moderatorQueue)).toEqual([visible]);
-    expect(targetIds(await queueOf(admin))).toEqual([visible, reporterBlocked, reporterBlocks, authorBlocked]);
+    expect(targetIds(await queueOf(admin))).toEqual([authorBlocked, reporterBlocks, reporterBlocked, visible]);
   });
 
   it('shows an Admin both kinds with reporters, except their own targets and any group holding their row', async () => {
@@ -143,23 +143,23 @@ describe('the moderation queue', () => {
     const response = await harness.get('/api/moderation/queue').set('Cookie', admin.cookie).expect(200);
     expect(response.body.data.items).toEqual([
       {
-        target: { kind: 'POST', post: expect.objectContaining({ id: open, author: ref(author), removed: false }) },
-        count: 1,
-        reports: [{ reporter: ref(reporter), reason: 'SPAM', text: 'Advertising.', createdAt: '2026-10-22T09:04:00.000Z' }],
-      },
-      {
         target: { kind: 'STUDENT', student: ref(reported) },
         count: 1,
         reports: [
           { reporter: ref(reporter), reason: 'HARASSMENT', text: 'Insults in messages.', createdAt: '2026-10-22T09:05:00.000Z' },
         ],
       },
+      {
+        target: { kind: 'POST', post: expect.objectContaining({ id: open, author: ref(author), removed: false }) },
+        count: 1,
+        reports: [{ reporter: ref(reporter), reason: 'SPAM', text: 'Advertising.', createdAt: '2026-10-22T09:04:00.000Z' }],
+      },
     ]);
     const otherQueue = await queueOf(other);
-    expect(targetIds(otherQueue)).toEqual([ownPost, admin.id, filedIn, author.id, open, reported.id]);
-    expect(otherQueue[2]).toMatchObject({
+    expect(targetIds(otherQueue)).toEqual([reported.id, open, author.id, filedIn, admin.id, ownPost]);
+    expect(otherQueue[3]).toMatchObject({
       count: 2,
-      reports: [{ reporter: ref(reporter) }, { reporter: ref(admin, true) }],
+      reports: [{ reporter: ref(admin, true) }, { reporter: ref(reporter) }],
     });
   });
 

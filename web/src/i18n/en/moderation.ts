@@ -10,19 +10,41 @@ const actionLabels = {
 } as const satisfies Record<GroupAction, string>;
 
 const confirmTitles = {
-  REMOVE_POST: 'Remove this Post?',
-  ACTION: 'Mark this group as actioned?',
-  DISMISS: 'Dismiss this group?',
-} as const satisfies Record<GroupAction, string>;
+  post: {
+    REMOVE_POST: 'Remove the Post by {name}?',
+    DISMISS: {
+      one: 'Dismiss the Report about the Post by {name}?',
+      other: 'Dismiss the {count} Reports about the Post by {name}?',
+    },
+  },
+  student: {
+    ACTION: {
+      one: 'Mark the Report about {name} as actioned?',
+      other: 'Mark the {count} Reports about {name} as actioned?',
+    },
+    DISMISS: { one: 'Dismiss the Report about {name}?', other: 'Dismiss the {count} Reports about {name}?' },
+  },
+} as const;
+
+const alreadyResolved = {
+  post: {
+    one: 'The Report about the Post by {name} was already resolved.',
+    other: 'The {count} Reports about the Post by {name} were already resolved.',
+  },
+  student: {
+    one: 'The Report about {name} was already resolved.',
+    other: 'The {count} Reports about {name} were already resolved.',
+  },
+} as const satisfies Record<'post' | 'student', EnPlural>;
 
 const postBodies = {
   REMOVE_POST: {
-    one: "The Post leaves the feed for everyone, and its Report is closed as actioned. You are recorded as the one who removed it. This can't be undone.",
-    other: "The Post leaves the feed for everyone, and its {count} Reports are closed as actioned. You are recorded as the one who removed it. This can't be undone.",
+    one: "The Post by {name} leaves the feed for everyone, and its Report is closed as actioned. You are recorded as the one who removed it. This can't be undone.",
+    other: "The Post by {name} leaves the feed for everyone, and its {count} Reports are closed as actioned. You are recorded as the one who removed it. This can't be undone.",
   },
   DISMISS: {
-    one: "The Post stays, and its Report is closed as dismissed. You are recorded as the one who dismissed it. This can't be undone.",
-    other: "The Post stays, and its {count} Reports are closed as dismissed. You are recorded as the one who dismissed them. This can't be undone.",
+    one: "The Post by {name} stays, and its Report is closed as dismissed. You are recorded as the one who dismissed it. This can't be undone.",
+    other: "The Post by {name} stays, and its {count} Reports are closed as dismissed. You are recorded as the one who dismissed them. This can't be undone.",
   },
 } as const satisfies Record<PostGroupAction, EnPlural>;
 
@@ -38,13 +60,24 @@ const studentBodies = {
 } as const satisfies Record<StudentGroupAction, EnPlural>;
 
 const done = {
-  REMOVE_POST: {
-    one: 'The Post was removed, and its Report was closed.',
-    other: 'The Post was removed, and its {count} Reports were closed.',
-  },
-  ACTION: { one: 'The Report was marked as actioned.', other: '{count} Reports were marked as actioned.' },
-  DISMISS: { one: 'The Report was dismissed.', other: '{count} Reports were dismissed.' },
-} as const satisfies Record<GroupAction, EnPlural>;
+  post: {
+    REMOVE_POST: {
+      one: 'The Post by {name} was removed, and its Report was closed.',
+      other: 'The Post by {name} was removed, and its {count} Reports were closed.',
+    },
+    DISMISS: {
+      one: 'The Report about the Post by {name} was dismissed.',
+      other: '{count} Reports about the Post by {name} were dismissed.',
+    },
+  } as const satisfies Record<PostGroupAction, EnPlural>,
+  student: {
+    ACTION: {
+      one: 'The Report about {name} was marked as actioned.',
+      other: '{count} Reports about {name} were marked as actioned.',
+    },
+    DISMISS: { one: 'The Report about {name} was dismissed.', other: '{count} Reports about {name} were dismissed.' },
+  } as const satisfies Record<StudentGroupAction, EnPlural>,
+};
 
 const postResolvedBy = {
   ACTIONED: 'Post removed by {name}',
@@ -72,11 +105,13 @@ export default {
     adminEmpty: 'Reports about Posts and Students appear here.',
     postGroup: 'Reported Post',
     studentGroup: 'Reported Student',
+    postBy: 'Post by {name}',
     reportCount: { one: '{count} Report', other: '{count} Reports' },
     reportsLabel: 'Reports in this group',
     openInUsers: 'Open in Users',
+    openNameInUsers: 'Open {name} in Users',
   },
-  post: { removed: 'Removed from the feed' },
+  post: { removed: 'Removed from the feed', postedAt: 'Posted {time}' },
   report: {
     filedAt: 'Filed {time}',
     filedBy: 'Filed by {name}',
@@ -87,11 +122,14 @@ export default {
     confirmTitle: confirmTitles,
     confirmBody: { post: postBodies, student: studentBodies },
     done,
+    alreadyResolved,
+    noSanction: 'No sanction was applied.',
     cancel: 'Cancel',
     working: 'Saving…',
   },
   audit: {
     resolvedBy: { post: postResolvedBy, student: studentResolvedBy },
+    resolvedAt: 'Resolved {time}',
     emptyTitle: 'No resolved Reports yet.',
     emptyDescription: 'Each resolution appears here, with who made it and every Report it closed.',
     paginationLabel: 'Resolved Reports pages',

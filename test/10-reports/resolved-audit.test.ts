@@ -63,8 +63,8 @@ describe('the resolved audit', () => {
       resolvedBy: ref(admin, true),
       resolvedAt: '2026-10-22T13:00:00.000Z',
       reports: [
-        { reporter: ref(first), reason: 'OTHER', text: 'Fake account.', createdAt: '2026-10-22T11:30:00.000Z' },
         { reporter: ref(second), reason: 'OTHER', text: null, createdAt: '2026-10-22T11:31:00.000Z' },
+        { reporter: ref(first), reason: 'OTHER', text: 'Fake account.', createdAt: '2026-10-22T11:30:00.000Z' },
       ],
     };
     const removal = {
@@ -125,7 +125,7 @@ describe('the resolved audit', () => {
     expect(seen(others.items)).toEqual([unrelated, filedIn, admin.id, ownPost]);
     expect(others.items[1]).toMatchObject({
       resolvedBy: ref(other, true),
-      reports: [{ reporter: ref(reporter) }, { reporter: ref(admin, true) }],
+      reports: [{ reporter: ref(admin, true) }, { reporter: ref(reporter) }],
     });
   });
 });

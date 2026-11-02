@@ -109,7 +109,7 @@ export class ModerationService {
     return this.uow.readOnly(async (tx) => {
       const rows = await tx.report.findMany({
         where: admin ? { state: 'OPEN' } : { state: 'OPEN', postId: { not: null } },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: REPORT_ROW_SELECT,
       });
       const groups = new Map<string, ReportRow[]>();
@@ -203,7 +203,7 @@ export class ModerationService {
             state: key.state,
           })),
         },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: { ...REPORT_ROW_SELECT, resolvedById: true, resolvedAt: true, state: true },
       });
       const byBatch = new Map<string, ReportRow[]>();
