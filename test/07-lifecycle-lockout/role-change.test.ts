@@ -261,7 +261,7 @@ describe('the Users-table refusals', () => {
 
     expect(await prisma.student.findUniqueOrThrow({ where: { id: student.id } })).toEqual({ ...before, role: 'ADMIN' });
     expect(await prisma.session.count({ where: { studentId: student.id } })).toBe(sessions);
-    expect(harness.recorder.events).toEqual([]);
+    expect(harness.recorder.events).toEqual([{ event: 'roleChanged', args: [student.id, 'ADMIN'] }]);
     expect((await harness.get('/api/admin/students').set('Cookie', student.cookie)).status).toBe(200);
   });
 });

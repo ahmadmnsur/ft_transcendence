@@ -1192,6 +1192,12 @@ harness bind a no-op or a recording implementation.
 > from a row read in the transaction. Route parameters pass `ParseUUIDPipe` without being
 > lowercased; rooms and client caches use the stored ids.
 
+> **Live moderation and Prompts, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> the port gains `postRemoved(postId)`, `promptPublished()` and `reportsChanged()` for §7.4's new
+> events, and `roleChanged(studentId, role)` to move open sockets into or out of `staff`, beside
+> `revokeSessions`. Each runs after commit through the same queue; a failed or retried attempt
+> sends nothing. The room move sends no event and carries no role to a client.
+
 **Deleting a file is an after-commit effect too** (ADR-0009 d2's note of 2026-10-05): a replaced or
 deleted avatar or Evidence file, and the avatar of a Removal, is deleted from its bucket only after
 the commit that stopped naming it. A failed delete is logged and left to the cleanup (§9.8), which
@@ -2718,6 +2724,14 @@ where `MatchView` names one side's partner (§6.6).
    caught here, because the commit deleted the row first. Only then join `feed`, `rounds` and
    `student:<studentId>` and apply §7.6's online transition.
 
+> **Staff admission, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> step 3's session re-read also reads the Student's current role. `PEER_MODERATOR` and `ADMIN`
+> join `staff` beside the three rooms above; a `STUDENT` never joins it. A role move that runs
+> while that socket waits overrides the re-read's role, so a stale read cannot undo a demotion
+> or promotion. Consecutive moves apply in the order they run, the last one winning. A held
+> `staff` event is delivered after admission only if the socket ends up in `staff`; held events
+> for the other rooms keep their existing behaviour.
+
 ### 7.3 Client → server: exactly one event
 
 `dm:send`, with acknowledgement. Payload `{ recipientId: uuid, body: string }` (body 1–2000). The
@@ -2814,6 +2828,21 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > reconnect the client already reads its queries again (§7.5). `post:likes` touches neither
 > `likedByMe` nor the likers list. Every Student with the Post loaded sees its count change live.
 > The existing events, payloads and rooms are unchanged.
+
+> **Live moderation and Prompts, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); ADR-0021 decisions 5–7)** *(uncommitted)*:
+>
+> | Event | Room | Payload | Emitted after the commit of | Client reaction |
+> | --- | --- | --- | --- | --- |
+> | `post:removed` | `feed` | `{ postId }` | a resolution that removes the Post (§12.5) | drop it from every loaded feed page, Student's Posts and Prompt's answers that holds it, decrement that page's `total`, then read that query again so a numbered page refills to 20 (§6.0.1) |
+> | `prompt:published` | `feed` | `{}` | a Prompt published (§8.12) | read again the loaded live Prompt, Prompt history pages (Student and Admin) and Prompt answers, including the Prompt it closed |
+> | `reports:changed` | `staff` | `{}` | a Report filed (§12.2); a group resolved (§12.5) | read again the loaded moderation queue and Admin's resolved audit |
+>
+> `staff` is the fourth room, shared by Peer Moderators and Admins (§7.2). A role change moves
+> open sockets after commit (§12.7). On a Prompt's page, an existing `post:created` whose Post is
+> an answer to that Prompt reads its answers again; the feed's page-1 insert stays as above.
+> No new event carries a Report, a role or Admin data. The reporter and reported Student receive
+> no outcome signal; a staff member hears only that the queue changed, and what it reads again
+> passes the same checks as any read.
 
 ### 7.5 Lifecycle and client retry (M27)
 
@@ -3059,6 +3088,12 @@ greatest `publication_order` is the one live Prompt**; publishing closes the pre
 answering and nothing else. Two overlapping publications both commit with distinct values, and a
 publication that committed before another began always has the smaller value (M2). No edit, delete,
 draft, schedule or close action exists.
+
+> **Live publication, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> publishing sends `prompt:published {}` to `feed` after commit (§7.4). The loaded Prompt list,
+> live Prompt and answers pages read again, including the Prompt it closed. The publication's
+> "no event" and "read on the next load" above no longer hold. Publication order and the one live
+> Prompt rule stay as they are.
 
 **Answer — `POST /api/prompts/:id/answers`** — session · `{ body }` (1–1000) · SSI reads:
 - the actor: role `STUDENT` or `PEER_MODERATOR` → else `admins_cannot_answer`; Active;
@@ -3508,6 +3543,11 @@ roles are Admin-only.
 - **UI**: the report flow also offers a separate Block button; filing never creates a Block
   (ADR-0011 d13).
 
+> **Live report queue, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> a successful filing sends `reports:changed {}` to `staff` after commit (§7.4). The reporter
+> still receives only `{ received: true }` and learns no outcome. Nothing is sent to the
+> reported Student; only Peer Moderators and Admins hear the queue change, without Report data.
+
 ### 12.3 Groups (ADR-0011 d5–d6)
 
 An **open group** is the `OPEN` rows for one target (one `post_id` or one `reported_student_id`) at
@@ -3566,6 +3606,13 @@ Admin only.
   target, a row the removing Admin filed included, attributed to that Admin (ADR-0011 d10,
   §12.7); §12.6 then governs who sees the batch.
 
+> **Live resolutions, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> either Post-group action and either Student-group action send `reports:changed {}` to `staff`
+> after commit. `REMOVE_POST` also sends `post:removed { postId }` to `feed`. A removed Post
+> leaves any loaded feed page, Student's Posts or Prompt's answers immediately, and that query
+> reads again to refill its numbered page. "A removed Post leaves the feed on the next load"
+> above no longer holds. Refused resolutions send nothing; the attribution and guards stay.
+
 ### 12.6 Resolved audit — `GET /api/admin/reports/resolved?page` (Admin) (ADR-0011 d6, d8)
 
 Resolution batches — rows sharing `(target, resolved_by_id, resolved_at, state)` — newest first, each
@@ -3590,6 +3637,16 @@ must stay ≥ 1 afterwards → `last_active_admin` (ADR-0008 d9).
 | **Suspend** | not already Suspended → `already_suspended`; target's in-progress Matches | `suspended_at = now`; every `MATCHED`/`ACCEPTED` Match of the target → `TERMINATED_BY_ADMIN` (`declined_by_id` stays null); delete every Session of the target | `revokeSessions(target)` |
 | **Reinstate** | Suspended → else `not_suspended` | `suspended_at = NULL`; nothing is revived | none |
 | **Remove** | target's in-progress Matches; `Avatar`; open Reports whose `reported_student_id` is the target | `removed_at = now`; in-progress Matches → `TERMINATED_BY_ADMIN`; delete every Session; delete the `Avatar` row; every such open Report → `ACTIONED` with `resolved_by_id = actor`, `resolved_at = now` | `revokeSessions(target)`; delete the avatar's file from `avatars` (§9.8) |
+
+> **Live staff membership and Removal, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> after a Change role that changes the role commits, the Student's open sockets move into `staff`
+> for `PEER_MODERATOR` or `ADMIN`, and out for `STUDENT`, including sockets still waiting for
+> admission (§7.2). A request that leaves the role as it was moves nothing.
+> No session or socket is dropped; HTTP authorization still changes on the next request.
+> A Remove sends no new event, even when it closes open Reports: a sanction stays silent beyond
+> the sign-out it causes (ADR-0021 decision 7), so another Admin sees that group closed on their
+> next read.
+> Suspension and Removal still disconnect as in §5.8, and Suspension resolves no Report.
 
 - **No sanction writes to Supabase Auth** (ADR-0008 d5's note of 2026-10-02): no ban, no delete.
   Each stays this one PeerConnect transaction, and the flags it sets are what sign-in and session
@@ -4537,6 +4594,11 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 > the trigger refusing a new or changed Direct Message body over 500 characters while an older,
 > longer body still reads and is still marked read. The API's own length checks stay untested, as
 > ADR-0016 d1 leaves forms (its note of the same day).
+
+> **Row 5 extended 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> category 5's `staff-room.test.ts` uses real sessions and sockets: a `STUDENT` never receives
+> `reports:changed` when a Report is filed; a Peer Moderator does, then stops after demotion on
+> the same connected socket. Admission is awaited before checking delivery.
 
 ### 16.4 CI — one advisory workflow (ADR-0016 d8, M21)
 

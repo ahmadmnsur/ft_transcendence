@@ -32,6 +32,12 @@ export function isPostView(value: unknown): value is PostView {
   return typeof prompt.id === 'string' && typeof prompt.question === 'string';
 }
 
+export function isPostRemoved(value: unknown): value is { postId: string } {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const post = value as Record<string, unknown>;
+  return typeof post.postId === 'string';
+}
+
 export interface PostPage {
   items: PostView[];
   total: number;
@@ -164,6 +170,27 @@ function afterRead<T>(
 
 export function applyPostCreated(client: QueryClient, post: PostView): void {
   placePost(client, post, firstPageReads);
+}
+
+export function applyPostRemoved(client: QueryClient, postId: string): void {
+  for (const queryKey of POST_LIST_QUERY_KEYS) {
+    const queries = client.getQueryCache().findAll({ queryKey });
+    for (const query of queries) {
+      const data = query.state.data as PostPage | undefined;
+      if (query.state.fetchStatus !== 'fetching' && !data?.items.some((post) => post.id === postId)) continue;
+      void dropPostFromPage(client, query.queryKey, postId);
+    }
+  }
+}
+
+async function dropPostFromPage(client: QueryClient, queryKey: readonly unknown[], postId: string): Promise<void> {
+  await client.cancelQueries({ queryKey, exact: true });
+  client.setQueryData<PostPage>(queryKey, (data) =>
+    data === undefined || !data.items.some((post) => post.id === postId)
+      ? data
+      : { ...data, items: data.items.filter((post) => post.id !== postId), total: data.total - 1 },
+  );
+  await client.invalidateQueries({ queryKey, exact: true });
 }
 
 function placePost(client: QueryClient, post: PostView, readsAtArrival: number): void {

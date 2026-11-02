@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Role } from '../shared/roles';
 
 export type RevokeTarget = { studentId: string } | { sessionHash: string };
 
@@ -6,6 +7,14 @@ export abstract class RealtimePublisher {
   abstract postCreated(item: object): void;
 
   abstract postLikes(postId: string, likeCount: number): void;
+
+  abstract postRemoved(postId: string): void;
+
+  abstract promptPublished(): void;
+
+  abstract reportsChanged(): void;
+
+  abstract roleChanged(studentId: string, role: Role): void;
 
   abstract roundOpened(): void;
 
@@ -28,6 +37,10 @@ export abstract class RealtimePublisher {
 export class NoopRealtimePublisher extends RealtimePublisher {
   postCreated(): void {}
   postLikes(): void {}
+  postRemoved(): void {}
+  promptPublished(): void {}
+  reportsChanged(): void {}
+  roleChanged(): void {}
   roundOpened(): void {}
   roundClosed(): void {}
   matchReady(): void {}

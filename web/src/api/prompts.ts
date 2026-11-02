@@ -1,4 +1,4 @@
-import { keepPreviousData, queryOptions } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions, type QueryClient } from '@tanstack/react-query';
 import { PAGING } from '@shared/limits';
 import { apiFetch } from './client';
 import type { StudentRef } from './profile';
@@ -14,6 +14,18 @@ export type AnswerView = {
 export type AnswerPage = { prompt: PromptView; live: boolean; answeredByMe: boolean; items: AnswerView[]; total: number };
 
 export const PROMPT_ANSWERS_QUERY_KEY = ['prompts', 'answers'] as const;
+
+export async function readPromptsAgain(client: QueryClient): Promise<void> {
+  const queryKey = ['prompts'];
+  await client.cancelQueries({ queryKey });
+  await client.invalidateQueries({ queryKey });
+}
+
+export async function readPromptAnswersAgain(client: QueryClient, promptId: string): Promise<void> {
+  const queryKey = [...PROMPT_ANSWERS_QUERY_KEY, promptId];
+  await client.cancelQueries({ queryKey });
+  await client.invalidateQueries({ queryKey });
+}
 
 export const livePromptQueryOptions = () => queryOptions({
   queryKey: ['prompts', 'live'], queryFn: () => apiFetch<{ prompt: PromptView | null; answeredByMe: boolean }>('/prompts/live'),

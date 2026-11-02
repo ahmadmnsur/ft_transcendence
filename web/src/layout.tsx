@@ -14,6 +14,7 @@ import { RoundUpdates } from './matching/RoundUpdates';
 import { FeedUpdates } from './feed/FeedUpdates';
 import { PresenceUpdates } from './social/PresenceUpdates';
 import { FriendUpdates } from './social/FriendUpdates';
+import { ReportUpdates } from './moderation/ReportUpdates';
 import { useDisclosure } from './shell/useDisclosure';
 
 export const BRAND = '21 Beirut';
@@ -415,6 +416,7 @@ export function RootLayout(): React.JSX.Element {
           <MessageUpdates />
           <RoundUpdates />
           <FeedUpdates />
+          <ReportUpdates />
           <Fragment key={pageKey}>
             <Outlet />
           </Fragment>

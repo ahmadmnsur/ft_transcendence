@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
 import { blockPair } from '../core/block-pair';
 import { ApiError } from '../core/errors';
+import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
 import { Prisma } from '../generated/prisma/client';
 import type { PostGroupAction, ResolvedState, StudentGroupAction } from '../shared/reports';
@@ -57,7 +58,7 @@ function visibleBatches(viewerId: string): Prisma.Sql {
 
 @Injectable()
 export class ModerationService {
-  constructor(private readonly uow: UnitOfWork) {}
+  constructor(private readonly uow: UnitOfWork, private readonly publisher: RealtimePublisher) {}
 
   file(actor: Actor, input: ReportInput): Promise<ReportReceipt> {
     return this.uow.run({
@@ -99,6 +100,7 @@ export class ModerationService {
           createdAt: ctx.now,
         },
       });
+      ctx.afterCommit(() => this.publisher.reportsChanged());
       return { received: true };
     });
   }
@@ -162,8 +164,10 @@ export class ModerationService {
         if (block !== null) throw conflictOfInterest();
       }
       await ctx.checkpoint('moderation.resolve');
+      ctx.afterCommit(() => this.publisher.reportsChanged());
       if (action === 'REMOVE_POST') {
         await tx.post.update({ where: { id: post.id }, data: { removedAt: ctx.now } });
+        ctx.afterCommit(() => this.publisher.postRemoved(post.id));
         return closeGroup(tx, ctx, actor.studentId, open, 'ACTIONED');
       }
       return closeGroup(tx, ctx, actor.studentId, open, 'DISMISSED');
@@ -178,6 +182,7 @@ export class ModerationService {
       if (student === null || open.length === 0) throw alreadyResolved();
       if ([student.id, ...open.map((row) => row.reporterId)].includes(actor.studentId)) throw conflictOfInterest();
       await ctx.checkpoint('moderation.resolve');
+      ctx.afterCommit(() => this.publisher.reportsChanged());
       return closeGroup(tx, ctx, actor.studentId, open, action === 'ACTION' ? 'ACTIONED' : 'DISMISSED');
     });
   }

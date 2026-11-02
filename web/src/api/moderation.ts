@@ -75,6 +75,11 @@ export function resolvedAuditQueryOptions(page: number) {
   });
 }
 
+export async function readModerationAgain(client: QueryClient): Promise<void> {
+  await client.cancelQueries({ queryKey: MODERATION_QUERY_KEY });
+  await client.invalidateQueries({ queryKey: MODERATION_QUERY_KEY });
+}
+
 function sendResolution(target: GroupTarget, action: GroupAction): Promise<Resolution> {
   return target.kind === 'POST'
     ? apiFetch<Resolution>(`/moderation/post-groups/${encodeURIComponent(target.post.id)}/resolve`, {

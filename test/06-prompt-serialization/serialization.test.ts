@@ -43,6 +43,7 @@ it('a duplicate answer creates one immutable Post and a retry keeps the slot use
   const admin = await createTestStaff(harness.app, 'ADMIN');
   const student = await createTestAccount(harness.app);
   const published = await harness.post('/api/admin/prompts').set('Cookie', admin.cookie).send({ question: 'What did you learn?' });
+  harness.recorder.clear();
   const path = `/api/prompts/${published.body.data.id}/answers`;
   const first = await harness.post(path).set('Cookie', student.cookie).send({ body: 'I learned to listen.' });
   expect(first.status).toBe(201);
@@ -73,6 +74,7 @@ it('concurrent duplicate answers produce one Post and one event', async () => {
   const admin = await createTestStaff(harness.app, 'ADMIN');
   const student = await createTestAccount(harness.app);
   const prompt = await harness.post('/api/admin/prompts').set('Cookie', admin.cookie).send({ question: 'One reflection?' });
+  harness.recorder.clear();
   const path = `/api/prompts/${prompt.body.data.id}/answers`;
   harness.barriers.arm('prompt.answer');
   const answer = () => harness.post(path).set('Cookie', student.cookie).send({ body: 'One answer.' }).then((r) => r);
@@ -94,6 +96,7 @@ it.each(['answer', 'publication'] as const)('overlapping publication and answer,
   const admin = await createTestStaff(harness.app, 'ADMIN');
   const student = await createTestAccount(harness.app);
   const old = await harness.post('/api/admin/prompts').set('Cookie', admin.cookie).send({ question: 'Before publication?' });
+  harness.recorder.clear();
   const path = `/api/prompts/${old.body.data.id}/answers`;
   harness.barriers.arm('prompt.answer');
   harness.barriers.arm('prompt.publish');
@@ -113,7 +116,13 @@ it.each(['answer', 'publication'] as const)('overlapping publication and answer,
   const stored = await harness.get(path).set('Cookie', student.cookie);
   expect(stored.body.data.items).toHaveLength(result.body.ok ? 1 : 0);
   expect(stored.body.data.live).toBe(false);
-  expect(harness.recorder.events.map((event) => event.event)).toEqual(result.body.ok ? ['postCreated'] : []);
+  expect(harness.recorder.events.map((event) => event.event)).toEqual(
+    result.body.ok
+      ? first === 'answer'
+        ? ['postCreated', 'promptPublished']
+        : ['promptPublished', 'postCreated']
+      : ['promptPublished'],
+  );
   const later = await harness.post(path).set('Cookie', student.cookie).send({ body: 'After supersession.' });
   expect(later.body).toMatchObject({ ok: false, error: { code: 'prompt_not_live' } });
 });
@@ -174,5 +183,9 @@ it('equal publication timestamps still leave exactly one live Prompt in durable 
   expect(new Set(history.body.data.items.map((p: { publishedAt: string }) => p.publishedAt)).size).toBe(1);
   const live = await harness.get('/api/prompts/live').set('Cookie', admin.cookie);
   expect(live.body.data.prompt.id).toBe(history.body.data.items[0].id);
-  expect(harness.recorder.events).toEqual([]);
+  expect(harness.recorder.events).toEqual([
+    { event: 'promptPublished', args: [] },
+    { event: 'promptPublished', args: [] },
+    { event: 'promptPublished', args: [] },
+  ]);
 });

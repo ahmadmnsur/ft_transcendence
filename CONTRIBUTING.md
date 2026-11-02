@@ -338,6 +338,13 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
    exact `Origin === PUBLIC_ORIGIN` and rejects absent, `null` and mismatched origins. It also
    verifies that the browser connection is WebSocket-only and HTTP long-polling is unavailable.
 
+   > **Staff room, 2026-11-03** ([`docs/spec.md`](docs/spec.md) §7.2, §16.3;
+   > [ADR-0021](docs/adr/0021-new-dots-and-live-updates.md) decisions 6–7;
+   > [#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261)). With real sessions and
+   > sockets, the category also asserts that a `STUDENT` socket never receives `reports:changed`
+   > when a Report is filed, a Peer Moderator's does, and after that Peer Moderator is demoted the
+   > same connected socket stops receiving it.
+
 6. **Reflection Prompt serialization** — exercises publication versus answer, two publications
    with equal timestamps, answer versus Round close, and duplicate/retried answers. It asserts one
    live Prompt by the durable, real-time-respecting publication order, no answer accepted after

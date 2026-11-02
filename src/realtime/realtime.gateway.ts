@@ -11,20 +11,26 @@ import { SessionResolver, type ActiveSession } from '../core/session-resolver';
 import { MessagingService } from '../messaging/messaging.service';
 import type { DirectMessageView } from '../messaging/views';
 import { LIMITS, isValidText } from '../shared/limits';
+import type { Role } from '../shared/roles';
 import { isUuid } from '../shared/uuid';
 import { PresenceAudience } from './presence-audience';
 import { PresenceRegistry, type PresenceTransition } from './presence-registry';
 
 export const FEED_ROOM = 'feed';
 export const ROUNDS_ROOM = 'rounds';
+export const STAFF_ROOM = 'staff';
 
 export function studentRoom(studentId: string): string {
   return `student:${studentId}`;
 }
 
+function joinsStaff(role: Role): boolean {
+  return role === 'PEER_MODERATOR' || role === 'ADMIN';
+}
+
 type SocketSession = { studentId: string; sessionHash: string };
 
-type HeldEvent = { event: string; payload: object };
+type HeldEvent = { rooms: readonly string[]; event: string; payload: object };
 
 type DmSendAck =
   | { ok: true; data: DirectMessageView }
@@ -53,7 +59,7 @@ function dmTypingPayload(payload: unknown): { recipientId: string; typing: boole
   return { recipientId: recipientId.toLowerCase(), typing };
 }
 
-type WaitingSocket = { rooms: string[]; held: HeldEvent[] };
+type WaitingSocket = { rooms: string[]; held: HeldEvent[]; staffAfterMove?: boolean };
 
 function socketSession(socket: Socket): SocketSession | null {
   const data = socket.data as Partial<SocketSession>;
@@ -131,7 +137,7 @@ export class RealtimeGateway
     try {
       const row = await this.prisma.session.findUnique({
         where: { id: session.sessionHash },
-        select: { id: true },
+        select: { id: true, student: { select: { role: true } } },
       });
       if (row === null) {
         this.waiting.delete(socket.id);
@@ -140,10 +146,12 @@ export class RealtimeGateway
       }
       const waiting = this.waiting.get(socket.id);
       if (waiting === undefined) return;
+      const staff = waiting.staffAfterMove ?? joinsStaff(row.student.role);
+      if (staff) waiting.rooms.push(STAFF_ROOM);
       const joined = socket.join(waiting.rooms);
       this.waiting.delete(socket.id);
       for (const held of waiting.held) {
-        socket.emit(held.event, held.payload);
+        if (held.rooms.some((room) => waiting.rooms.includes(room))) socket.emit(held.event, held.payload);
       }
       await joined;
       this.registry.activate(socket.id);
@@ -279,9 +287,7 @@ export class RealtimeGateway
     if (server === null) return;
     server.to([...rooms]).emit(event, payload);
     for (const waiting of this.waiting.values()) {
-      if (waiting.rooms.some((room) => rooms.includes(room))) {
-        waiting.held.push({ event, payload });
-      }
+      waiting.held.push({ rooms, event, payload });
     }
   }
 
@@ -291,6 +297,34 @@ export class RealtimeGateway
 
   override postLikes(postId: string, likeCount: number): void {
     this.publish([FEED_ROOM], 'post:likes', { postId, likeCount });
+  }
+
+  override postRemoved(postId: string): void {
+    this.publish([FEED_ROOM], 'post:removed', { postId });
+  }
+
+  override promptPublished(): void {
+    this.publish([FEED_ROOM], 'prompt:published', {});
+  }
+
+  override reportsChanged(): void {
+    this.publish([STAFF_ROOM], 'reports:changed', {});
+  }
+
+  override roleChanged(studentId: string, role: Role): void {
+    const server = this.server;
+    if (server === null) return;
+    const staff = joinsStaff(role);
+    for (const socketId of this.registry.socketIds({ studentId })) {
+      const waiting = this.waiting.get(socketId);
+      if (waiting !== undefined) {
+        waiting.staffAfterMove = staff;
+        continue;
+      }
+      const socket = server.sockets.sockets.get(socketId);
+      if (staff) void socket?.join(STAFF_ROOM);
+      else void socket?.leave(STAFF_ROOM);
+    }
   }
 
   override roundOpened(): void {
