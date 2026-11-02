@@ -26,6 +26,15 @@ export default {
       other: '{count} results',
     },
   },
+  characterCount: {
+    left: { one: '{count} character left', other: '{count} characters left' },
+    over: { one: '{count} character over the limit', other: '{count} characters over the limit' },
+    reached: {
+      one: 'Limit of {count} character reached. Text past it was not added.',
+      other: 'Limit of {count} characters reached. Text past it was not added.',
+    },
+    limit: { one: 'Up to {count} character.', other: 'Up to {count} characters.' },
+  },
   banner: { dismiss: 'Dismiss {title}' },
   roleLabel: 'Admin',
   skillChip: {

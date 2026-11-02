@@ -9,6 +9,12 @@ export default {
   answerPages: 'Answer pages',
   question: 'Reflection question', publish: 'Publish', publishing: 'Publishing…', published: 'Your Reflection Prompt is published.',
   publishHint: 'Publishing closes the previous Prompt. Questions and answers cannot be edited or deleted.',
+  textLimit: { one: '{min}–{count} character.', other: '{min}–{count} characters.' },
+  textEmpty: { one: 'Enter {min}–{count} character.', other: 'Enter {min}–{count} characters.' },
+  textInvalid: {
+    one: 'Enter {min}–{count} character. Remove unsupported control characters.',
+    other: 'Enter {min}–{count} characters. Remove unsupported control characters.',
+  },
   confirmTitle: 'Publish this Reflection Prompt?', cancel: 'Cancel',
   answerLabel: 'Your answer', answerHint: 'Your answer is visible immediately to every signed-in Student. You can answer once, and cannot edit or delete it.',
   submit: 'Publish answer', submitting: 'Publishing answer…', answered: 'You have answered this Reflection Prompt.',

@@ -28,6 +28,16 @@ export default {
       other: '{count} résultats',
     },
   },
+  characterCount: {
+    left: { one: '{count} caractère restant', many: '{count} de caractères restants', other: '{count} caractères restants' },
+    over: { one: '{count} caractère de trop', many: '{count} de caractères de trop', other: '{count} caractères de trop' },
+    reached: {
+      one: 'Limite de {count} caractère atteinte. Le texte au-delà n’a pas été ajouté.',
+      many: 'Limite de {count} de caractères atteinte. Le texte au-delà n’a pas été ajouté.',
+      other: 'Limite de {count} caractères atteinte. Le texte au-delà n’a pas été ajouté.',
+    },
+    limit: { one: 'Jusqu’à {count} caractère.', many: 'Jusqu’à {count} de caractères.', other: 'Jusqu’à {count} caractères.' },
+  },
   banner: { dismiss: 'Masquer « {title} »' },
   roleLabel: 'Admin',
   skillChip: {

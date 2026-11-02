@@ -1254,6 +1254,10 @@ behaviour-free ticket after Rounds.
      > and follows §3.8.2. Besides §6.15's cases, `busy_retry_later` covers §7.2 step 3's pending
      > session re-read, without writing a message.
 
+     > **Changed 2026-11-02** (#254): the body is 1–500 characters (it read 1–2000), held by the
+     > SPA, `dm:send` and a database trigger; a message saved before keeps its whole text and can
+     > still be marked read (spec §6.0.3's and §4.3.8's notes).
+
   3. `GET /api/messages/threads` returns, per peer, a `StudentRef`, the last message, `unreadCount`
      and `canSend`, with the newest activity first (§6.5).
   4. `GET /api/messages/threads/:peerId?cursor` returns both directions, newest first, 50 per

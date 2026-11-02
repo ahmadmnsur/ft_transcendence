@@ -1505,6 +1505,11 @@ Columns: `id` uuid PK; `sender_id` uuid FK; `recipient_id` uuid FK; `body` text;
 - **Service invariants**: `sender_id ≠ recipient_id`; at send, no Block in either direction and the
   recipient is not Removed.
 
+> **Changed 2026-11-02** (#254): `body` is 1–500 characters (§6.0.3's note), held by the trigger
+> `direct_message_body_length` (§4.4's note), which checks a body on insert and when an update
+> changes it. A plain `CHECK` would also test a row whose `read_at` is set, so an older body over
+> 500 characters could never be marked read; the trigger leaves such a body as it is.
+
 #### 4.3.9 `Round`
 
 Columns: `id` uuid PK; `opened_at` timestamptz default now(); `closed_at` timestamptz NULL.
@@ -1684,6 +1689,27 @@ collation. Category 2 fails the suite if any of the ten named objects (objects 1
 Report partial uniques) is missing after `migrate deploy`, or `display_name`'s collation is not
 `und-x-icu`.
 
+> **Count changed 2026-11-02** (#254): eight steps join the nine, all in the migration
+> `20261102120000_text_limits` rather than the one that creates each table, since the tables
+> exist. They hold §6.0.3's text limits in the database, each counted with `char_length`:
+>
+> | # | Object | Holds |
+> | --- | --- | --- |
+> | 10 | `student_text_length` | `email` 1–254, `display_name` 1–40, `learning_goal_text` null or 1–200 |
+> | 11 | `review_text_length` | `learned` and `can_now_do` 1–2000 each |
+> | 12 | `private_feedback_text_length` | `answer_usefulness` and `answer_explanation` 1–2000 each |
+> | 13 | `post_body_length` | `body` 1–280 on a Takeaway (`review_id` set), 1–1000 on a Prompt answer (`prompt_id` set) |
+> | 14 | `reflection_prompt_question_length` | `question` 1–300 |
+> | 15 | `report_text_length` | `text` null or 1–1000 |
+> | 16 | `evidence_filename_length` | `filename` 1–255 |
+> | 17 | `direct_message_body_length` | a `BEFORE INSERT OR UPDATE OF body` trigger and its function: a new or changed `body` is 1–500; an unchanged one is not checked (§4.3.8's note) |
+>
+> Steps 10–16 are `CHECK` constraints. The working count is **seventeen**, or **nineteen** if
+> the `partialIndexes` preview feature is declined. Prisma represents none of the eight, so the
+> gate rule above covers them, and category 2 asserts each by name (§16.3's note). Changing a
+> limit in `src/shared/limits.ts` now also takes a migration that changes its step, reviewed
+> under the Schema gate.
+
 ### 4.5 Where each invariant is held
 
 | Invariant | DB constraint | Service check | Serialization (SSI, §3.6) |
@@ -1722,6 +1748,11 @@ Report partial uniques) is missing after `migrate deploy`, or `display_name`'s c
 | Every Student has its Supabase Auth user | — (no foreign key into `auth`) | sign-up's order (§5.1); only a reset or the seed's guarded run deletes one (§14.9, §15.6) | — |
 | Avatar ≤ 2 MiB PNG/JPEG; Evidence ≤ 5 MiB PDF/PNG/JPEG | — | byte validation §9.5 | — |
 | Live Prompt unique | `UNIQUE publication_order` | max + 1 | publish vs publish |
+
+> **Row added 2026-11-02** (#254): *Every text within its §6.0.3 limit* — DB constraint: steps
+> 10–17 of §4.4's note of the same day, where a Direct Message body is checked only when it is
+> written or changed; service check: the DTOs and the `dm:send` check, with the SPA stopping input
+> at the limit before either; serialization: —.
 
 ### 4.6 Visibility (who reads what, in the application)
 
@@ -2278,6 +2309,22 @@ search routes, §6.2 and §6.12 — is the one string whose minimum is 0**: abse
 trimming, it applies no text filter and is never `validation_failed`, so clearing the search box is
 ordinary use (§3.8.2).
 
+> **Changed 2026-11-02** (#254, at Ahmad's request): a **Direct Message is 1–500** characters (it
+> read 1–2000); every other limit above stays. Each limit is now held on **three layers**: the API,
+> the SPA, and the database (§4.4's note of the same day). The SPA stops a field at its limit when
+> text is typed, pasted, dropped or composed with an IME. It cuts only the text being added, never
+> text already in the field, and cuts whole characters only, so an emoji or a flag is never split. A
+> multi-line field shows how many characters are left once 80% of its limit is used, and a text
+> field or text area says in one sentence when it has cut text. All three layers count characters by
+> code point (`charLength` in `src/shared/limits.ts`, `char_length` in SQL), so an emoji such as 😀
+> counts one and a family emoji counts each of its code points. The SPA counts the field as typed
+> and the API counts it after trimming, so the SPA is never looser than the API. The search box
+> inside a long dropdown, which filters on the client and sends nothing, stops at the 60 characters
+> of Search `q` without that sentence, since nothing it holds is kept. A password field also cuts
+> without it, at 72 bytes, as §5.1's note of 2026-10-31 has it: nothing on the page names that
+> limit. A Direct Message saved before this note keeps its whole text: it still shows, and can
+> still be marked read (§4.3.8's note).
+
 > **Updated 2026-11-01**, decided by the team in Ahmad's review of
 > [#244](https://github.com/ahmadmnsur/ft_transcendence/pull/244): a display name and a new password
 > may not hold an emoji, as `hasEmoji` in `src/shared/limits.ts` defines it (§5.1's note of the same
@@ -2650,6 +2697,9 @@ in either direction), then inserts the `DirectMessage`. **After commit**: `dm:me
 DirectMessage }` or `{ ok: false, error: { code: dm_unavailable | validation_failed |
 busy_retry_later } }`. **No other client event has a handler**; nothing a client sends performs a
 privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Consequences).
+
+> **Changed 2026-11-02** (#254): the body is 1–500 characters after trimming (it read 1–2000);
+> a longer one is acknowledged `validation_failed` and nothing is written (§6.0.3's note).
 
 > **Refined 2026-10-20 by #47, review of #196:** the failure-code list also includes
 > `unauthenticated` when the socket has no session or the sender's transaction re-read finds
@@ -4395,6 +4445,12 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 | 10 | `10-reports` | services + HTTP | The two partial uniques and the Report CHECKs; two concurrent filings by one reporter on one target → one row and `already_reported`, winner unchanged; two concurrent resolutions → one winner, `already_resolved`, a losing removal leaves the Post; every row of a batch shares state, resolver and time; filing vs resolution and vs target Removal, both orders; Remove Post and Remove Student action their open rows atomically — Remove Student includes an open row the removing Admin personally filed, `ACTIONED` with `resolved_by_id` = that Admin, the batch then hidden from that Admin's own resolved audit and visible to another Admin with reporters — Suspension leaves them open; a Peer Moderator sees only eligible open Post groups with no reporter identity and no resolved history, and one conflicting open reporter hides the whole group; an Admin cannot read or resolve their own-target group or any open group or resolved batch containing their own report, while another Admin can, with reporters; a stale queue read followed by demotion is refused on action; a Block create/remove racing a Peer Moderator action, both orders. |
 | 11 | `11-name-search` | services + DB | Sign-up, the Student's own edit and the Admin edit, and any path added later that sets a name, each write a name, and searching its plain form (`helene`, `احمد`, `فاطمه`) finds the Student; after a rename to a name whose folded form does not contain the old folded form, the old one no longer does. Binds the outcome, not the fold's technique; the seed's two directly inserted bootstrap accounts are asserted by §14.8 instead (ADR-0016 d1's note of 2026-10-02). |
 | 12 | `12-sign-in` | HTTP + services + `checkpoint` and the named pause (§3.6.4); for 42, only the token exchange and `/v2/me` replaced by a fixed answer | **A sanction is told only after the right password**: a Suspended or Removed Student signed in with a wrong password gets `password_incorrect`, never the sanction's code; with the right password, `account_suspended` or `account_removed`. **A completed password change leaves no session the old password opened**: a sign-in with the old password racing the change ends refused or signed out in every order staged, held at its own transaction's `checkpoint` and at the change's, and run whole between the change's first sign-out and Supabase's admin update, with the change held at `password-change:admin-update`, then released, and the session gone. **A 42 login finds its Student only by `forty_two_id`**: after an Admin sets another Student's email to the email the fixed `/v2/me` answer returns for a connected Student's 42 account, a 42 login with that account reaches the Student who connected it, never the other. **A password is set without the current one only within a fresh Confirm with 42**: without the confirmation, and eleven minutes after it, the request is refused `confirmation_required`; within ten minutes, once, it succeeds (ADR-0016 d1's notes of 2026-10-04 and 2026-10-08). Untested on purpose: a concurrent duplicate sign-up that fails to delete its spare Supabase Auth user, which harms nothing, and a Supabase `429`, which no test can make Supabase answer on demand. |
+
+> **Row 2 extended 2026-11-02** (#254): category 2's `text-limits.test.ts` asserts §4.4's steps
+> 10–17 by name, each `CHECK` refusing a text one character over its limit and an empty one, and
+> the trigger refusing a new or changed Direct Message body over 500 characters while an older,
+> longer body still reads and is still marked read. The API's own length checks stay untested, as
+> ADR-0016 d1 leaves forms (its note of the same day).
 
 ### 16.4 CI — one advisory workflow (ADR-0016 d8, M21)
 

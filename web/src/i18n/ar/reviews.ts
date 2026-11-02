@@ -21,6 +21,14 @@ export default {
     many: 'من {min} إلى {count} حرفا.',
     other: 'من {min} إلى {count} حرف.',
   },
+  textEmpty: {
+    zero: 'أدخل من {min} إلى {count} حرف.',
+    one: 'أدخل من {min} إلى حرف واحد.',
+    two: 'أدخل من {min} إلى حرفين.',
+    few: 'أدخل من {min} إلى {count} أحرف.',
+    many: 'أدخل من {min} إلى {count} حرفا.',
+    other: 'أدخل من {min} إلى {count} حرف.',
+  },
   textInvalid: {
     zero: 'أدخل من {min} إلى {count} حرف. احذف محارف التحكم غير المسموحة.',
     one: 'أدخل من {min} إلى حرف واحد. احذف محارف التحكم غير المسموحة.',

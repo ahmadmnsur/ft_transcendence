@@ -6,7 +6,8 @@ import { CloseIcon } from '../icons/CloseIcon';
 import { SearchIcon } from '../icons/SearchIcon';
 import { useI18n } from '../../i18n/context';
 import { Button } from './Button';
-import { FieldShell, controlClass, useField, type ControlSize, type FieldMessage } from './field';
+import { LIMITS } from '@shared/limits';
+import { FieldShell, capText, controlClass, useField, type ControlSize, type FieldMessage } from './field';
 
 export interface SelectOption {
   value: string;
@@ -491,10 +492,16 @@ export function Select({
               dir={query === '' ? undefined : 'auto'}
               placeholder={searchPlaceholder}
               value={query}
-              onChange={(event) => {
-                search(event.target.value);
-                setByKeyboard(true);
-              }}
+              {...capText<HTMLInputElement>(
+                { maxChars: LIMITS.searchQuery.maxChars },
+                {
+                  onChange: (event) => {
+                    search(event.target.value);
+                    setByKeyboard(true);
+                  },
+                },
+                { previous: query },
+              )}
               onKeyDown={onInputKeyDown}
               className={`w-full rounded-md border border-line-strong bg-surface py-2 ps-9 text-base text-ink placeholder:text-ink-subtle focus-ring sm:text-sm ${query === '' ? 'pe-3' : 'pe-10'}`}
             />

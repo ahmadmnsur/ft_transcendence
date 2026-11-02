@@ -135,6 +135,7 @@ function FiltersForm({
         ref={nameRef}
         type="search"
         label={copy.nameLabel}
+        maxChars={LIMITS.searchQuery.maxChars}
         value={q}
         error={qInvalid ? format(copy.nameInvalid, { count: LIMITS.searchQuery.maxChars }) : undefined}
         onChange={(event) => {

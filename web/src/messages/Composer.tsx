@@ -7,8 +7,6 @@ import { useI18n } from '../i18n/context';
 import { subscribe } from '../realtime/socket';
 import { usePeerTyping, useTypingSignals } from './typing';
 
-const COUNTER_FROM = 200;
-
 function isFieldCheck(status: ComposerStatus | undefined): boolean {
   return status?.kind === 'empty' || status?.kind === 'tooLong';
 }
@@ -37,7 +35,6 @@ export function Composer({ peerId, peerName, newMessage, onShowNewest }: Compose
   const textRef = useRef<HTMLTextAreaElement>(null);
   const typingSignals = useTypingSignals(peerId);
   const peerTyping = usePeerTyping(peerId);
-  const remaining = LIMITS.directMessage.maxChars - charLength(text.trim());
 
   const { changed: typingChanged } = typingSignals;
   useEffect(() => {
@@ -75,6 +72,7 @@ export function Composer({ peerId, peerName, newMessage, onShowNewest }: Compose
     }
     if (!isValidText(body, LIMITS.directMessage, true)) {
       setStatus({ kind: 'failed', code: 'validation_failed' });
+      textRef.current?.focus();
       return;
     }
     typingSignals.stop();
@@ -145,15 +143,10 @@ export function Composer({ peerId, peerName, newMessage, onShowNewest }: Compose
           placeholder={copy.composerLabel}
           aria-keyshortcuts="Control+Enter Meta+Enter"
           rows={2}
+          maxRows={6}
+          maxChars={LIMITS.directMessage.maxChars}
           value={text}
-          error={
-            remaining < 0
-              ? statusTitle({ kind: 'tooLong' })
-              : status !== undefined && isFieldCheck(status)
-                ? statusTitle(status)
-                : undefined
-          }
-          hint={remaining <= COUNTER_FROM ? formatText(copy.charactersLeft, { count: remaining }) : undefined}
+          error={status !== undefined && isFieldCheck(status) ? statusTitle(status) : undefined}
           onChange={(event) => {
             setText(event.target.value);
             setStatus((current) => (current !== undefined && current.kind !== 'unconfirmed' ? undefined : current));

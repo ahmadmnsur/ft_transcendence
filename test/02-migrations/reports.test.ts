@@ -51,7 +51,9 @@ describe('reports migration', () => {
   it('keeps all three CHECKs by name and definition', async () => {
     const rows = await harness.app.get(PrismaService).$queryRaw<Array<{ name: string; definition: string }>>`
       SELECT conname AS name, pg_get_constraintdef(oid) AS definition FROM pg_constraint
-      WHERE conrelid = '"Report"'::regclass AND contype = 'c' ORDER BY conname`;
+      WHERE conrelid = '"Report"'::regclass AND contype = 'c'
+        AND conname IN ('report_exactly_one_target', 'report_no_self_student', 'report_state_attribution')
+      ORDER BY conname`;
     expect(rows).toEqual([
       { name: 'report_exactly_one_target', definition: 'CHECK (((post_id IS NULL) <> (reported_student_id IS NULL)))' },
       { name: 'report_no_self_student', definition: 'CHECK (((reported_student_id IS NULL) OR (reporter_id <> reported_student_id)))' },

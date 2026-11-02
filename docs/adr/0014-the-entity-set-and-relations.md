@@ -80,6 +80,11 @@
 > Raw SQL stays at **nine** steps, or **eleven** if the `partialIndexes` preview feature is declined
 > (the *Consequences* count note of 2026-10-10).
 
+> **Count revised 2026-11-02 by [#254](https://github.com/ahmadmnsur/ft_transcendence/issues/254):**
+> raw SQL is now **seventeen** steps, or **nineteen** with the preview feature declined. Eight
+> steps hold the text limits in the database (the *Consequences* count note of 2026-11-02). The
+> tables, columns and enums do not change.
+
 `document/en.subject.md:373` requires "a clear schema and well-defined relations", and `:1280`-`:1284`
 requires the schema to be *documented* — tables, relationships, key fields and data types. Twelve
 tickets have decided what this platform does; none of them has said what tables it has. This ADR is
@@ -803,6 +808,19 @@ model's central entity, to hold a rule the matcher already holds as a loop invar
   > no raw-SQL step: `password_version`, `display_name_search` and `forty_two_id` are plain Prisma,
   > and no row-level security or grants step is added. The working count stays **nine**, or
   > **eleven** if the `partialIndexes` preview feature is declined.
+
+  > **Count revised 2026-11-02 by [Text fields: one limit on every layer, a 500-character Direct
+  > Message, and growing text areas](https://github.com/ahmadmnsur/ft_transcendence/issues/254).**
+  > The database now holds the text limits of [`docs/spec.md`](../spec.md) §6.0.3, which only the
+  > API and the SPA held before, so eight hand-written steps join the nine, in one migration:
+  > seven `CHECK` constraints, one per table with a limited text column (`Student`, `Review`,
+  > `PrivateFeedback`, `Post`, `ReflectionPrompt`, `Report`, `Evidence`), each counting with
+  > `char_length`, and a trigger with its function on `DirectMessage.body`. The body is a trigger,
+  > not a `CHECK`, because the same ticket lowers the Direct Message limit from 2000 to 500: a
+  > `CHECK` is tested again whenever `read_at` is set, so an older, longer message could never be
+  > marked read, while the trigger checks a body only when it is written or changed. The steps
+  > are listed in spec §4.4's note of the same day and fall under its gate rule. The working count
+  > is **seventeen**, or **nineteen** if the `partialIndexes` preview feature is declined.
 - **The seed gains an input that was not on the map's list: the Skill catalogue.** Without it no
   Student can list anything, no Match can form and the matcher has no inputs — it joins the bootstrap
   Admin, the Peer Moderator and the one Reflection Prompt as something without which nothing is

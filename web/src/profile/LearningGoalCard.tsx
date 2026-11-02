@@ -227,12 +227,11 @@ export function LearningGoalCard({ target, learnPickerId }: { target: ProfileTar
             minChars: LIMITS.learningGoalText.minChars,
           })}
           rows={3}
+          maxChars={LIMITS.learningGoalText.maxChars}
+          singleLine
           value={text}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') event.preventDefault();
-          }}
           onChange={(event) => {
-            setDraft({ skillId, text: event.target.value.replace(/[\r\n]+/g, ' ') });
+            setDraft({ skillId, text: event.target.value });
             setTextError(false);
           }}
           error={
