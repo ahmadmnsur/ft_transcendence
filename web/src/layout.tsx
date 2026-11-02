@@ -24,6 +24,7 @@ export function PageTitle({ name }: { name?: string }): React.JSX.Element {
 
 type BarPath = '/' | '/match' | '/prompts' | '/messages' | '/students' | '/friends' | '/moderation' | '/admin';
 type AccountPath = '/me' | '/feedback' | '/leaderboard' | '/rules';
+type GuestPath = '/sign-in' | '/sign-up';
 
 function activeOptions(to: string): { exact: boolean; includeSearch: false } {
   return { exact: to === '/', includeSearch: false };
@@ -171,16 +172,40 @@ function SiteHeader(): React.JSX.Element {
       options={languages.map((l) => ({ value: l, label: languageNames[l], lang: l }))}
       value={language}
       onValueChange={onLanguageChange}
-      className={student !== null ? 'w-32 shrink-0' : 'w-32 shrink-0 max-sm:order-1'}
+      className="w-32 shrink-0"
     />
   );
 
+  const phoneMenuButton = (
+    <IconButton {...phoneMenu.buttonProps} label={copy.menu} className="ms-auto md:hidden">
+      <MenuIcon size={20} />
+    </IconButton>
+  );
+
+  const phoneMenuPanelClass = `absolute inset-x-0 top-full z-30 ${panelFitClass} border-y border-line bg-surface shadow-lg md:hidden`;
+
+  const themeButton = (
+    <IconButton label={themeLabel} size="sm" onClick={onThemeToggle} className="max-md:hidden">
+      {dark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+    </IconButton>
+  );
+
+  const themePanelItem = (
+    <button type="button" onClick={onThemeToggle} className={panelItemClass}>
+      {themeLabel}
+    </button>
+  );
+
   if (student === null) {
+    const guestLinks: Array<{ to: GuestPath; label: string }> = [
+      { to: '/sign-in', label: copy.signInLink },
+      { to: '/sign-up', label: copy.signUpLink },
+    ];
     return (
       <header ref={followHeaderHeight} className={headerClass}>
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3 sm:gap-3">
           {brandLink}
-          <nav aria-label={copy.navLabel} className="ms-auto flex min-w-0 flex-wrap items-center gap-2 max-sm:order-2 max-sm:basis-full max-sm:justify-end">
+          <nav aria-label={copy.navLabel} className="ms-auto hidden items-center gap-2 md:flex">
             <Link to="/sign-in" className={`shrink-0 ${buttonClasses({ variant: 'secondary', size: 'sm' })}`}>
               {copy.signInLink}
             </Link>
@@ -188,9 +213,22 @@ function SiteHeader(): React.JSX.Element {
               {copy.signUpLink}
             </Link>
           </nav>
-          <IconButton label={themeLabel} size="sm" onClick={onThemeToggle} className="max-sm:order-1 max-sm:ms-auto">
-            {dark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
-          </IconButton>
+          {phoneMenuButton}
+          <nav aria-label={copy.navLabel} {...phoneMenu.panelProps} className={phoneMenuPanelClass}>
+            <div className="mx-auto w-full max-w-6xl px-4 py-2">
+              <ul>
+                {guestLinks.map((link) => (
+                  <li key={link.to}>
+                    <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2 border-t border-line pt-2">{themePanelItem}</div>
+            </div>
+          </nav>
+          {themeButton}
           {languageSwitcher}
         </div>
       </header>
@@ -245,14 +283,8 @@ function SiteHeader(): React.JSX.Element {
             {signOut}
           </div>
         </div>
-        <IconButton {...phoneMenu.buttonProps} label={copy.menu} className="ms-auto md:hidden">
-          <MenuIcon size={20} />
-        </IconButton>
-        <nav
-          aria-label={copy.navLabel}
-          {...phoneMenu.panelProps}
-          className={`absolute inset-x-0 top-full z-30 ${panelFitClass} border-y border-line bg-surface shadow-lg md:hidden`}
-        >
+        {phoneMenuButton}
+        <nav aria-label={copy.navLabel} {...phoneMenu.panelProps} className={phoneMenuPanelClass}>
           <div className="mx-auto w-full max-w-6xl px-4 py-2">
             <ul>
               {barLinks.map((link) => (
@@ -276,16 +308,12 @@ function SiteHeader(): React.JSX.Element {
                   </li>
                 ))}
               </ul>
-              <button type="button" onClick={onThemeToggle} className={panelItemClass}>
-                {themeLabel}
-              </button>
+              {themePanelItem}
               {signOut}
             </div>
           </div>
         </nav>
-        <IconButton label={themeLabel} size="sm" onClick={onThemeToggle} className="max-md:hidden">
-          {dark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
-        </IconButton>
+        {themeButton}
         {languageSwitcher}
       </div>
       <nav aria-label={copy.navLabel} className="mx-auto hidden w-full max-w-6xl px-4 pt-1 md:block">

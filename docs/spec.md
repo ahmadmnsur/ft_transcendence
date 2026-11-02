@@ -716,6 +716,11 @@ included (ADR-0020 d6, §3.5.5).
 > or the heading a `#` link opens, stops below it, not behind it. The account menu and, below `md`,
 > the Menu's panel each scroll on their own when taller than the window under the header.
 
+> **The signed-out header below `md`, 2026-11-02.** It wrapped onto two lines on a phone. Below
+> `md` its line now holds the logo, a Menu button and the language switcher. The Menu's panel lists
+> Sign in and Sign up, the current page marked, then the theme switch, and closes like the signed-in
+> one. From `md` the line is unchanged: Sign in, Sign up, the theme button and the language switcher.
+
 #### 3.5.2 Data, validation and state
 
 - All server state through TanStack Query; the socket only invalidates or inserts (§7.4). No global
@@ -886,7 +891,8 @@ icon set of hand-authored inline SVG React components (no icon package, no CDN).
     `localStorage` key `peerconnect.theme`, as `light` or `dark`; any other stored value is
     ignored. A choice made in one tab reaches the browser's other open tabs at once. Like the
     language, the choice belongs to the browser, not the account. Signed in below `md`, the switch
-    is an item of the phone menu instead, so the header's line keeps the logo's width.
+    is an item of the phone menu instead, so the header's line keeps the logo's width. *(Signed out
+    too, since 2026-11-02, §3.5.1.)*
   - **No flash.** `web/public/theme.js`, a small script at the top of `web/index.html`, sets
     `data-theme` on `<html>` before anything is drawn, so a stored choice never shows the other
     theme first, and the SPA starts from the theme it set. It is served from PeerConnect's own
@@ -1053,7 +1059,8 @@ in one object per area shaped like the dictionary, as that rule's *Before the fo
   "Language" in the current language, its label hidden visually while screen readers still read it.
   Its options are each language's own name, English, Français and العربية, each with its `lang`
   attribute, and are never translated. Choosing one switches at once. From 360 px wide the header
-  may wrap to a second line.
+  may wrap to a second line. *(2026-11-02: the signed-out header no longer wraps either; below `md`
+  its line holds the logo, a Menu button and the switcher, §3.5.1.)*
 - **The legal pages' text stays outside the dictionary**, in their Markdown files (§3.5.4); their
   page titles and the footer links are dictionary text.
 
