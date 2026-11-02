@@ -182,7 +182,7 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > **2026-10-25:** the *Signed out* row gains the landing page at `/`, which shows no data
    > (decision 12's note of 2026-10-25).
 
-   > **A new row, 2026-11-01 ([Direct Messages: a typing indicator, and Presence in the thread's header](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+   > **A new row, 2026-11-01 ([Direct Messages: a typing indicator, and Presence in the thread's header](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*, **landed on `main` at `4cc1717`**:
    > *That a Student is writing a Direct Message to another, while they write* — that other
    > Student only, on their open page of the pair's Direct Messages, and only while the two
    > could exchange one (no Block either way, neither Removed). It is never stored, so nobody

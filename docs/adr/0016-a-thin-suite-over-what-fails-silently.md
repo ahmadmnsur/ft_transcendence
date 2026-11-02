@@ -369,6 +369,14 @@ done when the PR template already is one.**
    > real round trip to 42 is shown by hand, once on the registered application and again at the
    > defense. The category count stays at twelve.
 
+   > **Three assertions to come, 2026-11-03 (ADR-0021 *Consequences*).** Each is written by the
+   > ticket that builds what it tests, and each guards something that would fail without a sign:
+   > in `05-socket-origin`, a `STUDENT` socket never hears `reports:changed` and a demoted Peer
+   > Moderator's socket stops hearing it ([Live updates: removed Posts, new Prompts, Prompt answers and the report queue](https://github.com/ahmadmnsur/ft_transcendence/issues/261));
+   > in `12-sign-in`, the New dot rule across an opening, a new Direct Message and a new sign-in,
+   > and in `09-review-xp-badges`, the Mentee is never shown `read_at` ([New dots: a dot on each link where something waits for you](https://github.com/ahmadmnsur/ft_transcendence/issues/262)).
+   > The category count stays at twelve.
+
 2. **Vitest, one runner for both ends.** Vite is already a locked stack component (ADR-0004
    decision 4's dev overlay), so Vitest reuses its transform and there is no second
    `ts-jest`/babel configuration to keep alive. One runner means **one command for decision 6 to

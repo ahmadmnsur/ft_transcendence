@@ -271,6 +271,11 @@ arms. Those three sentences are the whole shape.
    ADR-0007 decision 5 word for word: Post's second arm "references the **Review** whose Public
    Takeaway it distils."
 
+   > **Private Feedback gains read state, 2026-11-03 by ADR-0021 decision 4.**
+   > `PrivateFeedback.read_at`, nullable, is set when the Mentor opens `/feedback` or that Match's
+   > page. It feeds the Mentor's New dot and nothing else: no response carries it, so its author is
+   > never shown whether it was read. The three homes and their readers are unchanged.
+
 2. **Six Match statuses, partitioned into standing and repudiated.**
 
    | Status | Meaning | |
@@ -446,6 +451,11 @@ arms. Those three sentences are the whole shape.
    > and nothing else: the sender is never shown whether a message has been read. That follows the
    > note above that read state belongs to the other participant, and the Privacy Policy promises it.
 
+   > **A second reader of `read_at`, 2026-11-03 by ADR-0021 decision 3.** This read "no
+   > cross-surface push, only a column the thread list counts". The Messages New dot now counts it
+   > too, in the header of every page. It still tells only the recipient that something waits, never
+   > the sender, and nothing is delivered or listed, so it is still not the notification system.
+
 7. **Streak is a stored integer on Student, recomputed in the Round-close transaction.** For every
    Student, that transaction asks whether the closing Round contained qualifying activity:
    increment if so, reset to zero if not, **and skip Students who are Suspended or Removed**.
@@ -535,6 +545,13 @@ arms. Those three sentences are the whole shape.
    > and re-queries the authenticated viewer's own progress over HTTP; the ordinary Badge list then
    > reflects any Consistent Learner award committed by Round close. No Badge payload, per-Student
    > socket event, notification entity, unread state or delivery mechanism is added.
+
+   > **A fourth room and more events, 2026-11-03 by ADR-0021 decisions 5 and 6.** `staff` joins the
+   > three rooms, for Peer Moderators and Admins, and a role change moves a Student's sockets into
+   > or out of it. The new events, `friends:changed`, `match:changed`, `post:likes`,
+   > `post:removed`, `prompt:published`, `reports:changed` and `new-dots:changed`, all go from the
+   > server to the client. The note above still holds for progress: no event carries a Badge or
+   > speaks of XP.
 
 9. **The entire explanation state is frozen on the Match, not merely the Score.** `Match` carries
    `compatibility_score smallint NULL` (null for an Admin's hand-made Match, ADR-0006 d10) and

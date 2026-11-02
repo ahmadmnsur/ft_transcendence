@@ -316,6 +316,11 @@ every place they could do social damage.**
     > reporter receives no report status or sanction disclosure and cannot reliably infer a
     > Suspension; decision 12's no-feedback rule stands on privacy rather than on that example.
 
+    > **A push channel exists since 2026-11-03 (ADR-0021 decisions 5 and 7).** This read "there is
+    > no push channel". The server now sends events after more commits, `reports:changed` among
+    > them, but that one goes only to Peer Moderators and Admins and carries nothing, and no event
+    > reaches the reporter or the reported Student. The reporter still learns nothing.
+
 13. **Reporting and Block stay separate in the model, and are offered together in the UI.**
     `CONTEXT.md` says a Block is "always a Student's own act"; a report is a request for staff
     action. Auto-Blocking on report would be worse than untidy: ADR-0006 makes **Block** a hard

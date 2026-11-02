@@ -127,10 +127,15 @@ on the dev path (the base path opens to the local network only when a member's `
 Supabase Auth returns, which lives only inside that request on the server (§5.1, ADR-0003 d1's
 note); any Compose service beyond the six of §15.1.
 
-> **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+> **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*, **landed on `main` at `4cc1717`**:
 > a typing indicator on a Direct Message page is built (§7.3's note of the same day). It is one
 > bullet of the advanced chat Minor, which stays unclaimed and out of scope: two of its six bullets
 > need a game. Read receipts stay out.
+
+> **2026-11-03 ([#259](https://github.com/ahmadmnsur/ft_transcendence/issues/259); ADR-0021)**: New dots, a dot on a link when
+> something waits for the Student on that page, and more live events are in scope, on
+> [#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260), [#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261) and [#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262). The notification system stays out: no number, popup,
+> operating-system notification, inbox or list of what happened (ADR-0021 decision 8).
 
 **Out of scope with the move to Supabase** (map #85, ADR-0019): everything Supabase offers beyond
 its three stores, namely its sessions and tokens past one request, its browser client, the Data
@@ -357,6 +362,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0018 | Pages describe the model as built; two kinds of copy, the team's (Supabase, Frankfurt) and a local one (d1's note of 2026-10-11); one cookie; the browser loads nothing from third parties and never contacts Supabase (Sign in with 42 the one chosen exception); logs clean and capped, the team project's `postgres` role with four log settings (d6's note of 2026-10-11); throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes (a fifth, the landing page at `/`, since d12's note of 2026-10-25), footer everywhere; acceptance checkbox validated, not stored, on the 42 sign-up form too; Removal on request only, keeping the hash and the 42 account number; 42 data minimisation; 42's account `id` in `Student.forty_two_id` as the only key; recovery through 42 only; Privacy Policy moves with personal data. |
 | ADR-0019 | Supabase is three stores and nothing more: Postgres as the database, Storage for the two buckets, Auth as the place each password is kept and checked. The browser never talks to Supabase; PeerConnect keeps its session, Prisma, Socket.IO and Sign in with 42. One team project in Frankfurt, which Kamel owns and keeps available. |
 | ADR-0020 | Multi-language (English, French, Arabic) and right-to-left (Arabic) claimed; WCAG stays out. Every text the SPA shows or gives to a screen reader is translated in the SPA; names, text for developers, the seed's text and what the browser or 42 draws are not; the API keeps its English `message` and `"Former student"`, which the SPA never shows. A typed dictionary over `Intl`, no package; `tsc -b` refuses a missing text, plural form or placeholder; English is the fallback. Every value isolated; numbers, dates and lists by `Intl` with `en-GB`, `fr` and `ar-u-nu-arab`. First visit from the browser's languages; the choice in `localStorage` only when picked; switcher in the shared header on every route. Flow-relative classes only, the build refusing a left or right class; tables and the chart mirror; arrows flip. A bundled Noto Sans Arabic for Arabic characters. Legal pages English until translated once, the English canonical, one date for three versions. Each slice ships its text in three languages (`CONTRIBUTING.md` → *Text ships in three languages*). |
+| ADR-0021 | New dots: a red dot after a link's text, no number, when something waits on that page and is newer than this sign-in's last opening of it; menus and the tab icon show one too. Openings on five `Session` columns; `PrivateFeedback.read_at`, never shown to its author. Events say "read again", except `post:removed { postId }` and the author's `post:likes { postId, likeCount }`; a `staff` room that follows role changes. Blocks, Reports' parties and sanctions stay silent; not the notification system. Built by #260, #261, #262. |
 | Map #1 | Stack: NestJS, PostgreSQL, Prisma, socket.io, React, Tailwind, TanStack, Recharts, Vitest, Docker Compose. Vertical slices DB-through-UI. |
 | Map #85 | Supabase provides the database, the file storage and the password check; Socket.IO stays; `make up` on any machine serves `https://localhost:8443`; hosting comes later. |
 | Map #139 | PeerConnect in English, French and Arabic; Hussein owns both modules; Skill names stay English; the database stores nothing per language; switching changes language and direction at once, without a reload. |
@@ -1787,7 +1793,7 @@ application:**
 > **2026-10-25:** the *Signed out* row also covers the landing page at `/`, which shows no data
 > (§3.5.1's note of 2026-10-25).
 
-> **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+> **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*, **landed on `main` at `4cc1717`**:
 > a new row. *That a Student is writing a Direct Message to another* — that other Student only,
 > while the pair could exchange one, on their open page of the pair's messages; never stored
 > (§7.3's note of the same day, ADR-0018 d4's note). *Presence* stays with accepted Friends: the
@@ -2708,7 +2714,7 @@ privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Con
 > §6.15's retry-exhaustion and Auth-unreachable cases, `busy_retry_later` answers a send while
 > §7.2 step 3's session re-read is pending: no message is written in that window.
 
-> **A second client event, 2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); ADR-0003 d9's note of the same day)** *(uncommitted)*:
+> **A second client event, 2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); ADR-0003 d9's note of the same day)** *(uncommitted)*, **landed on `main` at `4cc1717`**:
 > the heading's "exactly one event" no longer holds. A client may also send **`dm:typing`**,
 > payload exactly `{ recipientId: uuid, typing: boolean }`, with **no acknowledgement**. The
 > gateway drops any other payload, and an event while §7.2 step 3's re-read is pending, without
@@ -2745,7 +2751,7 @@ privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Con
 > there, page 1 keeps 20 Posts, and its `total` grows by one. Another page takes nothing; its
 > reader sees the Post on page 1, which is read again when opened.
 
-> **A seventh event, 2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); §7.3's note of the same day)** *(uncommitted)*:
+> **A seventh event, 2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); §7.3's note of the same day)** *(uncommitted)*, **landed on `main` at `4cc1717`**:
 >
 > | Event | Room | Payload | Emitted after the commit of | Client reaction |
 > | --- | --- | --- | --- | --- |
@@ -2759,6 +2765,15 @@ privileged action (ADR-0003 d9). DMs are not restricted to Friends (ADR-0018 Con
 Round events are content-free invalidation signals (ADR-0010 d7, ADR-0015 d8); no event carries a
 Badge, a Report, a role or any Admin data. **No event is added** for Likes, declines, Reviews,
 Evidence, Prompt publication, reports or sanctions; those surfaces refresh on navigation or reload.
+
+> **Changed 2026-11-03 by ADR-0021 decisions 5 and 6 ([#259](https://github.com/ahmadmnsur/ft_transcendence/issues/259))**: friend
+> requests, Match answers, Reviews, Prompt publication, removed Posts, the report queue and the
+> author's like count gain events, and a fourth room, `staff`, joins for Peer Moderators and
+> Admins. Each row is added here by the ticket that builds it: [#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260) (`friends:changed`,
+> `match:changed`, `post:likes`), [#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261) (`post:removed`, `prompt:published`,
+> `reports:changed`) and [#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262) (`new-dots:changed`). Evidence and sanctions still have no
+> event, and the sentence above holds for them. No new event carries a Badge, a Report, a role or
+> Admin data.
 
 ### 7.5 Lifecycle and client retry (M27)
 
@@ -2796,7 +2811,7 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > read in that window answers online, as the friends were last told. The transitions and broadcasts
 > above are unchanged, and nothing is stored.
 
-> **Shortened 2026-11-01, decided by Ahmad ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*: the grace timer is **5
+> **Shortened 2026-11-01, decided by Ahmad ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*, **landed on `main` at `4cc1717`**: the grace timer is **5
 > seconds**, not 20, so a Friend who closes the page shows offline about 5 seconds later. A reload
 > reconnects within 1 to 2 seconds and still broadcasts nothing; a connection that drops for longer
 > than the window shows offline, then online again. A connection lost without closing (a sleeping
@@ -3324,6 +3339,10 @@ Knowledge Sharer progress but never Streak (ADR-0002 d9). Consistent Learner is 
 - **`/rules`**: a static page with the XP table, the ten Level bands and the Level-10 cap, and the three
   Badge conditions. No data is fetched.
 
+> **Still true for progress, 2026-11-03 (ADR-0021 decision 3; ADR-0010 d7's note of the same
+> day)**: New dots and Private Feedback's `read_at` come elsewhere, and none of them shows XP, a
+> Level or a Badge. The fourth bullet holds as written.
+
 ### 10.8 Promotion to Admin
 
 XP, Level, Streak value, Badges and Posts stay and render normally on the profile. Only the
@@ -3376,7 +3395,7 @@ Student set on the actor still applies. Only the blocker can lift it. The Privac
   only on messages addressed to the opener.
 - **No read receipts**: `read_at` feeds the recipient's unread count and nothing else.
 
-  > **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+  > **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*, **landed on `main` at `4cc1717`**:
   > a **typing indicator** is not a read receipt: it tells the recipient that the sender is writing
   > to them now, and tells the sender nothing. It goes only to a Student the sender could message,
   > is never stored, and runs over §7.3's `dm:typing`.
@@ -4877,7 +4896,7 @@ Rules every ticket inherits; a PR breaking one is not done.
 6. Nothing a client sends over the socket performs a privileged action; `dm:send` is the only client
    event.
 
-   > **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); §7.3's note)** *(uncommitted)*:
+   > **2026-11-01 ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249); §7.3's note)** *(uncommitted)*, **landed on `main` at `4cc1717`**:
    > `dm:send` and `dm:typing` are the only client events, and `dm:send` is the only one that writes.
 7. The socket admits only `Origin === PUBLIC_ORIGIN`, before session resolution, WebSocket only.
 8. `PUBLIC_ORIGIN` is the only place the origin exists; no hardcoded `https://localhost:8443` or
