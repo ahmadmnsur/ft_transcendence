@@ -143,6 +143,10 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > [Settle how accounts work on Supabase Auth](https://github.com/ahmadmnsur/ft_transcendence/issues/92) does with Supabase bans; a ban there would only stop the
    > password check.
 
+   > **Widened 2026-11-03 by ADR-0021 decision 4.** The row also holds five nullable timestamps:
+   > when this sign-in last opened Messages, Match, Friends, Prompts and Reports. They feed the New
+   > dots, start empty at sign-in and go with the row. The role is still read from the Student row.
+
 6. **What kills a session:** logout deletes that row; a password change or a moderation
    **Suspension** deletes *every* row for that Student. A **role change deletes nothing** —
    decision 5 means it takes effect on the next request.
@@ -239,7 +243,7 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > **The rule above is unchanged**: nothing a client sends over the socket performs a
    > privileged action, and a direct message is the only write a client sends.
 
-   > **A second client event, 2026-11-01, decided by Ahmad ([Direct Messages: a typing indicator, and Presence in the thread's header](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*.
+   > **A second client event, 2026-11-01, decided by Ahmad ([Direct Messages: a typing indicator, and Presence in the thread's header](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*, **landed on `main` at `4cc1717`**.
    > A client may now also send `dm:typing { recipientId, typing }`, which says that its Student
    > is writing a Direct Message to that recipient, or has stopped. It belongs to the 1:1 direct
    > messages this decision already puts on the socket. It writes nothing and stores nothing: the
@@ -520,7 +524,7 @@ database read per chat message.
   > during a reload says what the other friends were last told. The window, its broadcasts and
   > "never a record" are unchanged. `docs/spec.md` §7.6 and `CONTEXT.md` carry it.
   >
-  > **The window shortened to 5 seconds, 2026-11-01, decided by Ahmad ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*.
+  > **The window shortened to 5 seconds, 2026-11-01, decided by Ahmad ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*, **landed on `main` at `4cc1717`**.
   > Twenty seconds read as a slow status once the online line sat under a Friend's name on every
   > Direct Message page. Five still covers a reload, which reconnects within 1 to 2 seconds; a longer
   > drop now shows offline and then online again. As the note above says, the number was an

@@ -306,6 +306,10 @@ them deliberately and settles the rest.
    > durable Badge on the next profile visit; the platform does not backfill an earn alert. The two
    > existing confirmation-screen earn panels are unchanged.
 
+   > **Still true for progress, 2026-11-03 (ADR-0021 decision 3).** ADR-0021 adds New dots, an
+   > unread flag on Private Feedback and new events elsewhere. None of them shows XP, a Level or a
+   > Badge, so the note above holds as written.
+
    **Clear rules and progression mechanics (`:856`)** is one static route listing the XP table,
    the Level bands and every Badge condition. No queries, no data. It doubles as the defense
    script for "clear rules".

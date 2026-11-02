@@ -281,6 +281,10 @@ license pulling any other.**
    > No new event, room or payload. ADR-0003 d9 and ADR-0014 d8 are unchanged, and the refresh
    > remains ordinary authenticated HTTP carrying the role check.
 
+   > **Noted 2026-11-03 (ADR-0021 decision 5).** Accepts, declines and Reviews now send
+   > `match:changed`, but only to the Match's two Students. The dashboard does not hear it, so the
+   > paragraph above holds: those changes still show as of the last load.
+
    **Export is refused** on this map's standing habit of not paying for absolutes it does not owe.
    Export answers "can I take the data away", which neither source asks; charts and a derived insight
    answer the question actually being graded.

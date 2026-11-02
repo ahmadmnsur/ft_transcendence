@@ -1162,14 +1162,14 @@ behaviour-free ticket after Rounds.
   5. No client event other than `dm:send` has a handler; that handler lands with T19 (§7.3,
      §19 item 6).
 
-     > **Changed 2026-11-01 by [#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249)** *(uncommitted)*: `dm:typing` has a handler too; it relays and
+     > **Changed 2026-11-01 by [#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249)** *(uncommitted)*, **landed on `main` at `4cc1717`**: `dm:typing` has a handler too; it relays and
      > writes nothing (spec §7.3's note of 2026-11-01).
   6. The Presence registry maps `studentId → Set<socketId>` and is never stored (§7.6):
      - the first socket broadcasts online, unless a grace timer is pending, in which case the
        timer is cancelled and nothing is broadcast;
      - the last socket starts a 20 s grace timer, then offline;
 
-       > **Shortened 2026-11-01 by [#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249)** *(uncommitted)*: the timer is 5 s (spec §7.6's note).
+       > **Shortened 2026-11-01 by [#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249)** *(uncommitted)*, **landed on `main` at `4cc1717`**: the timer is 5 s (spec §7.6's note).
      - forced disconnects take the same path;
      - recipients are computed at broadcast. The Friend set arrives with T18.
   7. The SPA client (§7.1, §7.5, M27):
