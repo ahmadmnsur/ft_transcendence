@@ -48,7 +48,7 @@ from.
 
 ### Prerequisites
 
-Install Docker Engine with the Compose plugin, Compose version 2.24.4 or newer, and Node 22 (22.12 or a later 22.x release). Docker runs the application, proxy and local Supabase services. Node on the host runs only the Vite development server used by the dev overlay.
+Install Docker Engine with the Compose plugin, Compose version 2.27.2 or newer, and Node 22 (22.12 or a later 22.x release). Docker runs the application, proxy and local Supabase services. Node on the host runs only the Vite development server used by the dev overlay.
 
 The repository checks out every text file with LF on every machine, Windows included, through `.gitattributes`. Without it Windows checkouts would use CRLF, which breaks shell scripts run from the checkout. A Windows checkout made before `.gitattributes` was added keeps its CRLF files until they are checked out again. `git status` stays clean on such a checkout, so check it with:
 
@@ -71,7 +71,7 @@ or clone the repository again.
 
 `.env.example` lists every variable the stack reads, with no values. Copy it to `.env` and fill in every line: the values pass between team members privately and are never committed. Every target that starts a stack stops at once when `.env` is missing.
 
-`.env` holds two sets of values. The team project's go under the variables' own names, and `make up`, bare `docker compose up --build` and `make reset-team` use them. The local Supabase fallback's values for the eleven variables that differ go under the same names with a `LOCAL_` prefix (`LOCAL_DATABASE_URL`, `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_PUBLISHABLE_KEY`, `LOCAL_SUPABASE_SECRET_KEY`, `LOCAL_PUBLIC_ORIGIN`, `LOCAL_BIND_ADDRESS`, the three `LOCAL_` passwords and the `LOCAL_FT_OAUTH_*` pair), with `LOCAL_DEV_PUBLIC_ORIGIN` for `make dev`. `make local`, `make dev`, `make test` and `make reset-local` give every service the `LOCAL_` values in place of the team's, and stop first, naming each fallback value `.env` lacks. The fallback's own Postgres, Auth, Storage and gateway services run only under those commands. They read the fallback database's user, password and name and the nine keys its Supabase services sign with from `.env` too; those carry no prefix, since every command uses the same ones. `POSTGRES_PASSWORD` may hold only letters, digits and `. _ ~ -`, because Compose writes it into the fallback's database URLs as it is; `make local`, `make dev`, `make test` and `make reset-local` refuse any other.
+`.env` holds two sets of values. The team project's go under the variables' own names, and `make up`, bare `docker compose up --build` and `make reset-team` use them. The local Supabase fallback's values for the eleven variables that differ go under the same names with a `LOCAL_` prefix (`LOCAL_DATABASE_URL`, `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_PUBLISHABLE_KEY`, `LOCAL_SUPABASE_SECRET_KEY`, `LOCAL_PUBLIC_ORIGIN`, `LOCAL_BIND_ADDRESS`, the three `LOCAL_` passwords and the `LOCAL_FT_OAUTH_*` pair), with `LOCAL_DEV_PUBLIC_ORIGIN` for `make dev` and `make test`. `make local`, `make dev`, `make test` and `make reset-local` give every service the `LOCAL_` values in place of the team's, and stop first, naming each fallback value `.env` lacks. The fallback's own Postgres, Auth, Storage and gateway services run only under those commands. They read the fallback database's user, password and name and the nine keys its Supabase services sign with from `.env` too; those carry no prefix, since every command uses the same ones. `POSTGRES_PASSWORD` may hold only letters, digits and `. _ ~ -`, because Compose writes it into the fallback's database URLs as it is; `make local`, `make dev`, `make test` and `make reset-local` refuse any other.
 
 Set the three team passwords before the first boot on the team project. Paste `DATABASE_URL` as the dashboard's Session pooler string with no TLS settings: on the team project the `api` and `prisma migrate` replace any TLS setting it carries and verify the connection themselves against Supabase's certificate, `supabase/prod-ca-2021.crt`. Add no other query parameter: the boot check refuses every one but the TLS settings, because `pg` takes the user, password, host and port from a parameter before the URL's own, so it could connect somewhere the check never saw. That includes `connect_timeout`: `prisma migrate` already waits up to 30 seconds for the pooler, so remove it if your `.env` has one. *Running the team project*, below, says how it boots. The `FT_OAUTH_CLIENT_ID` and `FT_OAUTH_CLIENT_SECRET` pair, and its `LOCAL_` twin, may stay empty: the platform works without them. If this checkout has a database volume created by the former plain Postgres image, run `make wipe` once before booting: Supabase's Postgres image cannot reuse that data directory.
 
@@ -271,7 +271,7 @@ make local
 # make local-env, then docker compose --env-file .env --profile local -f compose.yaml -f compose.local.yaml up --build
 
 make dev
-# make local-env, then docker compose --env-file .env --profile local -f compose.yaml -f compose.local.yaml -f compose.dev.yaml up --build
+# make dev-env, then docker compose --env-file .env --profile local -f compose.yaml -f compose.local.yaml -f compose.dev.yaml up --build
 
 make down
 # make env, then docker compose --profile local down
@@ -290,7 +290,7 @@ make reset-local
 # make local-env, then docker compose --env-file .env --profile local -f compose.yaml -f compose.local.yaml run --rm --build api node dist/prisma/reset/main.js local
 
 make test
-# make local-env, then:
+# make dev-env, then:
 # docker compose -p peerconnect-test --env-file .env --profile local -f compose.yaml -f compose.local.yaml -f compose.dev.yaml down --volumes --remove-orphans
 # docker compose -p peerconnect-test --env-file .env --profile local -f compose.yaml -f compose.local.yaml -f compose.dev.yaml build api
 # docker compose -p peerconnect-test --env-file .env --profile local -f compose.yaml -f compose.local.yaml -f compose.dev.yaml up -d db auth storage api-gw
@@ -306,6 +306,9 @@ make env
 
 make local-env
 # make env, then stops naming every fallback value .env lacks
+
+make dev-env
+# make local-env's check, plus LOCAL_DEV_PUBLIC_ORIGIN, which make dev and make test need
 ```
 
 ## Credentials and demo accounts
@@ -529,7 +532,7 @@ account anywhere.
 
 | Technology | Why |
 | --- | --- |
-| **Docker Compose** 2.24.4 or newer | One command boots six services: `proxy`, `api`, and the fallback's `db`, `auth`, `storage` and `api-gw`. |
+| **Docker Compose** 2.27.2 or newer | One command boots six services: `proxy`, `api`, and the fallback's `db`, `auth`, `storage` and `api-gw`. |
 | **nginx** | The only entry point. It serves the SPA, terminates HTTPS with a self-signed certificate made when the image is built, forwards `/api` and the socket to the API, and sets the security headers. |
 | **Vitest 5**, `supertest`, `socket.io-client` | One test runner. The suite runs against the local fallback only and covers what fails silently: the matcher, the migrations, concurrency, file access, sanctions and sign-in. |
 | **GitHub Actions** | The CI workflow and the required check named under *Tools*, above. |

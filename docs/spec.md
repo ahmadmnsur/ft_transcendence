@@ -591,6 +591,11 @@ goes through the map; a new runtime library needs a PR sentence saying why.**
 | Orchestration | Docker Compose ≥ 2.24.4 (`env_file.required` from 2.24.0; `!override`, used by the dev overlay, only from 2.24.4) | ADR-0004 d8 |
 | CI | GitHub Actions, one advisory workflow; plus one required check that tests nothing (§17.4) | ADR-0016 d8 |
 
+> **Updated 2026-11-02** (ADR-0004's note of 2026-10-31): the floor is Docker Compose ≥ 2.27.2, since
+> `make local`, `make dev`, `make test` and `make reset-local` check `.env` with
+> `docker compose config --environment`, which Compose has only from 2.27.2. This replaces 2.24.4
+> here, in §15.2 and in §17.5.
+
 **Not in the stack, by rule:** JWT libraries, Passport, Redis or any shared store, a Markdown
 library (M22), a translation package such as react-intl, i18next or Lingui (ADR-0020 d3), an icon
 or font package fetched from a CDN, analytics SDKs, `mkcert`, Caddy,

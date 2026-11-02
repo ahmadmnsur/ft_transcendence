@@ -689,19 +689,23 @@ demo.
 ## Environment
 
 `.env` is gitignored and holds every value; `.env.example` is committed with the variables' names
-only. The team project's values go under the variables' own names, and `make up`, bare
-`docker compose up --build` and `make reset-team` use them. The local Supabase fallback's values for
-the eleven variables that differ carry a `LOCAL_` prefix, with `LOCAL_DEV_PUBLIC_ORIGIN` for
-`make dev`; `make local`, `make dev`, `make test` and `make reset-local` give every service those in
-place of the team's, and run the fallback's Postgres, Auth, Storage and gateway services, which
-`make up` never starts. Every target stops when `.env` is missing, and the fallback ones name each
-value it lacks (`README.md` → *The `.env` model*, *Running the team project* and *The two resets*;
-[ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the
-database runs on the fallback, and migrations reach the team project only through `make up` on
-`main` (*Schema changes* → *Supabase*, above). Develop through nginx at `http://localhost:8081`,
-published as `127.0.0.1:8081`; LAN access is outside the contract.
+only. The team project's values go under the variables' own names, and `make up`, bare `docker
+compose up --build` and `make reset-team` use them. The local Supabase fallback's values for the
+eleven variables that differ carry a `LOCAL_` prefix, with `LOCAL_DEV_PUBLIC_ORIGIN` for `make dev`
+and `make test`; `make local`, `make dev`, `make test` and `make reset-local` give every service
+those in place of the team's, and run the fallback's Postgres, Auth, Storage and gateway services,
+which `make up` never starts. Every target stops when `.env` is missing, and the fallback ones name
+each value it lacks (`README.md` → *The `.env` model*, *Running the team project* and *The two
+resets*; [ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the database runs
+on the fallback, and migrations reach the team project only through `make up` on `main` (*Schema
+changes* → *Supabase*, above). Develop through nginx at `http://localhost:8081`, published as
+`127.0.0.1:8081`; LAN access is outside the contract.
 
 > **Toolchain floor, 2026-09-24** ([ADR-0004](docs/adr/0004-deployment-shape.md) d8;
 > [`docs/spec.md`](docs/spec.md) §3.3): Docker Compose **≥ 2.24.4**. The optional `env_file` needs
 > 2.24.0, but the dev overlay's `!override` tag exists only from 2.24.4. Check with
 > `docker compose version`.
+
+> **Raised to 2.27.2, 2026-11-02** ([ADR-0004](docs/adr/0004-deployment-shape.md)'s note of
+> 2026-10-31). `make local`, `make dev`, `make test` and `make reset-local` check `.env` with
+> `docker compose config --environment`, which Compose has only from 2.27.2.

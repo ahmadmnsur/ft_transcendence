@@ -45,8 +45,6 @@ services:
       POSTGRES_HOST: /var/run/postgresql
       PGPORT: 5432
       POSTGRES_PORT: 5432
-      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
-      # cannot reach the fallback.
       PGPASSWORD: ${POSTGRES_PASSWORD:-}
       PGDATABASE: postgres
       JWT_EXP: 3600
@@ -71,8 +69,7 @@ services:
       GOTRUE_API_PORT: 9999
       API_EXTERNAL_URL: http://api-gw:8000/auth/v1
       GOTRUE_DB_DRIVER: postgres
-      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
-      # cannot reach the fallback.
+      # POSTGRES_PASSWORD goes into this URL unescaped; the fallback's make targets accept only letters, digits and . _ ~ -
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD:-}@db:5432/postgres
       GOTRUE_SITE_URL: ${LOCAL_PUBLIC_ORIGIN:-}
       GOTRUE_DISABLE_SIGNUP: "true"
@@ -104,8 +101,7 @@ services:
     env_file: *pc-fallback-env-file
     environment:
       <<: *pc-local-values
-      # Must equal .env.example's POSTGRES_PASSWORD; plain value so a .env value
-      # cannot reach the fallback.
+      # POSTGRES_PASSWORD goes into this URL unescaped; the fallback's make targets accept only letters, digits and . _ ~ -
       DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD:-}@db:5432/postgres
       STORAGE_PUBLIC_URL: http://api-gw:8000
       REQUEST_ALLOW_X_FORWARDED_PATH: "true"

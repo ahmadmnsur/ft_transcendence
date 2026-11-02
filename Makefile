@@ -9,10 +9,11 @@ LOCAL_KEYS    := POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB NODE_ENV HTTPS_PORT
                  ANON_KEY SERVICE_ROLE_KEY GOTRUE_JWT_KEYS JWT_JWKS GOTRUE_JWT_SECRET AUTH_JWT_SECRET SERVICE_KEY \
                  ANON_KEY_ASYMMETRIC SERVICE_ROLE_KEY_ASYMMETRIC LOCAL_DATABASE_URL LOCAL_PUBLIC_ORIGIN LOCAL_BIND_ADDRESS \
                  LOCAL_ADMIN_PASSWORD LOCAL_MODERATOR_PASSWORD LOCAL_SEED_STUDENT_PASSWORD LOCAL_SUPABASE_URL \
-                 LOCAL_SUPABASE_PUBLISHABLE_KEY LOCAL_SUPABASE_SECRET_KEY LOCAL_DEV_PUBLIC_ORIGIN
+                 LOCAL_SUPABASE_PUBLISHABLE_KEY LOCAL_SUPABASE_SECRET_KEY
+DEV_KEYS      := $(LOCAL_KEYS) LOCAL_DEV_PUBLIC_ORIGIN
 RESET         := node dist/prisma/reset/main.js
 
-.PHONY: up local dev down wipe seed test logs env local-env reset-team reset-local
+.PHONY: up local dev down wipe seed test logs env local-env dev-env reset-team reset-local
 
 up: env
 	$(COMPOSE) up --build
@@ -20,7 +21,7 @@ up: env
 local: local-env
 	$(LOCAL_COMPOSE) up --build
 
-dev: local-env
+dev: dev-env
 	$(DEV_COMPOSE) up --build
 
 down: env
@@ -39,7 +40,7 @@ reset-team: env
 reset-local: local-env
 	$(LOCAL_COMPOSE) run --rm --build api $(RESET) local
 
-test: local-env
+test: dev-env
 	@set -e; \
 		trap 'status=$$?; $(TEST_COMPOSE) down --volumes --remove-orphans || { if [ $$status -eq 0 ]; then status=1; fi; }; exit $$status' EXIT; \
 		$(TEST_COMPOSE) down --volumes --remove-orphans; \
@@ -54,11 +55,14 @@ env:
 	@test -f .env || { \
 		echo "missing .env: copy .env.example to .env and fill in every value"; exit 1; }
 
-local-env: env
+local-env: ENV_KEYS = $(LOCAL_KEYS)
+dev-env: ENV_KEYS = $(DEV_KEYS)
+
+local-env dev-env: env
 	@vars=$$($(COMPOSE) --env-file .env -f $(COMPOSE_FILE) config --environment) || exit 1; \
 	value() { printf '%s\n' "$$vars" | sed -n "s/^$$1=//p" | tail -n 1; }; \
 	missing=""; \
-	for key in $(LOCAL_KEYS); do \
+	for key in $(ENV_KEYS); do \
 		test -n "$$(value $$key)" || missing="$$missing $$key"; \
 	done; \
 	test -z "$$missing" || { echo "missing in .env:$$missing"; exit 1; }; \
