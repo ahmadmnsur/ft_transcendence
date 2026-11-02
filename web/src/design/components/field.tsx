@@ -94,9 +94,17 @@ export function FieldShell({ label, controlId, hint, error, hintId, errorId, hid
   );
 }
 
-export const controlClass = (invalid: boolean): string =>
+export type ControlSize = 'sm' | 'md';
+
+const controlSizes: Record<ControlSize, string> = {
+  sm: 'relative py-1.5 text-sm pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:-inset-y-1.5',
+  md: 'py-2 text-base sm:text-sm',
+};
+
+export const controlClass = (invalid: boolean, size: ControlSize = 'md'): string =>
   [
-    'w-full rounded-lg border bg-surface px-3 py-2 text-base text-ink sm:text-sm',
+    'w-full rounded-lg border bg-surface px-3 text-ink',
+    controlSizes[size],
     'placeholder:text-ink-subtle',
     'transition-colors duration-150 focus-ring',
     'disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-muted disabled:text-ink-muted disabled:hover:border-line',

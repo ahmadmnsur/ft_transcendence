@@ -166,6 +166,7 @@ function SiteHeader(): React.JSX.Element {
   const languageSwitcher = (
     <Select
       hideLabel
+      size="sm"
       label={t.shell.language.label}
       options={languages.map((l) => ({ value: l, label: languageNames[l], lang: l }))}
       value={language}
