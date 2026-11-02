@@ -182,6 +182,14 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > **2026-10-25:** the *Signed out* row gains the landing page at `/`, which shows no data
    > (decision 12's note of 2026-10-25).
 
+   > **A new row, 2026-11-01 ([Direct Messages: a typing indicator, and Presence in the thread's header](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*:
+   > *That a Student is writing a Direct Message to another, while they write* — that other
+   > Student only, on their open page of the pair's Direct Messages, and only while the two
+   > could exchange one (no Block either way, neither Removed). It is never stored, so nobody
+   > can read it later. It is not Presence: Presence stays with accepted Friends, and the
+   > signal says nothing about a Student who is not writing to you. ADR-0003 d9's note of the
+   > same day puts it on the socket, and the Privacy Policy's *Who can see what* gains the row.
+
    **Match history is the row with product weight.** The proposal's `:55` puts "a running record of
    students helped and students learned from" on the profile, but that is the Learning Progress view,
    Version 2 at `:233` — and naming the Mentor on a Takeaway Post would make every pairing public

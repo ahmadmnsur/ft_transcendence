@@ -339,6 +339,23 @@ export function isDirectMessage(value: unknown): value is DirectMessageView {
   return typeof message.createdAt === 'string' && !Number.isNaN(Date.parse(message.createdAt));
 }
 
+export interface TypingSignal {
+  studentId: string;
+  typing: boolean;
+}
+
+export function isTypingSignal(value: unknown): value is TypingSignal {
+  if (typeof value !== 'object' || value === null) return false;
+  const signal = value as Record<string, unknown>;
+  return typeof signal.studentId === 'string' && typeof signal.typing === 'boolean';
+}
+
+export function sendTyping(recipientId: string, typing: boolean): boolean {
+  if (!socket.connected) return false;
+  socket.volatile.emit('dm:typing', { recipientId, typing });
+  return true;
+}
+
 export async function rereadThread(queryClient: QueryClient, peerId: string): Promise<void> {
   await readAgain(queryClient, peerThreadQueryKey(peerId));
 }

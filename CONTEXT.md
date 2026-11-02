@@ -62,6 +62,9 @@ _French_: Présence · _Arabic_: تواجد
 > closes, they keep Presence through the 20-second grace window, because their friends have not been
 > told otherwise; a reconnect inside it is no change at all.
 
+> **Updated 2026-11-01** (#249; ADR-0003's note of 2026-11-01) *(uncommitted)*: the grace window is 5
+> seconds, not 20.
+
 **Friend**:
 Another Student whose connection a Student asked for and who accepted. Never one-sided: a
 request confers nothing until it is accepted, and either Student may end it. Friends see each

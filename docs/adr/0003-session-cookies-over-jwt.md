@@ -239,6 +239,16 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > **The rule above is unchanged**: nothing a client sends over the socket performs a
    > privileged action, and a direct message is the only write a client sends.
 
+   > **A second client event, 2026-11-01, decided by Ahmad ([Direct Messages: a typing indicator, and Presence in the thread's header](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*.
+   > A client may now also send `dm:typing { recipientId, typing }`, which says that its Student
+   > is writing a Direct Message to that recipient, or has stopped. It belongs to the 1:1 direct
+   > messages this decision already puts on the socket. It writes nothing and stores nothing: the
+   > server reads whether the pair could exchange a Direct Message (§7.3's predicate) and passes
+   > the signal on to the recipient's room, or drops it. **The rule above is unchanged**: it is
+   > not a privileged action, and a direct message is still the only write a client sends.
+   > `docs/spec.md` §7.3, §7.4 and §19 item 6 carry it, and ADR-0018 d4's note of the same day
+   > says who sees it.
+
 10. **CSRF is answered by SameSite=Lax plus a JSON content-type requirement** on every
     mutation — a cross-site HTML form cannot submit `application/json`; a script attempt
     would require a CORS preflight that the same-origin deployment does not authorize. Login
@@ -509,6 +519,12 @@ database read per chat message.
   > nothing. **A Student still holds Presence while that window runs**, so a Friends list loaded
   > during a reload says what the other friends were last told. The window, its broadcasts and
   > "never a record" are unchanged. `docs/spec.md` §7.6 and `CONTEXT.md` carry it.
+  >
+  > **The window shortened to 5 seconds, 2026-11-01, decided by Ahmad ([#249](https://github.com/ahmadmnsur/ft_transcendence/issues/249))** *(uncommitted)*.
+  > Twenty seconds read as a slow status once the online line sat under a Friend's name on every
+  > Direct Message page. Five still covers a reload, which reconnects within 1 to 2 seconds; a longer
+  > drop now shows offline and then online again. As the note above says, the number was an
+  > engineering default; the shape stands. `docs/spec.md` §7.6 and `CONTEXT.md` carry it.
 - **Whoever settles moderation depth inherits decision 6**, and should wire the moderation
   **Suspension** into session deletion rather than inventing a second mechanism.
 - **Decision 9 is a rule to hold, not a fact to observe.** The pressure to put a privileged

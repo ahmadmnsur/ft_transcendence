@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**21 Beirut** · Dernière mise à jour : 26 octobre 2026
+**21 Beirut** · Dernière mise à jour : 1 novembre 2026
 
 Ceci est une traduction. Si elle diffère de la version anglaise, la version anglaise s'applique.
 
@@ -200,6 +200,7 @@ votre adresse e-mail sert à vous connecter.
 | Le Classement : les dix premiers Étudiants remplissant les conditions, par XP | tout Étudiant connecté |
 | Votre propre position au-delà des dix premiers, si vous remplissez les conditions | vous seul |
 | Si vous êtes en ligne maintenant | vos Amis uniquement |
+| Si vous êtes en train d'écrire un Message direct à un Étudiant, pendant que vous écrivez | cet Étudiant uniquement, sur sa page ouverte de vos Messages directs, et seulement tant que vous pouvez vous écrire. Ce n'est jamais sauvegardé |
 | Votre adresse e-mail | vous et les Admins — jamais affichée sur votre profil ni dans une recherche d'Étudiants |
 | Votre liste d'Amis | vous uniquement |
 | Une demande d'ami envoyée ou reçue, en attente de réponse | vous et l'autre Étudiant uniquement |

@@ -1,9 +1,24 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { rereadThread, sendAndApply } from '../api/messages';
 import { charLength, isValidText, LIMITS } from '@shared/limits';
-import { Banner, Button, TextArea } from '../design';
+import { Banner, Button, ChevronDownIcon, TextArea } from '../design';
 import { useI18n } from '../i18n/context';
+import { subscribe } from '../realtime/socket';
+import { usePeerTyping, useTypingSignals } from './typing';
+
+const COUNTER_FROM = 200;
+
+function isFieldCheck(status: ComposerStatus | undefined): boolean {
+  return status?.kind === 'empty' || status?.kind === 'tooLong';
+}
+
+interface ComposerProps {
+  peerId: string;
+  peerName: string;
+  newMessage: boolean;
+  onShowNewest: () => void;
+}
 
 type ComposerStatus =
   | { kind: 'empty' }
@@ -12,7 +27,7 @@ type ComposerStatus =
   | { kind: 'disconnected' }
   | { kind: 'unconfirmed' };
 
-export function Composer({ peerId }: { peerId: string }): React.JSX.Element {
+export function Composer({ peerId, peerName, newMessage, onShowNewest }: ComposerProps): React.JSX.Element {
   const { t, formatText, errorText } = useI18n();
   const copy = t.messages.page;
   const queryClient = useQueryClient();
@@ -20,6 +35,22 @@ export function Composer({ peerId }: { peerId: string }): React.JSX.Element {
   const [pending, setPending] = useState(false);
   const [status, setStatus] = useState<ComposerStatus | undefined>(undefined);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const typingSignals = useTypingSignals(peerId);
+  const peerTyping = usePeerTyping(peerId);
+  const remaining = LIMITS.directMessage.maxChars - charLength(text.trim());
+
+  const { changed: typingChanged } = typingSignals;
+  useEffect(() => {
+    typingChanged(text);
+  }, [text, typingChanged]);
+
+  useEffect(
+    () =>
+      subscribe('connect', () => {
+        setStatus((current) => (current?.kind === 'disconnected' ? undefined : current));
+      }),
+    [],
+  );
 
   function statusTitle(current: ComposerStatus): string {
     if (current.kind === 'empty') return copy.empty;
@@ -34,16 +65,19 @@ export function Composer({ peerId }: { peerId: string }): React.JSX.Element {
     const body = text.trim();
     if (charLength(body) === 0) {
       setStatus({ kind: 'empty' });
+      textRef.current?.focus();
       return;
     }
     if (charLength(body) > LIMITS.directMessage.maxChars) {
       setStatus({ kind: 'tooLong' });
+      textRef.current?.focus();
       return;
     }
     if (!isValidText(body, LIMITS.directMessage, true)) {
       setStatus({ kind: 'failed', code: 'validation_failed' });
       return;
     }
+    typingSignals.stop();
     setPending(true);
     try {
       const outcome = await sendAndApply(queryClient, peerId, body);
@@ -73,17 +107,63 @@ export function Composer({ peerId }: { peerId: string }): React.JSX.Element {
         event.preventDefault();
         void onSend();
       }}
-      className="flex min-w-0 flex-col gap-3"
+      className="sticky bottom-0 z-20 -mx-4 mt-auto flex min-w-0 flex-col gap-1.5 border-t border-line bg-canvas px-4 pt-1.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
-      {status !== undefined ? <Banner tone="danger" title={statusTitle(status)} /> : null}
-      <TextArea
-        ref={textRef}
-        label={copy.composerLabel}
-        rows={3}
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-      />
-      <div className="flex justify-end">
+      <div className="flex h-5 min-w-0 items-center gap-2 text-xs text-ink-muted">
+        <span role="status" className={newMessage ? 'sr-only' : 'flex min-w-0 items-center gap-2'}>
+          {peerTyping ? (
+            <>
+              <span aria-hidden="true" className="flex shrink-0 items-center gap-1">
+                <span className="size-1.5 rounded-full bg-ink-subtle motion-safe:animate-typing-dot" />
+                <span className="size-1.5 rounded-full bg-ink-subtle motion-safe:animate-typing-dot motion-safe:[animation-delay:160ms]" />
+                <span className="size-1.5 rounded-full bg-ink-subtle motion-safe:animate-typing-dot motion-safe:[animation-delay:320ms]" />
+              </span>
+              <span className="min-w-0 truncate">{formatText(copy.typing, { name: peerName })}</span>
+            </>
+          ) : null}
+        </span>
+        {newMessage ? (
+          <button
+            type="button"
+            onClick={onShowNewest}
+            className="relative inline-flex min-w-0 items-center gap-1 rounded font-medium text-link underline-offset-2 hover:underline focus-ring pointer-coarse:before:absolute pointer-coarse:before:-inset-x-2 pointer-coarse:before:-inset-y-3.5"
+          >
+            <ChevronDownIcon size={14} />
+            <span className="truncate">{formatText(copy.newBelow, { name: peerName })}</span>
+          </button>
+        ) : null}
+      </div>
+      <p role="alert" className="sr-only">
+        {status !== undefined && isFieldCheck(status) ? statusTitle(status) : null}
+      </p>
+      {status !== undefined && !isFieldCheck(status) ? <Banner tone="danger" title={statusTitle(status)} /> : null}
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+        <TextArea
+          ref={textRef}
+          label={copy.composerLabel}
+          hideLabel
+          placeholder={copy.composerLabel}
+          aria-keyshortcuts="Control+Enter Meta+Enter"
+          rows={2}
+          value={text}
+          error={
+            remaining < 0
+              ? statusTitle({ kind: 'tooLong' })
+              : status !== undefined && isFieldCheck(status)
+                ? statusTitle(status)
+                : undefined
+          }
+          hint={remaining <= COUNTER_FROM ? formatText(copy.charactersLeft, { count: remaining }) : undefined}
+          onChange={(event) => {
+            setText(event.target.value);
+            setStatus((current) => (current !== undefined && current.kind !== 'unconfirmed' ? undefined : current));
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey) || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            void onSend();
+          }}
+        />
         <Button type="submit" loading={pending}>
           {pending ? copy.sending : copy.send}
         </Button>

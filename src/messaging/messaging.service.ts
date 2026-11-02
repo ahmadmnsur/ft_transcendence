@@ -4,7 +4,7 @@ import { blockPair } from '../core/block-pair';
 import { encodeCursor, type Cursor } from '../core/cursor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
-import { UnitOfWork } from '../core/uow';
+import { UnitOfWork, type PrismaTx } from '../core/uow';
 import { Prisma } from '../generated/prisma/client';
 import { PAGING } from '../shared/limits';
 import { readActiveActor } from '../students/profile-writes';
@@ -48,6 +48,13 @@ function nextCursor(rows: ReadonlyArray<{ id: string; created_at: Date }>): stri
   return encodeCursor({ createdAt: last.created_at, id: last.id });
 }
 
+async function messageablePeer(tx: PrismaTx, actorId: string, recipientId: string): Promise<string | null> {
+  const recipient = await tx.student.findUnique({ where: { id: recipientId }, select: { id: true, removedAt: true } });
+  if (recipient === null || recipient.id === actorId || recipient.removedAt !== null) return null;
+  const block = await tx.block.findFirst({ where: blockPair(actorId, recipient.id), select: { id: true } });
+  return block === null ? recipient.id : null;
+}
+
 @Injectable()
 export class MessagingService {
   constructor(
@@ -58,30 +65,35 @@ export class MessagingService {
   send(actor: Actor, recipientId: string, body: string): Promise<DirectMessageView> {
     return this.uow.run('dm-send', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
-      const recipient = await tx.student.findUnique({ where: { id: recipientId }, select: STUDENT_REF_SELECT });
-      if (recipient === null || recipient.id === actor.studentId || recipient.removedAt !== null) {
-        throw dmUnavailable();
-      }
-      const block = await tx.block.findFirst({
-        where: blockPair(actor.studentId, recipient.id),
-        select: { id: true },
-      });
-      if (block !== null) throw dmUnavailable();
+      const peerId = await messageablePeer(tx, actor.studentId, recipientId);
+      if (peerId === null) throw dmUnavailable();
       const text = body.trim();
       await ctx.checkpoint('dm-send');
       const created = await tx.directMessage.create({
-        data: { senderId: actor.studentId, recipientId: recipient.id, body: text },
+        data: { senderId: actor.studentId, recipientId: peerId, body: text },
         select: { id: true, createdAt: true },
       });
       const message: DirectMessageView = {
         id: created.id,
         senderId: actor.studentId,
-        recipientId: recipient.id,
+        recipientId: peerId,
         body: text,
         createdAt: created.createdAt.toISOString(),
       };
       ctx.afterCommit(() => this.publisher.dmMessage(message.senderId, message.recipientId, message));
       return message;
+    });
+  }
+
+  typingPeer(actor: Actor, recipientId: string): Promise<string | null> {
+    return this.uow.readOnly(async (tx) => {
+      try {
+        await readActiveActor(tx, actor.studentId);
+      } catch (err) {
+        if (err instanceof ApiError) return null;
+        throw err;
+      }
+      return messageablePeer(tx, actor.studentId, recipientId);
     });
   }
 

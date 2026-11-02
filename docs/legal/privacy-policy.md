@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**21 Beirut** · Last updated: 26 October 2026
+**21 Beirut** · Last updated: 1 November 2026
 
 This page explains what 21 Beirut records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -175,6 +175,7 @@ your email address is used to sign in.
 | The Leaderboard: the top ten eligible Students by XP | every signed-in Student |
 | Your own position outside the top ten, when eligible | you alone |
 | Whether you are online now | your Friends only |
+| Whether you are writing a Direct Message to a Student, while you write | that Student only, on their open page of your Direct Messages, and only while the two of you can message each other. It is never saved |
 | Your email address | you and Admins — never shown on your profile or in a Student's search |
 | Your list of Friends | you only |
 | A friend request you sent or received, while it waits for an answer | you and the other Student only |
