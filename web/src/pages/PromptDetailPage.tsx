@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidText, LIMITS } from '@shared/limits';
@@ -33,6 +33,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const detail = answers.data;
   const [body, setBody] = useState('');
   const answerRef = useRef<HTMLTextAreaElement>(null);
+  const answerHintId = useId();
   const [invalid, setInvalid] = useState(false);
   const answer = useMutation({
     mutationFn: (text: string) => answerPrompt(promptId, text),
@@ -66,8 +67,8 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
           else answerRef.current?.focus();
         }}>
           <div className="flex flex-col gap-2">
-            <TextArea ref={answerRef} label={copy.answerLabel} value={body} maxChars={LIMITS.promptAnswer.maxChars} onChange={(event) => { setBody(event.target.value); setInvalid(false); answer.reset(); }} hint={formatText(copy.textLimit, answerLimits)} error={invalid ? formatText(body.trim() === '' ? copy.textEmpty : copy.textInvalid, answerLimits) : undefined} disabled={answer.isPending} />
-            <p className="text-sm text-ink-muted">{copy.answerHint}</p>
+            <TextArea ref={answerRef} label={copy.answerLabel} value={body} maxChars={LIMITS.promptAnswer.maxChars} aria-describedby={answerHintId} onChange={(event) => { setBody(event.target.value); setInvalid(false); answer.reset(); }} hint={formatText(copy.textLimit, answerLimits)} error={invalid ? formatText(body.trim() === '' ? copy.textEmpty : copy.textInvalid, answerLimits) : undefined} disabled={answer.isPending} />
+            <p id={answerHintId} className="text-sm text-ink-muted">{copy.answerHint}</p>
           </div>
           <Button type="submit" loading={answer.isPending}>{answer.isPending ? copy.submitting : copy.submit}</Button>
         </form>

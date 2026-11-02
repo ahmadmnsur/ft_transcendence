@@ -94,7 +94,7 @@ export function FieldShell({ label, controlId, hint, error, hintId, errorId, hid
       {aside ? (
         <div className="flex min-w-0 flex-wrap items-start gap-x-3">
           <div className="min-w-0 flex-[1_1_16rem]">{messages}</div>
-          <div className="ms-auto shrink-0">{aside}</div>
+          <div className="ms-auto min-w-0">{aside}</div>
         </div>
       ) : (
         messages
@@ -107,7 +107,7 @@ export type ControlSize = 'sm' | 'md';
 
 const controlSizes: Record<ControlSize, string> = {
   sm: 'relative py-1.5 text-sm pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:-inset-y-1.5',
-  md: 'py-2 text-base sm:text-sm',
+  md: 'py-2 text-base sm:text-sm pointer-coarse:min-h-11',
 };
 
 export const controlClass = (invalid: boolean, size: ControlSize = 'md'): string =>
@@ -169,6 +169,12 @@ function keepUpTo(value: string, from: number, to: number, fits: Fits): Cut | un
 const isHigh = (code: number): boolean => code >= 0xd800 && code <= 0xdbff;
 const isLow = (code: number): boolean => code >= 0xdc00 && code <= 0xdfff;
 
+function isBoundary(value: string, index: number): boolean {
+  if (index <= 0 || index >= value.length) return true;
+  if (graphemes) return graphemes.segment(value).containing(index)?.index === index;
+  return !(isHigh(value.charCodeAt(index - 1)) && isLow(value.charCodeAt(index)));
+}
+
 function insertedRange(previous: string, value: string, caret: number | null): [number, number] {
   const caretFits = caret !== null && caret <= value.length && previous.endsWith(value.slice(caret));
   const shortest = Math.min(previous.length, value.length);
@@ -192,7 +198,9 @@ function cutToFit(value: string, caret: number | null, previous: string | undefi
   if (previous !== undefined) {
     const [from, to] = insertedRange(previous, value, caret);
     if (from === to) return undefined;
-    return keepUpTo(value, from, to, fits) ?? { value: value.slice(0, from) + value.slice(to), caret: from };
+    const cut = keepUpTo(value, from, to, fits) ?? { value: value.slice(0, from) + value.slice(to), caret: from };
+    if (cut.caret !== from || isBoundary(value, from)) return cut;
+    return { value: previous, caret: previous.length - (value.length - to) };
   }
   const end = caret ?? value.length;
   const at = isHigh(value.charCodeAt(end - 1)) && isLow(value.charCodeAt(end)) ? end + 1 : end;
