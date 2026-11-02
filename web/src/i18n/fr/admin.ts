@@ -139,10 +139,12 @@ export default {
     },
     skills: {
       subtitle:
-        "Les deux listes apparaissent sur son profil, et le prochain Tour s'appuie sur ces Compétences pour l'associer.",
+        "Les deux listes apparaissent sur son profil, et le prochain Tour s'appuie sur ces Compétences pour l'associer. Une Compétence ne peut figurer que dans une seule liste.",
       teachHeading: 'Compétences à enseigner',
       learnHeading: 'Compétences à apprendre',
-      nothingToAdd: 'Toutes les Compétences du catalogue figurent déjà ici.',
+      nothingToAdd: "Toutes les Compétences du catalogue figurent déjà dans l'une de ses listes.",
+      onBothLists:
+        "Une Compétence ne peut figurer que dans une seule liste. Retirez {skills} de l'une de ses listes pour enregistrer.",
       emptyNudge: "Les Tours apparient les Étudiants selon leurs Compétences, et cet Étudiant n'en a aucune.",
       goalWillClear:
         "L'enregistrement effacera son Objectif d'apprentissage, car sa Compétence ne figure plus dans sa liste d'apprentissage.",

@@ -63,6 +63,7 @@ describe('hand-made Matches through the services', () => {
   it('uses the goal bonus to choose the higher-id Mentor and freezes the chosen explanation', async () => {
     const skills = await insertCatalogue(harness.app.get(UnitOfWork));
     const docker = skills.get('Docker')!;
+    const git = skills.get('Git')!;
     const matching = harness.app.get(MatchingService);
     const students = harness.app.get(StudentsService);
     const admin = actor((await createTestStaff(harness.app, 'ADMIN')).id);
@@ -70,8 +71,8 @@ describe('hand-made Matches through the services', () => {
     const lower = actor((await createTestAccount(harness.app)).id);
     const higher = actor((await createTestAccount(harness.app)).id);
     expect(lower.studentId < higher.studentId).toBe(true);
-    await students.setSkills(lower, [docker], [docker]);
-    await students.setSkills(higher, [docker], [docker]);
+    await students.setSkills(lower, [git], [docker]);
+    await students.setSkills(higher, [docker], [git]);
     await students.setLearningGoal(lower, docker, 'Learn Docker together.');
 
     const view = await matching.createHandMadeMatch(admin, [lower.studentId, higher.studentId]);
@@ -80,7 +81,7 @@ describe('hand-made Matches through the services', () => {
       status: 'MATCHED', compatibilityScore: null, handMade: true,
       goalBonusApplied: true, mentorAccepted: false, menteeAccepted: false,
       mission: 'TECHNICAL_CONCEPT',
-      coverage: { forward: [{ id: docker, name: 'Docker' }], reverse: [{ id: docker, name: 'Docker' }] },
+      coverage: { forward: [{ id: docker, name: 'Docker' }], reverse: [{ id: git, name: 'Git' }] },
     });
     await students.setSkills(lower, [], []);
     await students.setSkills(higher, [], []);
