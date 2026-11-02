@@ -13,6 +13,10 @@ export class RecordingRealtimePublisher extends RealtimePublisher {
     this.record('postCreated', item);
   }
 
+  postLikes(authorId: string, postId: string, likeCount: number): void {
+    this.record('postLikes', authorId, postId, likeCount);
+  }
+
   roundOpened(): void {
     this.record('roundOpened');
   }
@@ -23,6 +27,14 @@ export class RecordingRealtimePublisher extends RealtimePublisher {
 
   matchReady(studentIds: readonly string[]): void {
     this.record('matchReady', studentIds);
+  }
+
+  matchChanged(studentIds: readonly string[]): void {
+    this.record('matchChanged', studentIds);
+  }
+
+  friendsChanged(studentIds: readonly string[]): void {
+    this.record('friendsChanged', studentIds);
   }
 
   dmMessage(senderId: string, recipientId: string, message: object): void {

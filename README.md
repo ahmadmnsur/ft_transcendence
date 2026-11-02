@@ -701,9 +701,11 @@ React 19 SPA ([`web/`](web/)) with TanStack Router and Query.
 **Real-time WebSockets (Major).** *Why:* Matches, messages and online status lose their point if a
 Student must reload to see them. *How:* one Socket.IO gateway with rooms (`feed`, `rounds` and one
 per Student) broadcasts `post:created`, `round:opened`, `round:closed`, `match:ready` and
-`dm:message` after the database commits. A reconnecting client is admitted again by its session
-cookie, a short grace window keeps a reload from flickering the online status, and a Suspension or a
-password change disconnects the socket.
+`dm:message` after the database commits. `friends:changed` goes to both Students of the request or
+Friendship, `match:changed` to the Match's Mentor and Mentee, and `post:likes` only to the Post's
+author. A reconnecting client is admitted again by its session cookie, a short grace window keeps a
+reload from flickering the online status, and a Suspension or a password change disconnects the
+socket.
 
 **User interaction (Major).** *Why:* meeting a Match needs a way to talk, and a peer-learning
 platform needs profiles and Friends. *How:* one-to-one Direct Messages, persisted and delivered

@@ -89,7 +89,7 @@ async function readAgain(queryClient: QueryClient, queryKey: readonly string[]):
   await queryClient.invalidateQueries({ queryKey });
 }
 
-function readListsAgain(queryClient: QueryClient): void {
+export function readListsAgain(queryClient: QueryClient): void {
   void readAgain(queryClient, FRIENDS_QUERY_KEY);
   void readAgain(queryClient, FRIEND_REQUESTS_QUERY_KEY);
 }

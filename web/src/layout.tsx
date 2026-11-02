@@ -13,6 +13,7 @@ import { MessageUpdates } from './messages/MessageUpdates';
 import { RoundUpdates } from './matching/RoundUpdates';
 import { FeedUpdates } from './feed/FeedUpdates';
 import { PresenceUpdates } from './social/PresenceUpdates';
+import { FriendUpdates } from './social/FriendUpdates';
 import { useDisclosure } from './shell/useDisclosure';
 
 export const BRAND = '21 Beirut';
@@ -410,6 +411,7 @@ export function RootLayout(): React.JSX.Element {
         <div className="mx-auto w-full max-w-6xl px-4 py-8">
           <RealtimeConnection brand={BRAND} />
           <PresenceUpdates />
+          <FriendUpdates />
           <MessageUpdates />
           <RoundUpdates />
           <FeedUpdates />

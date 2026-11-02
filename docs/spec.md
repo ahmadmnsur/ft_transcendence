@@ -1183,6 +1183,15 @@ throws is logged (§3.9) and does not fail the request: every DB-derived event i
 an insert that a reload also recovers. The socket gateway implements the port; the seed and the test
 harness bind a no-op or a recording implementation.
 
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> the port also has `friendsChanged(studentIds)`, `matchChanged(studentIds)` and
+> `postLikes(authorId, postId, likeCount)` (§7.4). Services queue them with `ctx.afterCommit` like
+> the other events. `post:likes` updates a cached count, extending "an invalidation or an insert"
+> above; a reload recovers the count too. For these events, every Student id used for a room comes
+> from a row read in the transaction or the actor's own Student id; the payload's `postId` comes
+> from a row read in the transaction. Route parameters pass `ParseUUIDPipe` without being
+> lowercased; rooms and client caches use the stored ids.
+
 **Deleting a file is an after-commit effect too** (ADR-0009 d2's note of 2026-10-05): a replaced or
 deleted avatar or Evidence file, and the avatar of a Removal, is deleted from its bucket only after
 the commit that stopped naming it. A failed delete is logged and left to the cleanup (§9.8), which
@@ -2492,6 +2501,13 @@ row is indistinguishable from an unknown one, and this is a race a correct UI re
 **`DELETE /api/friends/:studentId`** — session · `{}` · either party ends an accepted Friendship (hard delete);
 none → `not_friends` · Events none.
 
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> `friends:changed {}` replaces "Events none" for the five friend writes above: a request sent,
+> accepted, declined or cancelled, and a Friendship ended. After commit it goes to `student:<id>`
+> of both Students of the request or Friendship (§7.4). A refusal sends nothing. The client reads
+> again `GET /api/friends` and `GET /api/friends/requests`. A Block still sends nothing, even when
+> it deletes the pair's Friendship in the same transaction; lifting a Block sends nothing too.
+
 **`POST /api/blocks`** — session · `{ studentId }` · Rule (reads: target; the pair's Friendship rows): target
 exists → else `not_found`; target ≠ actor → else `self_action_forbidden`; target not Removed → else
 `student_removed` · Persist `Block`; **delete the pair's Friendship row, pending or
@@ -2570,6 +2586,15 @@ with `post_unavailable` (200), never 404: a loaded feed can still show a Post a 
 removed, so reaching it is normal use (§3.8.2). That includes both Like writes: `POST
 .../like` and `DELETE .../like` against a removed Post return `post_unavailable` (200) and write
 nothing — no insert, no delete.
+
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> "no event" in "No XP, no event, not reportable" above no longer holds.
+> `POST /api/posts/:id/like` and `DELETE /api/posts/:id/like` send `post:likes { postId, likeCount }`
+> to `student:<authorId>` only after commit, with the count the transaction counted (§7.4).
+> A Like on one's own Post sends it too, so the author's other tabs agree (ADR-0014 d5). A repeated
+> Like or unlike that writes nothing still sends it with the unchanged count. A removed Post
+> still answers `post_unavailable`, writes nothing and sends nothing. No XP and not reportable
+> still hold.
 
 ### 6.10 Progress and the Leaderboard
 
@@ -2775,6 +2800,21 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > event, and the sentence above holds for them. No new event carries a Badge, a Report, a role or
 > Admin data.
 
+> **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> the three rows from #260 join the list above (§6.4, §6.9, §8.5, §9.2).
+>
+> | Event | Room | Payload | Emitted after the commit of | Client reaction |
+> | --- | --- | --- | --- | --- |
+> | `friends:changed` | `student:<id>` of both Students of the request or Friendship | `{}` | a request sent, accepted, declined or cancelled; a Friendship ended | read again `GET /api/friends` and `GET /api/friends/requests` |
+> | `match:changed` | `student:<id>` of the Match's Mentor and Mentee | `{}` | an Accept that writes, a Decline, a Review (after its `post:created`) | read again the Student's Matches (current, history, one Match) and `/feedback` |
+> | `post:likes` | `student:<authorId>` only | `{ postId, likeCount }` | `POST` or `DELETE /api/posts/:id/like`, including a self-Like and a repeat with an unchanged count | set `likeCount` on that Post in loaded feed pages, the author's profile Posts and a Prompt's answers; read nothing |
+>
+> Only what is loaded reacts: invalidation refetches queries on screen and marks the rest stale,
+> so a page not on screen reads on its next visit. A missed event costs nothing: after a
+> reconnect the client already reads its queries again (§7.5). `post:likes` touches neither
+> `likedByMe` nor the likers list. Nobody else's count changes live. The existing events, payloads
+> and rooms are unchanged.
+
 ### 7.5 Lifecycle and client retry (M27)
 
 - **Session rejection is terminal**: a `connect_error` whose message is `unauthorized` → stop
@@ -2900,6 +2940,14 @@ as for accept) · status `MATCHED` or `ACCEPTED` → `DECLINED`,
 `declined_by_id = actor`; else `match_not_in_progress`. Both Students become unmatched (derived);
 nothing searches for a replacement (ADR-0002 d8). A Block is not a decline; the blocking Student
 declines here if they want out (ADR-0006 d10). Events none · Visibility: as accept.
+
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> `match:changed {}` replaces "Events none · Visibility: no event" for Accept and Decline above,
+> including Decline's "Visibility: as accept". After an Accept that writes or a Decline commits,
+> it goes to `student:<id>` of the Match's Mentor and Mentee; the client reads again current,
+> history and single-Match queries and `/feedback` (§7.4). A repeated accept that writes nothing
+> sends nothing. A Match ended by a Suspension or a Removal sends nothing (ADR-0021 decision 7).
+> A Round close already sends `round:closed`.
 
 **Concurrency**: accept, decline, Review, Round close, Suspension and Removal all write the Match
 row; whichever commits first wins and the others see the new status (ADR-0002 d5).
@@ -3059,6 +3107,12 @@ Evidence is the one mutable attachment.
   `BadgeAward(FIRST_MENTOR)` for the Mentor `ON CONFLICT DO NOTHING` (this Review makes their count of
   Matches completed as Mentor ≥ 1).
 - **Events**: `post:created` (the Takeaway).
+
+  > **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+  > the Review also sends `match:changed {}` to `student:<id>` of the Match's Mentor and Mentee,
+  > after the existing `post:created`. Both are sent after the Review commits (§3.7). The client
+  > reads again the Student's Matches and `/feedback` (§7.4).
+
 - **Result**: the Mentee's earn panel `{ reviewId, postId, xpAwarded: 120, xp, level, xpIntoLevel,
   xpForNextLevel, badgesAwarded: [] }`.
 - **Roles**: a participant promoted to `ADMIN` after the Match was created may still submit, and both
@@ -3363,6 +3417,12 @@ Operations are §6.4. A request to, or acceptance of a request from, a Removed S
 (ADR-0008 Consequences); Removed counterparts disappear from friends and request lists, while any
 history elsewhere shows the tombstone.
 
+> **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> the five writes — a request sent, accepted, declined or cancelled, and a Friendship ended —
+> send `friends:changed {}` to both Students after commit (§6.4, §7.4). The client reads the loaded
+> Friends and request lists again without a reload. A Block stays silent (§11.2), as does lifting
+> one (§11.3).
+
 ### 11.2 Blocks (ADR-0006 d10, ADR-0014 d4, CONTEXT)
 
 - **Create** (`POST /api/blocks`): one Student's standing refusal, stored directed, **evaluated in
@@ -3410,6 +3470,12 @@ Student set on the actor still applies. Only the blocker can lift it. The Privac
 
 Revocable (delete the row), attributed, readable by every signed-in Student, self-Like permitted, no
 XP, not reportable, no event (§6.9).
+
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> "no event" above no longer holds: only the Post's author hears `post:likes { postId, likeCount }`
+> after a Like or unlike commits (§6.9, §7.4). The client sets only that Post's `likeCount` where
+> it is loaded and reads nothing. `likedByMe` and the likers list are untouched; nobody else's
+> count changes live.
 
 ---
 

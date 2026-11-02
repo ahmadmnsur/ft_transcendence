@@ -42,6 +42,17 @@ export interface LikeState {
   likedByMe: boolean;
 }
 
+export interface PostLikesUpdate {
+  postId: string;
+  likeCount: number;
+}
+
+export function isPostLikesUpdate(value: unknown): value is PostLikesUpdate {
+  if (typeof value !== 'object' || value === null) return false;
+  const update = value as Record<string, unknown>;
+  return typeof update.postId === 'string' && typeof update.likeCount === 'number' && Number.isFinite(update.likeCount);
+}
+
 export const FEED_QUERY_KEY = ['feed'] as const;
 const STUDENT_POSTS_QUERY_KEY = ['posts', 'student'] as const;
 
@@ -90,14 +101,22 @@ export function likersQueryOptions(postId: string) {
 
 const POST_LIST_QUERY_KEYS = [FEED_QUERY_KEY, STUDENT_POSTS_QUERY_KEY, PROMPT_ANSWERS_QUERY_KEY];
 
-async function cacheLikeState(client: QueryClient, postId: string, state: LikeState): Promise<void> {
-  const reread = [...POST_LIST_QUERY_KEYS, likersQueryKey(postId)];
-  await Promise.all(reread.map((queryKey) => client.cancelQueries({ queryKey })));
+function cachePostLikes(client: QueryClient, postId: string, state: { likeCount: number; likedByMe?: boolean }): void {
   const update = (data: PostPage | undefined): PostPage | undefined =>
     data === undefined
       ? undefined
       : { ...data, items: data.items.map((post) => (post.id === postId ? { ...post, ...state } : post)) };
   for (const queryKey of POST_LIST_QUERY_KEYS) client.setQueriesData<PostPage>({ queryKey }, update);
+}
+
+export function applyPostLikes(client: QueryClient, update: PostLikesUpdate): void {
+  cachePostLikes(client, update.postId, { likeCount: update.likeCount });
+}
+
+async function cacheLikeState(client: QueryClient, postId: string, state: LikeState): Promise<void> {
+  const reread = [...POST_LIST_QUERY_KEYS, likersQueryKey(postId)];
+  await Promise.all(reread.map((queryKey) => client.cancelQueries({ queryKey })));
+  cachePostLikes(client, postId, state);
   for (const queryKey of reread) void client.invalidateQueries({ queryKey });
 }
 

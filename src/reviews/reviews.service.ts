@@ -73,6 +73,7 @@ export class ReviewsService {
           likedByMe: false,
         };
         ctx.afterCommit(() => this.publisher.postCreated(item));
+        ctx.afterCommit(() => this.publisher.matchChanged([match.mentorId, match.menteeId]));
         return { reviewId: review.id, postId: post.id, ...earned };
       },
     );

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
+import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef, type StudentRef } from '../students/student-ref';
@@ -17,7 +18,10 @@ function visiblePost<T extends { removedAt: Date | null }>(post: T | null): T {
 
 @Injectable()
 export class FeedService {
-  constructor(private readonly uow: UnitOfWork) {}
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly publisher: RealtimePublisher,
+  ) {}
 
   feed(actor: Actor, page: number, pageSize: number): Promise<PostPage> {
     return this.uow.readOnly((tx) => readPostPage(tx, actor.studentId, {}, page, pageSize));
@@ -61,23 +65,33 @@ export class FeedService {
   like(actor: Actor, postId: string): Promise<LikeState> {
     return this.uow.run({ name: 'post.like' }, async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
-      visiblePost(await tx.post.findUnique({ where: { id: postId }, select: { removedAt: true } }));
+      const post = visiblePost(await tx.post.findUnique({
+        where: { id: postId },
+        select: { id: true, authorId: true, removedAt: true },
+      }));
       await ctx.checkpoint('post.like');
       await tx.like.createMany({
         data: [{ postId, studentId: actor.studentId, createdAt: ctx.now }],
         skipDuplicates: true,
       });
-      return { likeCount: await tx.like.count({ where: { postId } }), likedByMe: true };
+      const likeCount = await tx.like.count({ where: { postId } });
+      ctx.afterCommit(() => this.publisher.postLikes(post.authorId, post.id, likeCount));
+      return { likeCount, likedByMe: true };
     });
   }
 
   unlike(actor: Actor, postId: string): Promise<LikeState> {
     return this.uow.run({ name: 'post.unlike' }, async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
-      visiblePost(await tx.post.findUnique({ where: { id: postId }, select: { removedAt: true } }));
+      const post = visiblePost(await tx.post.findUnique({
+        where: { id: postId },
+        select: { id: true, authorId: true, removedAt: true },
+      }));
       await ctx.checkpoint('post.unlike');
       await tx.like.deleteMany({ where: { postId, studentId: actor.studentId } });
-      return { likeCount: await tx.like.count({ where: { postId } }), likedByMe: false };
+      const likeCount = await tx.like.count({ where: { postId } });
+      ctx.afterCommit(() => this.publisher.postLikes(post.authorId, post.id, likeCount));
+      return { likeCount, likedByMe: false };
     });
   }
 }
