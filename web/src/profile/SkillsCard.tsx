@@ -181,6 +181,7 @@ export function SkillsCard({ target, learnPickerId }: { target: ProfileTarget; l
                 key={skill.id}
                 name={skill.name}
                 variant={kind}
+                filled
                 unsaved={!savedIds[kind].has(skill.id)}
                 onRemove={() => onRemove(kind, skill.id)}
               />

@@ -7,6 +7,7 @@ import { SkillName } from './SkillName';
 export interface SkillChipProps extends Omit<ComponentProps<'span'>, 'children'> {
   name: string;
   variant: 'teach' | 'learn';
+  filled?: boolean;
   onRemove?: () => void;
   unsaved?: boolean;
 }
@@ -21,11 +22,12 @@ const unsavedTones: Record<SkillChipProps['variant'], string> = {
   learn: 'border-dashed border-line-strong bg-surface text-ink',
 };
 
-export function SkillChip({ name, variant, onRemove, unsaved = false, className = '', ...rest }: SkillChipProps): React.JSX.Element {
+export function SkillChip({ name, variant, filled, onRemove, unsaved = false, className = '', ...rest }: SkillChipProps): React.JSX.Element {
   const { t, format, formatText } = useI18n();
+  const look = filled === undefined ? variant : filled ? 'teach' : 'learn';
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 ps-3 pe-1 text-sm font-medium ${unsaved ? unsavedTones[variant] : tones[variant]} ${className}`.trim()}
+      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 ps-3 pe-1 text-sm font-medium ${unsaved ? unsavedTones[look] : tones[look]} ${className}`.trim()}
       {...rest}
     >
       <span className="min-w-0 wrap-anywhere">
