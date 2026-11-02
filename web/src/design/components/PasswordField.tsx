@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { EyeIcon } from '../icons/EyeIcon';
 import { EyeOffIcon } from '../icons/EyeOffIcon';
-import { FieldShell, capBytes, controlClass, useField } from './field';
+import { FieldShell, capText, controlClass, useField } from './field';
 import { IconButton } from './IconButton';
 import type { TextFieldProps } from './TextField';
 
@@ -10,7 +10,7 @@ export interface PasswordFieldProps extends Omit<TextFieldProps, 'type'> {
   hidePasswordLabel: string;
 }
 
-export function PasswordField({ label, hint, error, id, showPasswordLabel, hidePasswordLabel, maxBytes, onChange, onCompositionEnd, 'aria-describedby': describedBy, 'aria-invalid': invalid, className, disabled, ...rest }: PasswordFieldProps): React.JSX.Element {
+export function PasswordField({ label, hint, error, id, showPasswordLabel, hidePasswordLabel, maxBytes, maxChars, onChange, onCompositionStart, onCompositionEnd, 'aria-describedby': describedBy, 'aria-invalid': invalid, className, disabled, ...rest }: PasswordFieldProps): React.JSX.Element {
   const [visible, setVisible] = useState(false);
   const { controlProps, hintId, errorId } = useField('password', { id, hint, error, 'aria-describedby': describedBy, 'aria-invalid': invalid });
   return (
@@ -21,7 +21,7 @@ export function PasswordField({ label, hint, error, id, showPasswordLabel, hideP
           spellCheck={false}
           {...rest}
           {...controlProps}
-          {...capBytes(maxBytes, { onChange, onCompositionEnd })}
+          {...capText({ maxBytes, maxChars }, { onChange, onCompositionStart, onCompositionEnd }, { previous: typeof rest.value === 'string' ? rest.value : undefined })}
           disabled={disabled}
           type={visible ? 'text' : 'password'}
           className={`${controlClass(Boolean(error))} pe-10 ${visible ? '[unicode-bidi:plaintext]' : ''}`.trim()}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidText, LIMITS } from '@shared/limits';
@@ -73,6 +73,11 @@ function ReviewForm({ matchId, onSubmitted }: { matchId: string; onSubmitted: (r
   const [usefulness, setUsefulness] = useState('');
   const [explanation, setExplanation] = useState('');
   const [takeaway, setTakeaway] = useState('');
+  const learnedRef = useRef<HTMLTextAreaElement>(null);
+  const canNowDoRef = useRef<HTMLTextAreaElement>(null);
+  const usefulnessRef = useRef<HTMLTextAreaElement>(null);
+  const explanationRef = useRef<HTMLTextAreaElement>(null);
+  const takeawayRef = useRef<HTMLTextAreaElement>(null);
   const [rating, setRating] = useState('');
   const [pending, setPending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -97,6 +102,14 @@ function ReviewForm({ matchId, onSubmitted }: { matchId: string; onSubmitted: (r
     setAttempted(true);
     if (Object.values(invalid).some(Boolean)) {
       setFailure({ code: 'validation_failed' });
+      const order = [
+        [invalid.learned, learnedRef],
+        [invalid.canNowDo, canNowDoRef],
+        [invalid.usefulness, usefulnessRef],
+        [invalid.explanation, explanationRef],
+        [invalid.takeaway, takeawayRef],
+      ] as const;
+      order.find(([bad]) => bad)?.[1].current?.focus();
       return;
     }
     setPending(true);
@@ -131,16 +144,20 @@ function ReviewForm({ matchId, onSubmitted }: { matchId: string; onSubmitted: (r
             <TextArea
               label={copy.learned}
               hint={format(copy.textLimit, outcomeLimits)}
-              error={attempted && invalid.learned ? format(copy.textInvalid, outcomeLimits) : undefined}
+              error={attempted && invalid.learned ? format(learned.trim() === '' ? copy.textEmpty : copy.textInvalid, outcomeLimits) : undefined}
               required
+              maxChars={LIMITS.learningOutcome.maxChars}
+              ref={learnedRef}
               value={learned}
               onChange={(e) => setLearned(e.target.value)}
             />
             <TextArea
               label={copy.canNowDo}
               hint={format(copy.textLimit, outcomeLimits)}
-              error={attempted && invalid.canNowDo ? format(copy.textInvalid, outcomeLimits) : undefined}
+              error={attempted && invalid.canNowDo ? format(canNowDo.trim() === '' ? copy.textEmpty : copy.textInvalid, outcomeLimits) : undefined}
               required
+              maxChars={LIMITS.learningOutcome.maxChars}
+              ref={canNowDoRef}
               value={canNowDo}
               onChange={(e) => setCanNowDo(e.target.value)}
             />
@@ -151,16 +168,20 @@ function ReviewForm({ matchId, onSubmitted }: { matchId: string; onSubmitted: (r
             <TextArea
               label={copy.usefulness}
               hint={format(copy.textLimit, feedbackLimits)}
-              error={attempted && invalid.usefulness ? format(copy.textInvalid, feedbackLimits) : undefined}
+              error={attempted && invalid.usefulness ? format(usefulness.trim() === '' ? copy.textEmpty : copy.textInvalid, feedbackLimits) : undefined}
               required
+              maxChars={LIMITS.privateFeedback.maxChars}
+              ref={usefulnessRef}
               value={usefulness}
               onChange={(e) => setUsefulness(e.target.value)}
             />
             <TextArea
               label={copy.explanation}
               hint={format(copy.textLimit, feedbackLimits)}
-              error={attempted && invalid.explanation ? format(copy.textInvalid, feedbackLimits) : undefined}
+              error={attempted && invalid.explanation ? format(explanation.trim() === '' ? copy.textEmpty : copy.textInvalid, feedbackLimits) : undefined}
               required
+              maxChars={LIMITS.privateFeedback.maxChars}
+              ref={explanationRef}
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
             />
@@ -179,9 +200,12 @@ function ReviewForm({ matchId, onSubmitted }: { matchId: string; onSubmitted: (r
           <TextArea
             label={copy.takeaway}
             hint={format(copy.takeawayLimit, takeawayLimits)}
-            error={attempted && invalid.takeaway ? format(copy.takeawayInvalid, takeawayLimits) : undefined}
+            error={attempted && invalid.takeaway ? format(takeaway.trim() === '' ? copy.textEmpty : copy.takeawayInvalid, takeawayLimits) : undefined}
             rows={2}
             required
+            maxChars={LIMITS.publicTakeaway.maxChars}
+            singleLine
+            ref={takeawayRef}
             value={takeaway}
             onChange={(e) => setTakeaway(e.target.value)}
           />

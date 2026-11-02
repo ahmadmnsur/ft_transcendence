@@ -215,6 +215,7 @@ export function SignUpPage(): React.JSX.Element {
                   hint={t.auth.signUp.emailHint}
                   type="email"
                   autoComplete="email"
+                  maxChars={LIMITS.email.maxChars}
                   value={email}
                   onChange={(event) => setTypedEmail(event.target.value)}
                   error={emailError ? t.auth.signUp.emailInvalid : undefined}
@@ -228,6 +229,7 @@ export function SignUpPage(): React.JSX.Element {
                   })}
                   type="text"
                   autoComplete="nickname"
+                  maxChars={LIMITS.displayName.maxChars}
                   value={displayName}
                   onChange={(event) => setTypedDisplayName(event.target.value)}
                   error={

@@ -153,6 +153,7 @@ export function SignInPage(): React.JSX.Element {
                 label={t.auth.signIn.emailLabel}
                 type="email"
                 autoComplete="email"
+                maxChars={LIMITS.email.maxChars}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 error={emailError ? t.auth.signIn.emailInvalid : undefined}

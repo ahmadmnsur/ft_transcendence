@@ -4,7 +4,7 @@ export const LIMITS = {
   displayName: { minChars: 1, maxChars: 40 },
   skillList: { maxItems: 15 },
   learningGoalText: { minChars: 1, maxChars: 200 },
-  directMessage: { minChars: 1, maxChars: 2000 },
+  directMessage: { minChars: 1, maxChars: 500 },
   learningOutcome: { minChars: 1, maxChars: 2000 },
   privateFeedback: { minChars: 1, maxChars: 2000, ratingMin: 1, ratingMax: 5 },
   publicTakeaway: { minChars: 1, maxChars: 280 },

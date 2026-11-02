@@ -16,6 +16,7 @@ export default {
     one: '{min}–{count} character.',
     other: '{min}–{count} characters.',
   },
+  textEmpty: { one: 'Enter {min}–{count} character.', other: 'Enter {min}–{count} characters.' },
   textInvalid: {
     one: 'Enter {min}–{count} character. Remove unsupported control characters.',
     other: 'Enter {min}–{count} characters. Remove unsupported control characters.',

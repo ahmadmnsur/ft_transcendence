@@ -10,8 +10,9 @@ import { failureCode } from '../profile/failure';
 import { PromptHistory } from '../prompts/PromptHistory';
 
 export function AdminPromptsPage(): React.JSX.Element {
-  const { t, errorText } = useI18n();
+  const { t, errorText, formatText } = useI18n();
   const copy = t.prompts;
+  const questionLimits = { min: LIMITS.promptQuestion.minChars, count: LIMITS.promptQuestion.maxChars };
   const client = useQueryClient();
   const search = useSearch({ from: '/admin/prompts' });
   const navigate = useNavigate({ from: '/admin/prompts' });
@@ -19,6 +20,7 @@ export function AdminPromptsPage(): React.JSX.Element {
   const [invalid, setInvalid] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const questionRef = useRef<HTMLTextAreaElement>(null);
   const publish = useMutation({
     mutationFn: publishPrompt,
     onSuccess: () => { setQuestion(''); void client.invalidateQueries({ queryKey: ['prompts'] }); void navigate({ search: {} }); },
@@ -36,8 +38,12 @@ export function AdminPromptsPage(): React.JSX.Element {
         const valid = isValidText(question, LIMITS.promptQuestion, true);
         setInvalid(!valid);
         if (valid) setConfirming(true);
+        else questionRef.current?.focus();
       }}>
-        <TextArea label={copy.question} value={question} onChange={(event) => { setQuestion(event.target.value); setInvalid(false); publish.reset(); }} hint={copy.publishHint} error={invalid ? errorText('validation_failed') : undefined} disabled={publish.isPending} />
+        <div className="flex flex-col gap-2">
+          <TextArea ref={questionRef} label={copy.question} value={question} maxChars={LIMITS.promptQuestion.maxChars} onChange={(event) => { setQuestion(event.target.value); setInvalid(false); publish.reset(); }} hint={formatText(copy.textLimit, questionLimits)} error={invalid ? formatText(question.trim() === '' ? copy.textEmpty : copy.textInvalid, questionLimits) : undefined} disabled={publish.isPending} />
+          <p className="text-sm text-ink-muted">{copy.publishHint}</p>
+        </div>
         <Button type="submit" loading={publish.isPending}>{publish.isPending ? copy.publishing : copy.publish}</Button>
       </form>
     </Card>

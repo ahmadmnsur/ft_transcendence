@@ -18,6 +18,7 @@ export default {
     many: '{min}–{count} de caractères.',
     other: '{min}–{count} caractères.',
   },
+  textEmpty: { one: 'Saisissez {min}–{count} caractère.', many: 'Saisissez {min}–{count} de caractères.', other: 'Saisissez {min}–{count} caractères.' },
   textInvalid: {
     one: 'Saisissez {min}–{count} caractère. Retirez les caractères de contrôle non autorisés.',
     many: 'Saisissez {min}–{count} de caractères. Retirez les caractères de contrôle non autorisés.',

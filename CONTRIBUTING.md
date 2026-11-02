@@ -321,6 +321,13 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
    > asserts the column's collation beside the ten named objects. With the preview fallback, the
    > raw steps are eleven.
 
+   > **Seventeen steps, 2026-11-02** ([`docs/spec.md`](docs/spec.md) §4.4, §16.3; ADR-0016 d1;
+   > [#254](https://github.com/ahmadmnsur/ft_transcendence/issues/254)). Seven `CHECK` constraints
+   > and a trigger on `DirectMessage.body` hold the §6.0.3 text limits in the database, and the
+   > category asserts each by name and that it refuses a violating row. With the preview fallback,
+   > the raw steps are nineteen. A limit changed in `src/shared/limits.ts` now also takes a
+   > migration, under the Schema gate.
+
 3. **At most one standing Match per Student per Round** — the one invariant the schema cannot
    hold, violable through an Admin's hand-made Match. Two concurrent hand-made creations sharing a
    Student must admit exactly one Match and reject the other with nothing written.

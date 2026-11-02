@@ -139,6 +139,8 @@ function ReportDialog({ target, student, open, onClose }: Props & {
               ref={textRef}
               label={copy.textLabel}
               value={text}
+              maxChars={LIMITS.reportText.maxChars}
+              maxRows={5}
               disabled={pending}
               onChange={(event) => setText(event.target.value)}
               hint={formatText(copy.textHint, { limit: LIMITS.reportText.maxChars })}

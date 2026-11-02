@@ -87,6 +87,15 @@ done when the PR template already is one.**
      > to the database's default order, code point on the hosted project, and nothing says so, so
      > this category asserts the column's collation too. It extends this category; it does not
      > create a new one.
+
+     > **Count corrected 2026-11-02 by [#254](https://github.com/ahmadmnsur/ft_transcendence/issues/254).**
+     > The working set is now **seventeen**: seven `CHECK` constraints and a trigger on
+     > `DirectMessage.body` hold the text limits of [`docs/spec.md`](../spec.md) §6.0.3 in the
+     > database (ADR-0014's *Consequences*, count note of 2026-11-02). If a migration stops creating
+     > one, a too-long text is stored and nothing says so, so this category asserts each by name and
+     > that it refuses a violating row, and that an older, longer Direct Message can still be marked
+     > read. It extends this category; it does not create a new one, and the API's own length checks
+     > stay untested, as decision 1 leaves forms.
    - **At most one standing Match per Student per Round** — the one invariant ADR-0014 decision 13
      records as **not expressible in the schema**, violable through an Admin's hand-made Match
      (ADR-0002 decision 7). If anything in this model earns a test, it is the rule nothing else

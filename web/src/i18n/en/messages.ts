@@ -22,7 +22,6 @@ export default {
     typing: '{name} is typing',
     newBelow: 'New message from {name} below',
     incoming: 'New message from {name}: {body}',
-    charactersLeft: { one: '{count} character left', other: '{count} characters left' },
     composerLabel: 'Your message',
     send: 'Send',
     sending: 'Sending…',

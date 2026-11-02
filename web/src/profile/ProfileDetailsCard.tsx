@@ -122,6 +122,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
           })}
           type="text"
           autoComplete="nickname"
+          maxChars={LIMITS.displayName.maxChars}
           value={displayName}
           onChange={(event) => setDraft({ displayName: event.target.value, email })}
           error={
@@ -142,6 +143,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
           hint={copy.emailHint}
           type="email"
           autoComplete="email"
+          maxChars={LIMITS.email.maxChars}
           value={email}
           onChange={(event) => setDraft({ displayName, email: event.target.value })}
           error={

@@ -23,11 +23,6 @@ export default {
     typing: "{name} est en train d'écrire",
     newBelow: 'Nouveau message de {name} plus bas',
     incoming: 'Nouveau message de {name}\u00A0: {body}',
-    charactersLeft: {
-      one: '{count} caractère restant',
-      many: '{count} de caractères restants',
-      other: '{count} caractères restants',
-    },
     composerLabel: 'Votre message',
     send: 'Envoyer',
     sending: 'Envoi…',

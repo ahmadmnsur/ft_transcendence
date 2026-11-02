@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isValidText, LIMITS } from '@shared/limits';
@@ -20,8 +20,9 @@ export function PromptDetailPage(): React.JSX.Element {
 }
 
 function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
-  const { t, formatDateTime, errorText } = useI18n();
+  const { t, formatDateTime, errorText, formatText } = useI18n();
   const copy = t.prompts;
+  const answerLimits = { min: LIMITS.promptAnswer.minChars, count: LIMITS.promptAnswer.maxChars };
   const client = useQueryClient();
   const session = useQuery(sessionQueryOptions()).data;
   const wellFormedId = isUuid(promptId);
@@ -31,6 +32,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const answers = useQuery({ ...promptAnswersQueryOptions(promptId, page), enabled: wellFormedId });
   const detail = answers.data;
   const [body, setBody] = useState('');
+  const answerRef = useRef<HTMLTextAreaElement>(null);
   const [invalid, setInvalid] = useState(false);
   const answer = useMutation({
     mutationFn: (text: string) => answerPrompt(promptId, text),
@@ -61,8 +63,12 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
           const valid = isValidText(body, LIMITS.promptAnswer, true);
           setInvalid(!valid);
           if (valid) answer.mutate(body);
+          else answerRef.current?.focus();
         }}>
-          <TextArea label={copy.answerLabel} value={body} onChange={(event) => { setBody(event.target.value); setInvalid(false); answer.reset(); }} hint={copy.answerHint} error={invalid ? errorText('validation_failed') : undefined} disabled={answer.isPending} />
+          <div className="flex flex-col gap-2">
+            <TextArea ref={answerRef} label={copy.answerLabel} value={body} maxChars={LIMITS.promptAnswer.maxChars} onChange={(event) => { setBody(event.target.value); setInvalid(false); answer.reset(); }} hint={formatText(copy.textLimit, answerLimits)} error={invalid ? formatText(body.trim() === '' ? copy.textEmpty : copy.textInvalid, answerLimits) : undefined} disabled={answer.isPending} />
+            <p className="text-sm text-ink-muted">{copy.answerHint}</p>
+          </div>
           <Button type="submit" loading={answer.isPending}>{answer.isPending ? copy.submitting : copy.submit}</Button>
         </form>
       </Card> : null}
