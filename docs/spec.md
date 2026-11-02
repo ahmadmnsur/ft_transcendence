@@ -2592,7 +2592,7 @@ nothing — no insert, no delete.
 > `POST /api/posts/:id/like` and `DELETE /api/posts/:id/like` send `post:likes { postId, likeCount }`
 > to `student:<authorId>` only after commit, with the count the transaction counted (§7.4).
 > A Like on one's own Post sends it too, so the author's other tabs agree (ADR-0014 d5). A repeated
-> Like or unlike that writes nothing still sends it with the unchanged count. A removed Post
+> Like or unlike that writes nothing sends nothing, as a repeated accept (§8.5). A removed Post
 > still answers `post_unavailable`, writes nothing and sends nothing. No XP and not reportable
 > still hold.
 
@@ -2807,7 +2807,7 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > | --- | --- | --- | --- | --- |
 > | `friends:changed` | `student:<id>` of both Students of the request or Friendship | `{}` | a request sent, accepted, declined or cancelled; a Friendship ended | read again `GET /api/friends` and `GET /api/friends/requests` |
 > | `match:changed` | `student:<id>` of the Match's Mentor and Mentee | `{}` | an Accept that writes, a Decline, a Review (after its `post:created`) | read again the Student's Matches (current, history, one Match) and `/feedback` |
-> | `post:likes` | `student:<authorId>` only | `{ postId, likeCount }` | `POST` or `DELETE /api/posts/:id/like`, including a self-Like and a repeat with an unchanged count | set `likeCount` on that Post in loaded feed pages, the author's profile Posts and a Prompt's answers; read nothing |
+> | `post:likes` | `student:<authorId>` only | `{ postId, likeCount }` | `POST` or `DELETE /api/posts/:id/like` that changes a row, including a self-Like; a repeat that writes nothing sends nothing | set `likeCount` on that Post in loaded feed pages, the author's profile Posts and a Prompt's answers; read nothing |
 >
 > Only what is loaded reacts: invalidation refetches queries on screen and marks the rest stale,
 > so a page not on screen reads on its next visit. A missed event costs nothing: after a

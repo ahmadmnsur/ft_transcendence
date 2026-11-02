@@ -32,7 +32,7 @@ export type ReviewDetail = {
 export type FeedbackItem = PrivateFeedback & { matchId: string; roundNumber: number; author: StudentRef };
 export type FeedbackPage = { items: FeedbackItem[]; total: number };
 
-export const FEEDBACK_QUERY_KEY = ['feedback'] as const;
+const FEEDBACK_QUERY_KEY = ['feedback'] as const;
 
 export function feedbackQueryOptions(page: number, pageSize: number) {
   return queryOptions({

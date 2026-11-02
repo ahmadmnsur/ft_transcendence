@@ -89,7 +89,7 @@ async function readAgain(queryClient: QueryClient, queryKey: readonly string[]):
   await queryClient.invalidateQueries({ queryKey });
 }
 
-export function readListsAgain(queryClient: QueryClient): void {
+export function readFriendListsAgain(queryClient: QueryClient): void {
   void readAgain(queryClient, FRIENDS_QUERY_KEY);
   void readAgain(queryClient, FRIEND_REQUESTS_QUERY_KEY);
 }
@@ -124,7 +124,7 @@ function friendsWrite<T>(
   send: () => Promise<T>,
   apply: (result: T) => Promise<void>,
 ): Promise<void> {
-  return writeAsSignedIn(queryClient, send, apply, () => readListsAgain(queryClient));
+  return writeAsSignedIn(queryClient, send, apply, () => readFriendListsAgain(queryClient));
 }
 
 function withoutRequest(lists: FriendRequestLists, requestId: string): FriendRequestLists {
@@ -203,13 +203,13 @@ export function isPresenceUpdate(value: unknown): value is PresenceUpdate {
 
 export function applyPresence(queryClient: QueryClient, update: PresenceUpdate): void {
   if (queryClient.getQueryState(FRIENDS_QUERY_KEY)?.fetchStatus === 'fetching') {
-    readListsAgain(queryClient);
+    readFriendListsAgain(queryClient);
     return;
   }
   const list = queryClient.getQueryData<FriendList>(FRIENDS_QUERY_KEY);
   if (list === undefined) return;
   if (!list.items.some((item) => item.student.id === update.studentId)) {
-    readListsAgain(queryClient);
+    readFriendListsAgain(queryClient);
     return;
   }
   queryClient.setQueryData<FriendList>(FRIENDS_QUERY_KEY, {

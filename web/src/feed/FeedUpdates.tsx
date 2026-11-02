@@ -5,19 +5,17 @@ import { subscribe } from '../realtime/socket';
 
 export function FeedUpdates(): null {
   const queryClient = useQueryClient();
-  useEffect(
-    () =>
-      subscribe('post:created', (payload) => {
-        if (isPostView(payload)) applyPostCreated(queryClient, payload);
-      }),
-    [queryClient],
-  );
-  useEffect(
-    () =>
-      subscribe('post:likes', (payload) => {
-        if (isPostLikesUpdate(payload)) applyPostLikes(queryClient, payload);
-      }),
-    [queryClient],
-  );
+  useEffect(() => {
+    const created = subscribe('post:created', (payload) => {
+      if (isPostView(payload)) applyPostCreated(queryClient, payload);
+    });
+    const likes = subscribe('post:likes', (payload) => {
+      if (isPostLikesUpdate(payload)) applyPostLikes(queryClient, payload);
+    });
+    return () => {
+      created();
+      likes();
+    };
+  }, [queryClient]);
   return null;
 }

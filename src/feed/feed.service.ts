@@ -70,12 +70,12 @@ export class FeedService {
         select: { id: true, authorId: true, removedAt: true },
       }));
       await ctx.checkpoint('post.like');
-      await tx.like.createMany({
+      const { count } = await tx.like.createMany({
         data: [{ postId, studentId: actor.studentId, createdAt: ctx.now }],
         skipDuplicates: true,
       });
       const likeCount = await tx.like.count({ where: { postId } });
-      ctx.afterCommit(() => this.publisher.postLikes(post.authorId, post.id, likeCount));
+      if (count > 0) ctx.afterCommit(() => this.publisher.postLikes(post.authorId, post.id, likeCount));
       return { likeCount, likedByMe: true };
     });
   }
@@ -88,9 +88,9 @@ export class FeedService {
         select: { id: true, authorId: true, removedAt: true },
       }));
       await ctx.checkpoint('post.unlike');
-      await tx.like.deleteMany({ where: { postId, studentId: actor.studentId } });
+      const { count } = await tx.like.deleteMany({ where: { postId, studentId: actor.studentId } });
       const likeCount = await tx.like.count({ where: { postId } });
-      ctx.afterCommit(() => this.publisher.postLikes(post.authorId, post.id, likeCount));
+      if (count > 0) ctx.afterCommit(() => this.publisher.postLikes(post.authorId, post.id, likeCount));
       return { likeCount, likedByMe: false };
     });
   }
