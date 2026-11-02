@@ -1461,6 +1461,14 @@ Columns: `id` uuid PK; `student_id` uuid FK; `skill_id` uuid FK; `kind` `SkillKi
 - **Index**: `(skill_id, kind)` (analytics, search).
 - **Delete**: hard, through the list-replacement operation only (§6.2), which diffs so that a Skill
   kept on a list keeps its row (and therefore its Goal).
+- **Service invariant**: a Skill is on at most one of a Student's two lists. The list-replacement
+  operation (§6.2) refuses a request that puts one Skill on both; the unique key stays
+  `(student_id, skill_id, kind)`, so the schema does not hold it.
+
+> **2026-11-02 ([#256](https://github.com/ahmadmnsur/ft_transcendence/issues/256)):** the invariant
+> above is new. `CONTEXT.md` has a Student list a Skill "either as one they can teach or one they
+> want to learn", but the operation accepted the same Skill on both lists. Rows written before the
+> change stay: the SPA names such a Skill and holds Save until it is removed from one list.
 
 #### 4.3.6 `Block` — directed, evaluated either way
 
@@ -2360,10 +2368,11 @@ Concurrency: the unique index decides two concurrent claims — the loser gets `
 with nothing written.
 
 **`PUT /api/me/skills`** — session · `{ teach: uuid[], learn: uuid[] }` · Validation: ids in the
-catalogue, no duplicates within a list, ≤ 15 each · Rule: diff against current rows; delete removed
-rows, insert added rows, **keep rows that stay** · if the Goal's `LEARN` row is deleted, clear both
-Goal columns first (M5) · Persist `StudentSkill`, `Student` · Result `{ goalCleared }` · Events
-none · Refusals: validation breaches → `validation_failed` · Effect: the
+catalogue, no duplicates within a list, no Skill on both lists (§4.3.5), ≤ 15 each · Rule: diff
+against current rows; delete removed rows, insert added rows, **keep rows that stay** · if the
+Goal's `LEARN` row is deleted, clear both Goal columns first (M5) · Persist `StudentSkill`,
+`Student` · Result `{ goalCleared }` · Events none · Refusals: validation breaches →
+`validation_failed` · Effect: the
 next Round's candidate pool only (ADR-0002 Consequences) · Concurrency: vs Round open, one serial
 order (the matcher read the lists).
 

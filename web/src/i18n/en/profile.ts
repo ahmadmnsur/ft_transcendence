@@ -87,7 +87,7 @@ export default {
   },
   skills: {
     title: 'Skills',
-    subtitle: 'Both lists show on your profile, and the next Round matches you on them.',
+    subtitle: 'Both lists show on your profile, and the next Round matches you on them. A Skill can be on one list only.',
     teachHeading: 'Skills I can teach',
     learnHeading: 'Skills I want to learn',
     teachSelectLabel: 'Choose a Skill to teach',
@@ -101,7 +101,8 @@ export default {
       one: 'A list holds up to {count} Skill.',
       other: 'A list holds up to {count} Skills.',
     },
-    nothingToAdd: 'You have listed every catalogue Skill here.',
+    nothingToAdd: 'Every catalogue Skill is already on one of your lists.',
+    onBothLists: 'A Skill can be on one list only. Remove {skills} from one of your lists to save.',
     catalogueLoading: 'Loading the Skill catalogue…',
     emptyNudge: 'Rounds match Students on their Skills. List a Skill to teach or to learn so the next Round can match you.',
     unsaved: 'You have unsaved changes.',

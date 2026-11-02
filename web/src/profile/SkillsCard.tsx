@@ -26,7 +26,7 @@ function inCatalogueOrder(list: SkillView[], catalogue: SkillView[] | undefined)
 }
 
 export function SkillsCard({ target, learnPickerId }: { target: ProfileTarget; learnPickerId?: string }): React.JSX.Element {
-  const { t, format, errorText } = useI18n();
+  const { t, format, formatText, listText, errorText } = useI18n();
   const copy = target.voice === 'own' ? t.profile.skills : { ...t.profile.skills, ...t.admin.cards.skills };
   const profile = target.profile;
   const {
@@ -92,13 +92,16 @@ export function SkillsCard({ target, learnPickerId }: { target: ProfileTarget; l
     learn: new Set(profile.skills.learn.map((skill) => skill.id)),
   };
   const goalWillClear = goalSkillId !== undefined && !learn.some((skill) => skill.id === goalSkillId);
+  const learnIds = new Set(learn.map((skill) => skill.id));
+  const onBoth = teach.filter((skill) => learnIds.has(skill.id));
+  const canSave = dirty && onBoth.length === 0;
 
   function listFor(kind: Kind): SkillView[] {
     return kind === 'teach' ? teach : learn;
   }
 
   function availableFor(kind: Kind): SkillView[] {
-    const chosen = new Set(listFor(kind).map((skill) => skill.id));
+    const chosen = new Set([...teach, ...learn].map((skill) => skill.id));
     return (catalogue?.items ?? []).filter((skill) => !chosen.has(skill.id));
   }
 
@@ -120,13 +123,14 @@ export function SkillsCard({ target, learnPickerId }: { target: ProfileTarget; l
     if (skill === undefined) return;
     const next = [...listFor(kind), skill];
     setDraft({ teach: kind === 'teach' ? next : teach, learn: kind === 'learn' ? next : learn });
-    setChoice({ ...choice, [kind]: '' });
+    const keep = (other: Kind): string => (other === kind || choice[other] === chosen ? '' : choice[other]);
+    setChoice({ teach: keep('teach'), learn: keep('learn') });
     setStatus(undefined);
   }
 
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
-    if (pending) return;
+    if (pending || onBoth.length > 0) return;
     setStatus(undefined);
     setPending(true);
     try {
@@ -237,9 +241,15 @@ export function SkillsCard({ target, learnPickerId }: { target: ProfileTarget; l
           {teach.length === 0 && learn.length === 0 ? <Banner tone="info" title={copy.emptyNudge} /> : null}
           {renderPicker('teach')}
           {renderPicker('learn')}
+          {onBoth.length > 0 ? (
+            <Banner
+              tone="warning"
+              title={formatText(copy.onBothLists, { skills: listText(onBoth.map((skill) => skill.name)) })}
+            />
+          ) : null}
           {goalWillClear ? <Banner tone="warning" title={copy.goalWillClear} /> : null}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-5">
-            <Button type="submit" variant={dirty ? 'primary' : 'secondary'} aria-disabled={!dirty || undefined} loading={pending}>
+            <Button type="submit" variant={canSave ? 'primary' : 'secondary'} aria-disabled={!canSave || undefined} loading={pending}>
               {pending ? copy.saving : copy.save}
             </Button>
             {dirty ? (

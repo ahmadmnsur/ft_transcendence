@@ -80,6 +80,8 @@ export async function applySkills(
     if (list.length > LIMITS.skillList.maxItems) throw new ApiError('validation_failed');
     if (new Set(list).size !== list.length) throw new ApiError('validation_failed');
   }
+  const learnSet = new Set(learnIds);
+  if (teachIds.some((id) => learnSet.has(id))) throw new ApiError('validation_failed');
   const ids = [...new Set([...teachIds, ...learnIds])];
   const found = await tx.skill.findMany({ where: { id: { in: ids } }, select: { id: true } });
   if (found.length !== ids.length) throw new ApiError('validation_failed');

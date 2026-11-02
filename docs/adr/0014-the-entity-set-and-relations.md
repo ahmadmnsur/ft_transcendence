@@ -359,6 +359,13 @@ arms. Those three sentences are the whole shape.
    > are service checks. Removing the Goal's Skill from the list **clears** both Goal columns in the
    > same transaction, and a list edit that keeps the Skill keeps its row, and so its Goal.
 
+   > **2026-11-02 ([#256](https://github.com/ahmadmnsur/ft_transcendence/issues/256)): a Skill is on
+   > at most one of a Student's two lists**, as `CONTEXT.md`'s "either as one they can teach or one
+   > they want to learn" already reads. The list-replacement operation accepted the same Skill on
+   > both; it now refuses that, and the SPA offers a Skill only while it is on neither list. It is a
+   > service check: the unique key stays on all three columns, and rows written before the change
+   > are kept ([`docs/spec.md`](../spec.md) §4.3.5, §6.2).
+
 4. **A Friendship is a directed request with an acceptance, and a Block ends one.**
    `Friendship(requester_id, addressee_id, status, created_at, responded_at)`, unique on the
    **unordered** pair via a unique index on `(LEAST(a,b), GREATEST(a,b))`.

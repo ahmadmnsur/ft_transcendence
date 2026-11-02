@@ -91,7 +91,8 @@ export default {
   },
   skills: {
     title: 'Compétences',
-    subtitle: "Les deux listes apparaissent sur votre profil, et le prochain Tour s'appuie sur elles pour vous associer.",
+    subtitle:
+      "Les deux listes apparaissent sur votre profil, et le prochain Tour s'appuie sur elles pour vous associer. Une Compétence ne peut figurer que dans une seule liste.",
     teachHeading: 'Compétences que je peux enseigner',
     learnHeading: 'Compétences que je veux apprendre',
     teachSelectLabel: 'Choisissez une Compétence à enseigner',
@@ -106,7 +107,9 @@ export default {
       many: 'Une liste contient au plus {count} de Compétences.',
       other: 'Une liste contient au plus {count} Compétences.',
     },
-    nothingToAdd: 'Vous avez déjà ajouté ici toutes les Compétences du catalogue.',
+    nothingToAdd: "Toutes les Compétences du catalogue figurent déjà dans l'une de vos listes.",
+    onBothLists:
+      "Une Compétence ne peut figurer que dans une seule liste. Retirez {skills} de l'une de vos listes pour enregistrer.",
     catalogueLoading: 'Chargement du catalogue des Compétences…',
     emptyNudge:
       'Les Tours apparient les Étudiants selon leurs Compétences. Ajoutez une Compétence à enseigner ou à apprendre pour que le prochain Tour puisse vous apparier.',

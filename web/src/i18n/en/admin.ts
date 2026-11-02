@@ -133,10 +133,11 @@ export default {
       saved: 'The profile was updated.',
     },
     skills: {
-      subtitle: 'Both lists show on their profile, and the next Round matches them on these Skills.',
+      subtitle: 'Both lists show on their profile, and the next Round matches them on these Skills. A Skill can be on one list only.',
       teachHeading: 'Skills they can teach',
       learnHeading: 'Skills they want to learn',
-      nothingToAdd: 'Every catalogue Skill is already listed here.',
+      nothingToAdd: 'Every catalogue Skill is already on one of their lists.',
+      onBothLists: 'A Skill can be on one list only. Remove {skills} from one of their lists to save.',
       emptyNudge: 'Rounds match Students on their Skills, and this Student has none listed.',
       goalWillClear: 'Saving will clear their Learning Goal, because its Skill is no longer on their learn list.',
       saved: 'The Skills were saved.',
