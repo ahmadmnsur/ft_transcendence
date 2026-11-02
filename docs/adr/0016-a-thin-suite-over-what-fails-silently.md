@@ -1,5 +1,9 @@
 # A thin suite over what fails silently, and done is the merged PR
 
+> **Annotated 2026-10-31.** `.env.example` now lists names only, and every value it is said below to
+> carry lives in the gitignored `.env`; the fallback's values there carry a `LOCAL_` prefix where
+> they differ from the team project's (ADR-0004's note of 2026-10-31).
+
 > **Annotated 2026-10-12 for the move to Supabase.** The suite runs on Supabase's own containers,
 > never on a stand-in. Decision 1 (where the suite runs, the eleventh and twelfth categories, and
 > four checks in `08-files`), decisions 5 and 6 (the clean-clone triggers and the gate box),

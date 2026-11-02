@@ -3,7 +3,7 @@ import type { Catalogue } from '../types';
 
 export default {
   title: 'التقدم', loading: 'جار تحميل التقدم…', retry: 'إعادة المحاولة',
-  level: 'المستوى {level}', totalXp: '{xp} XP إجمالا', levelProgress: '{earned} / {needed} XP',
+  level: 'المستوى {level}', totalXp: '{xp} XP إجمالا', levelProgress: '{earned} / {needed} XP للوصول إلى المستوى {next}',
   cap: 'بلغت المستوى الأقصى. تستمر في كسب XP.', earned: 'كسبت +{xp} XP',
   badges: 'الشارات', noBadges: 'لا توجد شارات بعد. راجع القواعد لمعرفة كيفية كسبها.',
   newlyAwarded: 'الشارات المكتسبة', awardedAt: 'اكتسبت في {date}',

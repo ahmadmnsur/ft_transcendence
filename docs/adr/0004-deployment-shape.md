@@ -40,6 +40,26 @@
 > computer, and only the team holds the team `.env` (decision 9's note of that date). "The handed
 > `.env`" in the notes below now names the team `.env` used at the defense.
 
+> **Changed 2026-10-31: `.env.example` lists names only, and every value lives in `.env`.**
+> `.env.example` stays committed, as `document/en.subject.md:371` asks, with each variable's name
+> and no value. `.env` holds the team project's values under the variables' own names, and the local
+> fallback's values for the eleven variables that differ under a `LOCAL_` prefix, with
+> `LOCAL_DEV_PUBLIC_ORIGIN` for `make dev` and `make test`; the fallback database's user, password
+> and name and its nine signing keys, the same under every command, carry no prefix. `make up` and bare
+> `docker compose up --build` read the team values and start only `api` and `proxy`: the fallback's
+> Postgres, Auth, Storage and gateway services sit in a Compose profile, `local`, that only
+> `make local`, `make dev`, `make test` and `make reset-local` enable, and those give every service
+> the `LOCAL_` values in place of the team's. Every target stops when `.env` is missing, and the
+> fallback ones name each value it lacks. So a fresh clone boots once a filled `.env` is copied into
+> it: decision 8's working defaults in `.env.example`, and `make up` copying it into place, no longer
+> hold, and the clean-clone check runs `make local` and bare Compose with the local profile from a
+> copied `.env` (`CONTRIBUTING.md` → *The clean-clone check*). The database password and the
+> fallback's site address left `compose.yaml`, which now reads them from `.env`. The fallback targets
+> check `.env` with `docker compose config --environment`, so the toolchain floor rises from Compose
+> 2.24.4 to 2.27.2, the first release whose `config` takes `--environment`. The notes below that say
+> the fallback loads `.env.example` alone, or that `make local`, `make dev` and `make test` never read
+> `.env`, describe the setup before this date.
+
 The subject's entire requirement for deployment is `document/en.subject.md:314` — a
 containerisation solution (Docker, Podman, or equivalent) that runs with a **single
 command** — plus HTTPS for every browser-to-backend connection (`:383`), credentials in a

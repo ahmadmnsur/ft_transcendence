@@ -1,28 +1,38 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { LIMITS, isValidPassword, newPasswordInvalidReason, type InvalidReason } from '@shared/limits';
-import { ApiProtocolError, ApiRefusalError } from '../api/client';
-import { changePassword } from '../api/auth';
 import { configQueryOptions } from '../api/config';
-import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from '../api/session';
-import { Banner, Button, Card, TextField } from '../design';
+import { SESSION_QUERY_KEY, sessionQueryOptions } from '../api/session';
+import { Banner, Button, buttonClasses } from '../design';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { AvatarCard } from '../profile/AvatarCard';
-import { FortyTwoCard } from '../profile/FortyTwoCard';
 import { LearningGoalCard } from '../profile/LearningGoalCard';
 import { ProfileDetailsCard } from '../profile/ProfileDetailsCard';
+import { ProfileNav } from '../profile/ProfileNav';
+import { SecurityCard } from '../profile/SecurityCard';
 import { SkillsCard } from '../profile/SkillsCard';
 import { ME_QUERY_KEY, meQueryOptions } from '../api/profile';
-import { ConfirmWith42Card } from '../profile/ConfirmWith42Card';
 import { useOwnProfileTarget } from '../profile/target';
+import { UnsavedChangesGuard } from '../profile/unsaved';
 import { OwnProgressCard } from '../progress/ProgressCard';
 
 const meSearch = getRouteApi('/me');
 
+const LEARN_PICKER_ID = 'me-learn-skill';
+
+type OAuthNotice = 'connected' | 'in_use' | 'failed';
+
+function Section({ id, children }: { id: string; children: ReactNode }): React.JSX.Element {
+  return (
+    <div id={id} className="min-w-0 scroll-mt-6 [&_h2]:rounded-sm [&_h2]:focus-ring">
+      {children}
+    </div>
+  );
+}
+
 export function MePage(): React.JSX.Element {
-  const { t, format, errorText } = useI18n();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: session } = useQuery(sessionQueryOptions());
@@ -30,113 +40,63 @@ export function MePage(): React.JSX.Element {
   const profile = useOwnProfileTarget();
   const { data: config } = useQuery(configQueryOptions());
   const { oauth } = meSearch.useSearch();
-  const [oauthNotice, setOauthNotice] = useState<'connected' | 'in_use' | 'failed' | undefined>(
-    undefined,
-  );
-  const [confirmed42, setConfirmed42] = useState(false);
+  const [oauthNotice, setOauthNotice] = useState<OAuthNotice | undefined>(undefined);
+  const [confirmed42At, setConfirmed42At] = useState<number | null>(null);
   const username = session?.authenticated === true ? session.student.email : '';
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [currentError, setCurrentError] = useState<'empty' | 'invalid' | undefined>(undefined);
-  const [newError, setNewError] = useState<InvalidReason | undefined>(undefined);
-  const [confirmError, setConfirmError] = useState(false);
-  const [status, setStatus] = useState<{ code: unknown } | undefined>(undefined);
-  const [pending, setPending] = useState(false);
-  const currentRef = useRef<HTMLInputElement>(null);
-  const newRef = useRef<HTMLInputElement>(null);
-  const confirmRef = useRef<HTMLInputElement>(null);
-  const statusRef = useRef<HTMLDivElement>(null);
-
-  const passwordInvalid = format(t.auth.password.invalid, { count: LIMITS.password.minChars });
+  const noticeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (status !== undefined) statusRef.current?.focus();
-  }, [status]);
+    if (oauthNotice !== undefined) noticeRef.current?.focus();
+  }, [oauthNotice]);
 
   useEffect(() => {
     if (oauth === undefined) return;
     if (oauth === 'connected') void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
-    if (oauth === 'confirmed') setConfirmed42(true);
+    if (oauth === 'confirmed') setConfirmed42At(Date.now());
     else setOauthNotice(oauth);
-    void navigate({ to: '/me', search: {}, replace: true }).catch(() => {
-    });
+    const replaceTimer = window.setTimeout(() => {
+      void navigate({ to: '/me', search: {}, replace: true, resetScroll: false }).catch(() => {
+      });
+    }, 0);
+    return () => window.clearTimeout(replaceTimer);
   }, [oauth, navigate, queryClient]);
 
-  function signOutAndGo(
-    notice: 'password-changed' | 'password-change-unknown',
-  ): Promise<void> {
+  function signOutAndGo(notice: 'password-changed' | 'password-change-unknown'): Promise<void> {
     queryClient.clear();
     queryClient.setQueryData(SESSION_QUERY_KEY, { authenticated: false });
-    return navigate({ to: '/sign-in', search: { notice }, replace: true });
+    return navigate({ to: '/sign-in', search: { notice }, replace: true, ignoreBlocker: true });
   }
 
-  async function onSubmit(event: React.FormEvent): Promise<void> {
-    event.preventDefault();
-    if (pending) return;
-    const nextCurrentError: 'empty' | 'invalid' | undefined =
-      currentPassword === '' ? 'empty' : isValidPassword(currentPassword) ? undefined : 'invalid';
-    const nextNewError = newPasswordInvalidReason(newPassword);
-    const nextConfirmError = confirmPassword.trim() !== newPassword.trim();
-    setCurrentError(nextCurrentError);
-    setNewError(nextNewError);
-    setConfirmError(nextConfirmError);
-    setStatus(undefined);
-    if (nextCurrentError !== undefined) {
-      currentRef.current?.focus();
-      return;
-    }
-    if (nextNewError !== undefined) {
-      newRef.current?.focus();
-      return;
-    }
-    if (nextConfirmError) {
-      confirmRef.current?.focus();
-      return;
-    }
-    setPending(true);
-    try {
-      await changePassword({ currentPassword: currentPassword.trim(), newPassword: newPassword.trim() });
-      await signOutAndGo('password-changed');
-    } catch (error) {
-      if (error instanceof ApiRefusalError) {
-        setStatus({ code: error.code });
-        return;
-      }
-      let signedOut = true;
-      try {
-        signedOut = !(await fetchSession()).authenticated;
-      } catch {
-        signedOut = false;
-      }
-      if (signedOut) {
-        await signOutAndGo('password-change-unknown');
-        return;
-      }
-      setStatus({ code: error instanceof ApiProtocolError ? error.code : undefined });
-    } finally {
-      setPending(false);
-    }
-  }
+  const sections = [
+    { id: 'me-skills', label: t.profile.skills.title },
+    { id: 'me-goal', label: t.profile.goal.title },
+    { id: 'me-avatar', label: t.profile.avatar.title },
+    { id: 'me-details', label: t.profile.details.title },
+    { id: 'me-progress', label: t.progress.title },
+    { id: 'me-security', label: t.profile.security.title },
+  ];
 
   return (
-    <>
+    <UnsavedChangesGuard>
       <PageTitle name={t.auth.passwordChange.title} />
-      <div className="mx-auto w-full max-w-2xl">
-        <h1 className="text-2xl font-semibold text-ink">{t.auth.passwordChange.heading}</h1>
-        {session?.authenticated === true ? (
-          <p className="mt-2 text-sm">
+      <div className="mx-auto w-full max-w-4xl">
+        <header className="flex min-w-0 flex-wrap items-end justify-between gap-x-6 gap-y-4">
+          <div className="min-w-0 flex-1 basis-80">
+            <h1 className="text-2xl font-semibold text-ink">{t.auth.passwordChange.heading}</h1>
+            <p className="mt-1 max-w-prose text-sm text-ink-muted text-pretty">{t.profile.me.intro}</p>
+          </div>
+          {session?.authenticated === true ? (
             <Link
               to="/students/$studentId"
               params={{ studentId: session.student.id }}
-              className="rounded text-link underline underline-offset-2 focus-ring"
+              className={buttonClasses({ variant: 'secondary', size: 'sm' })}
             >
               {t.profile.me.publicProfileLink}
             </Link>
-          </p>
-        ) : null}
-        <div className="mt-4 flex flex-col gap-4">
-          {oauthNotice !== undefined ? (
+          ) : null}
+        </header>
+        {oauthNotice !== undefined ? (
+          <div ref={noticeRef} tabIndex={-1} className="mt-6 rounded-lg focus-ring">
             <Banner
               tone={oauthNotice === 'connected' ? 'success' : 'danger'}
               title={
@@ -147,98 +107,52 @@ export function MePage(): React.JSX.Element {
                     : t.errors.codes.oauth_failed
               }
             />
-          ) : null}
-          {me === undefined && meError ? (
-            <div className="flex min-w-0 flex-col gap-2">
-              <Banner tone="danger" title={t.errors.unknown} />
-              <Button variant="secondary" className="self-start" onClick={() => void refetchMe()}>
-                {t.profile.me.retry}
-              </Button>
-            </div>
-          ) : null}
-          <AvatarCard target={profile} />
-          <ProfileDetailsCard target={profile} />
-          <OwnProgressCard />
-          <SkillsCard target={profile} />
-          <LearningGoalCard target={profile} />
-          {config?.oauth42Enabled === true ? (
-            <FortyTwoCard onAction={() => setOauthNotice(undefined)} />
-          ) : null}
-        </div>
-        <Card title={t.auth.passwordChange.cardTitle} subtitle={t.auth.passwordChange.cardSubtitle} headingLevel={2} className="mt-4">
-          <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
-            {status !== undefined ? (
-              <div ref={statusRef} tabIndex={-1} className="rounded-lg focus-ring">
-                <Banner tone="danger" title={errorText(status.code)} />
-              </div>
-            ) : null}
-            <input
-              type="text"
-              autoComplete="username"
-              value={username}
-              readOnly
-              tabIndex={-1}
-              aria-hidden="true"
-              className="sr-only"
-            />
-            <TextField
-              ref={currentRef}
-              label={t.auth.passwordChange.currentLabel}
-              type="password"
-              autoComplete="current-password"
-              maxBytes={LIMITS.password.maxBytes}
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              error={
-                currentError === undefined
-                  ? undefined
-                  : currentError === 'empty'
-                    ? t.auth.passwordChange.currentEmpty
-                    : passwordInvalid
-              }
-            />
-            <TextField
-              ref={newRef}
-              label={t.auth.passwordChange.newLabel}
-              hint={format(t.auth.password.hint, { count: LIMITS.password.minChars })}
-              type="password"
-              autoComplete="new-password"
-              maxBytes={LIMITS.password.maxBytes}
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              error={
-                newError === undefined
-                  ? undefined
-                  : newError === 'emoji'
-                    ? t.auth.password.emoji
-                    : passwordInvalid
-              }
-            />
-            <TextField
-              ref={confirmRef}
-              label={t.auth.passwordChange.confirmLabel}
-              type="password"
-              autoComplete="new-password"
-              maxBytes={LIMITS.password.maxBytes}
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              error={confirmError ? t.auth.passwordChange.confirmInvalid : undefined}
-            />
-            <Button type="submit" loading={pending} className="w-full">
-              {pending ? t.auth.passwordChange.submitting : t.auth.passwordChange.submit}
-            </Button>
-          </form>
-        </Card>
-        {config?.oauth42Enabled === true ? (
-          <ConfirmWith42Card
-            confirmed={confirmed42}
-            onAction={() => setOauthNotice(undefined)}
-            onConfirmedEnd={() => setConfirmed42(false)}
-            onSignedOut={signOutAndGo}
-            className="mt-4"
-          />
+          </div>
         ) : null}
+        {me === undefined && meError ? (
+          <div className="mt-6 flex min-w-0 flex-col gap-2">
+            <Banner tone="danger" title={t.profile.me.loadFailed} />
+            <Button variant="secondary" className="self-start" onClick={() => void refetchMe()}>
+              {t.profile.me.retry}
+            </Button>
+          </div>
+        ) : null}
+        <div className="mt-4 lg:hidden">
+          <ProfileNav label={t.profile.me.navLabel} items={sections} layout="grid" />
+        </div>
+        <div className="mt-6 grid min-w-0 gap-8 lg:mt-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
+          <div className="hidden lg:block">
+            <ProfileNav label={t.profile.me.navLabel} items={sections} layout="list" />
+          </div>
+          <div className="flex min-w-0 flex-col gap-4">
+            <Section id="me-skills">
+              <SkillsCard target={profile} learnPickerId={LEARN_PICKER_ID} />
+            </Section>
+            <Section id="me-goal">
+              <LearningGoalCard target={profile} learnPickerId={LEARN_PICKER_ID} />
+            </Section>
+            <Section id="me-avatar">
+              <AvatarCard target={profile} />
+            </Section>
+            <Section id="me-details">
+              <ProfileDetailsCard target={profile} />
+            </Section>
+            <Section id="me-progress">
+              <OwnProgressCard />
+            </Section>
+            <Section id="me-security">
+              <SecurityCard
+                username={username}
+                fortyTwoEnabled={config?.oauth42Enabled === true}
+                onNoticeRetire={() => setOauthNotice(undefined)}
+                confirmed42At={confirmed42At}
+                onConfirmedEnd={() => setConfirmed42At(null)}
+                onSignedOut={signOutAndGo}
+              />
+            </Section>
+          </div>
+        </div>
       </div>
-    </>
+    </UnsavedChangesGuard>
   );
 }

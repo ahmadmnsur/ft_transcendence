@@ -7,6 +7,7 @@ import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
 import type { ProfileTarget } from './target';
+import { useUnsavedChanges } from './unsaved';
 
 type Kind = 'teach' | 'learn';
 
@@ -24,7 +25,7 @@ function inCatalogueOrder(list: SkillView[], catalogue: SkillView[] | undefined)
   return [...list].sort((a, b) => (rank.get(a.id) ?? rank.size) - (rank.get(b.id) ?? rank.size));
 }
 
-export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Element {
+export function SkillsCard({ target, learnPickerId }: { target: ProfileTarget; learnPickerId?: string }): React.JSX.Element {
   const { t, format, errorText } = useI18n();
   const copy = target.voice === 'own' ? t.profile.skills : { ...t.profile.skills, ...t.admin.cards.skills };
   const profile = target.profile;
@@ -36,7 +37,6 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
   } = useQuery(skillsQueryOptions());
   const [draft, setDraft] = useState<{ teach: SkillView[]; learn: SkillView[] } | null>(null);
   const [choice, setChoice] = useState<Record<Kind, string>>({ teach: '', learn: '' });
-  const [choiceError, setChoiceError] = useState<Record<Kind, boolean>>({ teach: false, learn: false });
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const [focusRequest, setFocusRequest] = useState<{ kind: Kind; chipIndex: number | null } | null>(null);
@@ -57,6 +57,11 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
     teach: { heading: copy.teachHeading, selectLabel: copy.teachSelectLabel, search: copy.teachSearch },
     learn: { heading: copy.learnHeading, selectLabel: copy.learnSelectLabel, search: copy.learnSearch },
   };
+  const dirty =
+    draft !== null &&
+    profile !== undefined &&
+    !(sameIds(draft.teach, profile.skills.teach) && sameIds(draft.learn, profile.skills.learn));
+  useUnsavedChanges(dirty);
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -81,8 +86,11 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
   const teach = draft?.teach ?? profile.skills.teach;
   const learn = draft?.learn ?? profile.skills.learn;
 
-  const dirty = !(sameIds(teach, profile.skills.teach) && sameIds(learn, profile.skills.learn));
   const goalSkillId = profile.learningGoal?.skill.id;
+  const savedIds: Record<Kind, Set<string>> = {
+    teach: new Set(profile.skills.teach.map((skill) => skill.id)),
+    learn: new Set(profile.skills.learn.map((skill) => skill.id)),
+  };
   const goalWillClear = goalSkillId !== undefined && !learn.some((skill) => skill.id === goalSkillId);
 
   function listFor(kind: Kind): SkillView[] {
@@ -107,17 +115,12 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
     if (pending) return;
     if (listFor(kind).length >= LIMITS.skillList.maxItems) return;
     const chosen = choice[kind];
-    if (chosen === '') {
-      setChoiceError({ ...choiceError, [kind]: true });
-      selectRefs[kind].current?.focus();
-      return;
-    }
+    if (chosen === '') return;
     const skill = availableFor(kind).find((item) => item.id === chosen);
     if (skill === undefined) return;
     const next = [...listFor(kind), skill];
     setDraft({ teach: kind === 'teach' ? next : teach, learn: kind === 'learn' ? next : learn });
     setChoice({ ...choice, [kind]: '' });
-    setChoiceError({ ...choiceError, [kind]: false });
     setStatus(undefined);
   }
 
@@ -143,6 +146,14 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
     }
   }
 
+  function onDiscard(): void {
+    if (pending) return;
+    setDraft(null);
+    setChoice({ teach: '', learn: '' });
+    setStatus(undefined);
+    teachSelectRef.current?.focus();
+  }
+
   function renderPicker(kind: Kind): React.JSX.Element {
     const list = listFor(kind);
     const available = availableFor(kind);
@@ -155,7 +166,7 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
           ? copy.nothingToAdd
           : undefined;
     return (
-      <section className="min-w-0">
+      <section className={`min-w-0 ${kind === 'learn' ? 'border-t border-line pt-5' : ''}`.trim()}>
         <h3 className="text-sm font-semibold text-ink">{copyKeys[kind].heading}</h3>
         <div ref={boxRefs[kind]} className="mt-2 flex min-w-0 flex-wrap gap-2">
           {list.length === 0 ? (
@@ -166,36 +177,36 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
                 key={skill.id}
                 name={skill.name}
                 variant={kind}
+                unsaved={!savedIds[kind].has(skill.id)}
                 onRemove={() => onRemove(kind, skill.id)}
               />
             ))
           )}
         </div>
-        <Select
-          ref={selectRefs[kind]}
-          className="mt-3"
-          label={copyKeys[kind].selectLabel}
-          hint={hint}
-          error={choiceError[kind] ? copy.chooseFirst : undefined}
-          options={available.map((skill) => ({ value: skill.id, label: skillNameText(skill.name) }))}
-          value={choice[kind]}
-          loading={cataloguePending}
-          onValueChange={(skillId) => {
-            setChoice({ ...choice, [kind]: skillId });
-            setChoiceError({ ...choiceError, [kind]: false });
-          }}
-          placeholder={copy.selectPlaceholder}
-          searchable
-          searchPlaceholder={copyKeys[kind].search}
-        />
-        <Button
-          variant="secondary"
-          className="mt-2 self-start"
-          aria-disabled={atLimit || cataloguePending || pending ? true : undefined}
-          onClick={() => onAdd(kind)}
-        >
-          {copy.add}
-        </Button>
+        <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start">
+          <Select
+            ref={selectRefs[kind]}
+            id={kind === 'learn' ? learnPickerId : undefined}
+            className="min-w-0 sm:flex-1"
+            label={copyKeys[kind].selectLabel}
+            hint={hint}
+            options={available.map((skill) => ({ value: skill.id, label: skillNameText(skill.name) }))}
+            value={choice[kind]}
+            loading={cataloguePending}
+            onValueChange={(skillId) => setChoice({ ...choice, [kind]: skillId })}
+            placeholder={copy.selectPlaceholder}
+            searchable
+            searchPlaceholder={copyKeys[kind].search}
+          />
+          <Button
+            variant="secondary"
+            className="self-start sm:mt-6 sm:shrink-0"
+            aria-disabled={atLimit || cataloguePending || pending || choice[kind] === '' ? true : undefined}
+            onClick={() => onAdd(kind)}
+          >
+            {copy.add}
+          </Button>
+        </div>
       </section>
     );
   }
@@ -205,7 +216,7 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
       {catalogueError && catalogue === undefined ? (
         <div className="flex min-w-0 flex-col gap-3">
           <Banner tone="danger" title={t.errors.unknown} />
-          <Button variant="secondary" className="self-start" onClick={() => void refetchCatalogue()}>
+          <Button id={learnPickerId} variant="secondary" className="self-start" onClick={() => void refetchCatalogue()}>
             {t.profile.me.retry}
           </Button>
         </div>
@@ -223,14 +234,22 @@ export function SkillsCard({ target }: { target: ProfileTarget }): React.JSX.Ele
               )}
             </div>
           ) : null}
+          {teach.length === 0 && learn.length === 0 ? <Banner tone="info" title={copy.emptyNudge} /> : null}
           {renderPicker('teach')}
           {renderPicker('learn')}
           {goalWillClear ? <Banner tone="warning" title={copy.goalWillClear} /> : null}
-          <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" loading={pending}>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-5">
+            <Button type="submit" variant={dirty ? 'primary' : 'secondary'} aria-disabled={!dirty || undefined} loading={pending}>
               {pending ? copy.saving : copy.save}
             </Button>
-            {dirty ? <p className="text-sm text-ink-muted">{copy.unsaved}</p> : null}
+            {dirty ? (
+              <>
+                <Button variant="secondary" aria-disabled={pending || undefined} onClick={onDiscard}>
+                  {copy.discard}
+                </Button>
+                <p className="text-sm text-ink-muted">{copy.unsaved}</p>
+              </>
+            ) : null}
           </div>
         </form>
       )}

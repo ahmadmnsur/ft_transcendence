@@ -26,6 +26,7 @@ import { GoalSection, SkillSection } from '../profile/ProfileSections';
 import { SkillsCard } from '../profile/SkillsCard';
 import { StudentLink } from '../profile/StudentLink';
 import { useStudentProfileTarget } from '../profile/target';
+import { UnsavedChangesGuard } from '../profile/unsaved';
 import { ProgressCard } from '../progress/ProgressCard';
 
 type RoleStatus = { kind: 'changed'; role: Role } | { kind: 'failed'; code: unknown };
@@ -498,5 +499,9 @@ export function AdminUserPage(): React.JSX.Element {
   const { studentId } = useParams({ from: '/admin/users/$studentId' });
   if (!isUuid(studentId)) return <NotFoundPage />;
   const lowerStudentId = studentId.toLowerCase();
-  return <AdminUser key={lowerStudentId} studentId={lowerStudentId} />;
+  return (
+    <UnsavedChangesGuard>
+      <AdminUser key={lowerStudentId} studentId={lowerStudentId} />
+    </UnsavedChangesGuard>
+  );
 }

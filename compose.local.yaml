@@ -1,10 +1,23 @@
+x-local-values: &pc-local-values
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+  DATABASE_URL: ${LOCAL_DATABASE_URL:-}
+  PUBLIC_ORIGIN: ${LOCAL_PUBLIC_ORIGIN:-}
+  BIND_ADDRESS: ${LOCAL_BIND_ADDRESS:-}
+  ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD:-}
+  MODERATOR_PASSWORD: ${LOCAL_MODERATOR_PASSWORD:-}
+  SEED_STUDENT_PASSWORD: ${LOCAL_SEED_STUDENT_PASSWORD:-}
+  FT_OAUTH_CLIENT_ID: ${LOCAL_FT_OAUTH_CLIENT_ID:-}
+  FT_OAUTH_CLIENT_SECRET: ${LOCAL_FT_OAUTH_CLIENT_SECRET:-}
+  SUPABASE_URL: ${LOCAL_SUPABASE_URL:-}
+  SUPABASE_PUBLISHABLE_KEY: ${LOCAL_SUPABASE_PUBLISHABLE_KEY:-}
+  SUPABASE_SECRET_KEY: ${LOCAL_SUPABASE_SECRET_KEY:-}
+
 services:
   api:
-    env_file: !override
-      - path: .env.example
-        required: true
+    environment: *pc-local-values
 
   proxy:
-    env_file: !override
-      - path: .env.example
-        required: true
+    ports: !override
+      - "${LOCAL_BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-8443}:8443"
+      - "${LOCAL_BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:8080"
+    environment: *pc-local-values

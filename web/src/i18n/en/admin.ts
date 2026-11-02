@@ -137,6 +137,7 @@ export default {
       teachHeading: 'Skills they can teach',
       learnHeading: 'Skills they want to learn',
       nothingToAdd: 'Every catalogue Skill is already listed here.',
+      emptyNudge: 'Rounds match Students on their Skills, and this Student has none listed.',
       goalWillClear: 'Saving will clear their Learning Goal, because its Skill is no longer on their learn list.',
       saved: 'The Skills were saved.',
       goalCleared: 'Their Learning Goal was cleared, because its Skill left their learn list.',
@@ -147,6 +148,8 @@ export default {
       noLearn: 'Their learn list is empty: a Learning Goal names one of its Skills.',
       saved: 'The Learning Goal was saved.',
       cleared: 'The Learning Goal was cleared.',
+      confirmTitle: 'Clear this Learning Goal?',
+      confirmBody: 'Its Skill and sentence are removed. The Student can set a new Learning Goal at any time.',
     },
   },
 } as const satisfies EnGroup;

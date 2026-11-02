@@ -8,6 +8,7 @@ export interface SkillChipProps extends Omit<ComponentProps<'span'>, 'children'>
   name: string;
   variant: 'teach' | 'learn';
   onRemove?: () => void;
+  unsaved?: boolean;
 }
 
 const tones: Record<SkillChipProps['variant'], string> = {
@@ -15,15 +16,21 @@ const tones: Record<SkillChipProps['variant'], string> = {
   learn: 'border-line-strong bg-surface text-ink',
 };
 
-export function SkillChip({ name, variant, onRemove, className = '', ...rest }: SkillChipProps): React.JSX.Element {
+const unsavedTones: Record<SkillChipProps['variant'], string> = {
+  teach: 'border-dashed border-primary-600 bg-primary-100 text-primary-900',
+  learn: 'border-dashed border-line-strong bg-surface text-ink',
+};
+
+export function SkillChip({ name, variant, onRemove, unsaved = false, className = '', ...rest }: SkillChipProps): React.JSX.Element {
   const { t, format, formatText } = useI18n();
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 ps-3 pe-1 text-sm font-medium ${tones[variant]} ${className}`.trim()}
+      className={`inline-flex max-w-full items-center gap-1 rounded-full border py-0.75 ps-3 pe-1 text-sm font-medium ${unsaved ? unsavedTones[variant] : tones[variant]} ${className}`.trim()}
       {...rest}
     >
       <span className="min-w-0 wrap-anywhere">
         <span className="sr-only">{format(t.design.skillChip[variant], { skill: <SkillName name={name} /> })}</span>
+        {unsaved ? <span className="sr-only"> {t.design.skillChip.unsaved}</span> : null}
         <SkillName name={name} aria-hidden="true" />
       </span>
       {onRemove ? (

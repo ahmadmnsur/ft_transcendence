@@ -6,6 +6,7 @@ import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
 import type { ProfileTarget } from './target';
+import { useUnsavedChanges } from './unsaved';
 
 type Status = { kind: 'saved' } | { kind: 'nothingToSave' } | { kind: 'failed'; code: unknown };
 
@@ -21,6 +22,11 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+  const dirty =
+    draft !== null &&
+    profile !== undefined &&
+    (draft.displayName.trim() !== profile.displayName || normalizeEmail(draft.email) !== profile.email);
+  useUnsavedChanges(dirty);
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -61,6 +67,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
     if (trimmedName !== savedName) patch.displayName = trimmedName;
     if (normalizedEmail !== savedEmail) patch.email = normalizedEmail;
     if (patch.displayName === undefined && patch.email === undefined) {
+      setDraft(null);
       setStatus({ kind: 'nothingToSave' });
       return;
     }
@@ -82,6 +89,15 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
     }
   }
 
+  function onDiscard(): void {
+    if (pending) return;
+    setDraft(null);
+    setNameError(undefined);
+    setEmailError(undefined);
+    setStatus(undefined);
+    nameRef.current?.focus();
+  }
+
   return (
     <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
@@ -98,6 +114,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
         ) : null}
         <TextField
           ref={nameRef}
+          className="max-w-md"
           label={copy.displayNameLabel}
           hint={format(copy.displayNameHint, {
             count: LIMITS.displayName.maxChars,
@@ -120,6 +137,7 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
         />
         <TextField
           ref={emailRef}
+          className="max-w-md"
           label={copy.emailLabel}
           hint={copy.emailHint}
           type="email"
@@ -130,9 +148,19 @@ export function ProfileDetailsCard({ target }: { target: ProfileTarget }): React
             emailError === undefined ? undefined : emailError === 'invalid' ? copy.emailInvalid : errorText(emailError)
           }
         />
-        <Button type="submit" loading={pending} className="self-start">
-          {pending ? copy.saving : copy.save}
-        </Button>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <Button type="submit" variant={dirty ? 'primary' : 'secondary'} aria-disabled={!dirty || undefined} loading={pending}>
+            {pending ? copy.saving : copy.save}
+          </Button>
+          {dirty ? (
+            <>
+              <Button variant="secondary" aria-disabled={pending || undefined} onClick={onDiscard}>
+                {copy.discard}
+              </Button>
+              <p className="text-sm text-ink-muted">{copy.unsaved}</p>
+            </>
+          ) : null}
+        </div>
       </form>
     </Card>
   );

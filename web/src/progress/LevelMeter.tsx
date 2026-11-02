@@ -11,7 +11,7 @@ export function LevelMeter({ progress }: { progress: LevelProgress }): React.JSX
       label={formatText(t.progress.level, { level: progress.level })}
       value={capped ? 1 : progress.xpIntoLevel}
       max={progress.xpForNextLevel ?? 1}
-      valueText={capped ? t.progress.cap : formatText(t.progress.levelProgress, { earned: progress.xpIntoLevel, needed: (progress.xpForNextLevel ?? 250) })}
+      valueText={capped ? t.progress.cap : formatText(t.progress.levelProgress, { earned: progress.xpIntoLevel, needed: (progress.xpForNextLevel ?? 250), next: progress.level + 1 })}
       showValue={!capped}
     />
     {capped ? <p className="text-sm text-ink-muted">{t.progress.cap}</p> : null}

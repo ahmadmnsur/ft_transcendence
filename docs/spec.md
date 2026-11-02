@@ -596,6 +596,11 @@ goes through the map; a new runtime library needs a PR sentence saying why.**
 | Orchestration | Docker Compose ≥ 2.24.4 (`env_file.required` from 2.24.0; `!override`, used by the dev overlay, only from 2.24.4) | ADR-0004 d8 |
 | CI | GitHub Actions, one advisory workflow; plus one required check that tests nothing (§17.4) | ADR-0016 d8 |
 
+> **Updated 2026-11-02** (ADR-0004's note of 2026-10-31): the floor is Docker Compose ≥ 2.27.2, since
+> `make local`, `make dev`, `make test` and `make reset-local` check `.env` with
+> `docker compose config --environment`, which Compose has only from 2.27.2. This replaces 2.24.4
+> here, in §15.2 and in §17.5.
+
 **Not in the stack, by rule:** JWT libraries, Passport, Redis or any shared store, a Markdown
 library (M22), a translation package such as react-intl, i18next or Lingui (ADR-0020 d3), an icon
 or font package fetched from a CDN, analytics SDKs, `mkcert`, Caddy,
@@ -4075,6 +4080,24 @@ are made to expire on 2041-10-04 (ADR-0004 d9's note of 2026-10-04).
     of the password must equal `POSTGRES_PASSWORD`, and the overlay's `PUBLIC_ORIGIN` literal must
     match its published port; the reviewer checks them together.
 
+> **Updated 2026-10-31** (ADR-0004's note of that date): `.env.example` now holds each variable's
+> name with no value, and every value lives in the gitignored `.env`. The table's *Default* column
+> records the fallback's values as they were. The team project's values sit in `.env` under the
+> variables' own names; the fallback's values for the eleven variables that differ (`DATABASE_URL`,
+> `PUBLIC_ORIGIN`, `BIND_ADDRESS`, the three passwords, the `FT_OAUTH_*` pair, `SUPABASE_URL` and the
+> two Supabase keys) sit under a `LOCAL_` prefix, with `LOCAL_DEV_PUBLIC_ORIGIN` in place of the dev
+> overlay's literal origin; the fallback database's user, password and name and its nine signing
+> keys carry no prefix. `make up` and bare `docker compose up --build` read the team values and start
+> only `api` and `proxy`. The fallback's four services sit in the Compose profile `local`, which
+> `make local`, `make dev`, `make test`, `make reset-local` and CI enable with `--env-file .env`;
+> those give every service the `LOCAL_` values in place of the team's. `compose.yaml` reads the
+> fallback's database password and site address from `.env` instead of repeating them. Every target
+> stops when `.env` is missing, and the fallback ones name each value it lacks. This supersedes, where
+> they say `.env.example` carries values, that a fresh clone or bare Compose needs no `.env`, or that
+> the fallback and `make local`, `make dev` and `make test` read `.env.example` alone: stories 63 and
+> 64, the summary rows for ADR-0004 d8 and d9, the tree's lines for `compose.local.yaml` and
+> `.env.example`, §5.6 (A), §15.1, §15.2, this section, §15.6, §16.4 and §16.5.
+
 ### 15.5 Boot sequence (ADR-0004 d11 and its notes)
 
 The chain is the same on both targets.
@@ -4094,6 +4117,11 @@ The chain is the same on both targets.
    4. the database accepts `DATABASE_URL`. On the fallback, a refusal says to use `make dev` or
       `make local`, or to remove `.env` or replace it with a copy of `.env.example`, since the
       fallback's database never reads `.env`.
+
+      > **Updated 2026-10-31** (§15.4's note of that date): the refusal now says that the fallback's
+      > database keeps the password it was created with, so `POSTGRES_PASSWORD` and
+      > `LOCAL_DATABASE_URL` in `.env` must match it, or `make wipe` recreates the database. Removing
+      > `.env`, or replacing it with `.env.example`, which now holds names only, stops every boot.
 
    A failure ends the boot with the problem named, for example `Supabase check failed: Auth rejected
    SUPABASE_SECRET_KEY (401)` or `Supabase check failed: https://<ref>.supabase.co answered 540: the
@@ -4390,6 +4418,10 @@ d7). The only required check on `main` is *No bot or AI text* (§17.4), which te
 **What stays out of CI is the boot**: no production image, no `proxy`, no TLS and no boot chain; the
 clean-clone boot stays a human check (§16.5).
 
+> **Updated 2026-10-31** (§15.4's note of that date): before the suite, CI writes `.env` from the
+> repository secret `LOCAL_ENV_FILE`, which holds the fallback's values, and runs Compose with
+> `--env-file .env --profile local`.
+
 ### 16.5 Clean-clone boot verification (ADR-0004 d8, ADR-0016 d5)
 
 Required on any PR touching `prisma/**` (the seed at `prisma/seed/**`, the fixture at
@@ -4429,6 +4461,11 @@ own run is §15.7's.
    stands (§14.9) and the bootstrap Admin's sign-in join from §18 item 3; the sign-in page from the
    SPA's sign-in slice; the demo Student's sign-in and four closed Rounds from item 12. Four closed
    Rounds is never required of a PR that precedes the slices producing them.
+
+> **Updated 2026-10-31** (§15.4's note of that date): `make up` now runs only the team project, which
+> is never empty. Each fresh clone first gets a copy of a filled `.env`, and the two checks run the
+> fallback: `make local`, and bare `docker compose --env-file .env --profile local -f compose.yaml
+> -f compose.local.yaml up --build`. The pass line is unchanged.
 
 ### 16.6 Detecting a seed or boot regression before defense — four distinct layers
 

@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { isValidLearningGoalText, LIMITS } from '@shared/limits';
 import { ApiRefusalError } from '../api/client';
 import type { LearningGoalView } from '../api/profile';
-import { Banner, Button, Card, Select, SkillName, TextArea, skillNameText } from '../design';
+import { Banner, Button, Card, Modal, Select, SkillChip, TextArea, skillNameText } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from './failure';
 import { PendingCardBody } from './PendingCardBody';
+import { revealClass } from './SettingRow';
 import type { ProfileTarget } from './target';
+import { useUnsavedChanges } from './unsaved';
 
 type Status = { kind: 'saved' } | { kind: 'cleared' } | { kind: 'failed'; code: unknown };
 
-export function LearningGoalCard({ target }: { target: ProfileTarget }): React.JSX.Element {
+export function LearningGoalCard({ target, learnPickerId }: { target: ProfileTarget; learnPickerId?: string }): React.JSX.Element {
   const { t, format, errorText } = useI18n();
   const copy = target.voice === 'own' ? t.profile.goal : { ...t.profile.goal, ...t.admin.cards.goal };
   const profile = target.profile;
@@ -20,15 +22,20 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
   const [status, setStatus] = useState<Status | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const [editing, setEditing] = useState(false);
   const [focusTarget, setFocusTarget] = useState<'skill' | 'edit' | null>(null);
   const skillRef = useRef<HTMLButtonElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const editRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+  const keepRef = useRef<HTMLButtonElement>(null);
 
   const learn = profile?.skills.learn ?? [];
   const goal = profile?.learningGoal ?? null;
+  const dirty =
+    editing && draft !== null && (draft.skillId !== (goal?.skill.id ?? '') || draft.text.trim() !== (goal?.text ?? ''));
+  useUnsavedChanges(dirty);
 
   useEffect(() => {
     if (status !== undefined) statusRef.current?.focus();
@@ -38,6 +45,14 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
     if (draft === null || draft.skillId === '' || learn.some((skill) => skill.id === draft.skillId)) return;
     setDraft({ skillId: goal?.skill.id ?? '', text: draft.text });
   }, [draft, learn, goal]);
+
+  useEffect(() => {
+    if (profile === undefined || learn.length > 0) return;
+    setEditing(false);
+    setDraft(null);
+    setSkillError(undefined);
+    setTextError(false);
+  }, [profile, learn.length]);
 
   useEffect(() => {
     if (focusTarget === null) return;
@@ -56,7 +71,6 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
 
   const skillId = draft?.skillId ?? goal?.skill.id ?? '';
   const text = draft?.text ?? goal?.text ?? '';
-  const viewed = goal !== null && !editing ? goal : null;
 
   async function onSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
@@ -104,11 +118,12 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
       setDraft(null);
       setEditing(false);
       setStatus({ kind: 'cleared' });
-      setFocusTarget('skill');
+      setFocusTarget('edit');
     } catch (error) {
       setStatus({ kind: 'failed', code: failureCode(error) });
     } finally {
       setClearing(false);
+      setConfirmingClear(false);
     }
   }
 
@@ -121,7 +136,22 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
     setFocusTarget('edit');
   }
 
+  function onFormKeyDown(event: React.KeyboardEvent): void {
+    if (event.key !== 'Escape' || event.nativeEvent.isComposing || dirty || pending) return;
+    event.preventDefault();
+    onCancel();
+  }
+
+  function onFindLearnPicker(id: string): void {
+    const picker = document.getElementById(id);
+    if (picker === null) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    picker.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    picker.focus({ preventScroll: true });
+  }
+
   function onEdit(): void {
+    setStatus(undefined);
     setEditing(true);
     setFocusTarget('skill');
   }
@@ -129,28 +159,48 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
   function renderView(saved: LearningGoalView): React.JSX.Element {
     return (
       <div className="flex min-w-0 flex-col gap-3">
-        <h3 className="text-sm font-semibold text-ink">{copy.currentHeading}</h3>
-        <p className="text-sm font-semibold text-ink">
-          <SkillName name={saved.skill.name} />
-        </p>
-        <p dir="auto" className="text-sm text-ink wrap-anywhere">
+        <h3 className="sr-only">{copy.currentHeading}</h3>
+        <SkillChip name={saved.skill.name} variant="learn" className="self-start" />
+        <p dir="auto" className="text-base text-ink wrap-anywhere">
           {saved.text}
         </p>
         <div className="flex flex-wrap gap-2">
           <Button ref={editRef} variant="secondary" onClick={onEdit}>
             {copy.edit}
           </Button>
-          <Button variant="secondary" loading={clearing} onClick={() => void onClear()}>
-            {clearing ? copy.clearing : copy.clear}
+          <Button
+            variant="danger-ghost"
+            onClick={() => {
+              setStatus(undefined);
+              setConfirmingClear(true);
+            }}
+          >
+            {copy.clear}
           </Button>
         </div>
       </div>
     );
   }
 
+  function renderEmpty(): React.JSX.Element {
+    return (
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <p className="text-sm text-ink-muted">{copy.none}</p>
+        <Button ref={editRef} variant="secondary" onClick={onEdit}>
+          {copy.set}
+        </Button>
+      </div>
+    );
+  }
+
   function renderForm(): React.JSX.Element {
     return (
-      <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex min-w-0 flex-col gap-4">
+      <form
+        onSubmit={(event) => void onSubmit(event)}
+        onKeyDown={onFormKeyDown}
+        noValidate
+        className={`flex min-w-0 flex-col gap-4 ${revealClass}`}
+      >
         <Select
           ref={skillRef}
           label={copy.skillLabel}
@@ -198,11 +248,9 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
           <Button type="submit" loading={pending}>
             {pending ? copy.saving : copy.save}
           </Button>
-          {goal !== null ? (
-            <Button variant="secondary" onClick={onCancel}>
-              {copy.cancel}
-            </Button>
-          ) : null}
+          <Button variant="secondary" aria-disabled={pending || undefined} onClick={onCancel}>
+            {copy.cancel}
+          </Button>
         </div>
       </form>
     );
@@ -211,7 +259,14 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
   return (
     <Card title={copy.title} subtitle={copy.subtitle} headingLevel={2}>
       {learn.length === 0 ? (
-        <p className="text-sm text-ink-muted">{copy.noLearn}</p>
+        <div className="flex min-w-0 flex-col items-start gap-3">
+          <p className="text-sm text-ink-muted">{copy.noLearn}</p>
+          {learnPickerId !== undefined ? (
+            <Button variant="secondary" onClick={() => onFindLearnPicker(learnPickerId)}>
+              {copy.addLearnSkill}
+            </Button>
+          ) : null}
+        </div>
       ) : (
         <div className="flex min-w-0 flex-col gap-4">
           {status !== undefined ? (
@@ -223,9 +278,35 @@ export function LearningGoalCard({ target }: { target: ProfileTarget }): React.J
               )}
             </div>
           ) : null}
-          {viewed !== null ? renderView(viewed) : renderForm()}
+          {editing ? renderForm() : goal !== null ? renderView(goal) : renderEmpty()}
         </div>
       )}
+      <Modal
+        open={confirmingClear}
+        size="sm"
+        title={copy.confirmTitle}
+        description={copy.confirmBody}
+        onClose={() => {
+          if (!clearing) setConfirmingClear(false);
+        }}
+        initialFocusRef={keepRef}
+        footer={
+          <>
+            <Button
+              ref={keepRef}
+              variant="secondary"
+              onClick={() => {
+                if (!clearing) setConfirmingClear(false);
+              }}
+            >
+              {copy.cancel}
+            </Button>
+            <Button variant="danger" loading={clearing} onClick={() => void onClear()}>
+              {clearing ? copy.clearing : copy.clear}
+            </Button>
+          </>
+        }
+      />
     </Card>
   );
 }

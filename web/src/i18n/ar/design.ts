@@ -34,9 +34,10 @@ export default {
   banner: { dismiss: 'إخفاء التنبيه: {title}' },
   roleLabel: 'مسؤول',
   skillChip: {
-    teach: 'يستطيع تعليم: {skill}',
-    learn: 'يريد تعلم: {skill}',
+    teach: 'مهارة للتعليم: {skill}',
+    learn: 'مهارة للتعلم: {skill}',
     remove: 'إزالة {skill}',
+    unsaved: 'لم تحفظ بعد.',
   },
   fileDrop: {
     label: 'إرفاق ملف',

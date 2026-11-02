@@ -4,8 +4,16 @@ import type { Catalogue } from '../types';
 export default {
   me: {
     publicProfileLink: 'Voir votre profil public',
+    intro:
+      'Ce que voient les autres Étudiants, les Compétences sur lesquelles le prochain Tour vous apparie, et votre façon de vous connecter.',
+    navLabel: 'Sections du profil',
     loading: 'Chargement de votre profil…',
     retry: 'Réessayer',
+    loadFailed: "Votre profil n'a pas pu être chargé.",
+    leaveTitle: 'Quitter sans enregistrer ?',
+    leaveBody: 'Vous avez des modifications non enregistrées sur cette page. Si vous partez maintenant, elles seront perdues.',
+    stay: 'Rester sur cette page',
+    leave: 'Quitter sans enregistrer',
   },
   avatar: {
     title: 'Avatar',
@@ -13,6 +21,8 @@ export default {
     currentAlt: 'Votre avatar',
     defaultAlt: "L'avatar par défaut",
     fileLabel: 'Nouvel avatar',
+    upload: 'Envoyer un avatar',
+    change: "Changer l'avatar",
     saved: 'Votre avatar a été mis à jour.',
     remove: "Supprimer l'avatar",
     removing: 'Suppression…',
@@ -23,27 +33,36 @@ export default {
     cancel: 'Annuler',
   },
   fortyTwo: {
-    title: 'Compte 42',
-    subtitle: 'Connectez-vous avec 42, en plus de votre e-mail et de votre mot de passe.',
-    connected: 'Associé.',
-    notConnected: 'Non associé.',
+    title: 'Se connecter avec 42',
+    subtitle:
+      'Associez votre compte 42 pour vous connecter avec lui, en plus de votre e-mail et de votre mot de passe, et pour réinitialiser un mot de passe oublié.',
+    subtitleConnected:
+      'Vous pouvez vous connecter avec votre compte 42, en plus de votre e-mail et de votre mot de passe. Si vous oubliez votre mot de passe, ouvrez Changer le mot de passe et confirmez plutôt avec 42.',
+    connected: 'Associé',
+    notConnected: 'Non associé',
     connect: 'Associer 42',
     disconnect: 'Dissocier 42',
-    connecting: 'Association…',
+    connectIntro:
+      "Saisissez le mot de passe avec lequel vous vous connectez à {brand}, pas votre mot de passe 42. Il confirme que c'est bien vous qui associez ce compte. Ensuite, 42 s'ouvre et vous demande d'approuver.",
+    disconnectIntro:
+      'Saisissez votre mot de passe actuel pour confirmer. Ensuite, vous vous connectez uniquement avec votre e-mail et votre mot de passe, et vous ne pouvez plus réinitialiser un mot de passe oublié avec 42. Vous pouvez associer 42 de nouveau à tout moment.',
+    wrongPassword: 'Utilisez le mot de passe avec lequel vous vous connectez à {brand}, pas votre mot de passe 42.',
+    continue: 'Continuer avec 42',
+    cancel: 'Annuler',
+    connecting: 'Ouverture de 42…',
     disconnecting: 'Dissociation…',
     noticeConnected: 'Votre compte 42 est associé.',
     noticeInUse: 'Ce compte 42 est déjà associé à un autre compte.',
     disconnectedNotice: 'Votre compte 42 est dissocié.',
   },
   confirm42: {
-    title: 'Mot de passe oublié ?',
-    subtitle:
-      'Confirmez avec 42, puis définissez un nouveau mot de passe dans les dix minutes. Cela vous déconnecte partout.',
+    prompt: 'Mot de passe actuel oublié ? {action}, puis définissez-en un nouveau dans les dix minutes.',
     confirm: 'Confirmer avec 42',
     confirming: 'Ouverture de 42…',
-    confirmedNotice: '42 a confirmé votre compte. Définissez votre nouveau mot de passe dans les dix minutes.',
+    confirmedNotice: '42 a confirmé votre compte. Définissez votre nouveau mot de passe avant {time}.',
     submit: 'Définir le nouveau mot de passe',
     submitting: 'Enregistrement…',
+    cancel: 'Annuler',
   },
   details: {
     title: 'Informations du profil',
@@ -67,6 +86,8 @@ export default {
     saving: 'Enregistrement…',
     saved: 'Votre profil a été mis à jour.',
     nothingToSave: 'Rien à enregistrer.',
+    unsaved: 'Vous avez des modifications non enregistrées.',
+    discard: 'Abandonner les modifications',
   },
   skills: {
     title: 'Compétences',
@@ -87,8 +108,10 @@ export default {
     },
     nothingToAdd: 'Vous avez déjà ajouté ici toutes les Compétences du catalogue.',
     catalogueLoading: 'Chargement du catalogue des Compétences…',
-    chooseFirst: 'Choisissez une Compétence à ajouter.',
+    emptyNudge:
+      'Les Tours apparient les Étudiants selon leurs Compétences. Ajoutez une Compétence à enseigner ou à apprendre pour que le prochain Tour puisse vous apparier.',
     unsaved: 'Vous avez des modifications non enregistrées.',
+    discard: 'Abandonner les modifications',
     goalWillClear:
       "L'enregistrement effacera votre Objectif d'apprentissage, car sa Compétence n'est plus dans votre liste d'apprentissage.",
     save: 'Enregistrer',
@@ -102,6 +125,9 @@ export default {
     subtitle:
       "Une Compétence de votre liste d'apprentissage, la plus importante pour vous en ce moment, avec une phrase qui explique pourquoi.",
     currentHeading: "Objectif d'apprentissage actuel",
+    addLearnSkill: 'Choisir une Compétence à apprendre',
+    none: "Pas encore d'Objectif d'apprentissage.",
+    set: "Définir un Objectif d'apprentissage",
     skillLabel: 'Compétence',
     skillPlaceholder: 'Choisissez une Compétence',
     chooseSkillError: "Choisissez une Compétence de votre liste d'apprentissage.",
@@ -126,9 +152,17 @@ export default {
     clear: 'Effacer',
     clearing: 'Effacement…',
     cleared: "Votre Objectif d'apprentissage a été effacé.",
+    confirmTitle: "Effacer votre Objectif d'apprentissage ?",
+    confirmBody:
+      "Sa Compétence et sa phrase sont supprimées. Vous pouvez définir un nouvel Objectif d'apprentissage à tout moment.",
+  },
+  security: {
+    title: 'Connexion et sécurité',
+    subtitle: 'Votre façon de vous connecter à {brand}.',
   },
   stats: {
     streak: 'Série',
+    streakValue: { one: "{count} Tour d'affilée", many: "{count} de Tours d'affilée", other: "{count} Tours d'affilée" },
   },
   student: {
     teachHeading: 'Compétences à enseigner',

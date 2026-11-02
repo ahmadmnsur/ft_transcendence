@@ -17,7 +17,7 @@ const KEY_CALLS: KeyCall[] = [
 ];
 
 const FALLBACK_REMEDY =
-  "; the fallback's database never reads .env, so use make dev or make local, or remove .env or replace it with a copy of .env.example";
+  "; the fallback's database keeps the password it was created with, so POSTGRES_PASSWORD and LOCAL_DATABASE_URL in .env must match it, or make wipe recreates the database";
 
 export function errorCodeSuffix(err: unknown): string {
   const code = (err as { cause?: { code?: unknown } } | undefined)?.cause?.code ?? (err as { code?: unknown } | undefined)?.code;

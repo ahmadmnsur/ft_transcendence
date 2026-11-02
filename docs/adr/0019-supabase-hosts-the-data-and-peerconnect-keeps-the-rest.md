@@ -1,5 +1,9 @@
 # Supabase hosts the database, the files and the passwords; PeerConnect keeps the rest
 
+> **Annotated 2026-10-31.** `.env.example` now lists names only, and every value it is said below to
+> carry lives in the gitignored `.env`; the fallback's values there carry a `LOCAL_` prefix where
+> they differ from the team project's (ADR-0004's note of 2026-10-31).
+
 Until the move was decided on 2026-09-30, the design kept every copy's data on the computer that
 started it: Postgres in a Compose volume (ADR-0004 d1), avatar and Evidence bytes in `bytea` columns
 (ADR-0009 d2), and argon2id password hashes in `Student.password_hash` (ADR-0003 d3). Nothing was

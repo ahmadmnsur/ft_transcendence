@@ -643,15 +643,22 @@ d5).
 > clean-clone box which criteria you checked. Nobody is asked for four closed Rounds before the code
 > that makes them exists.
 
+> **On the fallback, from a copied `.env`, 2026-10-31.** `.env.example` now lists the variables'
+> names only, every value lives in the gitignored `.env`, and `make up` runs only the team project,
+> which is never empty. So before each check, copy a filled `.env` into the fresh clone, and run the
+> two checks on the local fallback: Check 1 is `make local`, Check 2 is bare Compose with the local
+> profile. The pass line is unchanged, read at `https://localhost:8443`.
+
 **Check 1 — project entry point:**
 
 ```bash
-make up
+make local
 ```
 
-**`make up` is the project's entry point.** It bootstraps `.env` from `.env.example` when
-`.env` is absent and then brings the stack up, so an evaluator does not need to hand-write
-environment configuration (ADR-0004 decision 8).
+**`make up` is the project's entry point.** It stops when `.env` is missing and otherwise brings
+the stack up on the team project. `.env.example` names every variable; a fresh clone gets a filled
+`.env` from a team member, and a defense runs on a team member's computer with the team's `.env`
+(ADR-0004 decision 8 and its note of 2026-10-31).
 
 The Compose invocation used by `make up` is an implementation detail inside the `Makefile`;
 bare `docker compose up --build` must also work independently.
@@ -664,13 +671,11 @@ particular command and does not rule out a `Makefile`.
 From a **different fresh clone**, run:
 
 ```bash
-docker compose up --build
+docker compose --env-file .env --profile local -f compose.yaml -f compose.local.yaml up --build
 ```
 
-This must also work end-to-end **without relying on `make up` or any setup performed by the
-Makefile**. A fresh clone must therefore provide everything bare Compose requires through the
-Compose/configuration design itself; the direct Compose path must not depend on `.env` having first
-been created by `make up`.
+This must also work end-to-end **without relying on any setup performed by the Makefile**. It
+reads the same copied `.env`, and nothing the Makefile does creates it.
 
 **That is not a duplicate of the first.** ADR-0004 decision 8 requires bare Compose to work on its
 own precisely so **the `Makefile` is never a hiding place for required setup** — a rule ADR-0008 and
@@ -683,25 +688,24 @@ demo.
 
 ## Environment
 
-`.env` is gitignored; `.env.example` carries fixed values for the local Supabase fallback. Its
-Postgres, Auth, Storage and gateway services load `.env.example` alone. `make local`,
-`make dev` and `make test` give `api` and `proxy` that file alone as well, including Compose
-interpolation. Among Makefile targets that start a stack, only `make up` reads an optional `.env`
-for `api` and `proxy`, after `.env.example`; it copies the example into place if absent.
-`make reset-team` also reads it after `.env.example`, without copying anything, to find the team
-project it empties. Bare Compose uses the same base file and works without `.env` because its
-interpolated values have defaults. To run the team project, a team member's `.env` holds only its
-values (`DATABASE_URL`, `SUPABASE_URL`, the two keys, the three passwords and the `FT_OAUTH_*`
-pair, plus `BIND_ADDRESS` and `PUBLIC_ORIGIN` while its member opens `make up` to the local
-network: `README.md` → *Open it from other laptops on the same network*), never a copy of
-`.env.example`, and only `make up`, bare `docker compose up --build` and
-`make reset-team` read it (`README.md` → *The `.env` model*, *Running the team project* and
-*The two resets*; [ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the
-database runs on the fallback, and migrations reach the team project only through `make up` on
-`main` (*Schema changes* → *Supabase*, above). Develop through nginx at `http://localhost:8081`,
-published as `127.0.0.1:8081`; LAN access is outside the contract.
+`.env` is gitignored and holds every value; `.env.example` is committed with the variables' names
+only. The team project's values go under the variables' own names, and `make up`, bare `docker
+compose up --build` and `make reset-team` use them. The local Supabase fallback's values for the
+eleven variables that differ carry a `LOCAL_` prefix, with `LOCAL_DEV_PUBLIC_ORIGIN` for `make dev`
+and `make test`; `make local`, `make dev`, `make test` and `make reset-local` give every service
+those in place of the team's, and run the fallback's Postgres, Auth, Storage and gateway services,
+which `make up` never starts. Every target stops when `.env` is missing, and the fallback ones name
+each value it lacks (`README.md` → *The `.env` model*, *Running the team project* and *The two
+resets*; [ADR-0004](docs/adr/0004-deployment-shape.md)). Branch work that changes the database runs
+on the fallback, and migrations reach the team project only through `make up` on `main` (*Schema
+changes* → *Supabase*, above). Develop through nginx at `http://localhost:8081`, published as
+`127.0.0.1:8081`; LAN access is outside the contract.
 
 > **Toolchain floor, 2026-09-24** ([ADR-0004](docs/adr/0004-deployment-shape.md) d8;
 > [`docs/spec.md`](docs/spec.md) §3.3): Docker Compose **≥ 2.24.4**. The optional `env_file` needs
 > 2.24.0, but the dev overlay's `!override` tag exists only from 2.24.4. Check with
 > `docker compose version`.
+
+> **Raised to 2.27.2, 2026-11-02** ([ADR-0004](docs/adr/0004-deployment-shape.md)'s note of
+> 2026-10-31). `make local`, `make dev`, `make test` and `make reset-local` check `.env` with
+> `docker compose config --environment`, which Compose has only from 2.27.2.
