@@ -23,6 +23,12 @@ delivered, listed, kept as a history or shown outside the page's own links, and 
 nothing at all. The claim stays at 22 points; the subject counts at most 19 (`:1375`), so the module
 would have added margin, not score, at #7's cost.
 
+> **2026-11-03** *(uncommitted, on branch `docs/readme-modules`)*: "claims no point" no longer
+> holds. On Kamel's call the New dots are offered as an extra Minor Module of choice
+> (`document/en.subject.md:957`), outside the 22, so the count stands if the evaluator refuses them
+> (`docs/spec.md` §1.3's note of this day; `README.md` → *Modules* → *Extra modules*). They are
+> still not the notification system (`:518`): decision 7, decision 8 and *Considered options* hold.
+
 The shape we chose: **a dot that clears per sign-in, kept on the `Session` row; and events that say
 "read again" rather than carrying data.**
 
