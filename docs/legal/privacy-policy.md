@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**21 Beirut** · Last updated: 1 November 2026
+**21 Beirut** · Last updated: 3 November 2026
 
 This page explains what 21 Beirut records about you, why, who can see it, how long it is kept,
 and what you can change. It describes the platform exactly as it works — including what it does
@@ -184,8 +184,8 @@ your email address is used to sign in.
 | Private Feedback, including its rating | the Mentor it is about, Admins, and you, its author. It is **not anonymous**: the Mentor sees that it came from you |
 | Direct Messages | only the two Students in the conversation — not Admins, not Peer Moderators. The sender is never shown whether you have read a message |
 | Your Blocks | you only. The other Student is not told, though they may notice they can no longer message you, send you a friend request or be matched with you |
-| A Report you file | Admins, who can see that you filed it, unless the group of Reports is about them or their Post, or contains a Report they filed. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |
-| A Report you resolve, as a Peer Moderator or an Admin | Admins, who see who closed each Report, how and when, unless the group of resolved Reports is about them or their Post, or contains a Report they filed. Not the Student it was about, and not the Student who filed it |
+| A Report you file | Admins, who can see that you filed it, unless the group of Reports is about them or their Post. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |
+| A Report you resolve, as a Peer Moderator or an Admin | Admins, who see who closed each Report, how and when, unless the group of resolved Reports is about them or their Post. Not the Student it was about, and not the Student who filed it unless they are an Admin |
 | Learning Analytics | Admins only, and only community-wide figures |
 | Your role, and whether your account is suspended or removed | you, and Admins in their list of every account. Other Students see a removed account only as a former student (see *Leaving 21 Beirut*). Admins are labelled as Admins wherever other Students see them. The Peer Moderator role is not shown to other Students |
 
@@ -346,7 +346,9 @@ In 21 Beirut you can:
 - erase your data;
 - edit or delete a Post, a Review, Private Feedback, an answer to a Reflection Prompt or a Report once
   submitted, or a Direct Message once sent;
-- see Reports filed about you, or look back at Reports you filed.
+- see Reports filed about you, or look back at Reports you filed. A Peer Moderator or an Admin sees a
+  Report they filed on their Moderation or Reports page while it waits for a decision, and an Admin
+  also sees it once resolved.
 
 ## Leaving 21 Beirut
 

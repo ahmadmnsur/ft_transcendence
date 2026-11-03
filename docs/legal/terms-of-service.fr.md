@@ -1,6 +1,6 @@
 # Conditions d'utilisation
 
-**21 Beirut** · Dernière mise à jour : 26 octobre 2026
+**21 Beirut** · Dernière mise à jour : 3 novembre 2026
 
 Ceci est une traduction. Si elle diffère de la version anglaise, la version anglaise s'applique.
 
@@ -109,8 +109,9 @@ Les rencontres ont lieu en dehors de 21 Beirut et sont soumises aux règles du c
   Signalements de Publications sont examinés par les **Modérateurs étudiants** — des Étudiants
   de confiance — et par les Admins ; les Signalements d'Étudiants, par les Admins uniquement.
 - **Personne n'est averti d'un Signalement.** L'Étudiant signalé, ou dont la Publication est
-  signalée, n'est jamais averti. L'Étudiant qui a signalé n'est jamais informé du résultat.
-  Seuls les Admins peuvent voir qui a déposé un Signalement.
+  signalée, n'est jamais averti. L'Étudiant qui a signalé n'est jamais informé du résultat. Un
+  Modérateur étudiant ou un Admin qui a signalé voit encore le Signalement tant qu'il attend, et un
+  Admin aussi une fois résolu. Seuls les Admins peuvent voir qui a déposé un Signalement.
 - **Il y a trois sanctions :**
   - **Le retrait d'une Publication** l'enlève du fil. Les Modérateurs étudiants et les Admins
     peuvent le faire.

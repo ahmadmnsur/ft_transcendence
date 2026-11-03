@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**21 Beirut** · Dernière mise à jour : 1 novembre 2026
+**21 Beirut** · Dernière mise à jour : 3 novembre 2026
 
 Ceci est une traduction. Si elle diffère de la version anglaise, la version anglaise s'applique.
 
@@ -209,8 +209,8 @@ votre adresse e-mail sert à vous connecter.
 | Le Retour privé, y compris sa note | le Mentor concerné, les Admins et vous, son auteur. Il **n'est pas anonyme** : le Mentor voit qu'il vient de vous |
 | Les Messages directs | uniquement les deux Étudiants de la conversation — ni les Admins ni les Modérateurs étudiants. L'expéditeur ne voit jamais si vous avez lu un message |
 | Vos Blocages | vous uniquement. L'autre Étudiant n'est pas averti, mais peut remarquer qu'il ne peut plus vous envoyer de message ou de demande d'ami, ni avoir de Match avec vous |
-| Un Signalement que vous déposez | les Admins, qui voient que vous l'avez déposé, sauf si le groupe de Signalements les concerne ou concerne leur Publication, ou contient un Signalement qu'ils ont déposé. Les Modérateurs étudiants, qui examinent les Publications signalées, ne voient jamais qui a déposé un Signalement. L'Étudiant que vous signalez, ou dont vous signalez la Publication, n'est jamais averti |
-| Un Signalement que vous résolvez, comme Modérateur étudiant ou Admin | les Admins, qui voient qui a clos chaque Signalement, comment et quand, sauf si le groupe de Signalements résolus les concerne ou concerne leur Publication, ou contient un Signalement qu'ils ont déposé. Ni l'Étudiant concerné ni l'Étudiant qui l'a déposé |
+| Un Signalement que vous déposez | les Admins, qui voient que vous l'avez déposé, sauf si le groupe de Signalements les concerne ou concerne leur Publication. Les Modérateurs étudiants, qui examinent les Publications signalées, ne voient jamais qui a déposé un Signalement. L'Étudiant que vous signalez, ou dont vous signalez la Publication, n'est jamais averti |
+| Un Signalement que vous résolvez, comme Modérateur étudiant ou Admin | les Admins, qui voient qui a clos chaque Signalement, comment et quand, sauf si le groupe de Signalements résolus les concerne ou concerne leur Publication. Ni l'Étudiant concerné ni l'Étudiant qui l'a déposé, sauf s'il est Admin |
 | L'Analytique des apprentissages | les Admins uniquement, et uniquement des chiffres sur l'ensemble de la communauté |
 | Votre rôle, et si votre compte est suspendu ou exclu | vous et les Admins dans leur liste de tous les comptes. Les autres Étudiants ne voient un compte exclu que comme celui d'un ancien étudiant (voir *Quitter 21 Beirut*). Les Admins sont désignés comme Admins partout où les autres Étudiants les voient. Le rôle de Modérateur étudiant n'est pas montré aux autres Étudiants |
 
@@ -401,7 +401,9 @@ Dans 21 Beirut, vous pouvez :
 - effacer vos données ;
 - modifier ou supprimer une Publication, un Bilan, un Retour privé, une réponse à un Sujet de
   réflexion ou un Signalement une fois soumis, ni un Message direct une fois envoyé ;
-- voir les Signalements déposés à votre sujet ou consulter ceux que vous avez déposés.
+- voir les Signalements déposés à votre sujet ou consulter ceux que vous avez déposés. Un Modérateur
+  étudiant ou un Admin voit un Signalement qu'il a déposé sur sa page Modération ou Signalements tant
+  qu'il attend une décision, et un Admin le voit aussi une fois résolu.
 
 ## Quitter 21 Beirut
 

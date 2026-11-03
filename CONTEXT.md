@@ -99,8 +99,9 @@ _French_: Blocage · _Arabic_: حظر
 **Report**:
 A Student's request that staff review a Post or another Student — the only two things that
 can be reported. The reporter's account of the problem is testimony, never edited by anyone,
-and the reporter is never told the outcome. A Report an Admin filed, or one about that Admin or
-their Post, is reviewed only by another Admin; its subject cannot read the reporter. A Removal is
+and a reporter who is not staff is never told the outcome. A Report about an Admin or their Post
+is reviewed only by another Admin; its subject cannot read the reporter. An Admin may review a
+Report they filed; a Peer Moderator sees one they filed, but someone else decides it. A Removal is
 not such a review: it closes every open Report about the removed Student, one the removing Admin
 filed included. Not a Block:
 a Report asks for staff action, where a Block withdraws contact and asks for nothing.

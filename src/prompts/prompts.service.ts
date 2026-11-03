@@ -66,9 +66,11 @@ export class PromptsService {
       await readActiveAdmin(tx, actor.studentId);
       const maximum = await tx.reflectionPrompt.aggregate({ _max: { publicationOrder: true } });
       await ctx.checkpoint('prompt.publish');
-      return toPromptView(await tx.reflectionPrompt.create({
+      const prompt = await tx.reflectionPrompt.create({
         data: { question: question.trim(), publishedAt: ctx.now, publicationOrder: (maximum._max.publicationOrder ?? 0n) + 1n },
-      }));
+      });
+      ctx.afterCommit(() => this.publisher.promptPublished());
+      return toPromptView(prompt);
     });
   }
 

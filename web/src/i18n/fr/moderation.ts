@@ -111,9 +111,9 @@ const studentResolvedBy = {
 
 export default {
   peerTitle: 'Modération',
-  peerIntro: "Les Publications signalées en attente d'une décision. Vous ne voyez jamais qui a déposé un Signalement. Une Publication que vous avez écrite ou signalée est confiée à quelqu'un d'autre, tout comme une Publication dont l'auteur, ou une personne qui l'a signalée, est quelqu'un que vous avez bloqué ou qui vous a bloqué.",
+  peerIntro: "Les Publications signalées en attente d'une décision. Vous ne voyez jamais qui a déposé un Signalement. Une Publication que vous avez écrite est confiée à quelqu'un d'autre, tout comme une Publication dont l'auteur, ou une personne qui l'a signalée, est quelqu'un que vous avez bloqué ou qui vous a bloqué. Une Publication que vous avez signalée apparaît ici, mais quelqu'un d'autre en décide.",
   adminTitle: 'Signalements',
-  adminIntro: "Les Signalements visant des Publications et des Étudiants, avec la personne qui a déposé chacun. Un Signalement qui vous vise, vous ou votre Publication, ou que vous avez déposé, est confié à un autre Admin.",
+  adminIntro: "Les Signalements visant des Publications et des Étudiants, avec la personne qui a déposé chacun. Un Signalement qui vous vise, vous ou votre Publication, est confié à un autre Admin.",
   tabsLabel: 'Signalements',
   openTab: 'Ouverts',
   resolvedTab: 'Résolus',
@@ -122,6 +122,7 @@ export default {
   queue: {
     emptyTitle: 'Aucun Signalement à examiner.',
     peerEmpty: 'Les Publications signalées que vous pouvez examiner apparaissent ici.',
+    filedByMe: 'Vous avez signalé cette Publication. Un autre Modérateur étudiant ou un Admin décide.',
     adminEmpty: 'Les Signalements visant des Publications et des Étudiants apparaissent ici.',
     postGroup: 'Publication signalée',
     studentGroup: 'Étudiant signalé',

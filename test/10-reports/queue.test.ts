@@ -48,6 +48,7 @@ describe('the moderation queue', () => {
     const own = await createTestPost(harness.app, moderator.id);
     await fileTestReport(harness.app, first.id, { postId: own });
     const filedIn = await createTestPost(harness.app, author.id);
+    at('2026-10-22T10:01:00.000Z');
     await fileTestReport(harness.app, first.id, { postId: filedIn });
     await fileTestReport(harness.app, moderator.id, { postId: filedIn });
 
@@ -67,8 +68,18 @@ describe('the moderation queue', () => {
       data: {
         items: [
           {
+            target: { kind: 'POST', post: post(filedIn, 'Read an index plan.') },
+            count: 2,
+            filedByMe: true,
+            reports: [
+              { reason: 'SPAM', text: null, createdAt: '2026-10-22T10:01:00.000Z' },
+              { reason: 'SPAM', text: null, createdAt: '2026-10-22T10:01:00.000Z' },
+            ],
+          },
+          {
             target: { kind: 'POST', post: post(earlier, 'Earlier group.') },
             count: 2,
+            filedByMe: false,
             reports: [
               { reason: 'OTHER', text: 'Off topic.', createdAt: '2026-10-22T10:00:00.000Z' },
               { reason: 'SPAM', text: 'Copied from a forum.', createdAt: '2026-10-22T09:00:00.000Z' },
@@ -77,6 +88,7 @@ describe('the moderation queue', () => {
           {
             target: { kind: 'POST', post: post(later, 'Later group.') },
             count: 1,
+            filedByMe: false,
             reports: [{ reason: 'HARASSMENT', text: null, createdAt: '2026-10-22T09:30:00.000Z' }],
           },
         ],
@@ -102,6 +114,7 @@ describe('the moderation queue', () => {
     at('2026-10-22T09:01:00.000Z');
     await fileTestReport(harness.app, clean.id, { postId: reporterBlocked });
     await fileTestReport(harness.app, blocked.id, { postId: reporterBlocked });
+    await fileTestReport(harness.app, moderator.id, { postId: reporterBlocked });
     at('2026-10-22T09:02:00.000Z');
     await fileTestReport(harness.app, clean.id, { postId: reporterBlocks });
     await fileTestReport(harness.app, blocker.id, { postId: reporterBlocks });
@@ -116,7 +129,7 @@ describe('the moderation queue', () => {
     expect(targetIds(await queueOf(admin))).toEqual([authorBlocked, reporterBlocks, reporterBlocked, visible]);
   });
 
-  it('shows an Admin both kinds with reporters, except their own targets and any group holding their row', async () => {
+  it('shows an Admin both kinds with reporters and their own filings, except their own targets', async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const other = await createTestStaff(harness.app, 'ADMIN');
     const author = await createTestAccount(harness.app);
@@ -145,6 +158,7 @@ describe('the moderation queue', () => {
       {
         target: { kind: 'STUDENT', student: ref(reported) },
         count: 1,
+        filedByMe: false,
         reports: [
           { reporter: ref(reporter), reason: 'HARASSMENT', text: 'Insults in messages.', createdAt: '2026-10-22T09:05:00.000Z' },
         ],
@@ -152,13 +166,30 @@ describe('the moderation queue', () => {
       {
         target: { kind: 'POST', post: expect.objectContaining({ id: open, author: ref(author), removed: false }) },
         count: 1,
+        filedByMe: false,
         reports: [{ reporter: ref(reporter), reason: 'SPAM', text: 'Advertising.', createdAt: '2026-10-22T09:04:00.000Z' }],
+      },
+      {
+        target: { kind: 'STUDENT', student: ref(author) },
+        count: 1,
+        filedByMe: true,
+        reports: [{ reporter: ref(admin, true), reason: 'SPAM', text: null, createdAt: '2026-10-22T09:03:00.000Z' }],
+      },
+      {
+        target: { kind: 'POST', post: expect.objectContaining({ id: filedIn, author: ref(author), removed: false }) },
+        count: 2,
+        filedByMe: true,
+        reports: [
+          { reporter: ref(admin, true), reason: 'SPAM', text: null, createdAt: '2026-10-22T09:02:30.000Z' },
+          { reporter: ref(reporter), reason: 'SPAM', text: null, createdAt: '2026-10-22T09:02:00.000Z' },
+        ],
       },
     ]);
     const otherQueue = await queueOf(other);
     expect(targetIds(otherQueue)).toEqual([reported.id, open, author.id, filedIn, admin.id, ownPost]);
     expect(otherQueue[3]).toMatchObject({
       count: 2,
+      filedByMe: false,
       reports: [{ reporter: ref(admin, true) }, { reporter: ref(reporter) }],
     });
   });

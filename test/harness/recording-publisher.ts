@@ -1,4 +1,5 @@
 import { RealtimePublisher, type RevokeTarget } from '../../src/core/realtime-publisher';
+import type { Role } from '../../src/shared/roles';
 
 export type RecordedEvent = { event: string; args: unknown[] };
 
@@ -15,6 +16,22 @@ export class RecordingRealtimePublisher extends RealtimePublisher {
 
   postLikes(postId: string, likeCount: number): void {
     this.record('postLikes', postId, likeCount);
+  }
+
+  postRemoved(postId: string): void {
+    this.record('postRemoved', postId);
+  }
+
+  promptPublished(): void {
+    this.record('promptPublished');
+  }
+
+  reportsChanged(exceptStudentIds: readonly string[]): void {
+    this.record('reportsChanged', exceptStudentIds);
+  }
+
+  roleChanged(studentId: string, role: Role): void {
+    this.record('roleChanged', studentId, role);
   }
 
   roundOpened(): void {

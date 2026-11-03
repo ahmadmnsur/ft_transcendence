@@ -395,6 +395,11 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > row. The resolved fixture remains Admin audit history and is not expected on the Peer
    > Moderator's open queue.
 
+   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: a Report the Admin filed no longer hides its group
+   > from them (ADR-0011 decision 9's note of that day); only a group about the Admin still would.
+   > The seeded Student report already neither targets nor is filed by the bootstrap Admin, so the
+   > fixture does not change.
+
    > **Asserted from each role's view, 2026-09-23 before `/to-spec #1`.** The whole-group guard and
    > the Admin self-interest rule turn on more than the reporters: the Post author, the seeded
    > Blocks, and who is later sanctioned. One hazard is silent. **The open Student report must not

@@ -44,7 +44,7 @@ async function auditOf(account: TestAccount): Promise<{ items: Array<Record<stri
 const REMOVED_AT = new Date('2026-10-22T12:00:00.000Z');
 
 describe('Remove Student and the Reports on them', () => {
-  it('actions every open row at once, the removing Admin’s own included; the audit hides the batch from that Admin only', async () => {
+  it('actions every open row at once, the removing Admin\'s own included; both Admins see the batch', async () => {
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const other = await createTestStaff(harness.app, 'ADMIN');
     const target = await createTestAccount(harness.app);
@@ -68,8 +68,8 @@ describe('Remove Student and the Reports on them', () => {
     expect(await outcome(harness.app.get(ModerationService).resolveStudentGroup(actor(other.id), target.id, 'DISMISS'))).toBe(
       'already_resolved',
     );
-    expect(await auditOf(admin)).toEqual({ items: [], total: 0 });
-    expect(await auditOf(other)).toEqual({
+    const audit = await auditOf(other);
+    expect(audit).toEqual({
       items: [
         {
           target: {
@@ -87,6 +87,7 @@ describe('Remove Student and the Reports on them', () => {
       ],
       total: 1,
     });
+    expect(await auditOf(admin)).toEqual(audit);
   });
 
   it.each([0, 1] as const)('against a filing, released %s first', async (first) => {

@@ -1,6 +1,6 @@
 # Terms of Service
 
-**21 Beirut** · Last updated: 26 October 2026
+**21 Beirut** · Last updated: 3 November 2026
 
 These Terms are the rules for using 21 Beirut: what you agree to when you create an account, how
 the community is moderated, and what 21 Beirut does and does not promise. The *Privacy Policy*
@@ -96,7 +96,9 @@ meetings and takes no part in them.
 - **Any signed-in Student can report** a Post, or another Student. Reports about Posts are reviewed by
   **Peer Moderators** — trusted Students — and by Admins; reports about Students by Admins only.
 - **Nobody is told about a Report.** The Student reported, or whose Post is reported, is never told.
-  The Student who reported is never told the outcome. Only Admins can see who filed a Report.
+  The Student who reported is never told the outcome. A Peer Moderator or an Admin who reported
+  still sees the Report while it waits, and an Admin also once it is resolved. Only Admins can see
+  who filed a Report.
 - **There are three sanctions:**
   - **Removing a Post** takes it off the feed. Peer Moderators and Admins can do it.
   - **Suspension** signs you out and stops you signing in, being matched or appearing on the

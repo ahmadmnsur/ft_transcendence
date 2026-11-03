@@ -16,7 +16,9 @@ export function canReport(viewerId: string | null, target: ReportTarget, student
   return viewerId !== null && viewerId !== student.id && !('studentId' in target && student.removed);
 }
 
-export function ReportControl({ target, student }: Props): React.JSX.Element | null {
+export function ReportControl({ target, student, onOpenChange }: Props & {
+  onOpenChange?: (open: boolean) => void;
+}): React.JSX.Element | null {
   const { t } = useI18n();
   const { data: session } = useQuery(sessionQueryOptions());
   const [open, setOpen] = useState(false);
@@ -29,11 +31,15 @@ export function ReportControl({ target, student }: Props): React.JSX.Element | n
       <Button variant="primary-secondary" size="sm" aria-haspopup="dialog" onClick={() => {
         setOpenings((count) => count + 1);
         setOpen(true);
+        onOpenChange?.(true);
       }}>
         {t.reports.report}
       </Button>
       {openings === 0 ? null : (
-        <ReportDialog key={openings} open={open} target={target} student={student} onClose={() => setOpen(false)} />
+        <ReportDialog key={openings} open={open} target={target} student={student} onClose={() => {
+          setOpen(false);
+          onOpenChange?.(false);
+        }} />
       )}
     </>
   );

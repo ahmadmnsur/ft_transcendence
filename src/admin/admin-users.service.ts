@@ -207,7 +207,10 @@ export class AdminUsersService {
       const target = await readTarget(tx, actor.studentId, id, { self: 'forbidden' });
       if (role !== 'ADMIN') await keepAnActiveAdmin(tx, target);
       await ctx.checkpoint('role-change');
-      if (target.role !== role) await tx.student.update({ where: { id: target.id }, data: { role } });
+      if (target.role !== role) {
+        await tx.student.update({ where: { id: target.id }, data: { role } });
+        ctx.afterCommit(() => this.publisher.roleChanged(target.id, role));
+      }
       return { role };
     });
   }

@@ -260,13 +260,11 @@ describe('resolving a report group', () => {
   it.each([
     ['a Post they wrote', 'own-post'],
     ['their own Student row', 'own-row'],
-    ['a group holding a Report they filed', 'filed'],
   ] as const)('refuses an Admin a group about %s, and lets another Admin resolve it', async (_name, kind) => {
     const moderation = harness.app.get(ModerationService);
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const other = await createTestStaff(harness.app, 'ADMIN');
     const reporter = await createTestAccount(harness.app);
-    const author = await createTestAccount(harness.app);
     let resolve: (by: string) => Promise<unknown>;
     let target: { postId: string } | { reportedStudentId: string };
     if (kind === 'own-row') {
@@ -274,9 +272,8 @@ describe('resolving a report group', () => {
       resolve = (by) => moderation.resolveStudentGroup(actor(by), admin.id, 'ACTION');
       target = { reportedStudentId: admin.id };
     } else {
-      const postId = await createTestPost(harness.app, kind === 'own-post' ? admin.id : author.id);
+      const postId = await createTestPost(harness.app, admin.id);
       await fileTestReport(harness.app, reporter.id, { postId });
-      if (kind === 'filed') await fileTestReport(harness.app, admin.id, { postId });
       resolve = (by) => moderation.resolvePostGroup(actor(by), postId, 'REMOVE_POST');
       target = { postId };
     }
@@ -284,6 +281,43 @@ describe('resolving a report group', () => {
     expect((await rowsOn(target)).every((row) => row.state === 'OPEN')).toBe(true);
     expect(await outcome(resolve(other.id))).toBe('ok');
     expect((await rowsOn(target)).every((row) => row.state === 'ACTIONED' && row.resolvedById === other.id)).toBe(true);
+  });
+
+  it.each(['Post', 'Student'] as const)('lets an Admin resolve a %s group holding their own Report', async (kind) => {
+    const moderation = harness.app.get(ModerationService);
+    const admin = await createTestStaff(harness.app, 'ADMIN');
+    const moderator = await createTestStaff(harness.app, 'PEER_MODERATOR');
+    const author = await createTestAccount(harness.app);
+    const target: { postId: string } | { studentId: string } = kind === 'Post'
+      ? { postId: await createTestPost(harness.app, author.id) }
+      : { studentId: author.id };
+    await fileTestReport(harness.app, admin.id, target);
+    await fileTestReport(harness.app, moderator.id, target);
+    expect(harness.recorder.events).toEqual([
+      { event: 'reportsChanged', args: [[author.id]] },
+      { event: 'reportsChanged', args: [[author.id]] },
+    ]);
+    const queue = await harness.get('/api/moderation/queue').set('Cookie', admin.cookie).expect(200);
+    expect(queue.body.data.items).toMatchObject([{ count: 2, filedByMe: true }]);
+    if ('postId' in target) {
+      const peerQueue = await harness.get('/api/moderation/queue').set('Cookie', moderator.cookie).expect(200);
+      expect(peerQueue.body.data.items).toMatchObject([{ filedByMe: true }]);
+      expect(peerQueue.body.data.items[0].reports.every((report: object) => !('reporter' in report))).toBe(true);
+      expect(await outcome(moderation.resolvePostGroup(actor(moderator.id), target.postId, 'REMOVE_POST'))).toBe('conflict_of_interest');
+      expect(await removedAt(target.postId)).toBeNull();
+    }
+    harness.recorder.clear();
+    const resolved = 'postId' in target
+      ? await moderation.resolvePostGroup(actor(admin.id), target.postId, 'REMOVE_POST')
+      : await moderation.resolveStudentGroup(actor(admin.id), target.studentId, 'ACTION');
+    expect(resolved).toEqual({ state: 'ACTIONED', count: 2 });
+    expect(harness.recorder.events).toEqual([
+      { event: 'reportsChanged', args: [[author.id]] },
+      ...('postId' in target ? [{ event: 'postRemoved', args: [target.postId] }] : []),
+    ]);
+    const rows = await rowsOn('postId' in target ? { postId: target.postId } : { reportedStudentId: target.studentId });
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.state === 'ACTIONED' && row.resolvedById === admin.id)).toBe(true);
   });
 
   it.each([

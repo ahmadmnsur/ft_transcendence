@@ -40,7 +40,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
     onSuccess: () => { setBody(''); },
     onSettled: () => { void client.invalidateQueries({ queryKey: ['prompts'] }); void client.invalidateQueries({ queryKey: FEED_QUERY_KEY }); for (const key of ['progress', 'me', 'students']) void client.invalidateQueries({ queryKey: [key] }); },
   });
-  const canAnswer = detail?.live && !detail.answeredByMe && session?.authenticated && session.student.role !== 'ADMIN' && !answer.isSuccess;
+  const canAnswer = (detail?.live || body !== '') && !detail?.answeredByMe && session?.authenticated && session.student.role !== 'ADMIN' && !answer.isSuccess;
   if (!wellFormedId) return <NotFoundPage />;
   if (answers.isError && answers.error instanceof ApiProtocolError && answers.error.status === 404) {
     return <NotFoundPage />;

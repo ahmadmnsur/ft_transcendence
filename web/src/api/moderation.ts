@@ -32,6 +32,7 @@ export interface QueueReport {
 export interface QueueGroup {
   target: GroupTarget;
   count: number;
+  filedByMe: boolean;
   reports: QueueReport[];
 }
 
@@ -59,6 +60,9 @@ export function moderationQueueQueryOptions(admin: boolean) {
     queryKey: [...MODERATION_QUERY_KEY, 'queue', admin ? 'admin' : 'peer'] as const,
     queryFn: async () => {
       const queue = await apiFetch<{ items: QueueGroup[] }>('/moderation/queue');
+      if (queue.items.some((group) => typeof group.filedByMe !== 'boolean')) {
+        throw new ApiProtocolError(200, 'internal_error', 'The server returned an unexpected response.');
+      }
       if (!admin && queue.items.some((group) => group.reports.some((report) => report.reporter !== undefined))) {
         throw new ApiProtocolError(403, 'forbidden', 'The queue answered as to an Admin.');
       }
@@ -73,6 +77,11 @@ export function resolvedAuditQueryOptions(page: number) {
     queryFn: () => apiFetch<ResolvedPage>(`/admin/reports/resolved?page=${page}&pageSize=${RESOLVED_PAGE_SIZE}`),
     placeholderData: keepPreviousData,
   });
+}
+
+export async function readModerationAgain(client: QueryClient): Promise<void> {
+  await client.cancelQueries({ queryKey: MODERATION_QUERY_KEY });
+  await client.invalidateQueries({ queryKey: MODERATION_QUERY_KEY });
 }
 
 function sendResolution(target: GroupTarget, action: GroupAction): Promise<Resolution> {
