@@ -5,6 +5,7 @@ import { PageTitle } from '../layout';
 import { parsePageSearch } from '../search';
 import { ModerationQueue } from '../moderation/ModerationQueue';
 import { ResolvedAudit } from '../moderation/ResolvedAudit';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export interface AdminReportsSearch {
   view?: 'resolved';
@@ -16,6 +17,7 @@ export function parseAdminReportsSearch(search: Record<string, unknown>): AdminR
 }
 
 export function AdminReportsPage(): React.JSX.Element {
+  useOpenedPage('reports');
   const { t } = useI18n();
   const copy = t.moderation;
   const search = useSearch({ from: '/admin/reports' });

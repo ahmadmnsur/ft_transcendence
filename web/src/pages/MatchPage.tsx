@@ -8,8 +8,10 @@ import { PageTitle } from '../layout';
 import { MatchNoticeBanner, type MatchNotice } from '../matching/MatchParts';
 import { PairMatchCard } from '../matching/PairMatchCard';
 import { failureCode } from '../profile/failure';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function MatchPage(): React.JSX.Element {
+  useOpenedPage('match');
   const { t, formatText, errorText } = useI18n();
   const copy = t.matching.current;
   const round = useQuery(currentRoundQueryOptions());

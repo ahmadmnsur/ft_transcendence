@@ -54,6 +54,10 @@ export class RecordingRealtimePublisher extends RealtimePublisher {
     this.record('friendsChanged', studentIds);
   }
 
+  newDotsChanged(target: RevokeTarget): void {
+    this.record('newDotsChanged', target);
+  }
+
   dmMessage(senderId: string, recipientId: string, message: object): void {
     this.record('dmMessage', senderId, recipientId, message);
   }

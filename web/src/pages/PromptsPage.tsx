@@ -6,8 +6,10 @@ import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 import { PromptHistory } from '../prompts/PromptHistory';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function PromptsPage(): React.JSX.Element {
+  useOpenedPage('prompts');
   const { t, errorText } = useI18n();
   const live = useQuery(livePromptQueryOptions());
   const search = useSearch({ from: '/prompts' });

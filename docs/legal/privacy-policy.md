@@ -87,6 +87,9 @@ Private Feedback received, newest first, including feedback from a former studen
 on a profile, and ratings are never averaged or combined into a score. The Public Takeaway contains
 your confirmed words, attributed to you, without a field naming your Mentor.
 
+21 Beirut records when you read Private Feedback about you. The Mentee who wrote it is never
+shown when you read it.
+
 **Your activity in the community**
 
 - your Posts: Public Takeaways and answers to Reflection Prompts. An answer is visible immediately
@@ -129,10 +132,13 @@ dismissed them or marked them as actioned, and when.
 
 **Sign-in sessions**
 
-One record for each browser you are signed in on: whose it is, and when it expires.
+One record for each browser you are signed in on: whose it is, when it expires, and when you last
+opened each page that can show a New dot: the feed, Direct Messages, Match, Friends, Reflection
+Prompts, and for Peer Moderators and Admins the Report queue. These page openings go with the
+session when it ends.
 
 Other records also carry the time they were made, and a Friendship also when it was accepted; a sign-in
-session records only when it expires.
+session records only when it expires and those page openings.
 
 **What 21 Beirut does not record: when you were last online.** Your Friends can see whether you are
 online *now*. That status lives only in the running server's memory, is never saved, and resets
@@ -181,7 +187,7 @@ your email address is used to sign in.
 | A friend request you sent or received, while it waits for an answer | you and the other Student only |
 | Your Matches: who you were paired with, their status, the Compatibility Score and its explanation, the suggested Mission, which of you has accepted and, for Admins, which of you declined | the two of you, and Admins. No profile lists anyone's Matches, and a Public Takeaway has no field naming the Mentor |
 | Your Learning Outcome and Evidence | the two Students in that Match, and Admins |
-| Private Feedback, including its rating | the Mentor it is about, Admins, and you, its author. It is **not anonymous**: the Mentor sees that it came from you |
+| Private Feedback, including its rating | the Mentor it is about, Admins, and you, its author. It is **not anonymous**: the Mentor sees that it came from you. You are never shown whether the Mentor has read it. |
 | Direct Messages | only the two Students in the conversation — not Admins, not Peer Moderators. The sender is never shown whether you have read a message |
 | Your Blocks | you only. The other Student is not told, though they may notice they can no longer message you, send you a friend request or be matched with you |
 | A Report you file | Admins, who can see that you filed it, unless the group of Reports is about them or their Post. Peer Moderators, who review reported Posts, never see who filed a Report. The Student you report, or whose Post you report, is never told |

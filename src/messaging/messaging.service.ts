@@ -15,6 +15,10 @@ import type { DirectMessageView, PeerThread, ThreadPage, ThreadView } from './vi
 
 const MESSAGES_PER_PAGE = PAGING.maxPageSize;
 
+export function unreadMessagesWhere(studentId: string): Prisma.DirectMessageWhereInput {
+  return { recipientId: studentId, readAt: null };
+}
+
 type MessageRow = { id: string; sender_id: string; recipient_id: string; body: string; created_at: Date };
 
 type ThreadRow = MessageRow & { peer_id: string };
@@ -123,7 +127,7 @@ export class MessagingService {
         (
           await tx.directMessage.groupBy({
             by: ['senderId'],
-            where: { recipientId: actor.studentId, readAt: null, senderId: { in: peerIds } },
+            where: { ...unreadMessagesWhere(actor.studentId), senderId: { in: peerIds } },
             _count: { _all: true },
           })
         ).map((group) => [group.senderId, group._count._all]),

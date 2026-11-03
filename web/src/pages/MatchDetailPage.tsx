@@ -11,12 +11,14 @@ import { MatchNoticeBanner, type MatchNotice } from '../matching/MatchParts';
 import { PairMatchCard } from '../matching/PairMatchCard';
 import { failureCode } from '../profile/failure';
 import { ReviewRecord } from '../reviews/ReviewRecord';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function MatchDetailPage(): React.JSX.Element {
   const { t, format, formatText, errorText } = useI18n();
   const copy = t.matching.detail;
   const { matchId } = useParams({ from: '/matches/$matchId' });
   const wellFormedId = isUuid(matchId);
+  useOpenedPage('feedback', matchId, wellFormedId);
   const { data, error, isError, refetch } = useQuery({ ...matchQueryOptions(matchId), enabled: wellFormedId });
   const [notice, setNotice] = useState<MatchNotice | undefined>(undefined);
 

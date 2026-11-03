@@ -7,7 +7,7 @@ import { logout } from './api/auth';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from './api/session';
 import { useI18n } from './i18n/context';
 import { languageNames, languages } from './i18n/language';
-import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, MoonIcon, PersonName, SearchIcon, Select, SunIcon, buttonClasses, useTheme } from './design';
+import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, MoonIcon, NewDot, PersonName, SearchIcon, Select, SunIcon, buttonClasses, useTheme } from './design';
 import { RealtimeConnection } from './realtime/connection';
 import { SessionUpdates } from './realtime/SessionUpdates';
 import { MessageUpdates } from './messages/MessageUpdates';
@@ -17,6 +17,8 @@ import { PresenceUpdates } from './social/PresenceUpdates';
 import { FriendUpdates } from './social/FriendUpdates';
 import { ReportUpdates } from './moderation/ReportUpdates';
 import { useDisclosure } from './shell/useDisclosure';
+import { NewDotsUpdates } from './newDots/NewDotsUpdates';
+import { useNewDots, type NewDots } from './newDots/useNewDots';
 
 export const BRAND = '21 Beirut';
 
@@ -28,6 +30,11 @@ export function PageTitle({ name }: { name?: string }): React.JSX.Element {
 type BarPath = '/' | '/match' | '/prompts' | '/messages' | '/students' | '/friends' | '/moderation' | '/admin';
 type AccountPath = '/me' | '/feedback' | '/leaderboard' | '/rules';
 type GuestPath = '/sign-in' | '/sign-up';
+
+const DOT_KEYS: Partial<Record<BarPath | AccountPath, keyof NewDots>> = {
+  '/': 'feed', '/match': 'match', '/prompts': 'prompts', '/messages': 'messages',
+  '/friends': 'friends', '/feedback': 'feedback', '/moderation': 'reports', '/admin': 'reports',
+};
 
 function activeOptions(to: string): { exact: boolean; includeSearch: false } {
   return { exact: to === '/', includeSearch: false };
@@ -58,7 +65,8 @@ function followHeaderHeight(header: HTMLElement | null): (() => void) | undefine
 }
 
 function SiteHeader(): React.JSX.Element {
-  const { t, language, setLanguage } = useI18n();
+  const { t, language, setLanguage, formatText } = useI18n();
+  const dots = useNewDots();
   const copy = t.shell.header;
   const { theme, setTheme } = useTheme();
   const { data: session } = useQuery(sessionQueryOptions());
@@ -148,6 +156,17 @@ function SiteHeader(): React.JSX.Element {
     { to: '/rules', label: t.progress.rules.nav },
   ];
 
+  function hasDot(to: BarPath | AccountPath): boolean {
+    const key = DOT_KEYS[to];
+    return key !== undefined && dots[key];
+  }
+
+  function linkLabel(link: { to: BarPath | AccountPath; label: string }): React.JSX.Element {
+    return <>{link.label}{hasDot(link.to) ? <NewDot /> : null}</>;
+  }
+
+  const phoneDot = student !== null && [...barLinks, ...accountLinks].some((link) => hasDot(link.to));
+
   const brandLink = (
     <Link to="/" className="inline-flex h-9 min-w-0 items-center rounded-lg focus-ring">
       <svg role="img" aria-label={BRAND} viewBox="0.8 10 274 72.3" fill="currentColor" className="h-9 w-auto max-w-full">
@@ -180,8 +199,9 @@ function SiteHeader(): React.JSX.Element {
   );
 
   const phoneMenuButton = (
-    <IconButton {...phoneMenu.buttonProps} label={copy.menu} className="ms-auto md:hidden">
+    <IconButton {...phoneMenu.buttonProps} label={phoneDot ? formatText(copy.newLabel, { label: copy.menu, new: copy.new }) : copy.menu} className="ms-auto md:hidden">
       <MenuIcon size={20} />
+      {phoneDot ? <NewDot className="absolute end-1 top-1" /> : null}
     </IconButton>
   );
 
@@ -267,6 +287,7 @@ function SiteHeader(): React.JSX.Element {
             <span className="max-w-40 truncate">
               <PersonName name={student.displayName} removed={false} />
             </span>
+            {dots.feedback ? <NewDot /> : null}
             <ChevronDownIcon size={16} className="shrink-0" />
           </button>
           <div
@@ -277,7 +298,7 @@ function SiteHeader(): React.JSX.Element {
               {accountLinks.map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
-                    {link.label}
+                    {linkLabel(link)}
                   </Link>
                 </li>
               ))}
@@ -293,7 +314,7 @@ function SiteHeader(): React.JSX.Element {
               {barLinks.map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
-                    {link.label}
+                    {linkLabel(link)}
                   </Link>
                 </li>
               ))}
@@ -306,7 +327,7 @@ function SiteHeader(): React.JSX.Element {
                 {accountLinks.map((link) => (
                   <li key={link.to}>
                     <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
-                      {link.label}
+                      {linkLabel(link)}
                     </Link>
                   </li>
                 ))}
@@ -324,7 +345,7 @@ function SiteHeader(): React.JSX.Element {
           {barLinks.map((link) => (
             <li key={link.to}>
               <Link to={link.to} activeOptions={activeOptions(link.to)} className={barLinkClass}>
-                {link.label}
+                {linkLabel(link)}
               </Link>
             </li>
           ))}
@@ -366,6 +387,7 @@ function ShellFrame({ children }: { children: React.ReactNode }): React.JSX.Elem
   return (
     <div className="flex min-h-dvh min-w-0 flex-col bg-canvas text-ink">
       <SkipLink />
+      <NewDotsUpdates />
       <SiteHeader />
       {children}
       <SiteFooter />

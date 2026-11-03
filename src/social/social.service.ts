@@ -33,6 +33,10 @@ function friendshipPair(a: string, b: string): Prisma.FriendshipWhereInput {
   };
 }
 
+export function incomingRequestsWhere(studentId: string): Prisma.FriendshipWhereInput {
+  return { addresseeId: studentId, status: 'PENDING', requester: { removedAt: null } };
+}
+
 const BLOCK_SELECT = {
   createdAt: true,
   blocked: { select: STUDENT_REF_SELECT },
@@ -85,7 +89,7 @@ export class SocialService {
   async listRequests(actor: Actor): Promise<FriendRequestLists> {
     return this.uow.readOnly(async (tx) => {
       const incoming = await tx.friendship.findMany({
-        where: { addresseeId: actor.studentId, status: 'PENDING', requester: { removedAt: null } },
+        where: incomingRequestsWhere(actor.studentId),
         orderBy: REQUEST_ORDER,
         select: REQUEST_SELECT,
       });

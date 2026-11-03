@@ -3,8 +3,10 @@ import { PageTitle } from '../layout';
 import { BlocksCard } from '../social/BlocksCard';
 import { FriendRequestsCard } from '../social/FriendRequestsCard';
 import { FriendsCard } from '../social/FriendsCard';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function FriendsPage(): React.JSX.Element {
+  useOpenedPage('friends');
   const { t } = useI18n();
   const copy = t.social.friends;
   return (

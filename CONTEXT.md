@@ -68,8 +68,8 @@ _French_: Présence · _Arabic_: تواجد
 **New dot**:
 A mark beside a link that tells a Student something waits for them on that page and is newer
 than their last visit to it since they signed in: an unread Direct Message or Private Feedback, a
-Match to answer or a Review to write, a friend request, the live Reflection Prompt unanswered, or
-a Report to act on. It says that something waits, never what or how many, and it is not a
+Match to answer or a Review to write, a friend request, the live Reflection Prompt unanswered, a
+Report to act on, or another Student's Like on one of your Posts. It says that something waits, never what or how many, and it is not a
 notification: nothing is delivered, listed or kept.
 _Avoid_: Notification, badge, alert, unread flag
 _French_: Pastille · _Arabic_: نقطة جديدة

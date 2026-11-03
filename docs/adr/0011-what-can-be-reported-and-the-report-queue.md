@@ -29,7 +29,7 @@ every place they could do social damage.**
   participating Student who may also **file** reports, and nothing stopped them actioning their
   own complaint. The guard now covers reports they filed as well.
 
-  > **Narrowed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: for a report they filed, the guard now
+  > **Narrowed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: for a report they filed, the guard now
   > stops the moderator resolving the group, not seeing it. Decision 9's note of the same day.
 - **ADR-0008 decision 3.** "The report queue" is **sharpened** to the *Post*-report queue. The
   sanctions for a Student report are Suspend and Remove, which the same decision reserves to
@@ -208,7 +208,7 @@ every place they could do social damage.**
    > may commit and the later Block does not rewrite its attribution. Role changes retain ADR-0003's
    > existing “next request” boundary rather than gaining a new mid-request rule here.
 
-   > **Changed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: "if they filed any open report in it"
+   > **Changed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: "if they filed any open report in it"
    > no longer hides the group. It shows in that moderator's queue, read-only, and they still cannot
    > resolve it. Their own Post or a Block still hides it. Decision 9's note of the same day.
 
@@ -245,7 +245,7 @@ every place they could do social damage.**
    > side effect. What the removing Admin's own report then suffers, and who sees it, is settled in
    > decision 10's annotation.
    >
-   > **A staff member sees the Report they filed, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*. A
+   > **A staff member sees the Report they filed, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**. A
    > manual test found the case this guard leaves stuck: when the only Peer Moderator and the only
    > Admin both report one Post, the group shows on no screen and nobody can resolve it, and neither
    > can report it again (decision 5). Changed:
@@ -287,7 +287,7 @@ every place they could do social damage.**
     > is deterministic, the guard governs queue reads and group resolutions. `docs/spec.md` §12.5,
     > §12.7; §16.3 category 10 carries the test.
     >
-    > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: the resolved audit no longer hides that batch
+    > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: the resolved audit no longer hides that batch
     > from the removing Admin (decision 9's note of the same day).
 
 11. **Any signed-in Student may file a report, never against themselves or their own Post.**
@@ -346,7 +346,7 @@ every place they could do social damage.**
     > them, but that one goes only to Peer Moderators and Admins and carries nothing, and no event
     > reaches the reporter or the reported Student. The reporter still learns nothing.
 
-    > **Staff reporters, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: a Peer Moderator or an
+    > **Staff reporters, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: a Peer Moderator or an
     > Admin who files a Report now sees its open group in their own queue (decision 9's note of the
     > same day), and hears `reports:changed` like any staff member. For them "the reporter learns
     > nothing" no longer holds; for every other Student it still does. `reports:changed` skips the

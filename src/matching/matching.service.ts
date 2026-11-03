@@ -3,6 +3,7 @@ import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
+import type { Prisma } from '../generated/prisma/client';
 import { evaluateStreaksAtClose } from '../gamification/streaks';
 import { readReview } from '../reviews/read-review';
 import { MISSIONS, STANDING_STATUSES, isInProgress } from '../shared/matches';
@@ -60,6 +61,14 @@ const PARTICIPANT_SELECT = {
   mentorAcceptedAt: true,
   menteeAcceptedAt: true,
 } as const;
+
+export function currentMatchWhere(studentId: string): Prisma.MatchWhereInput {
+  return {
+    round: { closedAt: null },
+    status: { in: [...STANDING_STATUSES] },
+    OR: [{ mentorId: studentId }, { menteeId: studentId }],
+  };
+}
 
 @Injectable()
 export class MatchingService {
@@ -268,11 +277,7 @@ export class MatchingService {
   async currentMatch(actor: Actor): Promise<CurrentMatch> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.match.findFirst({
-        where: {
-          round: { closedAt: null },
-          status: { in: [...STANDING_STATUSES] },
-          OR: [{ mentorId: actor.studentId }, { menteeId: actor.studentId }],
-        },
+        where: currentMatchWhere(actor.studentId),
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: MATCH_SELECT,
       });

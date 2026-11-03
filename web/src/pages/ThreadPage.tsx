@@ -4,8 +4,10 @@ import { isUuid } from '@shared/uuid';
 import { NotFoundPage } from '../layout';
 import { ThreadMessages } from '../messages/ThreadMessages';
 import { sessionQueryOptions } from '../api/session';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function ThreadPage(): React.JSX.Element {
+  useOpenedPage('messages');
   const { peerId } = useParams({ from: '/messages/$peerId' });
   const session = useQuery(sessionQueryOptions());
   const viewerId = session.data?.authenticated === true ? session.data.student.id : '';

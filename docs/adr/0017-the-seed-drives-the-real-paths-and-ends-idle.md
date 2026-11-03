@@ -395,7 +395,7 @@ closed Rounds, and leaves the platform idle so the demo opens the fifth on stage
    > row. The resolved fixture remains Admin audit history and is not expected on the Peer
    > Moderator's open queue.
 
-   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: a Report the Admin filed no longer hides its group
+   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: a Report the Admin filed no longer hides its group
    > from them (ADR-0011 decision 9's note of that day); only a group about the Admin still would.
    > The seeded Student report already neither targets nor is filed by the bootstrap Admin, so the
    > fixture does not change.

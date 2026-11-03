@@ -4,6 +4,8 @@ export default {
   skipLink: 'Skip to main content',
   pageTitle: '{page} · {brand}',
   header: {
+    new: 'new',
+    newLabel: '{label}, {new}',
     navLabel: 'Main menu',
     menu: 'Menu',
     accountMenu: 'Account menu',

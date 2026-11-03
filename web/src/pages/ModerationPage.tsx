@@ -1,8 +1,10 @@
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { ModerationQueue } from '../moderation/ModerationQueue';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function ModerationPage(): React.JSX.Element {
+  useOpenedPage('reports');
   const { t } = useI18n();
   const copy = t.moderation;
   return (

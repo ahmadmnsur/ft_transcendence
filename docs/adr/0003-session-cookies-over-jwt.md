@@ -147,6 +147,9 @@ Postgres**, because the credential we need is one that can be *withdrawn*.
    > when this sign-in last opened Messages, Match, Friends, Prompts and Reports. They feed the New
    > dots, start empty at sign-in and go with the row. The role is still read from the Student row.
 
+   > **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 4's note of the same day)** *(uncommitted)*: six, not
+   > five: the feed joins, for the dot a Like on your own Post brings.
+
 6. **What kills a session:** logout deletes that row; a password change or a moderation
    **Suspension** deletes *every* row for that Student. A **role change deletes nothing** —
    decision 5 means it takes effect on the next request.
