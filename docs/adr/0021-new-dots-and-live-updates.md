@@ -94,6 +94,10 @@ Unaffected:
    Each dot counts exactly what its page shows, with the page's own filters for Removed Students,
    Blocks and role. Nothing about XP, Levels, Badges, Likes or the Leaderboard has a dot.
 
+   > **Reopened 2026-11-03 by Kamel ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262))** *(uncommitted)*:
+   > he wants a New dot when one of your own Posts gets a Like. Where it shows and what clears it
+   > are settled when #262 starts; until then the sentence above holds.
+
 4. **The openings live on the `Session` row; Private Feedback carries its own `read_at`.** Five
    nullable timestamps on `Session`, one per page a sign-in opens: Messages, Match, Friends,
    Prompts and Reports. A sign-in starts with all five empty, and they go with the row at sign-out
@@ -118,6 +122,11 @@ Unaffected:
    after a resolution removes a Post, and `post:likes { postId, likeCount }` to the author's room
    only, after a Like is given or taken back. A Prompt's page takes its new answers from the
    existing `post:created`. No event carries a Report, a role or Admin data, as before.
+
+   > **Changed 2026-11-03 by Kamel ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+   > `post:likes { postId, likeCount }` now goes to `feed`, so every Student with the Post loaded
+   > sees its count change. The payload names no one. Counts were already readable by every
+   > signed-in Student. The cost is one small message to every signed-in socket per Like.
 
 6. **Peer Moderators and Admins share a fourth room, `staff`, and a role change moves a Student's
    connections at once.** A socket joins `staff` at admission when its Student's role is
@@ -161,6 +170,9 @@ Unaffected:
   crowded tab bar cuts the title first, and two signs on one tab say the same thing twice.
 - **Live Likes for everyone**: every Like would go to every signed-in Student, for a number. Only
   the author hears their own.
+
+  > **Taken 2026-11-03 by Kamel ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*: see decision 5's
+  > note.
 
 ## Consequences
 

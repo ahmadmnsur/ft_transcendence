@@ -4,6 +4,7 @@ import { blockPair } from '../core/block-pair';
 import { ApiError } from '../core/errors';
 import { PresenceReader } from '../core/presence-reader';
 import { PrismaService } from '../core/prisma.service';
+import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
 import type { Prisma } from '../generated/prisma/client';
 import { readActiveActor } from '../students/profile-writes';
@@ -67,6 +68,7 @@ export class SocialService {
     private readonly prisma: PrismaService,
     private readonly uow: UnitOfWork,
     private readonly presence: PresenceReader,
+    private readonly publisher: RealtimePublisher,
   ) {}
 
   async listFriends(actor: Actor): Promise<{ items: FriendView[] }> {
@@ -120,6 +122,7 @@ export class SocialService {
           data: { requesterId: actor.studentId, addresseeId: target.id, status: 'PENDING' },
           select: { id: true, createdAt: true },
         });
+        ctx.afterCommit(() => this.publisher.friendsChanged([actor.studentId, target.id]));
         return { id: created.id, student: toStudentRef(target), createdAt: created.createdAt.toISOString() };
       },
     );
@@ -146,6 +149,7 @@ export class SocialService {
         where: { id: requestId },
         data: { status: 'ACCEPTED', respondedAt: ctx.now },
       });
+      ctx.afterCommit(() => this.publisher.friendsChanged([actor.studentId, row.requester.id]));
       return row.requester;
     });
     return { student: toStudentRef(requester), online: this.presence.isOnline(requester.id) };
@@ -154,11 +158,14 @@ export class SocialService {
   async declineFriend(actor: Actor, requestId: string): Promise<Record<string, never>> {
     await this.uow.run('friend-decline', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
-      await ctx.checkpoint('friend-decline');
-      const { count } = await tx.friendship.deleteMany({
+      const row = await tx.friendship.findFirst({
         where: { id: requestId, addresseeId: actor.studentId, status: 'PENDING' },
+        select: { id: true, requesterId: true },
       });
-      if (count === 0) throw requestNotPending();
+      if (row === null) throw requestNotPending();
+      await ctx.checkpoint('friend-decline');
+      await tx.friendship.delete({ where: { id: row.id } });
+      ctx.afterCommit(() => this.publisher.friendsChanged([actor.studentId, row.requesterId]));
     });
     return {};
   }
@@ -166,11 +173,14 @@ export class SocialService {
   async cancelFriend(actor: Actor, requestId: string): Promise<Record<string, never>> {
     await this.uow.run('friend-cancel', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
-      await ctx.checkpoint('friend-cancel');
-      const { count } = await tx.friendship.deleteMany({
+      const row = await tx.friendship.findFirst({
         where: { id: requestId, requesterId: actor.studentId, status: 'PENDING' },
+        select: { id: true, addresseeId: true },
       });
-      if (count === 0) throw requestNotPending();
+      if (row === null) throw requestNotPending();
+      await ctx.checkpoint('friend-cancel');
+      await tx.friendship.delete({ where: { id: row.id } });
+      ctx.afterCommit(() => this.publisher.friendsChanged([actor.studentId, row.addresseeId]));
     });
     return {};
   }
@@ -178,11 +188,14 @@ export class SocialService {
   async endFriendship(actor: Actor, studentId: string): Promise<Record<string, never>> {
     await this.uow.run('friendship-end', async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
-      await ctx.checkpoint('friendship-end');
-      const { count } = await tx.friendship.deleteMany({
+      const row = await tx.friendship.findFirst({
         where: { status: 'ACCEPTED', ...friendshipPair(actor.studentId, studentId) },
+        select: { id: true, requesterId: true, addresseeId: true },
       });
-      if (count === 0) throw notFriends();
+      if (row === null) throw notFriends();
+      await ctx.checkpoint('friendship-end');
+      await tx.friendship.delete({ where: { id: row.id } });
+      ctx.afterCommit(() => this.publisher.friendsChanged([row.requesterId, row.addresseeId]));
     });
     return {};
   }

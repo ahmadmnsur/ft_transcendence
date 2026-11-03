@@ -234,6 +234,7 @@ export class MatchingService {
           ...(theirs !== null ? { status: 'ACCEPTED' as const } : {}),
         },
       });
+      ctx.afterCommit(() => this.publisher.matchChanged([match.mentorId, match.menteeId]));
     });
     return this.getMatch(actor, matchId);
   }
@@ -251,6 +252,7 @@ export class MatchingService {
         where: { id: match.id },
         data: { status: 'DECLINED', declinedById: actor.studentId },
       });
+      ctx.afterCommit(() => this.publisher.matchChanged([match.mentorId, match.menteeId]));
     });
     return this.getMatch(actor, matchId);
   }

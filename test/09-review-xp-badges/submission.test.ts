@@ -120,8 +120,9 @@ it('commits one immutable Review, Private Feedback and public Takeaway under dup
         },
       ],
     },
+    { event: 'matchChanged', args: [[mentor.studentId, mentee.studentId]] },
   ]);
-  expect(JSON.stringify(harness.recorder.events)).not.toContain(mentor.studentId);
+  expect(JSON.stringify(harness.recorder.events[0])).not.toContain(mentor.studentId);
 });
 
 type Accepted = Awaited<ReturnType<typeof acceptedMatch>>;

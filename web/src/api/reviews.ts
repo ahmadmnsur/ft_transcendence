@@ -32,11 +32,18 @@ export type ReviewDetail = {
 export type FeedbackItem = PrivateFeedback & { matchId: string; roundNumber: number; author: StudentRef };
 export type FeedbackPage = { items: FeedbackItem[]; total: number };
 
+const FEEDBACK_QUERY_KEY = ['feedback'] as const;
+
 export function feedbackQueryOptions(page: number, pageSize: number) {
   return queryOptions({
-    queryKey: ['feedback', page, pageSize] as const,
+    queryKey: [...FEEDBACK_QUERY_KEY, page, pageSize] as const,
     queryFn: () => apiFetch<FeedbackPage>(`/me/feedback-received?page=${page}&pageSize=${pageSize}`),
   });
+}
+
+export async function readFeedbackAgain(queryClient: QueryClient): Promise<void> {
+  await queryClient.cancelQueries({ queryKey: FEEDBACK_QUERY_KEY });
+  await queryClient.invalidateQueries({ queryKey: FEEDBACK_QUERY_KEY });
 }
 
 export async function submitReview(client: QueryClient, id: string, input: ReviewInput): Promise<EarnResult | null> {

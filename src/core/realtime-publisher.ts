@@ -5,11 +5,17 @@ export type RevokeTarget = { studentId: string } | { sessionHash: string };
 export abstract class RealtimePublisher {
   abstract postCreated(item: object): void;
 
+  abstract postLikes(postId: string, likeCount: number): void;
+
   abstract roundOpened(): void;
 
   abstract roundClosed(): void;
 
   abstract matchReady(studentIds: readonly string[]): void;
+
+  abstract matchChanged(studentIds: readonly string[]): void;
+
+  abstract friendsChanged(studentIds: readonly string[]): void;
 
   abstract dmMessage(senderId: string, recipientId: string, message: object): void;
 
@@ -21,9 +27,12 @@ export abstract class RealtimePublisher {
 @Injectable()
 export class NoopRealtimePublisher extends RealtimePublisher {
   postCreated(): void {}
+  postLikes(): void {}
   roundOpened(): void {}
   roundClosed(): void {}
   matchReady(): void {}
+  matchChanged(): void {}
+  friendsChanged(): void {}
   dmMessage(): void {}
   presenceUpdate(): void {}
   revokeSessions(): void {}

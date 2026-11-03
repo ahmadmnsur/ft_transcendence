@@ -289,6 +289,10 @@ export class RealtimeGateway
     this.publish([FEED_ROOM], 'post:created', item);
   }
 
+  override postLikes(postId: string, likeCount: number): void {
+    this.publish([FEED_ROOM], 'post:likes', { postId, likeCount });
+  }
+
   override roundOpened(): void {
     this.publish([ROUNDS_ROOM], 'round:opened', {});
   }
@@ -300,6 +304,16 @@ export class RealtimeGateway
   override matchReady(studentIds: readonly string[]): void {
     if (studentIds.length === 0) return;
     this.publish([...new Set(studentIds)].map(studentRoom), 'match:ready', {});
+  }
+
+  override matchChanged(studentIds: readonly string[]): void {
+    if (studentIds.length === 0) return;
+    this.publish([...new Set(studentIds)].map(studentRoom), 'match:changed', {});
+  }
+
+  override friendsChanged(studentIds: readonly string[]): void {
+    if (studentIds.length === 0) return;
+    this.publish([...new Set(studentIds)].map(studentRoom), 'friends:changed', {});
   }
 
   override dmMessage(senderId: string, recipientId: string, message: object): void {

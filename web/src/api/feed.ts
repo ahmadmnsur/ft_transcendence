@@ -42,6 +42,17 @@ export interface LikeState {
   likedByMe: boolean;
 }
 
+export interface PostLikesUpdate {
+  postId: string;
+  likeCount: number;
+}
+
+export function isPostLikesUpdate(value: unknown): value is PostLikesUpdate {
+  if (typeof value !== 'object' || value === null) return false;
+  const update = value as Record<string, unknown>;
+  return typeof update.postId === 'string' && typeof update.likeCount === 'number' && Number.isFinite(update.likeCount);
+}
+
 export const FEED_QUERY_KEY = ['feed'] as const;
 const STUDENT_POSTS_QUERY_KEY = ['posts', 'student'] as const;
 
@@ -90,14 +101,39 @@ export function likersQueryOptions(postId: string) {
 
 const POST_LIST_QUERY_KEYS = [FEED_QUERY_KEY, STUDENT_POSTS_QUERY_KEY, PROMPT_ANSWERS_QUERY_KEY];
 
-async function cacheLikeState(client: QueryClient, postId: string, state: LikeState): Promise<void> {
-  const reread = [...POST_LIST_QUERY_KEYS, likersQueryKey(postId)];
-  await Promise.all(reread.map((queryKey) => client.cancelQueries({ queryKey })));
-  const update = (data: PostPage | undefined): PostPage | undefined =>
+function postLikesUpdater(postId: string, state: { likeCount: number; likedByMe?: boolean }) {
+  return (data: PostPage | undefined): PostPage | undefined =>
     data === undefined
       ? undefined
       : { ...data, items: data.items.map((post) => (post.id === postId ? { ...post, ...state } : post)) };
+}
+
+function cachePostLikes(client: QueryClient, postId: string, state: { likeCount: number; likedByMe?: boolean }): void {
+  const update = postLikesUpdater(postId, state);
   for (const queryKey of POST_LIST_QUERY_KEYS) client.setQueriesData<PostPage>({ queryKey }, update);
+}
+
+export function applyPostLikes(client: QueryClient, update: PostLikesUpdate): void {
+  const setLikes = postLikesUpdater(update.postId, { likeCount: update.likeCount });
+  for (const queryKey of POST_LIST_QUERY_KEYS) {
+    for (const query of client.getQueryCache().findAll({ queryKey })) {
+      if (query.state.fetchStatus !== 'idle') {
+        const reading = query.promise;
+        afterRead(client, query, (settled, failed) => {
+          if ((settled !== reading && !failed) || query.state.fetchStatus !== 'idle') return;
+          client.setQueryData<PostPage>(query.queryKey, setLikes);
+        });
+        continue;
+      }
+      client.setQueryData<PostPage>(query.queryKey, setLikes);
+    }
+  }
+}
+
+async function cacheLikeState(client: QueryClient, postId: string, state: LikeState): Promise<void> {
+  const reread = [...POST_LIST_QUERY_KEYS, likersQueryKey(postId)];
+  await Promise.all(reread.map((queryKey) => client.cancelQueries({ queryKey })));
+  cachePostLikes(client, postId, state);
   for (const queryKey of reread) void client.invalidateQueries({ queryKey });
 }
 
@@ -106,7 +142,11 @@ async function readAgain(client: QueryClient, queryKey: readonly unknown[]): Pro
   await client.invalidateQueries({ queryKey });
 }
 
-function afterRead(client: QueryClient, query: Query<FeedPage>, then: () => void): void {
+function afterRead<T>(
+  client: QueryClient,
+  query: Query<T>,
+  then: (reading: Promise<T> | undefined, failed: boolean) => void,
+): void {
   const unsubscribe = client.getQueryCache().subscribe((event) => {
     if (event.query !== query) return;
     if (event.type === 'removed') {
@@ -115,7 +155,9 @@ function afterRead(client: QueryClient, query: Query<FeedPage>, then: () => void
     }
     if (query.state.fetchStatus === 'idle') {
       unsubscribe();
-      queueMicrotask(then);
+      const reading = query.promise;
+      const failed = query.state.status === 'error';
+      queueMicrotask(() => then(reading, failed));
     }
   });
 }
