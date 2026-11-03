@@ -4,24 +4,15 @@ import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork, type PrismaTx } from '../core/uow';
 import { visiblePostsWhere } from '../feed/post-page';
-import { currentMatchWhere } from '../matching/matching.service';
-import { unreadMessagesWhere } from '../messaging/messaging.service';
-import { readQueueGroups } from '../moderation/groups';
+import { currentMatchWhere, MATCH_WAITING_SELECT, matchWaitingAt } from '../matching/current-match';
+import { unreadMessagesWhere } from '../messaging/unread';
+import { filedBy, readQueueGroups } from '../moderation/groups';
 import { readLivePrompt } from '../prompts/live-prompt';
-import { feedbackReceivedWhere } from '../reviews/reviews.service';
-import { incomingRequestsWhere } from '../social/social.service';
+import { feedbackReceivedWhere } from '../reviews/feedback-received';
+import type { NewDotKey, NewDots } from '../shared/new-dots';
+import { incomingRequestsWhere } from '../social/incoming-requests';
 import { readActiveActor } from '../students/profile-writes';
 import type { OpenedPageDto } from './dto';
-
-export type NewDots = {
-  messages: boolean;
-  match: boolean;
-  friends: boolean;
-  prompts: boolean;
-  feedback: boolean;
-  reports: boolean;
-  feed: boolean;
-};
 
 const OPENED_COLUMNS = {
   messages: 'messagesOpenedAt',
@@ -30,7 +21,7 @@ const OPENED_COLUMNS = {
   prompts: 'promptsOpenedAt',
   reports: 'reportsOpenedAt',
   feed: 'feedOpenedAt',
-} as const;
+} as const satisfies { [Page in Exclude<NewDotKey, 'feedback'>]: `${Page}OpenedAt` };
 
 function newer(time: Date | null | undefined, opened: Date | null): boolean {
   return time !== null && time !== undefined && (opened === null || time > opened);
@@ -55,20 +46,8 @@ async function readNewDots(tx: PrismaTx, actor: Actor): Promise<NewDots> {
   const match = await tx.match.findFirst({
     where: currentMatchWhere(me),
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    select: {
-      status: true, mentorId: true, menteeId: true, createdAt: true,
-      mentorAcceptedAt: true, menteeAcceptedAt: true, review: { select: { id: true } },
-    },
+    select: MATCH_WAITING_SELECT,
   });
-  let matchTime: Date | null = null;
-  if (match !== null) {
-    const mine = match.mentorId === me ? match.mentorAcceptedAt : match.menteeAcceptedAt;
-    if (match.status === 'MATCHED' && mine === null) matchTime = match.createdAt;
-    if (match.status === 'ACCEPTED' && match.menteeId === me && match.review === null) {
-      const times = [match.mentorAcceptedAt, match.menteeAcceptedAt].filter((time) => time !== null);
-      matchTime = times.sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
-    }
-  }
   const request = await tx.friendship.findFirst({
     where: incomingRequestsWhere(me), orderBy: { createdAt: 'desc' }, select: { createdAt: true },
   });
@@ -80,7 +59,7 @@ async function readNewDots(tx: PrismaTx, actor: Actor): Promise<NewDots> {
   if (role === 'PEER_MODERATOR' || role === 'ADMIN') {
     const { visible } = await readQueueGroups(tx, me, role);
     reports = visible.some(([, group]) =>
-      (role === 'ADMIN' || !group.some((row) => row.reporterId === me)) &&
+      (role === 'ADMIN' || !filedBy(group, me)) &&
       group.some((row) => newer(row.createdAt, session.reportsOpenedAt)),
     );
   }
@@ -90,7 +69,7 @@ async function readNewDots(tx: PrismaTx, actor: Actor): Promise<NewDots> {
   });
   return {
     messages: newer(message?.createdAt, session.messagesOpenedAt),
-    match: newer(matchTime, session.matchOpenedAt),
+    match: newer(matchWaitingAt(match, me), session.matchOpenedAt),
     friends: newer(request?.createdAt, session.friendsOpenedAt),
     prompts: live !== null && !live.answeredByMe && newer(live.prompt?.publishedAt, session.promptsOpenedAt),
     feedback: feedback !== null,

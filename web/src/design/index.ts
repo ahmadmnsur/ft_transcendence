@@ -18,8 +18,8 @@ export type { FileDropProps, FileType, StoredFile } from './components/FileDrop'
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
 export { Modal } from './components/Modal';
-export { NewDot } from './components/NewDot';
 export type { ModalProps } from './components/Modal';
+export { NewDot } from './components/NewDot';
 export { Pagination } from './components/Pagination';
 export type { PaginationProps } from './components/Pagination';
 export { PasswordField } from './components/PasswordField';

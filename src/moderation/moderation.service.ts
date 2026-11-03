@@ -11,6 +11,7 @@ import { readActiveActor, readActiveAdmin, readActiveRole } from '../students/pr
 import { closeGroup, openRows } from './group-writes';
 import {
   REPORT_ROW_SELECT,
+  filedBy,
   readQueueGroups,
   readRefs,
   readTargets,
@@ -118,7 +119,7 @@ export class ModerationService {
         items: visible.map(([key, group]): QueueGroup => ({
           target: targetOf(targets, key).view,
           count: group.length,
-          filedByMe: group.some((row) => row.reporterId === me),
+          filedByMe: filedBy(group, me),
           reports: group.map((row) =>
             reporters === null ? toQueueReport(row) : { ...toQueueReport(row), reporter: refOf(reporters, row.reporterId) },
           ),

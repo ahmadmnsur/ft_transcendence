@@ -10,6 +10,7 @@ import type { Prisma } from '../generated/prisma/client';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
 import { acceptedFriendsOf } from './accepted-friends';
+import { incomingRequestsWhere } from './incoming-requests';
 import {
   ALREADY_BLOCKED,
   FRIENDSHIP_EXISTS,
@@ -31,10 +32,6 @@ function friendshipPair(a: string, b: string): Prisma.FriendshipWhereInput {
       { requesterId: b, addresseeId: a },
     ],
   };
-}
-
-export function incomingRequestsWhere(studentId: string): Prisma.FriendshipWhereInput {
-  return { addresseeId: studentId, status: 'PENDING', requester: { removedAt: null } };
 }
 
 const BLOCK_SELECT = {

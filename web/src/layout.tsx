@@ -4,6 +4,7 @@ import type { ErrorComponentProps } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiProtocolError } from './api/client';
 import { logout } from './api/auth';
+import type { NewDots } from './api/new-dots';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from './api/session';
 import { useI18n } from './i18n/context';
 import { languageNames, languages } from './i18n/language';
@@ -18,7 +19,7 @@ import { FriendUpdates } from './social/FriendUpdates';
 import { ReportUpdates } from './moderation/ReportUpdates';
 import { useDisclosure } from './shell/useDisclosure';
 import { NewDotsUpdates } from './newDots/NewDotsUpdates';
-import { useNewDots, type NewDots } from './newDots/useNewDots';
+import { useNewDots } from './newDots/useNewDots';
 
 export const BRAND = '21 Beirut';
 
@@ -199,7 +200,7 @@ function SiteHeader(): React.JSX.Element {
   );
 
   const phoneMenuButton = (
-    <IconButton {...phoneMenu.buttonProps} label={phoneDot ? formatText(copy.newLabel, { label: copy.menu, new: copy.new }) : copy.menu} className="ms-auto md:hidden">
+    <IconButton {...phoneMenu.buttonProps} label={phoneDot ? formatText(copy.newLabel, { label: copy.menu }) : copy.menu} className="ms-auto md:hidden">
       <MenuIcon size={20} />
       {phoneDot ? <NewDot className="absolute end-1 top-1" /> : null}
     </IconButton>

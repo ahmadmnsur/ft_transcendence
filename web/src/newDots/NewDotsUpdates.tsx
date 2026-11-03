@@ -11,13 +11,13 @@ const EVENTS = [
 export function NewDotsUpdates(): null {
   const client = useQueryClient();
   const dots = useNewDots();
-  const any = Object.values(dots).some(Boolean);
+  const anyDot = Object.values(dots).some(Boolean);
   useEffect(() => {
     const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (icon === null) return;
-    icon.href = any ? '/favicon-dot.svg' : '/favicon.svg';
+    icon.href = anyDot ? '/favicon-dot.svg' : '/favicon.svg';
     return () => { icon.href = '/favicon.svg'; };
-  }, [any]);
+  }, [anyDot]);
   useEffect(() => {
     const cleanups = EVENTS.map((event) => subscribe(event, () => readNewDotsAgain(client)));
     return () => {

@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { requestActor } from '../core/session.guard';
+import type { NewDots } from '../shared/new-dots';
 import { OpenedPageDto } from './dto';
-import { NewDotsService, type NewDots } from './new-dots.service';
+import { NewDotsService } from './new-dots.service';
 
 @Controller('me/new-dots')
 export class NewDotsController {

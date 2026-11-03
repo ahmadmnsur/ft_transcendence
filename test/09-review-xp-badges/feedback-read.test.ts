@@ -30,7 +30,6 @@ it('records only the Mentor reading received feedback, for one Match or all, wit
     where: { review: { match: { mentorId: mentor.id } } },
     orderBy: { reviewId: 'asc' }, select: { reviewId: true, readAt: true },
   });
-  harness.recorder.clear();
   const menteeOpened = await harness.post('/api/me/new-dots/opened').set('Cookie', mentee.cookie)
     .send({ page: 'feedback', matchId }).expect(201);
   expect((await feedback()).every((row) => row.readAt === null)).toBe(true);

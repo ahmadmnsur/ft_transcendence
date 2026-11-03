@@ -17,6 +17,10 @@ export const REPORT_ROW_SELECT = {
 
 export type ReportRow = Prisma.ReportGetPayload<{ select: typeof REPORT_ROW_SELECT }>;
 
+export function filedBy(group: readonly ReportRow[], studentId: string): boolean {
+  return group.some((row) => row.reporterId === studentId);
+}
+
 export function targetKey(row: { postId: string | null; reportedStudentId: string | null }): string {
   return row.postId !== null ? `post:${row.postId}` : `student:${row.reportedStudentId}`;
 }

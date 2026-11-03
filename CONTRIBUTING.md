@@ -402,6 +402,12 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
    > refused `prompt_not_live` and writes nothing, and the Prompt-*n+1* answer commits once with
    > +20 and exactly one Knowledge Sharer. The Review-plus-answer overlap above is unchanged.
 
+   > **Feedback read state, 2026-11-03** ([`docs/spec.md`](docs/spec.md) §16.3;
+   > [ADR-0021](docs/adr/0021-new-dots-and-live-updates.md) decision 4;
+   > [#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262)). The category also asserts
+   > that only the Mentor's opening sets `PrivateFeedback.read_at`, for one Match or for all, and
+   > that no response the Mentee receives carries `read_at`: nothing else would show it leaking.
+
 10. **Report integrity, authorization and group serialization** — asserts the two target-specific
     uniqueness rules and Report CHECKs; one winner plus an `already reported` loser for two
     concurrent filings by the same reporter against the same target, with the winning row
@@ -450,6 +456,13 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
     Admin edits emails; and a password is set without the current one only within a fresh Confirm
     with 42. *(Added 2026-10-04 and 2026-10-08; ADR-0016 d1, [`docs/spec.md`](docs/spec.md)
     §16.3.)*
+
+    > **New dots, 2026-11-03** ([`docs/spec.md`](docs/spec.md) §16.3;
+    > [ADR-0021](docs/adr/0021-new-dots-and-live-updates.md) decision 2;
+    > [#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262)). The category also asserts
+    > the dot rule over real sign-ins: Messages has a dot with an unread Direct Message, none after
+    > opening Messages, one again after a newer message, and one after signing out and in again
+    > while only the older message is unread. A dot that kept an old opening would look normal.
 
 **Adding a test outside that list needs an argument.** The rule is *does it fail silently?* —
 anything the compiler or a demo step would catch is not tested. Twelve categories, closed until

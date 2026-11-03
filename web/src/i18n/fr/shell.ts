@@ -5,8 +5,8 @@ export default {
   skipLink: 'Aller au contenu principal',
   pageTitle: '{page} · {brand}',
   header: {
-    new: 'du nouveau',
-    newLabel: '{label}, {new}',
+    newDot: ', du nouveau',
+    newLabel: '{label}, du nouveau',
     navLabel: 'Menu principal',
     menu: 'Menu',
     accountMenu: 'Menu du compte',

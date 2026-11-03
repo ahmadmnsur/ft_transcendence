@@ -17,7 +17,6 @@ it('clears Messages for this sign-in, shows a newer message, and restores an old
   const cookie = [login.headers['set-cookie']].flat().map((value: string) => value.split(';')[0]).join('; ');
   const first = await messaging.send(actor(a.id), recipient.id, 'The first message.');
   harness.clock.stopAt(new Date(first.createdAt));
-  harness.recorder.clear();
 
   const waiting = await harness.get('/api/me/new-dots').set('Cookie', cookie).expect(200);
   expect(waiting.body.data.messages).toBe(true);

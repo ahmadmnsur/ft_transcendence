@@ -1,12 +1,9 @@
 import { IsIn, IsUUID, ValidateBy, ValidateIf } from 'class-validator';
+import { NEW_DOT_KEYS, type NewDotKey } from '../shared/new-dots';
 
-export const OPENED_PAGES = ['messages', 'match', 'friends', 'prompts', 'reports', 'feed', 'feedback'] as const;
-
-export type OpenedPage = (typeof OPENED_PAGES)[number];
-
-function FeedbackMatch(): PropertyDecorator {
+function OnlyWithFeedbackPage(): PropertyDecorator {
   return ValidateBy({
-    name: 'feedbackMatch',
+    name: 'onlyWithFeedbackPage',
     validator: {
       validate(_value: unknown, args): boolean {
         return (args?.object as OpenedPageDto).page === 'feedback';
@@ -16,11 +13,11 @@ function FeedbackMatch(): PropertyDecorator {
 }
 
 export class OpenedPageDto {
-  @IsIn(OPENED_PAGES)
-  page!: OpenedPage;
+  @IsIn(NEW_DOT_KEYS)
+  page!: NewDotKey;
 
   @ValidateIf((_dto, value) => value !== undefined)
   @IsUUID()
-  @FeedbackMatch()
+  @OnlyWithFeedbackPage()
   matchId?: string;
 }

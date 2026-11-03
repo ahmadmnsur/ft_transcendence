@@ -1,23 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { queryOptions, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { apiFetch } from '../api/client';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { NEW_DOT_KEYS, type NewDotKey } from '@shared/new-dots';
+import { NEW_DOTS_QUERY_KEY, newDotsQueryOptions, postOpenedPage, type NewDots } from '../api/new-dots';
 import { SESSION_QUERY_KEY, sessionQueryOptions, type SessionValue } from '../api/session';
 
-export type NewDots = Record<'messages' | 'match' | 'friends' | 'prompts' | 'feedback' | 'reports' | 'feed', boolean>;
-export type OpenedPage = keyof NewDots;
-
-export const NEW_DOTS_QUERY_KEY = ['new-dots'] as const;
-const EMPTY_DOTS: NewDots = {
-  messages: false, match: false, friends: false, prompts: false, feedback: false, reports: false, feed: false,
-};
-
-function dotsQueryOptions(studentId: string | null) {
-  return queryOptions({
-    queryKey: [...NEW_DOTS_QUERY_KEY, studentId],
-    enabled: studentId !== null,
-    queryFn: ({ signal }) => apiFetch<NewDots>('/me/new-dots', { signal }),
-  });
-}
+const EMPTY_DOTS = Object.fromEntries(NEW_DOT_KEYS.map((key) => [key, false])) as NewDots;
 
 export function readNewDotsAgain(client: QueryClient): void {
   void client.invalidateQueries({ queryKey: NEW_DOTS_QUERY_KEY });
@@ -26,18 +13,18 @@ export function readNewDotsAgain(client: QueryClient): void {
 export function useNewDots(): NewDots {
   const { data: session } = useQuery(sessionQueryOptions());
   const studentId = session?.authenticated === true ? session.student.id : null;
-  const { data } = useQuery(dotsQueryOptions(studentId));
+  const { data } = useQuery(newDotsQueryOptions(studentId));
   return studentId === null ? EMPTY_DOTS : data ?? EMPTY_DOTS;
 }
 
-export function useOpenedPage(page: OpenedPage, matchId?: string, enabled = true): void {
+export function useOpenedPage(page: NewDotKey, matchId?: string, enabled = true): void {
   const client = useQueryClient();
   const { data: session } = useQuery(sessionQueryOptions());
   const studentId = session?.authenticated === true ? session.student.id : null;
   const previous = useRef<boolean | undefined>(undefined);
   useEffect(() => {
     if (!enabled || studentId === null) return;
-    const queryKey = dotsQueryOptions(studentId).queryKey;
+    const queryKey = newDotsQueryOptions(studentId).queryKey;
     previous.current = client.getQueryData<NewDots>(queryKey)?.[page];
     let active = true;
     let opening = false;
@@ -55,9 +42,7 @@ export function useOpenedPage(page: OpenedPage, matchId?: string, enabled = true
       }
       opening = true;
       try {
-        const dots = await apiFetch<NewDots>('/me/new-dots/opened', {
-          method: 'POST', body: { page, ...(matchId === undefined ? {} : { matchId }) },
-        });
+        const dots = await postOpenedPage(page, matchId);
         if (!current()) return;
         await client.cancelQueries({ queryKey, exact: true });
         if (!current()) return;

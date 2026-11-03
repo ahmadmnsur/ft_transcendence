@@ -5,7 +5,7 @@ export function NewDot({ className = 'ms-2' }: { className?: string }): React.JS
   return (
     <>
       <span aria-hidden="true" className={`inline-block size-2 shrink-0 rounded-full bg-danger-500 align-middle ${className}`} />
-      <span className="sr-only"> {t.shell.header.new}</span>
+      <span className="sr-only">{t.shell.header.newDot}</span>
     </>
   );
 }

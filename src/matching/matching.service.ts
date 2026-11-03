@@ -3,12 +3,12 @@ import type { Actor } from '../core/actor';
 import { ApiError } from '../core/errors';
 import { RealtimePublisher } from '../core/realtime-publisher';
 import { UnitOfWork } from '../core/uow';
-import type { Prisma } from '../generated/prisma/client';
 import { evaluateStreaksAtClose } from '../gamification/streaks';
 import { readReview } from '../reviews/read-review';
 import { MISSIONS, STANDING_STATUSES, isInProgress } from '../shared/matches';
 import { readActiveActor, readActiveAdmin } from '../students/profile-writes';
 import { readCandidates, readCandidatesByIds, unmatchedIn } from './candidates';
+import { currentMatchWhere } from './current-match';
 import { orientPair, runMatcher, type UnorderedPair } from './engine';
 import {
   MATCH_SELECT,
@@ -61,14 +61,6 @@ const PARTICIPANT_SELECT = {
   mentorAcceptedAt: true,
   menteeAcceptedAt: true,
 } as const;
-
-export function currentMatchWhere(studentId: string): Prisma.MatchWhereInput {
-  return {
-    round: { closedAt: null },
-    status: { in: [...STANDING_STATUSES] },
-    OR: [{ mentorId: studentId }, { menteeId: studentId }],
-  };
-}
 
 @Injectable()
 export class MatchingService {

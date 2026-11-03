@@ -10,14 +10,11 @@ import { PAGING } from '../shared/limits';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
 import { dmUnavailable } from './refusals';
+import { unreadMessagesWhere } from './unread';
 import type { DirectMessageView, PeerThread, ThreadPage, ThreadView } from './views';
 
 
 const MESSAGES_PER_PAGE = PAGING.maxPageSize;
-
-export function unreadMessagesWhere(studentId: string): Prisma.DirectMessageWhereInput {
-  return { recipientId: studentId, readAt: null };
-}
 
 type MessageRow = { id: string; sender_id: string; recipient_id: string; body: string; created_at: Date };
 
