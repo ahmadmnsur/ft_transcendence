@@ -5,7 +5,7 @@ export type RevokeTarget = { studentId: string } | { sessionHash: string };
 export abstract class RealtimePublisher {
   abstract postCreated(item: object): void;
 
-  abstract postLikes(authorId: string, postId: string, likeCount: number): void;
+  abstract postLikes(postId: string, likeCount: number): void;
 
   abstract roundOpened(): void;
 

@@ -13,8 +13,8 @@ export class RecordingRealtimePublisher extends RealtimePublisher {
     this.record('postCreated', item);
   }
 
-  postLikes(authorId: string, postId: string, likeCount: number): void {
-    this.record('postLikes', authorId, postId, likeCount);
+  postLikes(postId: string, likeCount: number): void {
+    this.record('postLikes', postId, likeCount);
   }
 
   roundOpened(): void {

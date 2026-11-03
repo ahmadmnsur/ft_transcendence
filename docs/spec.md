@@ -1185,7 +1185,7 @@ harness bind a no-op or a recording implementation.
 
 > **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
 > the port also has `friendsChanged(studentIds)`, `matchChanged(studentIds)` and
-> `postLikes(authorId, postId, likeCount)` (§7.4). Services queue them with `ctx.afterCommit` like
+> `postLikes(postId, likeCount)` (§7.4). Services queue them with `ctx.afterCommit` like
 > the other events. `post:likes` updates a cached count, extending "an invalidation or an insert"
 > above; a reload recovers the count too. For these events, every Student id used for a room comes
 > from a row read in the transaction or the actor's own Student id; the payload's `postId` comes
@@ -2590,9 +2590,9 @@ nothing — no insert, no delete.
 > **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
 > "no event" in "No XP, no event, not reportable" above no longer holds.
 > `POST /api/posts/:id/like` and `DELETE /api/posts/:id/like` send `post:likes { postId, likeCount }`
-> to `student:<authorId>` only after commit, with the count the transaction counted (§7.4).
-> A Like on one's own Post sends it too, so the author's other tabs agree (ADR-0014 d5). A repeated
-> Like or unlike that writes nothing sends nothing, as a repeated accept (§8.5). A removed Post
+> to `feed` after commit, with the count the transaction counted (§7.4).
+> A Like on one's own Post sends it too, so every tab agrees (ADR-0014 d5). A repeated Like or
+> unlike that writes nothing sends nothing, as a repeated accept (§8.5). A removed Post
 > still answers `post_unavailable`, writes nothing and sends nothing. No XP and not reportable
 > still hold.
 
@@ -2807,13 +2807,13 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > | --- | --- | --- | --- | --- |
 > | `friends:changed` | `student:<id>` of both Students of the request or Friendship | `{}` | a request sent, accepted, declined or cancelled; a Friendship ended | read again `GET /api/friends` and `GET /api/friends/requests` |
 > | `match:changed` | `student:<id>` of the Match's Mentor and Mentee | `{}` | an Accept that writes, a Decline, a Review (after its `post:created`) | read again the Student's Matches (current, history, one Match) and `/feedback` |
-> | `post:likes` | `student:<authorId>` only | `{ postId, likeCount }` | `POST` or `DELETE /api/posts/:id/like` that changes a row, including a self-Like; a repeat that writes nothing sends nothing | set `likeCount` on that Post in loaded feed pages, the author's profile Posts and a Prompt's answers; read nothing |
+> | `post:likes` | `feed` | `{ postId, likeCount }` | `POST` or `DELETE /api/posts/:id/like` that changes a row, including a self-Like; a repeat that writes nothing sends nothing | set `likeCount` on that Post in loaded feed pages, profile Posts and a Prompt's answers; read nothing |
 >
 > Only what is loaded reacts: invalidation refetches queries on screen and marks the rest stale,
 > so a page not on screen reads on its next visit. A missed event costs nothing: after a
 > reconnect the client already reads its queries again (§7.5). `post:likes` touches neither
-> `likedByMe` nor the likers list. Nobody else's count changes live. The existing events, payloads
-> and rooms are unchanged.
+> `likedByMe` nor the likers list. Every Student with the Post loaded sees its count change live.
+> The existing events, payloads and rooms are unchanged.
 
 ### 7.5 Lifecycle and client retry (M27)
 
@@ -3472,10 +3472,11 @@ Revocable (delete the row), attributed, readable by every signed-in Student, sel
 XP, not reportable, no event (§6.9).
 
 > **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
-> "no event" above no longer holds: only the Post's author hears `post:likes { postId, likeCount }`
-> after a Like or unlike commits (§6.9, §7.4). The client sets only that Post's `likeCount` where
-> it is loaded and reads nothing. `likedByMe` and the likers list are untouched; nobody else's
-> count changes live.
+> "no event" above no longer holds: every signed-in Student with the Post loaded sees its count
+> change through `post:likes { postId, likeCount }` after a Like or unlike commits (§6.9, §7.4).
+> The client changes only `likeCount` and reads nothing; each viewer keeps their own `likedByMe`,
+> and the likers list is untouched. Nothing new is revealed: counts are already readable by
+> every signed-in Student.
 
 ---
 

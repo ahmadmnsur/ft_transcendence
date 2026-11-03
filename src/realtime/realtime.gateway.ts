@@ -289,8 +289,8 @@ export class RealtimeGateway
     this.publish([FEED_ROOM], 'post:created', item);
   }
 
-  override postLikes(authorId: string, postId: string, likeCount: number): void {
-    this.publish([studentRoom(authorId)], 'post:likes', { postId, likeCount });
+  override postLikes(postId: string, likeCount: number): void {
+    this.publish([FEED_ROOM], 'post:likes', { postId, likeCount });
   }
 
   override roundOpened(): void {
