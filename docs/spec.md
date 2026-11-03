@@ -2471,7 +2471,8 @@ two changes cannot both go through; a sign-in racing it is deleted or refused (�
 > **`POST /api/me/new-dots/opened`** — session · `{ page }`, `page` one of `feed`, `messages`,
 > `match`, `friends`, `prompts`, `reports` or `feedback`, and with `feedback` only, an
 > optional `matchId` · Validation: any other key or value → `validation_failed` · Persist: that
-> page's `*_opened_at` on the caller's own `Session` row = now; `feedback` has no column and sets
+> page's `*_opened_at` on the caller's own `Session` row = now, or the time of the newest thing
+> waiting on that page if that is later, so nothing the opening saw shows a dot; `feedback` has no column and sets
 > `PrivateFeedback.read_at = now` on every unread Private Feedback about the caller, or with
 > `matchId` on that Match's only, where the caller is its Mentor · Result: the same object as the
 > `GET` · Events `new-dots:changed {}` to that sign-in's own sockets; for `feedback`, to the

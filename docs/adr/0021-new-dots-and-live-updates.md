@@ -123,7 +123,8 @@ Unaffected:
    > **Six, 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); decision 3's note of the same day)** *(uncommitted)*: the feed
    > joins, as `feed_opened_at`, so `Session` holds six nullable timestamps: Feed, Messages, Match,
    > Friends, Prompts and Reports. Each is set to the server's time when this sign-in opens its
-   > page. No response carries any of them, nor `read_at`.
+   > page, or to the time of the newest thing waiting there if that is later, so nothing the
+   > opening saw shows a dot. No response carries any of them, nor `read_at`.
 
 5. **More pages change live, and the new events say "read again".** Each is sent after its commit
    (`docs/spec.md` §3.7), and the page reads again over HTTP, through the same checks as any read:
