@@ -52,7 +52,7 @@ it('a duplicate answer creates one immutable Post and a retry keeps the slot use
   const answers = await harness.get(path).set('Cookie', admin.cookie);
   expect(answers.body.data.items).toHaveLength(1);
   expect(answers.body.data.items[0]).toMatchObject({ body: 'I learned to listen.', author: { id: student.id } });
-  expect(harness.recorder.events.map((event) => event.event)).toEqual(['postCreated']);
+  expect(harness.recorder.events.map((event) => event.event)).toEqual(['postCreated', 'newDotsChanged']);
 });
 
 it.each(['answer', 'publication'] as const)('%s first: supersession preserves history and refuses later answers', async (first) => {
@@ -70,7 +70,7 @@ it.each(['answer', 'publication'] as const)('%s first: supersession preserves hi
   expect(history.body.data.items).toHaveLength(first === 'answer' ? 1 : 0);
 });
 
-it('concurrent duplicate answers produce one Post and one event', async () => {
+it('concurrent duplicate answers produce one Post and send each event once', async () => {
   const admin = await createTestStaff(harness.app, 'ADMIN');
   const student = await createTestAccount(harness.app);
   const prompt = await harness.post('/api/admin/prompts').set('Cookie', admin.cookie).send({ question: 'One reflection?' });
@@ -89,7 +89,7 @@ it('concurrent duplicate answers produce one Post and one event', async () => {
   expect((await b).body).toMatchObject({ ok: false, error: { code: 'already_answered' } });
   expect((await harness.get(path).set('Cookie', student.cookie)).body.data.items).toHaveLength(1);
   expect((await harness.get('/api/prompts/live').set('Cookie', student.cookie)).body.data.answeredByMe).toBe(true);
-  expect(harness.recorder.events.map((event) => event.event)).toEqual(['postCreated']);
+  expect(harness.recorder.events.map((event) => event.event)).toEqual(['postCreated', 'newDotsChanged']);
 });
 
 it.each(['answer', 'publication'] as const)('overlapping publication and answer, %s released first: every success fits one serial order', async (first) => {
@@ -119,8 +119,8 @@ it.each(['answer', 'publication'] as const)('overlapping publication and answer,
   expect(harness.recorder.events.map((event) => event.event)).toEqual(
     result.body.ok
       ? first === 'answer'
-        ? ['postCreated', 'promptPublished']
-        : ['promptPublished', 'postCreated']
+        ? ['postCreated', 'newDotsChanged', 'promptPublished']
+        : ['promptPublished', 'postCreated', 'newDotsChanged']
       : ['promptPublished'],
   );
   const later = await harness.post(path).set('Cookie', student.cookie).send({ body: 'After supersession.' });

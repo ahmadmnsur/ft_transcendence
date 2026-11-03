@@ -1,8 +1,10 @@
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { ThreadsCard } from '../messages/ThreadsCard';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function MessagesPage(): React.JSX.Element {
+  useOpenedPage('messages');
   const { t } = useI18n();
   return (
     <>

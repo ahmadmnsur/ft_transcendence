@@ -104,10 +104,16 @@ model Student {
 }
 
 model Session {
-  id        String   @id
-  studentId String   @map("student_id") @db.Uuid
-  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id               String    @id
+  studentId        String    @map("student_id") @db.Uuid
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  messagesOpenedAt DateTime? @map("messages_opened_at") @db.Timestamptz(3)
+  matchOpenedAt    DateTime? @map("match_opened_at") @db.Timestamptz(3)
+  friendsOpenedAt  DateTime? @map("friends_opened_at") @db.Timestamptz(3)
+  promptsOpenedAt  DateTime? @map("prompts_opened_at") @db.Timestamptz(3)
+  reportsOpenedAt  DateTime? @map("reports_opened_at") @db.Timestamptz(3)
+  feedOpenedAt     DateTime? @map("feed_opened_at") @db.Timestamptz(3)
+  student          Student   @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([studentId])
 }
@@ -282,13 +288,14 @@ model Like {
 }
 
 model PrivateFeedback {
-  id                String   @id @default(uuid(7)) @db.Uuid
-  reviewId          String   @unique @map("review_id") @db.Uuid
-  answerUsefulness  String   @map("answer_usefulness")
-  answerExplanation String   @map("answer_explanation")
-  rating            Int?     @db.SmallInt
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  review            Review   @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id                String    @id @default(uuid(7)) @db.Uuid
+  reviewId          String    @unique @map("review_id") @db.Uuid
+  answerUsefulness  String    @map("answer_usefulness")
+  answerExplanation String    @map("answer_explanation")
+  rating            Int?      @db.SmallInt
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  readAt            DateTime? @map("read_at") @db.Timestamptz(3)
+  review            Review    @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }
 
 model Report {

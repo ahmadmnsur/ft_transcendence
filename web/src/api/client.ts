@@ -54,6 +54,7 @@ export function parseEnvelope<T>(status: number, body: unknown): T {
 export interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
+  signal?: AbortSignal;
 }
 
 export async function notifyUnauthorized(): Promise<void> {
@@ -77,6 +78,7 @@ export async function apiFetch<T>(path: string, options: ApiRequestOptions = {})
     headers,
     body: payload,
     credentials: 'same-origin',
+    signal: options.signal,
   });
   if (response.status === 401 && path !== '/session') {
     await notifyUnauthorized();

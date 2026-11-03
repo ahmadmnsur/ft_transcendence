@@ -190,6 +190,14 @@ The draft texts are [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)
    > signal says nothing about a Student who is not writing to you. ADR-0003 d9's note of the
    > same day puts it on the socket, and the Privacy Policy's *Who can see what* gains the row.
 
+   > **Two new rows, 2026-11-03 ([New dots: a dot on each link where something waits for you](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 4)** *(uncommitted)*:
+   > *Whether Private Feedback was read* (`read_at`) — nobody. It is set when the Mentor opens
+   > `/feedback` or that Match's page and only turns off the Mentor's own New dot; no response
+   > carries it, so the Mentee who wrote it is never shown it, the same promise as the read state
+   > of a Direct Message. *When a sign-in last opened each page that can show a New dot* — nobody:
+   > it only decides that sign-in's own dots, and no response carries it. The Privacy Policy's
+   > *Sign-in sessions* section and its Private Feedback line say both, in three languages.
+
    **Match history is the row with product weight.** The proposal's `:55` puts "a running record of
    students helped and students learned from" on the profile, but that is the Learning Progress view,
    Version 2 at `:233` — and naming the Mentor on a Takeaway Post would make every pairing public

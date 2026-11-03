@@ -99,6 +99,11 @@ ceux d'un ancien étudiant. Cette liste ne figure jamais sur un profil, et les n
 jamais l'objet d'une moyenne ni d'un score combiné. Le Point clé public contient les mots que
 vous avez confirmés, qui vous sont attribués, sans champ nommant votre Mentor.
 
+Quand vous ouvrez votre page de Retours privés, 21 Beirut enregistre cet instant comme le moment où
+vous avez lu tous les Retours privés non lus à votre sujet, y compris ceux des pages suivantes.
+Ouvrir la page d'un Match fait de même pour son Retour privé non lu à votre sujet. Le Mentoré qui
+l'a écrit ne voit jamais quand vous l'avez lu.
+
 **Votre activité dans la communauté**
 
 - vos Publications : Points clés publics et réponses aux Sujets de réflexion. Une réponse est
@@ -147,10 +152,14 @@ retiré la Publication, les avez classés sans suite ou marqués comme traités,
 **Les sessions de connexion**
 
 Un enregistrement pour chaque navigateur sur lequel vous êtes connecté : à qui il appartient
-et quand il expire.
+et quand il expire, ainsi que votre dernière ouverture de chaque page pouvant afficher une
+Pastille : le fil, les Messages directs, le Match, les Amis, les Sujets de réflexion et, pour les
+Modérateurs étudiants et les Admins, la file des Signalements. Ces ouvertures disparaissent avec
+la session à sa fin.
 
 Les autres enregistrements portent aussi leur date de création, et une Amitié sa date
-d'acceptation ; une session de connexion n'enregistre que sa date d'expiration.
+d'acceptation ; une session de connexion n'enregistre que sa date d'expiration et ces ouvertures
+de pages.
 
 **Ce que 21 Beirut n'enregistre pas : votre dernière présence en ligne.** Vos Amis peuvent voir
 si vous êtes en ligne *maintenant*. Cet état ne vit que dans la mémoire du serveur en cours
@@ -206,7 +215,7 @@ votre adresse e-mail sert à vous connecter.
 | Une demande d'ami envoyée ou reçue, en attente de réponse | vous et l'autre Étudiant uniquement |
 | Vos Matchs : avec qui vous avez été associé, leur statut, le Score de compatibilité et son explication, la Mission suggérée, lequel de vous a accepté et, pour les Admins, lequel a refusé | vous deux et les Admins. Aucun profil ne liste les Matchs de quiconque, et un Point clé public n'a aucun champ nommant le Mentor |
 | Vos Acquis d'apprentissage et votre Justificatif | les deux Étudiants de ce Match et les Admins |
-| Le Retour privé, y compris sa note | le Mentor concerné, les Admins et vous, son auteur. Il **n'est pas anonyme** : le Mentor voit qu'il vient de vous |
+| Le Retour privé, y compris sa note | le Mentor concerné, les Admins et vous, son auteur. Il **n'est pas anonyme** : le Mentor voit qu'il vient de vous. Vous ne voyez jamais si le Mentor l'a lu. |
 | Les Messages directs | uniquement les deux Étudiants de la conversation — ni les Admins ni les Modérateurs étudiants. L'expéditeur ne voit jamais si vous avez lu un message |
 | Vos Blocages | vous uniquement. L'autre Étudiant n'est pas averti, mais peut remarquer qu'il ne peut plus vous envoyer de message ou de demande d'ami, ni avoir de Match avec vous |
 | Un Signalement que vous déposez | les Admins, qui voient que vous l'avez déposé, sauf si le groupe de Signalements les concerne ou concerne leur Publication. Les Modérateurs étudiants, qui examinent les Publications signalées, ne voient jamais qui a déposé un Signalement. L'Étudiant que vous signalez, ou dont vous signalez la Publication, n'est jamais averti |

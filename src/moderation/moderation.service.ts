@@ -11,6 +11,8 @@ import { readActiveActor, readActiveAdmin, readActiveRole } from '../students/pr
 import { closeGroup, openRows } from './group-writes';
 import {
   REPORT_ROW_SELECT,
+  filedBy,
+  readQueueGroups,
   readRefs,
   readTargets,
   refOf,
@@ -111,38 +113,13 @@ export class ModerationService {
     const admin = role === 'ADMIN';
     const me = actor.studentId;
     return this.uow.readOnly(async (tx) => {
-      const rows = await tx.report.findMany({
-        where: admin ? { state: 'OPEN' } : { state: 'OPEN', postId: { not: null } },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        select: REPORT_ROW_SELECT,
-      });
-      const groups = new Map<string, ReportRow[]>();
-      for (const row of rows) {
-        const key = targetKey(row);
-        const group = groups.get(key);
-        if (group === undefined) groups.set(key, [row]);
-        else group.push(row);
-      }
-      const targets = await readTargets(tx, rows);
-      const blocked = new Set<string>();
-      if (!admin) {
-        const blocks = await tx.block.findMany({
-          where: { OR: [{ blockerId: me }, { blockedId: me }] },
-          select: { blockerId: true, blockedId: true },
-        });
-        for (const block of blocks) blocked.add(block.blockerId === me ? block.blockedId : block.blockerId);
-      }
-      const visible = [...groups].filter(([key, group]) => {
-        const target = targetOf(targets, key);
-        const parties = [target.subjectId, ...group.map((row) => row.reporterId)];
-        return !target.postRemoved && target.subjectId !== me && !parties.some((id) => blocked.has(id));
-      });
+      const { visible, targets } = await readQueueGroups(tx, me, role);
       const reporters = admin ? await readRefs(tx, visible.flatMap(([, group]) => group.map((row) => row.reporterId))) : null;
       return {
         items: visible.map(([key, group]): QueueGroup => ({
           target: targetOf(targets, key).view,
           count: group.length,
-          filedByMe: group.some((row) => row.reporterId === me),
+          filedByMe: filedBy(group, me),
           reports: group.map((row) =>
             reporters === null ? toQueueReport(row) : { ...toQueueReport(row), reporter: refOf(reporters, row.reporterId) },
           ),

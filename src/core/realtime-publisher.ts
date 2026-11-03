@@ -26,6 +26,8 @@ export abstract class RealtimePublisher {
 
   abstract friendsChanged(studentIds: readonly string[]): void;
 
+  abstract newDotsChanged(target: RevokeTarget): void;
+
   abstract dmMessage(senderId: string, recipientId: string, message: object): void;
 
   abstract presenceUpdate(friendIds: readonly string[], studentId: string, online: boolean): void;
@@ -46,6 +48,7 @@ export class NoopRealtimePublisher extends RealtimePublisher {
   matchReady(): void {}
   matchChanged(): void {}
   friendsChanged(): void {}
+  newDotsChanged(): void {}
   dmMessage(): void {}
   presenceUpdate(): void {}
   revokeSessions(): void {}

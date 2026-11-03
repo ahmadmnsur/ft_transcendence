@@ -10,6 +10,7 @@ import type { Prisma } from '../generated/prisma/client';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
 import { acceptedFriendsOf } from './accepted-friends';
+import { incomingRequestsWhere } from './incoming-requests';
 import {
   ALREADY_BLOCKED,
   FRIENDSHIP_EXISTS,
@@ -85,7 +86,7 @@ export class SocialService {
   async listRequests(actor: Actor): Promise<FriendRequestLists> {
     return this.uow.readOnly(async (tx) => {
       const incoming = await tx.friendship.findMany({
-        where: { addresseeId: actor.studentId, status: 'PENDING', requester: { removedAt: null } },
+        where: incomingRequestsWhere(actor.studentId),
         orderBy: REQUEST_ORDER,
         select: REQUEST_SELECT,
       });

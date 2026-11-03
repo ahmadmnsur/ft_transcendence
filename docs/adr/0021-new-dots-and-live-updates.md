@@ -94,9 +94,22 @@ Unaffected:
    Each dot counts exactly what its page shows, with the page's own filters for Removed Students,
    Blocks and role. Nothing about XP, Levels, Badges, Likes or the Leaderboard has a dot.
 
-   > **Reopened 2026-11-03 by Kamel ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262))** *(uncommitted)*:
+   > **Reopened 2026-11-03 by Kamel ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262))** *(uncommitted)*, **landed on `main` at `20057b3`**:
    > he wants a New dot when one of your own Posts gets a Like. Where it shows and what clears it
    > are settled when #262 starts; until then the sentence above holds.
+
+   > **Settled 2026-11-03 by Kamel ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262))** *(uncommitted)*: the table gains a
+   > seventh row. **Feed**: a Like by another Student on one of your Posts that is not removed;
+   > opening `/` clears it. Your own Like never counts. Likes have no filter for Removed Students or
+   > Blocks, like the like count and the list of who liked, so the dot has none either. A Like is
+   > never handled, so a sign-in that has not opened the feed shows it whenever any Like waits; a
+   > sign-in lands on `/`, which opens it at once. "Nothing about … Likes … has a dot" no longer
+   > holds for Likes on your own Posts; XP, Levels, Badges and the Leaderboard still have none.
+
+   > **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262), on review)** *(uncommitted)*: your own Report never lights your own dot, as your own
+   > Like does not. An Admin's queue still shows a group holding their own Report, but only Reports
+   > filed by someone else turn the dot on; a Peer Moderator cannot act on such a group, so it has
+   > none.
 
 4. **The openings live on the `Session` row; Private Feedback carries its own `read_at`.** Five
    nullable timestamps on `Session`, one per page a sign-in opens: Messages, Match, Friends,
@@ -106,6 +119,12 @@ Unaffected:
    thread opens. It feeds the Mentor's dot and nothing else. No response carries it, so the Mentee
    who wrote the feedback is never shown whether it was read, the promise the Privacy Policy
    already makes for Direct Messages.
+
+   > **Six, 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); decision 3's note of the same day)** *(uncommitted)*: the feed
+   > joins, as `feed_opened_at`, so `Session` holds six nullable timestamps: Feed, Messages, Match,
+   > Friends, Prompts and Reports. Each is set to the server's time when this sign-in opens its
+   > page, or to the time of the newest thing waiting there if that is later, so nothing the
+   > opening saw shows a dot. No response carries any of them, nor `read_at`.
 
 5. **More pages change live, and the new events say "read again".** Each is sent after its commit
    (`docs/spec.md` §3.7), and the page reads again over HTTP, through the same checks as any read:
@@ -123,16 +142,26 @@ Unaffected:
    only, after a Like is given or taken back. A Prompt's page takes its new answers from the
    existing `post:created`. No event carries a Report, a role or Admin data, as before.
 
-   > **Changed 2026-11-03 by Kamel ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+   > **Changed 2026-11-03 by Kamel ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
    > `post:likes { postId, likeCount }` now goes to `feed`, so every Student with the Post loaded
    > sees its count change. The payload names no one. Counts were already readable by every
    > signed-in Student. The cost is one small message to every signed-in socket per Like.
 
-   > **Changed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: one more event, `session:changed {}`,
+   > **Changed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: one more event, `session:changed {}`,
    > goes to a Student's own `student:<id>` room after a role change that changes their role
    > commits. Their open pages read the session again, a page the new role cannot open goes to the
    > feed, and the header's links follow. It carries no role. `reports:changed` skips the Student a
    > Report is about (the reported Student, or the reported Post's author), staff or not.
+
+   > **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); decision 3's note of the same day)** *(uncommitted)*:
+   > `new-dots:changed {}` has more senders. After a Like is given or taken back by a Student
+   > who is not the Post's author, and the write changed a row, it also goes to the author's own
+   > `student:<id>` room, so their Feed dot reads again. A self-Like sends none. `post:likes` is
+   > unchanged. So that a thing handled on one sign-in leaves no dot on another (decision 2), it
+   > also goes to the Student's own room after a thread read or a Private Feedback opening that
+   > marks any, and after their Prompt answer. An opening of any other page still reaches that
+   > sign-in's own sockets only. Every page also reads its dots again on `post:removed`, which a
+   > removal already sends to `feed`, so no message goes to the reported Post's author alone.
 
 6. **Peer Moderators and Admins share a fourth room, `staff`, and a role change moves a Student's
    connections at once.** A socket joins `staff` at admission when its Student's role is
@@ -140,7 +169,7 @@ Unaffected:
    commits the server moves that Student's open sockets into or out of `staff`. A demoted Peer
    Moderator stops hearing the queue without reconnecting.
 
-   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: the demoted person's open page also follows at once,
+   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: the demoted person's open page also follows at once,
    > through `session:changed` (decision 5's note of the same day).
 
 7. **What stays silent.** A Block, including the Friendship it deletes (`docs/spec.md` §11.2); the
@@ -148,7 +177,7 @@ Unaffected:
    the sign-out it already causes, including a Match it ends. Each would tell someone what the
    records promise they are not told.
 
-   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: the reported Student is kept silent by
+   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: the reported Student is kept silent by
    > `reports:changed` skipping them. A reporter who is staff hears it and sees their own Report's
    > group (ADR-0011 decision 9's note of that day); the outcome stays silent for every other
    > reporter.
@@ -185,7 +214,7 @@ Unaffected:
 - **Live Likes for everyone**: every Like would go to every signed-in Student, for a number. Only
   the author hears their own.
 
-  > **Taken 2026-11-03 by Kamel ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*: see decision 5's
+  > **Taken 2026-11-03 by Kamel ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**: see decision 5's
   > note.
 
 ## Consequences
@@ -194,19 +223,22 @@ Unaffected:
   `Session` row gains five columns and `PrivateFeedback` one, the *Sign-in sessions* section and
   the Private Feedback line change in three languages, and the PR passes the schema gate. Kamel
   writes it, so Ahmad reviews it, and he also signs off the legal pages (ADR-0018 d14).
+
+  > **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262))** *(uncommitted)*: six columns, not five (decision 4's note
+  > of the same day).
 - **Each new event costs one HTTP read per page on screen that reacts to it**, and the dots read
   again on every event that can change one. A page not on screen reads on its next visit.
 - **Staff members learn when the queue changes**, a Peer Moderator included when a Report names
   them, though never what changed and never a Report about themselves (ADR-0011 d7).
 
-  > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: a staff member a Report names, as the reported
+  > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: a staff member a Report names, as the reported
   > Student or the reported Post's author, no longer hears it (decision 5's note of the same day).
 - **Three assertions join the suite** (ADR-0016 d1): in category 5, a `STUDENT` socket never hears
   `reports:changed` and a demoted Peer Moderator stops hearing it; in category 12, the dot rule
   across an opening, a new Direct Message and a new sign-in; in category 9, the Mentee is never
   shown `read_at`. Everything else shows on screen when it goes wrong.
 
-  > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: category 5's assertion also covers the demoted
+  > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: category 5's assertion also covers the demoted
   > socket's one `session:changed` and a Report about a staff member sending them no
   > `reports:changed`. Category 10's filer assertions follow ADR-0011 decision 9's note of that day.
 - **The seed does not change.** The demo Student already has two unread Direct Messages and two

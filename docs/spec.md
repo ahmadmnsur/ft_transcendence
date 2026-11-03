@@ -362,7 +362,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0018 | Pages describe the model as built; two kinds of copy, the team's (Supabase, Frankfurt) and a local one (d1's note of 2026-10-11); one cookie; the browser loads nothing from third parties and never contacts Supabase (Sign in with 42 the one chosen exception); logs clean and capped, the team project's `postgres` role with four log settings (d6's note of 2026-10-11); throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes (a fifth, the landing page at `/`, since d12's note of 2026-10-25), footer everywhere; acceptance checkbox validated, not stored, on the 42 sign-up form too; Removal on request only, keeping the hash and the 42 account number; 42 data minimisation; 42's account `id` in `Student.forty_two_id` as the only key; recovery through 42 only; Privacy Policy moves with personal data. |
 | ADR-0019 | Supabase is three stores and nothing more: Postgres as the database, Storage for the two buckets, Auth as the place each password is kept and checked. The browser never talks to Supabase; PeerConnect keeps its session, Prisma, Socket.IO and Sign in with 42. One team project in Frankfurt, which Kamel owns and keeps available. |
 | ADR-0020 | Multi-language (English, French, Arabic) and right-to-left (Arabic) claimed; WCAG stays out. Every text the SPA shows or gives to a screen reader is translated in the SPA; names, text for developers, the seed's text and what the browser or 42 draws are not; the API keeps its English `message` and `"Former student"`, which the SPA never shows. A typed dictionary over `Intl`, no package; `tsc -b` refuses a missing text, plural form or placeholder; English is the fallback. Every value isolated; numbers, dates and lists by `Intl` with `en-GB`, `fr` and `ar-u-nu-arab`. First visit from the browser's languages; the choice in `localStorage` only when picked; switcher in the shared header on every route. Flow-relative classes only, the build refusing a left or right class; tables and the chart mirror; arrows flip. A bundled Noto Sans Arabic for Arabic characters. Legal pages English until translated once, the English canonical, one date for three versions. Each slice ships its text in three languages (`CONTRIBUTING.md` → *Text ships in three languages*). |
-| ADR-0021 | New dots: a red dot after a link's text, no number, when something waits on that page and is newer than this sign-in's last opening of it; menus and the tab icon show one too. Openings on five `Session` columns; `PrivateFeedback.read_at`, never shown to its author. Events say "read again", except `post:removed { postId }` and `post:likes { postId, likeCount }` to `feed` (d5's note of 2026-11-03) *(uncommitted)*; a `staff` room that follows role changes. A dot for Likes on your own Post is reopened for #262 (d3's note of 2026-11-03) *(uncommitted)*. Blocks, Reports' parties and sanctions stay silent; not the notification system. Built by #260, #261, #262. |
+| ADR-0021 | New dots: a red dot after a link's text, no number, when something waits on that page and is newer than this sign-in's last opening of it; menus and the tab icon show one too. Openings on five `Session` columns, six since d4's note of 2026-11-03 *(uncommitted)*; `PrivateFeedback.read_at`, never shown to its author. Events say "read again", except `post:removed { postId }` and `post:likes { postId, likeCount }` to `feed` (d5's note of 2026-11-03) *(uncommitted)*, **landed on `main` at `20057b3`**; a `staff` room that follows role changes. A dot for Likes on your own Post is reopened for #262 (d3's note of 2026-11-03) *(uncommitted)*, **landed on `main` at `20057b3`**, and settled: it shows on the feed's link, and opening `/` clears it (d3's second note of 2026-11-03) *(uncommitted)*. Blocks, Reports' parties and sanctions stay silent; not the notification system. Built by #260, #261, #262. |
 | Map #1 | Stack: NestJS, PostgreSQL, Prisma, socket.io, React, Tailwind, TanStack, Recharts, Vitest, Docker Compose. Vertical slices DB-through-UI. |
 | Map #85 | Supabase provides the database, the file storage and the password check; Socket.IO stays; `make up` on any machine serves `https://localhost:8443`; hosting comes later. |
 | Map #139 | PeerConnect in English, French and Arabic; Hussein owns both modules; Skill names stay English; the database stores nothing per language; switching changes language and direction at once, without a reload. |
@@ -727,6 +727,20 @@ included (ADR-0020 d6, §3.5.5).
 > Sign in and Sign up, the current page marked, then the theme switch, and closes like the signed-in
 > one. From `md` the line is unchanged: Sign in, Sign up, the theme button and the language switcher.
 
+> **New dots, 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decisions 1–3)** *(uncommitted)*: a link in the header shows a
+> New dot when something waits on its page and is newer than this sign-in's last opening of it:
+> the feed (another Student's Like on one of your Posts), Match, Reflection Prompts, Direct
+> Messages, Friends, and *Moderation* or *Admin tools* (a Report you can act on); in the account
+> menu, Private Feedback. Students never has one. The account menu button shows one when Private
+> Feedback does, the phone Menu button when any link in its panel does, and the `/admin` page's
+> Reports entry when the Admin's link does. The browser tab's icon swaps `favicon.svg` for
+> `favicon-dot.svg` while any link has one. These pages open their dot when they show, and again
+> when it comes back while they are on screen: `/`, `/messages` and each thread, `/match`,
+> `/friends`, `/prompts` and the live Prompt's page, `/feedback` and a Match's page (§6.7's note
+> of the same day), `/moderation` and `/admin/reports`. All of them read one query,
+> `GET /api/me/new-dots` (§6.1's note of the same day); the route guards and the API still decide
+> what each page shows.
+
 #### 3.5.2 Data, validation and state
 
 - All server state through TanStack Query; the socket only invalidates or inserts (§7.4). No global
@@ -914,6 +928,11 @@ plain-text helper, §3.5.2), `SkillName` (a Skill name inside `<bdi>`, §3.5.2),
 `FileDrop` (drag/drop, type and size pre-check, preview, progress), `EmptyState`, `Banner`. A
 favicon ships in the bundle. Once the foundation exists, every text they show comes from the
 dictionary (§3.5.5).
+
+> **One more component, 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 1)** *(uncommitted)*: `NewDot` draws every
+> New dot, a red `danger-500` dot of 8 px after the link's text, hidden from screen readers, while
+> the link's name gains "new", in three languages. `web/public/favicon-dot.svg` is the favicon
+> with that dot, visible on a light and a dark tab bar.
 
 #### 3.5.4 Legal pages (M22)
 
@@ -1183,7 +1202,7 @@ throws is logged (§3.9) and does not fail the request: every DB-derived event i
 an insert that a reload also recovers. The socket gateway implements the port; the seed and the test
 harness bind a no-op or a recording implementation.
 
-> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
 > the port also has `friendsChanged(studentIds)`, `matchChanged(studentIds)` and
 > `postLikes(postId, likeCount)` (§7.4). Services queue them with `ctx.afterCommit` like
 > the other events. `post:likes` updates a cached count, extending "an invalidation or an insert"
@@ -1192,7 +1211,7 @@ harness bind a no-op or a recording implementation.
 > from a row read in the transaction. Route parameters pass `ParseUUIDPipe` without being
 > lowercased; rooms and client caches use the stored ids.
 
-> **Live moderation and Prompts, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> **Live moderation and Prompts, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > the port gains `postRemoved(postId)`, `promptPublished()` and `reportsChanged(exceptStudentIds)`
 > for §7.4's new events, and `roleChanged(studentId, role)` to move open sockets into or out of
 > `staff`, beside `revokeSessions`. Each runs after commit through the same queue; a failed or
@@ -1465,6 +1484,15 @@ Legend for each table: **PK**; **columns** (type, null, default); **unique**; **
   tokens of a Supabase Auth session never outlive one password check (ADR-0014's top note of
   2026-09-30).
 
+> **Six more columns, 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 4 and its note of the same day)** *(uncommitted)*:
+>
+> | Column | Type | Null | Notes |
+> | --- | --- | --- | --- |
+> | `feed_opened_at`, `messages_opened_at`, `match_opened_at`, `friends_opened_at`, `prompts_opened_at`, `reports_opened_at` | timestamptz | yes | when this sign-in last opened that page (§6.1's note of the same day); null until it does |
+>
+> "No other column" above no longer holds; the role is still never stored here. Each starts null
+> when the row is created and goes with the row, so the deletes above are unchanged.
+
 #### 4.3.3 `Avatar` — 0..1 per Student
 
 Columns: `id` uuid PK; `student_id` uuid UNIQUE FK; `token` uuid UNIQUE, no default (made by NestJS,
@@ -1592,6 +1620,11 @@ Columns: `id` uuid PK; `review_id` uuid UNIQUE FK; `answer_usefulness` text (*Ho
 session?*); `answer_explanation` text (*What did the Mentor explain well, and what could be
 improved?*); `rating` smallint NULL (raw CHECK 1–5, §4.4 step 5); `created_at`. Never updated or
 deleted. Its own table so no feed query can reach it (ADR-0014 d1).
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 4)** *(uncommitted)*: one more column, `read_at` timestamptz NULL,
+> set when the Mentor opens `/feedback` (every unread row about them) or that Match's page (that
+> row), §6.7's note of the same day. "Never updated" above no longer holds for this one column.
+> No response carries it (§4.6's note of the same day).
 
 #### 4.3.14 `Evidence` — 0..1 per Review
 
@@ -1816,6 +1849,13 @@ application:**
 > (§7.3's note of the same day, ADR-0018 d4's note). *Presence* stays with accepted Friends: the
 > page of a Direct Message shows a peer's online status only when they are one.
 
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0018 d4's note of the same day)** *(uncommitted)*: two new rows. *Private
+> Feedback's `read_at`* — nobody: it only turns off the Mentor's own New dot, and no response
+> carries it, so the Mentee who wrote it is never shown it. *When a sign-in last opened each page*
+> (`Session.*_opened_at`) — nobody: it only decides that sign-in's own dots. A dot tells no more
+> than its page shows, with the page's own filters for Removed Students, Blocks and role (ADR-0021
+> decision 3).
+
 **Removed-row surface rule** (ADR-0008 Consequences, corrected): discovery and participation
 surfaces (search, friend requests, new DMs, new Reports, matching, Leaderboard, friend lists,
 pending-request lists) **exclude** Removed Students; historical relations (Posts, Matches, threads,
@@ -1977,6 +2017,13 @@ view-only. The normal feed and profiles exclude Posts with `removed_at` set.
   This is one of the two GET-time writes ADR-0003 d10 allows; it touches only the caller's own
   session row.
 - **Logout** (`POST`) deletes that row, drops the sockets bound to it (§7.5), clears the cookie.
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decisions 2 and 4)** *(uncommitted)*: a new row starts with its six
+> `*_opened_at` columns null, so a new sign-in, on any device, shows again whatever still waits.
+> `POST /api/me/new-dots/opened` (§6.1's note of the same day) sets one of them on the caller's own
+> row to the server's time; it is a `POST` with the usual checks (§5.4), not a GET-time write.
+> Logout, a password change, a Suspension, a Removal and the purge delete the row with its
+> openings.
 
 ### 5.3 Per-request resolution and roles
 
@@ -2415,6 +2462,39 @@ two changes cannot both go through; a sign-in racing it is deleted or refused (�
 **`POST /api/auth/42/signup`**, **`POST /api/auth/42/disconnect`**, **`POST /api/auth/42/password`**
 — §5.6. Every one returns 404 while 42 is not configured.
 
+> **The New dots routes, 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decisions 2–4)** *(uncommitted)*:
+>
+> | Endpoint | Auth | Behaviour |
+> | --- | --- | --- |
+> | `GET /api/me/new-dots` | session | `{ feed, messages, match, friends, prompts, feedback, reports }`, each a boolean; no side effect |
+>
+> **`POST /api/me/new-dots/opened`** — session · `{ page }`, `page` one of `feed`, `messages`,
+> `match`, `friends`, `prompts`, `reports` or `feedback`, and with `feedback` only, an
+> optional `matchId` · Validation: any other key or value → `validation_failed` · Persist: that
+> page's `*_opened_at` on the caller's own `Session` row = now, or the time of the newest thing
+> waiting on that page if that is later, so nothing the opening saw shows a dot; `feedback` has no column and sets
+> `PrivateFeedback.read_at = now` on every unread Private Feedback about the caller, or with
+> `matchId` on that Match's only, where the caller is its Mentor · Result: the same object as the
+> `GET` · Events `new-dots:changed {}` to that sign-in's own sockets; for `feedback`, to the
+> caller's own `student:<id>` room, and only when it marked one (§7.4) · Refusals: none of
+> its own; an unknown `matchId`, or a Match the caller is not the Mentor of, writes nothing and
+> is not an error, so it reveals nothing.
+>
+> A key is `true` when the newest thing waiting on its page is later than its column, or the
+> column is null and something waits; `feedback` has no column, so unread is enough. A key that
+> does not apply to the caller's role is `false`. Each counts what its page shows, with the
+> page's own filters:
+>
+> | Key | What waits | Its time |
+> | --- | --- | --- |
+> | `feed` | another Student's Like on one of the caller's Posts that is not removed | `Like.created_at` |
+> | `messages` | an unread Direct Message to the caller, as the thread list counts it (§6.5) | `created_at` |
+> | `match` | a Match waiting for the caller's Accept or Decline; for the Mentee, an accepted Match with no Review | `created_at`; the later of the two accept times |
+> | `friends` | a pending friend request to the caller | `created_at` |
+> | `prompts` | the live Prompt, unanswered by the caller; `false` for an `ADMIN` | `published_at` |
+> | `feedback` | Private Feedback about the caller with `read_at` null | none |
+> | `reports` | an open Report filed by someone else, in a group the caller can act on (§12.4); `false` for a `STUDENT` | `created_at` |
+
 ### 6.2 Profiles, Skills, Learning Goal, search
 
 | Endpoint | Auth | Behaviour |
@@ -2509,7 +2589,7 @@ row is indistinguishable from an unknown one, and this is a race a correct UI re
 **`DELETE /api/friends/:studentId`** — session · `{}` · either party ends an accepted Friendship (hard delete);
 none → `not_friends` · Events none.
 
-> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
 > `friends:changed {}` replaces "Events none" for the five friend writes above: a request sent,
 > accepted, declined or cancelled, and a Friendship ended. After commit it goes to `student:<id>`
 > of both Students of the request or Friendship (§7.4). A refusal sends nothing. The client reads
@@ -2538,6 +2618,11 @@ actor's own inbox · Persist `read_at = now` on rows with
 (ADR-0014 d6) · Result `{ updated }` · Events none (no read receipt) · Concurrency: vs a concurrent
 message, one serial order — a message ordered first is counted, one ordered after is not.
 
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 2)** *(uncommitted)*: "Events none" no longer holds. When the call
+> marks at least one message, `new-dots:changed {}` goes to the actor's own `student:<id>` room
+> after commit, so the Messages dot of their other sign-ins reads again (§7.4). The sender is told
+> nothing, so there is still no read receipt.
+
 ### 6.6 Rounds and Matches (Student side)
 
 | Endpoint | Behaviour |
@@ -2562,6 +2647,13 @@ reads *"Matched by an Admin"* with no number (ADR-0006 d10, CONTEXT).
 | --- | --- |
 | `GET /api/me/feedback-received?page` | the Mentor's private route (ADR-0013 d5–d6): every Private Feedback received, newest first, each `{ matchId, roundNumber, author: StudentRef, answerUsefulness, answerExplanation, rating | null, createdAt }`. **No aggregate is computed or returned** (ADR-0013 d4) |
 
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 4)** *(uncommitted)*: the Mentor reads Private Feedback by opening
+> `/feedback` or a Match's page: `POST /api/me/new-dots/opened` with `{ page: "feedback" }`, and
+> `matchId` for one Match, sets its `read_at` (§6.1's note of the same day).
+> `GET /api/me/feedback-received` still has no side effect, and neither it nor any other response
+> carries `read_at`, to the Mentor or to the Mentee. When an opening marks any, `new-dots:changed {}`
+> goes to the Mentor's own `student:<id>` room, so their other sign-ins follow (§7.4).
+
 ### 6.8 Reflection Prompts
 
 | Endpoint | Behaviour |
@@ -2575,6 +2667,10 @@ reads *"Matched by an Admin"* with no number (ADR-0006 d10, CONTEXT).
 > total }`.
 
 **`POST /api/prompts/:id/answers`** and **`POST /api/admin/prompts`** — §8.12.
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 2)** *(uncommitted)*: an answer also sends `new-dots:changed {}` to
+> its author's own `student:<id>` room after commit, beside `post:created`, so the Prompts dot of
+> their other sign-ins reads again (§7.4).
 
 ### 6.9 Feed and Likes
 
@@ -2595,7 +2691,7 @@ removed, so reaching it is normal use (§3.8.2). That includes both Like writes:
 .../like` and `DELETE .../like` against a removed Post return `post_unavailable` (200) and write
 nothing — no insert, no delete.
 
-> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
 > "no event" in "No XP, no event, not reportable" above no longer holds.
 > `POST /api/posts/:id/like` and `DELETE /api/posts/:id/like` send `post:likes { postId, likeCount }`
 > to `feed` after commit, with the count the transaction counted (§7.4).
@@ -2603,6 +2699,11 @@ nothing — no insert, no delete.
 > repeated Like or unlike that writes nothing sends nothing, as a repeated accept (§8.5). A removed
 > Post still answers `post_unavailable`, writes nothing and sends nothing. No XP and not reportable
 > still hold.
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 5's note of the same day)** *(uncommitted)*: a Like or unlike by a
+> Student who is not the Post's author, when it changes a row, also sends `new-dots:changed {}` to
+> the author's `student:<id>` room after commit, so their Feed dot reads again (§7.4). A
+> self-Like sends only `post:likes`. The answers of both Like routes are unchanged.
 
 ### 6.10 Progress and the Leaderboard
 
@@ -2726,7 +2827,7 @@ where `MatchView` names one side's partner (§6.6).
    caught here, because the commit deleted the row first. Only then join `feed`, `rounds` and
    `student:<studentId>` and apply §7.6's online transition.
 
-> **Staff admission, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> **Staff admission, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > step 3's session re-read also reads the Student's current role. `PEER_MODERATOR` and `ADMIN`
 > join `staff` beside the three rooms above; a `STUDENT` never joins it. A role move that runs
 > while that socket waits overrides the re-read's role, so a stale read cannot undo a demotion
@@ -2817,7 +2918,7 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > event, and the sentence above holds for them. No new event carries a Badge, a Report, a role or
 > Admin data.
 
-> **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
 > the three rows from #260 join the list above (§6.4, §6.9, §8.5, §9.2).
 >
 > | Event | Room | Payload | Emitted after the commit of | Client reaction |
@@ -2832,7 +2933,7 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > `likedByMe` nor the likers list. Every Student with the Post loaded sees its count change live.
 > The existing events, payloads and rooms are unchanged.
 
-> **Live moderation and Prompts, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); ADR-0021 decisions 5–7)** *(uncommitted)*:
+> **Live moderation and Prompts, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); ADR-0021 decisions 5–7)** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 >
 > | Event | Room | Payload | Emitted after the commit of | Client reaction |
 > | --- | --- | --- | --- | --- |
@@ -2857,6 +2958,21 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 > gets the server's refusal (`already_resolved`, `conflict_of_interest`, `report_target_invalid`,
 > `prompt_not_live`), shown with its existing text. A removed Post is dropped only from the pages
 > that hold it; a read in flight is left to finish, then checked.
+
+> **The last event, 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decisions 2 and 5)** *(uncommitted)*:
+>
+> | Event | Room | Payload | Emitted after the commit of | Client reaction |
+> | --- | --- | --- | --- | --- |
+> | `new-dots:changed` | that sign-in's own sockets after an opening; otherwise the Student's own `student:<id>` | `{}` | an opening (`POST /api/me/new-dots/opened`, §6.1); for the Student's room, a Private Feedback opening or a thread read that marks any (§6.7, §6.5), a Prompt answer (§6.8), and another Student's Like or unlike of their Post that changes a row (§6.9) | read the New dots again |
+>
+> The New dots (§3.5.1) also read again on `dm:message`, `match:ready`, `match:changed`,
+> `friends:changed`, `prompt:published`, `reports:changed`, `round:opened`, `round:closed`,
+> `session:changed` and `post:removed` (§12.5), and after a reconnect with every other query (§7.5). The opening sign-in's
+> other tabs follow it; another sign-in of the same Student keeps its own dots. What is handled on
+> one sign-in (a thread read, Private Feedback read, the live Prompt answered) reaches the
+> Student's other sign-ins, whose dots read again without changing their openings. No room is added:
+> the server finds a sign-in's sockets by the session they were admitted with. The existing events,
+> payloads and rooms are unchanged.
 
 ### 7.5 Lifecycle and client retry (M27)
 
@@ -2984,7 +3100,7 @@ as for accept) · status `MATCHED` or `ACCEPTED` → `DECLINED`,
 nothing searches for a replacement (ADR-0002 d8). A Block is not a decline; the blocking Student
 declines here if they want out (ADR-0006 d10). Events none · Visibility: as accept.
 
-> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
 > `match:changed {}` replaces "Events none · Visibility: no event" for Accept and Decline above,
 > including Decline's "Visibility: as accept". After an Accept that writes or a Decline commits,
 > it goes to `student:<id>` of the Match's Mentor and Mentee; the client reads again current,
@@ -3103,7 +3219,7 @@ answering and nothing else. Two overlapping publications both commit with distin
 publication that committed before another began always has the smaller value (M2). No edit, delete,
 draft, schedule or close action exists.
 
-> **Live publication, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> **Live publication, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > publishing sends `prompt:published {}` to `feed` after commit (§7.4). The loaded Prompt list,
 > live Prompt and answers pages read again, including the Prompt it closed. The publication's
 > "no event" and "read on the next load" above no longer hold. Publication order and the one live
@@ -3157,7 +3273,7 @@ Evidence is the one mutable attachment.
   Matches completed as Mentor ≥ 1).
 - **Events**: `post:created` (the Takeaway).
 
-  > **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+  > **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
   > the Review also sends `match:changed {}` to `student:<id>` of the Match's Mentor and Mentee,
   > after the existing `post:created`. Both are sent after the Review commits (§3.7). The client
   > reads again the Student's Matches and `/feedback` (§7.4).
@@ -3466,7 +3582,7 @@ Operations are §6.4. A request to, or acceptance of a request from, a Removed S
 (ADR-0008 Consequences); Removed counterparts disappear from friends and request lists, while any
 history elsewhere shows the tombstone.
 
-> **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> **Added 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
 > the five writes — a request sent, accepted, declined or cancelled, and a Friendship ended —
 > send `friends:changed {}` to both Students after commit (§6.4, §7.4). The client reads the loaded
 > Friends and request lists again without a reload. A Block stays silent (§11.2), as does lifting
@@ -3520,12 +3636,16 @@ Student set on the actor still applies. Only the blocker can lift it. The Privac
 Revocable (delete the row), attributed, readable by every signed-in Student, self-Like permitted, no
 XP, not reportable, no event (§6.9).
 
-> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
+> **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*, **landed on `main` at `20057b3`**:
 > "no event" above no longer holds: every signed-in Student with the Post loaded sees its count
 > change through `post:likes { postId, likeCount }` after a Like or unlike commits (§6.9, §7.4).
 > The client changes only `likeCount` and reads nothing; each tab keeps the `likedByMe` it last
 > read, and the likers list is untouched. Nothing new is revealed: counts are already readable by
 > every signed-in Student.
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 3's note of the same day)** *(uncommitted)*: another Student's Like
+> on your Post turns on the feed's New dot until this sign-in opens `/`; your own Like does not.
+> The like count and the list of who liked are unchanged.
 
 ---
 
@@ -3557,7 +3677,7 @@ roles are Admin-only.
 - **UI**: the report flow also offers a separate Block button; filing never creates a Block
   (ADR-0011 d13).
 
-> **Live report queue, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> **Live report queue, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > a successful filing sends `reports:changed {}` to `staff` after commit, skipping the reported
 > Student or the reported Post's author (§7.4). The reporter still receives only
 > `{ received: true }`; a reporter who is a Peer Moderator or an Admin also sees the group in
@@ -3589,7 +3709,7 @@ One `REPEATABLE READ READ ONLY` transaction; groups ordered by their oldest open
   row shows its reporter. When no other Admin is eligible, the group simply waits.
 
 > **A staff member sees the Report they filed, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); ADR-0011 d9's note of
-> the same day)** *(uncommitted)*: a group holding the viewer's own open Report is no longer
+> the same day)** *(uncommitted)*, **landed on `main` at `2c9eb01`**: a group holding the viewer's own open Report is no longer
 > hidden for that reason. Each group carries `filedByMe`.
 >
 > - **Peer Moderator**: the group shows read-only, with no action and the line *"You reported this
@@ -3635,20 +3755,24 @@ Admin only.
   target, a row the removing Admin filed included, attributed to that Admin (ADR-0011 d10,
   §12.7); §12.6 then governs who sees the batch.
 
-> **Live resolutions, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> **Live resolutions, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > either Post-group action and either Student-group action send `reports:changed {}` to `staff`
 > after commit, skipping the Post's author or the reported Student. `REMOVE_POST` also sends `post:removed { postId }` to `feed`. A removed Post
 > leaves any loaded feed page, Student's Posts or Prompt's answers immediately, and that query
 > reads again to refill its numbered page. "A removed Post leaves the feed on the next load"
 > above no longer holds. Refused resolutions send nothing; the attribution and guards stay.
 
-> **Own Reports, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); §12.4's note of the same day)** *(uncommitted)*:
+> **Own Reports, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); §12.4's note of the same day)** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > an Admin's guard no longer counts a Report they filed. An Admin may resolve a group holding one;
 > being the Post's author or the reported Student still answers `conflict_of_interest`. A Peer
 > Moderator's guard is unchanged, so a group holding their own Report still answers
 > `conflict_of_interest`. "An Admin cannot bypass the own-complaint guard by removing a Post they
 > reported" above no longer holds: an Admin may remove a Post they reported, attributed through
 > `resolved_by_id` like every removal.
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 5's note of the same day)** *(uncommitted)*: every open page reads its
+> New dots again on the `post:removed` a removal already sends (§7.4), since Likes on a removed Post
+> no longer light its author's Feed dot. No event is added, so the author hears nothing of their own.
 
 ### 12.6 Resolved audit — `GET /api/admin/reports/resolved?page` (Admin) (ADR-0011 d6, d8)
 
@@ -3661,7 +3785,7 @@ access.
 > **Changed 2026-11-01** (#251): each batch lists its rows newest first, like the queue (§12.4's
 > note). The batches themselves stay newest first.
 
-> **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); §12.4's note of the same day)** *(uncommitted)*: a batch
+> **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); §12.4's note of the same day)** *(uncommitted)*, **landed on `main` at `2c9eb01`**: a batch
 > containing a row the viewing Admin filed is no longer hidden from them, the batch a Removal
 > closed included (§12.7). Only a batch about the viewing Admin or their Post is.
 
@@ -3679,7 +3803,7 @@ must stay ≥ 1 afterwards → `last_active_admin` (ADR-0008 d9).
 | **Reinstate** | Suspended → else `not_suspended` | `suspended_at = NULL`; nothing is revived | none |
 | **Remove** | target's in-progress Matches; `Avatar`; open Reports whose `reported_student_id` is the target | `removed_at = now`; in-progress Matches → `TERMINATED_BY_ADMIN`; delete every Session; delete the `Avatar` row; every such open Report → `ACTIONED` with `resolved_by_id = actor`, `resolved_at = now` | `revokeSessions(target)`; delete the avatar's file from `avatars` (§9.8) |
 
-> **Live staff membership and Removal, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> **Live staff membership and Removal, 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > after a Change role that changes the role commits, the Student's open sockets move into `staff`
 > for `PEER_MODERATOR` or `ADMIN`, and out for `STUDENT`, including sockets still waiting for
 > admission (§7.2). The same sockets then get `session:changed {}` (§7.4): the open page reads
@@ -3710,7 +3834,7 @@ must stay ≥ 1 afterwards → `last_active_admin` (ADR-0008 d9).
   the removing Admin and shows it, with the attribution, to every other Admin. The §12.4 guard bars
   queue reads and group resolutions, never this sanction, so the two rules cannot collide.
 
-  > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); §12.6's note of the same day)** *(uncommitted)*: §12.6 no
+  > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261); §12.6's note of the same day)** *(uncommitted)*, **landed on `main` at `2c9eb01`**: §12.6 no
   > longer hides that batch from the removing Admin, who sees it like every other Admin.
 - **Edits** (`PATCH`, Skills, Learning Goal, avatar) are allowed on Active and Suspended targets only,
   and never touch password, `forty_two_id`, XP, Level, Streak, Badges or anything the Student wrote
@@ -4641,7 +4765,7 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 > longer body still reads and is still marked read. The API's own length checks stay untested, as
 > ADR-0016 d1 leaves forms (its note of the same day).
 
-> **Row 5 extended 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*:
+> **Row 5 extended 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**:
 > category 5's `staff-room.test.ts` uses real sessions and sockets: a `STUDENT` never receives
 > `reports:changed` when a Report is filed; a Peer Moderator does, then stops after demotion on
 > the same connected socket, which receives one `session:changed {}` while the `STUDENT`'s
@@ -4651,6 +4775,16 @@ Files live at `test/<NN>-<category>/*.test.ts`.
 > same day: an Admin sees and may resolve a group holding their own Report, and their audit shows
 > its batch, the Removal's included; a Peer Moderator sees such a group with `filedByMe: true`
 > and no reporter, and is refused `conflict_of_interest` on resolving it.
+
+> **Rows 9 and 12 extended 2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 *Consequences*)** *(uncommitted)*:
+> category 12's `new-dots.test.ts` signs in over HTTP: Messages has a dot with an unread Direct
+> Message; after opening Messages, none; after a newer Direct Message, a dot again; and after
+> signing out and in again, a dot while only the older message is unread. The test clock makes
+> "newer" exact. Category 9's `feedback-read.test.ts`: a Mentee's opening sets nothing; the
+> Mentor's opening of one Match sets that Private Feedback's `read_at` alone, and opening
+> `/feedback` sets the rest; and no response the Mentee receives, the Match pages, Match history,
+> feedback, New dots and session included, nor the Mentor's own feedback list, carries `read_at`
+> or any `*_opened_at`.
 
 ### 16.4 CI — one advisory workflow (ADR-0016 d8, M21)
 

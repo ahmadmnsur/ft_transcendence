@@ -579,7 +579,7 @@ deleted in cascade, and a Removal is a timestamp on the `Student` row, not a del
 | Table | Key fields and types | What it holds |
 | --- | --- | --- |
 | `Student` | `id` uuid PK; `email` text, unique; `display_name` text (ICU collation); `role` Role; `xp` int; `streak` int; `forty_two_id` int, unique, nullable; `password_version` int; `learning_goal_student_skill_id` uuid, nullable; `suspended_at`, `removed_at` timestamptz, nullable | The account; every person, Admins included, is one. Its id is also its Supabase Auth user's id. |
-| `Session` | `id` text PK, the SHA-256 of the cookie's token; `student_id` FK; `expires_at` | One signed-in browser. |
+| `Session` | `id` text PK, the SHA-256 of the cookie's token; `student_id` FK; `expires_at`; `feed_opened_at`, `messages_opened_at`, `match_opened_at`, `friends_opened_at`, `prompts_opened_at`, `reports_opened_at`, nullable | One signed-in browser, and when it last opened each page that can show a New dot. |
 | `Skill` | `id` uuid PK; `name` text, unique | The shared catalogue of 27 Skills. |
 | `StudentSkill` | `student_id` FK; `skill_id` FK; `kind` SkillKind; unique (`student_id`, `skill_id`, `kind`) | A Skill on a Student's teach or learn list. A Learning Goal points at one of the Student's own rows, held by a composite foreign key. |
 | `Avatar` | `student_id` FK, unique; `token` uuid, unique; `mime` text; `size` int | 0 or 1 per Student; the file is in the `avatars` bucket, named by `token`. |
@@ -590,7 +590,7 @@ deleted in cascade, and a Removal is a timestamp on the `Student` row, not a del
 | `Match` | `round_id` FK; `mentor_id` FK; `mentee_id` FK; `status` MatchStatus; `mission` Mission; `compatibility_score` smallint, nullable; `goal_bonus_applied` bool; `declined_by_id` FK, nullable | Two Students in one Round. The score is null only for a Match an Admin made by hand. |
 | `MatchSkillCoverage` | PK (`match_id`, `skill_id`, `direction` CoverageDirection) | The Skills each side can teach the other, frozen when the Match is made. |
 | `Review` | `match_id` FK, unique; `learned` text; `can_now_do` text | The Mentee's Learning Outcome; one per Match, never edited. |
-| `PrivateFeedback` | `review_id` FK, unique; two answers, text; `rating` smallint 1 to 5, nullable | The Mentee's private feedback to the Mentor. |
+| `PrivateFeedback` | `review_id` FK, unique; two answers, text; `rating` smallint 1 to 5, nullable; `read_at` nullable | The Mentee's private feedback to the Mentor; `read_at` only feeds the Mentor's New dot and is never sent to anyone. |
 | `Evidence` | `review_id` FK, unique; `token` uuid, unique; `mime`; `size`; `filename` | 0 or 1 file per Review, in the `evidence` bucket. |
 | `ReflectionPrompt` | `question` text; `publication_order` bigint, unique | A question an Admin publishes; the live one has the greatest order. |
 | `Post` | `author_id` FK; `body` text; `prompt_id` FK or `review_id` FK, exactly one; `answer_round_id` FK, nullable; `removed_at` nullable; unique (`prompt_id`, `author_id`) | A feed item: a Prompt answer or a Review's Public Takeaway. |
@@ -633,6 +633,7 @@ member who built a part.
 | **Blocks** | Block a Student from their profile, and lift it from the Blocks list. A Block ends a Friendship, stops new friend requests and Direct Messages, and keeps the pair from being matched. | Hussein |
 | **Direct Messages** | One-to-one messages, delivered live, on `/messages` and from a profile, with unread counts. | Ahmad |
 | **Live updates** | The socket gateway, its rooms and the online-status registry; the pages react live to a new Post, a Round opening or closing, a new Match, friend requests, a partner's Match answer or Review, and like counts. | Ahmad (gateway), Hussein (live reactions), Kamel (friend, Match and Like events) |
+| **New dots** | A red dot on each header link where something waits: an unread Direct Message or Private Feedback, a Match to answer or a Review to write, a friend request, the live Prompt unanswered, a Report to act on, another Student's Like on your Post. The menu buttons and the tab's icon show one too; opening the page clears it for that sign-in. | Kamel |
 | **Rounds and Matches** | An Admin opens and closes Rounds. Opening one pairs Students by the Compatibility Score with a Mission; each side accepts or declines. | Kamel (Rounds and Matches), Ahmad (the matcher and its tests) |
 | **Hand-made Matches** | An Admin pairs two Students the matcher left unmatched. | Ahmad |
 | **Reviews and Private Feedback** | The Mentee's three-part Review closes the Match: the Learning Outcome, Private Feedback to the Mentor with an optional rating, and a Public Takeaway. | Ahmad |
@@ -705,7 +706,10 @@ and one per Student) broadcasts `post:created`, `post:removed`, `prompt:publishe
 `friends:changed` goes to both Students of the request or Friendship, `match:changed` to the
 Match's Mentor and Mentee, `post:likes` to every signed-in Student in `feed`,
 `reports:changed` to the Peer Moderators and Admins in `staff` except the Student a Report is
-about, and `session:changed` to a Student whose role changed, so their open page follows it. A
+about, and `session:changed` to a Student whose role changed, so their open page follows it.
+`new-dots:changed` goes to one sign-in's own sockets after it opens a page, and to a Student's
+own room after another Student's Like on their Post or after something they handled on one sign-in,
+so the header's New dots read again. A
 reconnecting client is admitted again by its session cookie, a short grace window keeps a reload
 from flickering the online status, and a Suspension or a password change disconnects the socket.
 

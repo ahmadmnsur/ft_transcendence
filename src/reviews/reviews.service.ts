@@ -7,6 +7,7 @@ import { awardMatchXp } from '../gamification/awards';
 import { roundNumbers } from '../matching/match-views';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
+import { feedbackReceivedWhere } from './feedback-received';
 import { ALREADY_REVIEWED, alreadyReviewed, matchNotReviewable } from './refusals';
 import type { FeedbackPage, ReviewInput, SubmitReviewResult } from './views';
 
@@ -81,7 +82,7 @@ export class ReviewsService {
 
   async listFeedbackReceived(actor: Actor, page: number, pageSize: number): Promise<FeedbackPage> {
     return this.uow.readOnly(async (tx) => {
-      const where = { review: { match: { mentorId: actor.studentId } } };
+      const where = feedbackReceivedWhere(actor.studentId);
       const total = await tx.privateFeedback.count({ where });
       const skip = (page - 1) * pageSize;
       if (skip >= total) return { items: [], total };

@@ -9,8 +9,10 @@ import { PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 import { StudentLink } from '../profile/StudentLink';
 import { FeedbackAnswers } from '../reviews/ReviewRecord';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function FeedbackPage(): React.JSX.Element {
+  useOpenedPage('feedback');
   const { t, format, formatDate, errorText } = useI18n();
   const { page: requestedPage } = useSearch({ from: '/feedback' });
   const navigate = useNavigate({ from: '/feedback' });

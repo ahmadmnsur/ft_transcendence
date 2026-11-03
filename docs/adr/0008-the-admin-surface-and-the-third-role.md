@@ -390,7 +390,7 @@ revoke XP.**
     > `OPEN`. This makes ADR-0011's staff-misconduct, own-complaint and no-feedback guards survive a
     > later role change.
 
-    > **Filed Reports, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: a Peer Moderator now sees,
+    > **Filed Reports, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: a Peer Moderator now sees,
     > read-only, a group holding a Report they filed, and still cannot resolve it. An Admin now sees
     > and resolves groups and batches holding a Report they filed; only a group about them or their
     > Post stays hidden from them. ADR-0011 decision 9's note of the same day.
@@ -509,7 +509,7 @@ this map never made.
   > without reporter identity or resolved history. The three views remain distinct and the
   > advanced-permissions claim is unchanged.
 
-  > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: an Admin now also sees a resolution batch containing a
+  > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*, **landed on `main` at `2c9eb01`**: an Admin now also sees a resolution batch containing a
   > Report they filed, and a Peer Moderator's queue shows, read-only, a group holding their own
   > Report (ADR-0011 decision 9's note of that day).
 - **The report queue itself is still unspecified.** What can be reported, what a report

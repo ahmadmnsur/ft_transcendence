@@ -7,6 +7,7 @@ import { PostList } from '../feed/PostList';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
 import { LandingPage } from './LandingPage';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function HomePage(): React.JSX.Element {
   const { data: session } = useQuery(sessionQueryOptions());
@@ -14,6 +15,7 @@ export function HomePage(): React.JSX.Element {
 }
 
 function FeedPage(): React.JSX.Element {
+  useOpenedPage('feed');
   const { t } = useI18n();
   const copy = t.feed;
   const { page: requestedPage } = useSearch({ from: '/' });

@@ -67,7 +67,7 @@ export class FeedService {
       await readActiveActor(tx, actor.studentId);
       const post = visiblePost(await tx.post.findUnique({
         where: { id: postId },
-        select: { id: true, removedAt: true },
+        select: { id: true, authorId: true, removedAt: true },
       }));
       await ctx.checkpoint('post.like');
       const { count } = await tx.like.createMany({
@@ -75,7 +75,12 @@ export class FeedService {
         skipDuplicates: true,
       });
       const likeCount = await tx.like.count({ where: { postId } });
-      if (count > 0) ctx.afterCommit(() => this.publisher.postLikes(post.id, likeCount));
+      if (count > 0) {
+        ctx.afterCommit(() => this.publisher.postLikes(post.id, likeCount));
+        if (post.authorId !== actor.studentId) {
+          ctx.afterCommit(() => this.publisher.newDotsChanged({ studentId: post.authorId }));
+        }
+      }
       return { likeCount, likedByMe: true };
     });
   }
@@ -85,12 +90,17 @@ export class FeedService {
       await readActiveActor(tx, actor.studentId);
       const post = visiblePost(await tx.post.findUnique({
         where: { id: postId },
-        select: { id: true, removedAt: true },
+        select: { id: true, authorId: true, removedAt: true },
       }));
       await ctx.checkpoint('post.unlike');
       const { count } = await tx.like.deleteMany({ where: { postId, studentId: actor.studentId } });
       const likeCount = await tx.like.count({ where: { postId } });
-      if (count > 0) ctx.afterCommit(() => this.publisher.postLikes(post.id, likeCount));
+      if (count > 0) {
+        ctx.afterCommit(() => this.publisher.postLikes(post.id, likeCount));
+        if (post.authorId !== actor.studentId) {
+          ctx.afterCommit(() => this.publisher.newDotsChanged({ studentId: post.authorId }));
+        }
+      }
       return { likeCount, likedByMe: false };
     });
   }

@@ -9,6 +9,7 @@ import { ApiError, Refusal, type RefusalSpec } from '../core/errors';
 import { readPostPage } from '../feed/post-page';
 import { readActiveAdmin } from '../students/profile-writes';
 import { STUDENT_REF_SELECT } from '../students/student-ref';
+import { readLivePrompt } from './live-prompt';
 import { toAnswerView, toPromptView, type AnswerPage, type PromptPage, type PromptView } from './views';
 
 const ALREADY_ANSWERED = { code: 'already_answered', message: 'You have already answered this Reflection Prompt.' } as const satisfies RefusalSpec;
@@ -43,6 +44,7 @@ export class PromptsService {
       const item = toAnswerView({ ...post, author }, prompt);
       const earned = await awardPromptXp(tx, author.id, promptPostCount + 1, ctx.now);
       ctx.afterCommit(() => this.publisher.postCreated(item));
+      ctx.afterCommit(() => this.publisher.newDotsChanged({ studentId: actor.studentId }));
       return earned;
     });
   }
@@ -76,11 +78,8 @@ export class PromptsService {
 
   live(actor: Actor): Promise<{ prompt: PromptView | null; answeredByMe: boolean }> {
     return this.uow.readOnly(async (tx) => {
-      const prompt = await tx.reflectionPrompt.findFirst({ orderBy: { publicationOrder: 'desc' } });
-      const answer = prompt === null ? null : await tx.post.findUnique({
-        where: { promptId_authorId: { promptId: prompt.id, authorId: actor.studentId } }, select: { id: true },
-      });
-      return { prompt: prompt === null ? null : toPromptView(prompt), answeredByMe: answer !== null };
+      const { prompt, answeredByMe } = await readLivePrompt(tx, actor.studentId);
+      return { prompt: prompt === null ? null : toPromptView(prompt), answeredByMe };
     });
   }
 

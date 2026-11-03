@@ -13,6 +13,7 @@ import { useI18n } from '../i18n/context';
 import { NotFoundPage, PageTitle } from '../layout';
 import { failureCode } from '../profile/failure';
 import { EarnPanel } from '../progress/EarnPanel';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function PromptDetailPage(): React.JSX.Element {
   const { promptId } = useParams({ from: '/prompts/$promptId' });
@@ -31,6 +32,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const page = requestedPage ?? 1;
   const answers = useQuery({ ...promptAnswersQueryOptions(promptId, page), enabled: wellFormedId });
   const detail = answers.data;
+  useOpenedPage('prompts', { enabled: detail?.live === true });
   const [body, setBody] = useState('');
   const answerRef = useRef<HTMLTextAreaElement>(null);
   const answerHintId = useId();

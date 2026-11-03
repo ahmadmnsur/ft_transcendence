@@ -10,6 +10,7 @@ import { PAGING } from '../shared/limits';
 import { readActiveActor } from '../students/profile-writes';
 import { STUDENT_REF_SELECT, toStudentRef } from '../students/student-ref';
 import { dmUnavailable } from './refusals';
+import { unreadMessagesWhere } from './unread';
 import type { DirectMessageView, PeerThread, ThreadPage, ThreadView } from './views';
 
 
@@ -123,7 +124,7 @@ export class MessagingService {
         (
           await tx.directMessage.groupBy({
             by: ['senderId'],
-            where: { recipientId: actor.studentId, readAt: null, senderId: { in: peerIds } },
+            where: { ...unreadMessagesWhere(actor.studentId), senderId: { in: peerIds } },
             _count: { _all: true },
           })
         ).map((group) => [group.senderId, group._count._all]),
@@ -191,6 +192,7 @@ export class MessagingService {
         where: { recipientId: actor.studentId, senderId: peer.id, readAt: null },
         data: { readAt: ctx.now },
       });
+      if (count > 0) ctx.afterCommit(() => this.publisher.newDotsChanged({ studentId: actor.studentId }));
       return { updated: count };
     });
   }

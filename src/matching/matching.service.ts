@@ -8,6 +8,7 @@ import { readReview } from '../reviews/read-review';
 import { MISSIONS, STANDING_STATUSES, isInProgress } from '../shared/matches';
 import { readActiveActor, readActiveAdmin } from '../students/profile-writes';
 import { readCandidates, readCandidatesByIds, unmatchedIn } from './candidates';
+import { currentMatchWhere } from './current-match';
 import { orientPair, runMatcher, type UnorderedPair } from './engine';
 import {
   MATCH_SELECT,
@@ -268,11 +269,7 @@ export class MatchingService {
   async currentMatch(actor: Actor): Promise<CurrentMatch> {
     return this.uow.readOnly(async (tx) => {
       const row = await tx.match.findFirst({
-        where: {
-          round: { closedAt: null },
-          status: { in: [...STANDING_STATUSES] },
-          OR: [{ mentorId: actor.studentId }, { menteeId: actor.studentId }],
-        },
+        where: currentMatchWhere(actor.studentId),
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: MATCH_SELECT,
       });

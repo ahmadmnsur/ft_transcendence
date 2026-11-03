@@ -15,12 +15,13 @@ import { StudentsModule } from './students/students.module';
 import { PromptsModule } from './prompts/prompts.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { NewDotsModule } from './new-dots/new-dots.module';
 
 @Module({
   imports: [
     CoreModule.forApp(), AuthModule, StudentsModule, SocialModule, FilesModule,
     MessagingModule, MatchingModule, PromptsModule, ReviewsModule, FeedModule, GamificationModule,
-    ModerationModule, AdminModule, AnalyticsModule,
+    ModerationModule, AdminModule, AnalyticsModule, NewDotsModule,
   ],
   controllers: [HealthController],
   providers: [FileCleanupSchedule],

@@ -19,6 +19,7 @@ export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
 export { Modal } from './components/Modal';
 export type { ModalProps } from './components/Modal';
+export { NewDot, useNewDotLabel } from './components/NewDot';
 export { Pagination } from './components/Pagination';
 export type { PaginationProps } from './components/Pagination';
 export { PasswordField } from './components/PasswordField';

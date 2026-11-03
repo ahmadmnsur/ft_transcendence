@@ -59,7 +59,13 @@ function dmTypingPayload(payload: unknown): { recipientId: string; typing: boole
   return { recipientId: recipientId.toLowerCase(), typing };
 }
 
-type WaitingSocket = { studentId: string; rooms: string[]; held: HeldEvent[]; staffAfterMove?: boolean };
+type WaitingSocket = {
+  studentId: string;
+  rooms: string[];
+  held: HeldEvent[];
+  staffAfterMove?: boolean;
+  newDotsChanged?: boolean;
+};
 
 function socketSession(socket: Socket): SocketSession | null {
   const data = socket.data as Partial<SocketSession>;
@@ -155,6 +161,7 @@ export class RealtimeGateway
         if (held.exceptStudentIds.includes(waiting.studentId)) continue;
         if (held.rooms.some((room) => waiting.rooms.includes(room))) socket.emit(held.event, held.payload);
       }
+      if (waiting.newDotsChanged) socket.emit('new-dots:changed', {});
       await joined;
       this.registry.activate(socket.id);
     } catch (err) {
@@ -351,6 +358,20 @@ export class RealtimeGateway
   override friendsChanged(studentIds: readonly string[]): void {
     if (studentIds.length === 0) return;
     this.publish([...new Set(studentIds)].map(studentRoom), 'friends:changed', {});
+  }
+
+  override newDotsChanged(target: RevokeTarget): void {
+    if ('studentId' in target) {
+      this.publish([studentRoom(target.studentId)], 'new-dots:changed', {});
+      return;
+    }
+    const server = this.server;
+    if (server === null) return;
+    for (const socketId of this.registry.socketIds(target)) {
+      const waiting = this.waiting.get(socketId);
+      if (waiting !== undefined) waiting.newDotsChanged = true;
+      else server.sockets.sockets.get(socketId)?.emit('new-dots:changed', {});
+    }
   }
 
   override dmMessage(senderId: string, recipientId: string, message: object): void {

@@ -11,6 +11,7 @@ import { MatchNoticeBanner, type MatchNotice } from '../matching/MatchParts';
 import { PairMatchCard } from '../matching/PairMatchCard';
 import { failureCode } from '../profile/failure';
 import { ReviewRecord } from '../reviews/ReviewRecord';
+import { useOpenedPage } from '../newDots/useNewDots';
 
 export function MatchDetailPage(): React.JSX.Element {
   const { t, format, formatText, errorText } = useI18n();
@@ -18,6 +19,7 @@ export function MatchDetailPage(): React.JSX.Element {
   const { matchId } = useParams({ from: '/matches/$matchId' });
   const wellFormedId = isUuid(matchId);
   const { data, error, isError, refetch } = useQuery({ ...matchQueryOptions(matchId), enabled: wellFormedId });
+  useOpenedPage('feedback', { matchId, enabled: wellFormedId, refresh: data?.privateFeedback != null });
   const [notice, setNotice] = useState<MatchNotice | undefined>(undefined);
 
   if (!wellFormedId) return <NotFoundPage />;

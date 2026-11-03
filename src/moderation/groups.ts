@@ -1,5 +1,6 @@
 import type { PrismaTx } from '../core/uow';
 import type { Prisma } from '../generated/prisma/client';
+import type { Role } from '../shared/roles';
 import { STUDENT_REF_SELECT, toStudentRef, type StudentRef } from '../students/student-ref';
 import { MODERATED_POST_SELECT, toModeratedPost, type GroupTarget, type QueueReport } from './views';
 
@@ -15,6 +16,10 @@ export const REPORT_ROW_SELECT = {
 } as const satisfies Prisma.ReportSelect;
 
 export type ReportRow = Prisma.ReportGetPayload<{ select: typeof REPORT_ROW_SELECT }>;
+
+export function filedBy(group: readonly ReportRow[], studentId: string): boolean {
+  return group.some((row) => row.reporterId === studentId);
+}
 
 export function targetKey(row: { postId: string | null; reportedStudentId: string | null }): string {
   return row.postId !== null ? `post:${row.postId}` : `student:${row.reportedStudentId}`;
@@ -74,4 +79,37 @@ export function targetOf(targets: ReadonlyMap<string, Target>, key: string): Tar
 
 export function toQueueReport(row: ReportRow): QueueReport {
   return { reason: row.reason, text: row.text, createdAt: row.createdAt.toISOString() };
+}
+
+export type QueueGroups = { visible: Array<[string, ReportRow[]]>; targets: Map<string, Target> };
+
+export async function readQueueGroups(tx: PrismaTx, me: string, role: Role): Promise<QueueGroups> {
+  const admin = role === 'ADMIN';
+  const rows = await tx.report.findMany({
+    where: admin ? { state: 'OPEN' } : { state: 'OPEN', postId: { not: null } },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: REPORT_ROW_SELECT,
+  });
+  const groups = new Map<string, ReportRow[]>();
+  for (const row of rows) {
+    const key = targetKey(row);
+    const group = groups.get(key);
+    if (group === undefined) groups.set(key, [row]);
+    else group.push(row);
+  }
+  const targets = await readTargets(tx, rows);
+  const blocked = new Set<string>();
+  if (!admin) {
+    const blocks = await tx.block.findMany({
+      where: { OR: [{ blockerId: me }, { blockedId: me }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    for (const block of blocks) blocked.add(block.blockerId === me ? block.blockedId : block.blockerId);
+  }
+  const visible = [...groups].filter(([key, group]) => {
+    const target = targetOf(targets, key);
+    const parties = [target.subjectId, ...group.map((row) => row.reporterId)];
+    return !target.postRemoved && target.subjectId !== me && !parties.some((id) => blocked.has(id));
+  });
+  return { visible, targets };
 }
