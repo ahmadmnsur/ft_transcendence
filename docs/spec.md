@@ -362,7 +362,7 @@ One line per operative rule, as annotated. The ADR text is authoritative; this r
 | ADR-0018 | Pages describe the model as built; two kinds of copy, the team's (Supabase, Frankfurt) and a local one (d1's note of 2026-10-11); one cookie; the browser loads nothing from third parties and never contacts Supabase (Sign in with 42 the one chosen exception); logs clean and capped, the team project's `postgres` role with four log settings (d6's note of 2026-10-11); throttle in memory; visibility rows (§4.6); Admin label; Peer Moderator unlabelled; no read receipts; four signed-out routes (a fifth, the landing page at `/`, since d12's note of 2026-10-25), footer everywhere; acceptance checkbox validated, not stored, on the 42 sign-up form too; Removal on request only, keeping the hash and the 42 account number; 42 data minimisation; 42's account `id` in `Student.forty_two_id` as the only key; recovery through 42 only; Privacy Policy moves with personal data. |
 | ADR-0019 | Supabase is three stores and nothing more: Postgres as the database, Storage for the two buckets, Auth as the place each password is kept and checked. The browser never talks to Supabase; PeerConnect keeps its session, Prisma, Socket.IO and Sign in with 42. One team project in Frankfurt, which Kamel owns and keeps available. |
 | ADR-0020 | Multi-language (English, French, Arabic) and right-to-left (Arabic) claimed; WCAG stays out. Every text the SPA shows or gives to a screen reader is translated in the SPA; names, text for developers, the seed's text and what the browser or 42 draws are not; the API keeps its English `message` and `"Former student"`, which the SPA never shows. A typed dictionary over `Intl`, no package; `tsc -b` refuses a missing text, plural form or placeholder; English is the fallback. Every value isolated; numbers, dates and lists by `Intl` with `en-GB`, `fr` and `ar-u-nu-arab`. First visit from the browser's languages; the choice in `localStorage` only when picked; switcher in the shared header on every route. Flow-relative classes only, the build refusing a left or right class; tables and the chart mirror; arrows flip. A bundled Noto Sans Arabic for Arabic characters. Legal pages English until translated once, the English canonical, one date for three versions. Each slice ships its text in three languages (`CONTRIBUTING.md` → *Text ships in three languages*). |
-| ADR-0021 | New dots: a red dot after a link's text, no number, when something waits on that page and is newer than this sign-in's last opening of it; menus and the tab icon show one too. Openings on five `Session` columns; `PrivateFeedback.read_at`, never shown to its author. Events say "read again", except `post:removed { postId }` and the author's `post:likes { postId, likeCount }`; a `staff` room that follows role changes. Blocks, Reports' parties and sanctions stay silent; not the notification system. Built by #260, #261, #262. |
+| ADR-0021 | New dots: a red dot after a link's text, no number, when something waits on that page and is newer than this sign-in's last opening of it; menus and the tab icon show one too. Openings on five `Session` columns; `PrivateFeedback.read_at`, never shown to its author. Events say "read again", except `post:removed { postId }` and `post:likes { postId, likeCount }` to `feed` (d5's note of 2026-11-03) *(uncommitted)*; a `staff` room that follows role changes. A dot for Likes on your own Post is reopened for #262 (d3's note of 2026-11-03) *(uncommitted)*. Blocks, Reports' parties and sanctions stay silent; not the notification system. Built by #260, #261, #262. |
 | Map #1 | Stack: NestJS, PostgreSQL, Prisma, socket.io, React, Tailwind, TanStack, Recharts, Vitest, Docker Compose. Vertical slices DB-through-UI. |
 | Map #85 | Supabase provides the database, the file storage and the password check; Socket.IO stays; `make up` on any machine serves `https://localhost:8443`; hosting comes later. |
 | Map #139 | PeerConnect in English, French and Arabic; Hussein owns both modules; Skill names stay English; the database stores nothing per language; switching changes language and direction at once, without a reload. |
@@ -2591,9 +2591,9 @@ nothing — no insert, no delete.
 > "no event" in "No XP, no event, not reportable" above no longer holds.
 > `POST /api/posts/:id/like` and `DELETE /api/posts/:id/like` send `post:likes { postId, likeCount }`
 > to `feed` after commit, with the count the transaction counted (§7.4).
-> A Like on one's own Post sends it too, so every tab agrees (ADR-0014 d5). A repeated Like or
-> unlike that writes nothing sends nothing, as a repeated accept (§8.5). A removed Post
-> still answers `post_unavailable`, writes nothing and sends nothing. No XP and not reportable
+> A Like on one's own Post sends it too, so every tab shows the same count (ADR-0014 d5). A
+> repeated Like or unlike that writes nothing sends nothing, as a repeated accept (§8.5). A removed
+> Post still answers `post_unavailable`, writes nothing and sends nothing. No XP and not reportable
 > still hold.
 
 ### 6.10 Progress and the Leaderboard
@@ -3474,8 +3474,8 @@ XP, not reportable, no event (§6.9).
 > **Changed 2026-11-03 ([#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260))** *(uncommitted)*:
 > "no event" above no longer holds: every signed-in Student with the Post loaded sees its count
 > change through `post:likes { postId, likeCount }` after a Like or unlike commits (§6.9, §7.4).
-> The client changes only `likeCount` and reads nothing; each viewer keeps their own `likedByMe`,
-> and the likers list is untouched. Nothing new is revealed: counts are already readable by
+> The client changes only `likeCount` and reads nothing; each tab keeps the `likedByMe` it last
+> read, and the likers list is untouched. Nothing new is revealed: counts are already readable by
 > every signed-in Student.
 
 ---

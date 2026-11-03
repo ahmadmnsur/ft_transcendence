@@ -632,7 +632,7 @@ member who built a part.
 | **Friends and online status** | Friend requests, accepting, declining and ending; the Friends list; live online status. | Ahmad |
 | **Blocks** | Block a Student from their profile, and lift it from the Blocks list. A Block ends a Friendship, stops new friend requests and Direct Messages, and keeps the pair from being matched. | Hussein |
 | **Direct Messages** | One-to-one messages, delivered live, on `/messages` and from a profile, with unread counts. | Ahmad |
-| **Live updates** | The socket gateway, its rooms and the online-status registry; the pages react live to a new Post, a Round opening or closing, a new Match, friend requests, a partner's Match answer or Review, and like counts. | Ahmad (gateway), Hussein (live reactions) |
+| **Live updates** | The socket gateway, its rooms and the online-status registry; the pages react live to a new Post, a Round opening or closing, a new Match, friend requests, a partner's Match answer or Review, and like counts. | Ahmad (gateway), Hussein (live reactions), Kamel (friend, Match and Like events) |
 | **Rounds and Matches** | An Admin opens and closes Rounds. Opening one pairs Students by the Compatibility Score with a Mission; each side accepts or declines. | Kamel (Rounds and Matches), Ahmad (the matcher and its tests) |
 | **Hand-made Matches** | An Admin pairs two Students the matcher left unmatched. | Ahmad |
 | **Reviews and Private Feedback** | The Mentee's three-part Review closes the Match: the Learning Outcome, Private Feedback to the Mentor with an optional rating, and a Public Takeaway. | Ahmad |
