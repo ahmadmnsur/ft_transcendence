@@ -5,7 +5,7 @@ import { readNewDotsAgain, useNewDots } from './useNewDots';
 
 const EVENTS = [
   'dm:message', 'match:ready', 'match:changed', 'friends:changed', 'prompt:published',
-  'reports:changed', 'round:opened', 'round:closed', 'session:changed', 'new-dots:changed',
+  'reports:changed', 'round:opened', 'round:closed', 'session:changed', 'new-dots:changed', 'post:removed',
 ];
 
 export function NewDotsUpdates(): null {

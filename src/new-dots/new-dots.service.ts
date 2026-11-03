@@ -60,7 +60,7 @@ async function readNewDots(tx: PrismaTx, actor: Actor): Promise<NewDots> {
     const { visible } = await readQueueGroups(tx, me, role);
     reports = visible.some(([, group]) =>
       (role === 'ADMIN' || !filedBy(group, me)) &&
-      group.some((row) => newer(row.createdAt, session.reportsOpenedAt)),
+      group.some((row) => row.reporterId !== me && newer(row.createdAt, session.reportsOpenedAt)),
     );
   }
   const like = await tx.like.findFirst({
@@ -91,20 +91,20 @@ export class NewDotsService {
       await readActiveActor(tx, actor.studentId);
       if (actor.sessionHash === null) throw new ApiError('unauthenticated');
       if (input.page === 'feedback') {
-        await tx.privateFeedback.updateMany({
+        const { count } = await tx.privateFeedback.updateMany({
           where: { ...feedbackReceivedWhere(actor.studentId, input.matchId), readAt: null },
           data: { readAt: ctx.now },
         });
+        if (count > 0) ctx.afterCommit(() => this.publisher.newDotsChanged({ studentId: actor.studentId }));
       } else {
         await tx.session.updateMany({
           where: { id: actor.sessionHash, studentId: actor.studentId },
           data: { [OPENED_COLUMNS[input.page]]: ctx.now },
         });
+        const sessionHash = actor.sessionHash;
+        ctx.afterCommit(() => this.publisher.newDotsChanged({ sessionHash }));
       }
-      const dots = await readNewDots(tx, actor);
-      const sessionHash = actor.sessionHash;
-      ctx.afterCommit(() => this.publisher.newDotsChanged({ sessionHash }));
-      return dots;
+      return readNewDots(tx, actor);
     });
   }
 }

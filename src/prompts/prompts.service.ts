@@ -44,6 +44,7 @@ export class PromptsService {
       const item = toAnswerView({ ...post, author }, prompt);
       const earned = await awardPromptXp(tx, author.id, promptPostCount + 1, ctx.now);
       ctx.afterCommit(() => this.publisher.postCreated(item));
+      ctx.afterCommit(() => this.publisher.newDotsChanged({ studentId: actor.studentId }));
       return earned;
     });
   }

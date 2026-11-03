@@ -106,6 +106,11 @@ Unaffected:
    > sign-in lands on `/`, which opens it at once. "Nothing about … Likes … has a dot" no longer
    > holds for Likes on your own Posts; XP, Levels, Badges and the Leaderboard still have none.
 
+   > **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262), on review)** *(uncommitted)*: your own Report never lights your own dot, as your own
+   > Like does not. An Admin's queue still shows a group holding their own Report, but only Reports
+   > filed by someone else turn the dot on; a Peer Moderator cannot act on such a group, so it has
+   > none.
+
 4. **The openings live on the `Session` row; Private Feedback carries its own `read_at`.** Five
    nullable timestamps on `Session`, one per page a sign-in opens: Messages, Match, Friends,
    Prompts and Reports. A sign-in starts with all five empty, and they go with the row at sign-out
@@ -148,10 +153,14 @@ Unaffected:
    > Report is about (the reported Student, or the reported Post's author), staff or not.
 
    > **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); decision 3's note of the same day)** *(uncommitted)*:
-   > `new-dots:changed {}` has a second sender. After a Like is given or taken back by a Student
+   > `new-dots:changed {}` has more senders. After a Like is given or taken back by a Student
    > who is not the Post's author, and the write changed a row, it also goes to the author's own
    > `student:<id>` room, so their Feed dot reads again. A self-Like sends none. `post:likes` is
-   > unchanged.
+   > unchanged. So that a thing handled on one sign-in leaves no dot on another (decision 2), it
+   > also goes to the Student's own room after a thread read or a Private Feedback opening that
+   > marks any, and after their Prompt answer. An opening of any other page still reaches that
+   > sign-in's own sockets only. Every page also reads its dots again on `post:removed`, which a
+   > removal already sends to `feed`, so no message goes to the reported Post's author alone.
 
 6. **Peer Moderators and Admins share a fourth room, `staff`, and a role change moves a Student's
    connections at once.** A socket joins `staff` at admission when its Student's role is

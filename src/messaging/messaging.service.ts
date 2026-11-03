@@ -192,6 +192,7 @@ export class MessagingService {
         where: { recipientId: actor.studentId, senderId: peer.id, readAt: null },
         data: { readAt: ctx.now },
       });
+      if (count > 0) ctx.afterCommit(() => this.publisher.newDotsChanged({ studentId: actor.studentId }));
       return { updated: count };
     });
   }

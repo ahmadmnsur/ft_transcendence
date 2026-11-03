@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { useI18n } from '../i18n/context';
 import { PageTitle } from '../layout';
-import { NewDot } from '../design';
+import { NewDot, useNewDotLabel } from '../design';
 import { useNewDots } from '../newDots/useNewDots';
 
 export function AdminHomePage(): React.JSX.Element {
   const dots = useNewDots();
+  const newDotLabel = useNewDotLabel();
   const { t } = useI18n();
   const copy = t.admin.home;
   const tools = [
@@ -30,7 +31,7 @@ export function AdminHomePage(): React.JSX.Element {
                 to={tool.to}
                 className="flex h-full flex-col gap-1 rounded-xl border border-line bg-surface p-4 shadow-sm transition-colors duration-150 hover:border-line-strong hover:bg-surface-muted focus-ring sm:p-5"
               >
-                <h2 className="text-base font-semibold text-link">
+                <h2 aria-label={tool.to === '/admin/reports' && dots.reports ? newDotLabel(tool.title) : undefined} className="text-base font-semibold text-link">
                   {tool.title}
                   {tool.to === '/admin/reports' && dots.reports ? <NewDot /> : null}
                 </h2>

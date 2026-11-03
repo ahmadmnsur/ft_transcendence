@@ -99,8 +99,10 @@ ceux d'un ancien étudiant. Cette liste ne figure jamais sur un profil, et les n
 jamais l'objet d'une moyenne ni d'un score combiné. Le Point clé public contient les mots que
 vous avez confirmés, qui vous sont attribués, sans champ nommant votre Mentor.
 
-21 Beirut enregistre quand vous lisez un Retour privé à votre sujet. Le Mentoré qui l'a écrit
-ne voit jamais quand vous l'avez lu.
+Quand vous ouvrez votre page de Retours privés, 21 Beirut enregistre cet instant comme le moment où
+vous avez lu tous les Retours privés non lus à votre sujet, y compris ceux des pages suivantes.
+Ouvrir la page d'un Match fait de même pour son Retour privé non lu à votre sujet. Le Mentoré qui
+l'a écrit ne voit jamais quand vous l'avez lu.
 
 **Votre activité dans la communauté**
 

@@ -6,6 +6,8 @@ import { SESSION_QUERY_KEY, sessionQueryOptions, type SessionValue } from '../ap
 
 const EMPTY_DOTS = Object.fromEntries(NEW_DOT_KEYS.map((key) => [key, false])) as NewDots;
 
+type OpenedPageOptions = { matchId?: string; enabled?: boolean; refresh?: unknown };
+
 export function readNewDotsAgain(client: QueryClient): void {
   void client.invalidateQueries({ queryKey: NEW_DOTS_QUERY_KEY });
 }
@@ -17,7 +19,7 @@ export function useNewDots(): NewDots {
   return studentId === null ? EMPTY_DOTS : data ?? EMPTY_DOTS;
 }
 
-export function useOpenedPage(page: NewDotKey, matchId?: string, enabled = true): void {
+export function useOpenedPage(page: NewDotKey, { matchId, enabled = true, refresh }: OpenedPageOptions = {}): void {
   const client = useQueryClient();
   const { data: session } = useQuery(sessionQueryOptions());
   const studentId = session?.authenticated === true ? session.student.id : null;
@@ -49,6 +51,7 @@ export function useOpenedPage(page: NewDotKey, matchId?: string, enabled = true)
         failed = false;
         previous.current = dots[page];
         client.setQueryData(queryKey, dots);
+        void client.invalidateQueries({ queryKey, exact: true });
       } catch {
         failed = true;
       } finally {
@@ -74,5 +77,5 @@ export function useOpenedPage(page: NewDotKey, matchId?: string, enabled = true)
       active = false;
       unsubscribe();
     };
-  }, [client, studentId, page, matchId, enabled]);
+  }, [client, studentId, page, matchId, enabled, refresh]);
 }

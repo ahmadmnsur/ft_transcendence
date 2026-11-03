@@ -2474,7 +2474,8 @@ two changes cannot both go through; a sign-in racing it is deleted or refused (�
 > page's `*_opened_at` on the caller's own `Session` row = now; `feedback` has no column and sets
 > `PrivateFeedback.read_at = now` on every unread Private Feedback about the caller, or with
 > `matchId` on that Match's only, where the caller is its Mentor · Result: the same object as the
-> `GET` · Events `new-dots:changed {}` to that sign-in's own sockets (§7.4) · Refusals: none of
+> `GET` · Events `new-dots:changed {}` to that sign-in's own sockets; for `feedback`, to the
+> caller's own `student:<id>` room, and only when it marked one (§7.4) · Refusals: none of
 > its own; an unknown `matchId`, or a Match the caller is not the Mentor of, writes nothing and
 > is not an error, so it reveals nothing.
 >
@@ -2491,7 +2492,7 @@ two changes cannot both go through; a sign-in racing it is deleted or refused (�
 > | `friends` | a pending friend request to the caller | `created_at` |
 > | `prompts` | the live Prompt, unanswered by the caller; `false` for an `ADMIN` | `published_at` |
 > | `feedback` | Private Feedback about the caller with `read_at` null | none |
-> | `reports` | an open Report in a group the caller can act on (§12.4); `false` for a `STUDENT` | `created_at` |
+> | `reports` | an open Report filed by someone else, in a group the caller can act on (§12.4); `false` for a `STUDENT` | `created_at` |
 
 ### 6.2 Profiles, Skills, Learning Goal, search
 
@@ -2616,6 +2617,11 @@ actor's own inbox · Persist `read_at = now` on rows with
 (ADR-0014 d6) · Result `{ updated }` · Events none (no read receipt) · Concurrency: vs a concurrent
 message, one serial order — a message ordered first is counted, one ordered after is not.
 
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 2)** *(uncommitted)*: "Events none" no longer holds. When the call
+> marks at least one message, `new-dots:changed {}` goes to the actor's own `student:<id>` room
+> after commit, so the Messages dot of their other sign-ins reads again (§7.4). The sender is told
+> nothing, so there is still no read receipt.
+
 ### 6.6 Rounds and Matches (Student side)
 
 | Endpoint | Behaviour |
@@ -2644,7 +2650,8 @@ reads *"Matched by an Admin"* with no number (ADR-0006 d10, CONTEXT).
 > `/feedback` or a Match's page: `POST /api/me/new-dots/opened` with `{ page: "feedback" }`, and
 > `matchId` for one Match, sets its `read_at` (§6.1's note of the same day).
 > `GET /api/me/feedback-received` still has no side effect, and neither it nor any other response
-> carries `read_at`, to the Mentor or to the Mentee.
+> carries `read_at`, to the Mentor or to the Mentee. When an opening marks any, `new-dots:changed {}`
+> goes to the Mentor's own `student:<id>` room, so their other sign-ins follow (§7.4).
 
 ### 6.8 Reflection Prompts
 
@@ -2659,6 +2666,10 @@ reads *"Matched by an Admin"* with no number (ADR-0006 d10, CONTEXT).
 > total }`.
 
 **`POST /api/prompts/:id/answers`** and **`POST /api/admin/prompts`** — §8.12.
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 2)** *(uncommitted)*: an answer also sends `new-dots:changed {}` to
+> its author's own `student:<id>` room after commit, beside `post:created`, so the Prompts dot of
+> their other sign-ins reads again (§7.4).
 
 ### 6.9 Feed and Likes
 
@@ -2951,12 +2962,14 @@ Evidence, Prompt publication, reports or sanctions; those surfaces refresh on na
 >
 > | Event | Room | Payload | Emitted after the commit of | Client reaction |
 > | --- | --- | --- | --- | --- |
-> | `new-dots:changed` | that sign-in's own sockets; for a Like, the Post author's `student:<id>` | `{}` | an opening (`POST /api/me/new-dots/opened`); a Like or unlike by another Student that changes a row (§6.9) | read the New dots again |
+> | `new-dots:changed` | that sign-in's own sockets after an opening; otherwise the Student's own `student:<id>` | `{}` | an opening (`POST /api/me/new-dots/opened`, §6.1); for the Student's room, a Private Feedback opening or a thread read that marks any (§6.7, §6.5), a Prompt answer (§6.8), and another Student's Like or unlike of their Post that changes a row (§6.9) | read the New dots again |
 >
 > The New dots (§3.5.1) also read again on `dm:message`, `match:ready`, `match:changed`,
-> `friends:changed`, `prompt:published`, `reports:changed`, `round:opened`, `round:closed` and
-> `session:changed`, and after a reconnect with every other query (§7.5). The opening sign-in's
-> other tabs follow it; another sign-in of the same Student keeps its own dots. No room is added:
+> `friends:changed`, `prompt:published`, `reports:changed`, `round:opened`, `round:closed`,
+> `session:changed` and `post:removed` (§12.5), and after a reconnect with every other query (§7.5). The opening sign-in's
+> other tabs follow it; another sign-in of the same Student keeps its own dots. What is handled on
+> one sign-in (a thread read, Private Feedback read, the live Prompt answered) reaches the
+> Student's other sign-ins, whose dots read again without changing their openings. No room is added:
 > the server finds a sign-in's sockets by the session they were admitted with. The existing events,
 > payloads and rooms are unchanged.
 
@@ -3755,6 +3768,10 @@ Admin only.
 > `conflict_of_interest`. "An Admin cannot bypass the own-complaint guard by removing a Post they
 > reported" above no longer holds: an Admin may remove a Post they reported, attributed through
 > `resolved_by_id` like every removal.
+
+> **2026-11-03 ([#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262); ADR-0021 decision 5's note of the same day)** *(uncommitted)*: every open page reads its
+> New dots again on the `post:removed` a removal already sends (§7.4), since Likes on a removed Post
+> no longer light its author's Feed dot. No event is added, so the author hears nothing of their own.
 
 ### 12.6 Resolved audit — `GET /api/admin/reports/resolved?page` (Admin) (ADR-0011 d6, d8)
 

@@ -87,7 +87,9 @@ Private Feedback received, newest first, including feedback from a former studen
 on a profile, and ratings are never averaged or combined into a score. The Public Takeaway contains
 your confirmed words, attributed to you, without a field naming your Mentor.
 
-21 Beirut records when you read Private Feedback about you. The Mentee who wrote it is never
+When you open your Private Feedback page, 21 Beirut records that time as when you read all
+unread Private Feedback about you, including feedback on later pages. Opening a Match’s page does
+the same for that Match’s unread Private Feedback about you. The Mentee who wrote it is never
 shown when you read it.
 
 **Your activity in the community**

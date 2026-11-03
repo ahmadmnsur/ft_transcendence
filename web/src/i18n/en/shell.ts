@@ -4,11 +4,11 @@ export default {
   skipLink: 'Skip to main content',
   pageTitle: '{page} · {brand}',
   header: {
-    newDot: ', new',
     newLabel: '{label}, new',
     navLabel: 'Main menu',
     menu: 'Menu',
     accountMenu: 'Account menu',
+    accountMenuNamed: 'Account menu {name}',
     adminLink: 'Admin tools',
     studentsLink: 'Students',
     friendsLink: 'Friends',

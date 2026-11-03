@@ -633,6 +633,7 @@ member who built a part.
 | **Blocks** | Block a Student from their profile, and lift it from the Blocks list. A Block ends a Friendship, stops new friend requests and Direct Messages, and keeps the pair from being matched. | Hussein |
 | **Direct Messages** | One-to-one messages, delivered live, on `/messages` and from a profile, with unread counts. | Ahmad |
 | **Live updates** | The socket gateway, its rooms and the online-status registry; the pages react live to a new Post, a Round opening or closing, a new Match, friend requests, a partner's Match answer or Review, and like counts. | Ahmad (gateway), Hussein (live reactions), Kamel (friend, Match and Like events) |
+| **New dots** | A red dot on each header link where something waits: an unread Direct Message or Private Feedback, a Match to answer or a Review to write, a friend request, the live Prompt unanswered, a Report to act on, another Student's Like on your Post. The menu buttons and the tab's icon show one too; opening the page clears it for that sign-in. | Kamel |
 | **Rounds and Matches** | An Admin opens and closes Rounds. Opening one pairs Students by the Compatibility Score with a Mission; each side accepts or declines. | Kamel (Rounds and Matches), Ahmad (the matcher and its tests) |
 | **Hand-made Matches** | An Admin pairs two Students the matcher left unmatched. | Ahmad |
 | **Reviews and Private Feedback** | The Mentee's three-part Review closes the Match: the Learning Outcome, Private Feedback to the Mentor with an optional rating, and a Public Takeaway. | Ahmad |
@@ -706,8 +707,9 @@ and one per Student) broadcasts `post:created`, `post:removed`, `prompt:publishe
 Match's Mentor and Mentee, `post:likes` to every signed-in Student in `feed`,
 `reports:changed` to the Peer Moderators and Admins in `staff` except the Student a Report is
 about, and `session:changed` to a Student whose role changed, so their open page follows it.
-`new-dots:changed` goes to one sign-in's own sockets after it opens a page, and to a Post's
-author after another Student's Like, so the header's New dots read again. A
+`new-dots:changed` goes to one sign-in's own sockets after it opens a page, and to a Student's
+own room after another Student's Like on their Post or after something they handled on one sign-in,
+so the header's New dots read again. A
 reconnecting client is admitted again by its session cookie, a short grace window keeps a reload
 from flickering the online status, and a Suspension or a password change disconnects the socket.
 

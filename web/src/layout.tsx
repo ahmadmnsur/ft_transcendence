@@ -8,7 +8,7 @@ import type { NewDots } from './api/new-dots';
 import { SESSION_QUERY_KEY, fetchSession, sessionQueryOptions } from './api/session';
 import { useI18n } from './i18n/context';
 import { languageNames, languages } from './i18n/language';
-import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, MoonIcon, NewDot, PersonName, SearchIcon, Select, SunIcon, buttonClasses, useTheme } from './design';
+import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, MoonIcon, NewDot, PersonName, SearchIcon, Select, SunIcon, buttonClasses, useNewDotLabel, useTheme } from './design';
 import { RealtimeConnection } from './realtime/connection';
 import { SessionUpdates } from './realtime/SessionUpdates';
 import { MessageUpdates } from './messages/MessageUpdates';
@@ -66,8 +66,9 @@ function followHeaderHeight(header: HTMLElement | null): (() => void) | undefine
 }
 
 function SiteHeader(): React.JSX.Element {
-  const { t, language, setLanguage, formatText } = useI18n();
+  const { t, language, setLanguage, formatText, personNameText } = useI18n();
   const dots = useNewDots();
+  const newDotLabel = useNewDotLabel();
   const copy = t.shell.header;
   const { theme, setTheme } = useTheme();
   const { data: session } = useQuery(sessionQueryOptions());
@@ -200,7 +201,7 @@ function SiteHeader(): React.JSX.Element {
   );
 
   const phoneMenuButton = (
-    <IconButton {...phoneMenu.buttonProps} label={phoneDot ? formatText(copy.newLabel, { label: copy.menu }) : copy.menu} className="ms-auto md:hidden">
+    <IconButton {...phoneMenu.buttonProps} label={phoneDot ? newDotLabel(copy.menu) : copy.menu} className="ms-auto md:hidden">
       <MenuIcon size={20} />
       {phoneDot ? <NewDot className="absolute end-1 top-1" /> : null}
     </IconButton>
@@ -283,7 +284,12 @@ function SiteHeader(): React.JSX.Element {
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 pt-3 max-md:pb-3 sm:gap-3">
         {brandLink}
         <div className="relative ms-auto hidden md:block">
-          <button type="button" {...accountMenu.buttonProps} className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
+          <button
+            type="button"
+            {...accountMenu.buttonProps}
+            aria-label={dots.feedback ? newDotLabel(formatText(copy.accountMenuNamed, { name: personNameText(student.displayName, false) })) : undefined}
+            className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+          >
             <span className="sr-only">{copy.accountMenu}</span>
             <span className="max-w-40 truncate">
               <PersonName name={student.displayName} removed={false} />
@@ -298,7 +304,7 @@ function SiteHeader(): React.JSX.Element {
             <ul>
               {accountLinks.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                  <Link to={link.to} activeOptions={activeOptions(link.to)} aria-label={hasDot(link.to) ? newDotLabel(link.label) : undefined} className={panelItemClass}>
                     {linkLabel(link)}
                   </Link>
                 </li>
@@ -314,7 +320,7 @@ function SiteHeader(): React.JSX.Element {
             <ul>
               {barLinks.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                  <Link to={link.to} activeOptions={activeOptions(link.to)} aria-label={hasDot(link.to) ? newDotLabel(link.label) : undefined} className={panelItemClass}>
                     {linkLabel(link)}
                   </Link>
                 </li>
@@ -327,7 +333,7 @@ function SiteHeader(): React.JSX.Element {
               <ul>
                 {accountLinks.map((link) => (
                   <li key={link.to}>
-                    <Link to={link.to} activeOptions={activeOptions(link.to)} className={panelItemClass}>
+                    <Link to={link.to} activeOptions={activeOptions(link.to)} aria-label={hasDot(link.to) ? newDotLabel(link.label) : undefined} className={panelItemClass}>
                       {linkLabel(link)}
                     </Link>
                   </li>
@@ -345,7 +351,7 @@ function SiteHeader(): React.JSX.Element {
         <ul className="-mx-3 flex flex-wrap">
           {barLinks.map((link) => (
             <li key={link.to}>
-              <Link to={link.to} activeOptions={activeOptions(link.to)} className={barLinkClass}>
+              <Link to={link.to} activeOptions={activeOptions(link.to)} aria-label={hasDot(link.to) ? newDotLabel(link.label) : undefined} className={barLinkClass}>
                 {linkLabel(link)}
               </Link>
             </li>

@@ -32,7 +32,7 @@ function PromptDetail({ promptId }: { promptId: string }): React.JSX.Element {
   const page = requestedPage ?? 1;
   const answers = useQuery({ ...promptAnswersQueryOptions(promptId, page), enabled: wellFormedId });
   const detail = answers.data;
-  useOpenedPage('prompts', undefined, detail?.live === true);
+  useOpenedPage('prompts', { enabled: detail?.live === true });
   const [body, setBody] = useState('');
   const answerRef = useRef<HTMLTextAreaElement>(null);
   const answerHintId = useId();

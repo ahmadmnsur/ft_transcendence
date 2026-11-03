@@ -5,11 +5,11 @@ export default {
   skipLink: 'الانتقال إلى المحتوى الرئيسي',
   pageTitle: '{page} · {brand}',
   header: {
-    newDot: '، جديد',
     newLabel: '{label}، جديد',
     navLabel: 'القائمة الرئيسية',
     menu: 'القائمة',
     accountMenu: 'قائمة الحساب',
+    accountMenuNamed: 'قائمة الحساب {name}',
     adminLink: 'أدوات المسؤول',
     studentsLink: 'الطلاب',
     friendsLink: 'الأصدقاء',

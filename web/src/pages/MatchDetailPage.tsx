@@ -18,8 +18,8 @@ export function MatchDetailPage(): React.JSX.Element {
   const copy = t.matching.detail;
   const { matchId } = useParams({ from: '/matches/$matchId' });
   const wellFormedId = isUuid(matchId);
-  useOpenedPage('feedback', matchId, wellFormedId);
   const { data, error, isError, refetch } = useQuery({ ...matchQueryOptions(matchId), enabled: wellFormedId });
+  useOpenedPage('feedback', { matchId, enabled: wellFormedId, refresh: data?.privateFeedback != null });
   const [notice, setNotice] = useState<MatchNotice | undefined>(undefined);
 
   if (!wellFormedId) return <NotFoundPage />;
