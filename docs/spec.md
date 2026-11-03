@@ -83,6 +83,13 @@ Majors failing (20 − 4 = 16).
 > `README.md` → *Modules* gives the justification `:941`–`:949` asks for, framed as #7 requires:
 > the engine and its validation method, never the platform's matching counted twice.
 
+> **2026-11-03** *(uncommitted, on branch `docs/readme-modules`)*: two Minor Modules of choice
+> (`:957`) are offered beyond the 22, on Kamel's call: the light and the dark theme (§3.5.3) and
+> New dots (ADR-0021). They are extras: the 22 do not depend on them, so the count stands if the
+> evaluator refuses them. With both, 24 are claimed, and 19 still count at most. Neither is the
+> notification system (`:518`), which stays out (§1.4). `README.md` → *Modules* → *Extra modules*
+> gives each the justification `:941`–`:949` asks for.
+
 | Module (`document/en.subject.md`) | Pts | What in this spec satisfies each bullet |
 | --- | --- | --- |
 | **Major — framework on both ends** (`:478`) | 2 | React SPA (§3.5) + NestJS API (§3.4). The two framework Minors are **not** also claimed (#7). |
@@ -136,6 +143,10 @@ note); any Compose service beyond the six of §15.1.
 > something waits for the Student on that page, and more live events are in scope, on
 > [#260](https://github.com/ahmadmnsur/ft_transcendence/issues/260), [#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261) and [#262](https://github.com/ahmadmnsur/ft_transcendence/issues/262). The notification system stays out: no number, popup,
 > operating-system notification, inbox or list of what happened (ADR-0021 decision 8).
+
+> **2026-11-03** *(uncommitted, on branch `docs/readme-modules`)*: the New dots are now offered as
+> an extra Minor Module of choice (`:957`), outside the 22 (§1.3's note of this day). The
+> notification system (`:518`) still stays out, for ADR-0021 decision 7's reason.
 
 **Out of scope with the move to Supabase** (map #85, ADR-0019): everything Supabase offers beyond
 its three stores, namely its sessions and tokens past one request, its browser client, the Data

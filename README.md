@@ -31,6 +31,8 @@ Key features:
   and how many Matches end in a Review.
 - Sign-up with email and password, and Sign in with 42.
 - English, French and Arabic, with Arabic laid out right to left.
+- A light and a dark theme, following the computer's setting until a person picks one.
+- New dots on the header's links where something waits, and pages that change without a reload.
 - One command starts everything: `make up`, or `docker compose up --build`.
 
 The domain words (Student, Round, Match, Mentor, Review, Post, …) are defined in
@@ -476,7 +478,7 @@ and when it was met:
 | The move to Supabase: the database, the files and the passwords | Kamel | before anyone built on it | decided 2026-09-30; ADR-0019 on 2026-10-13; tickets rewritten on 2026-10-14 |
 | French, Arabic and right to left, claimed and planned | Hussein | before anyone built on it | claimed 2026-10-11; ADR-0020 on 2026-10-15; tickets on 2026-10-16 |
 | The Privacy Policy and the Terms of Service, live and signed off | Ahmad, Kamel checking the technical claims | 2026-10-15 (end of week 4), moved to 2026-10-25 | live on 2026-10-11; signed off on 2026-10-25 |
-| Every feature merged | the team | before the browser pass | 2026-10-26, the last being the legal pages in French and Arabic |
+| Every feature merged | the team | before the browser pass | the planned ones on 2026-10-26, the last being the legal pages in French and Arabic; those added after, the dark theme and the New dots among them, through 2026-11-03 |
 | Week 5: the browser pass in Chrome, Firefox and Brave | Ahmad | 2026-10-22 | still open on 2026-10-27 |
 | The evaluation | the team | no date set on 2026-10-27 | — |
 
@@ -618,40 +620,34 @@ files; the tables hold only each file's token, type and size.
 
 ## Features List
 
-Each feature, what it does, and who built it. A feature built in several pull requests names each
-member who built a part.
+Each feature, what it does, and who built it. Related features share a row, and a feature built in
+several pull requests names each member who built a part.
 
 | Feature | What it does | Built by |
 | --- | --- | --- |
-| **Accounts** | Sign-up with an email, a password and a display name; sign-in, sign-out and password change; a password visibility toggle and a sign-up confirmation. | Ahmad |
-| **Sign in with 42** | Signs in through 42's OAuth. A 42 account finds its Student by 42's account id, never by email; a new one gets a sign-up form. A signed-in Student can connect or disconnect 42. | Ahmad |
+| **Accounts and Sign in with 42** | Sign-up with an email, a password and a display name; sign-in, sign-out and password change, with a password visibility toggle and a sign-up confirmation. A display name or a new password refuses emoji, and a password stops at 72 bytes. Sign in with 42 runs through 42's OAuth: a 42 account finds its Student by 42's account id, never by email, a new one gets a sign-up form, and a signed-in Student can connect or disconnect 42. | Ahmad, Hussein (the emoji and length rules) |
 | **Recovery through 42** | A Student who forgot their password and connected 42 sets a new one after confirming with 42. | Kamel |
-| **Profiles, Skills and the Learning Goal** | A profile page; Skills to teach and to learn from the shared catalogue; one Learning Goal, which raises the Compatibility Score. | Hussein |
+| **Profiles, Skills and the Learning Goal** | A profile page, with each form behind its own button; Skills to teach and to learn from the shared catalogue, each Skill on one list only; one Learning Goal, which raises the Compatibility Score. | Hussein, Ahmad (the page's redesign) |
 | **Avatars** | Upload a PNG or a JPEG with a preview and a progress bar, replace it or delete it; a default avatar otherwise. | Hussein |
 | **Advanced search** | `/students`: filter by Skills to teach and to learn, sort and page the results. | Ahmad |
-| **Friends and online status** | Friend requests, accepting, declining and ending; the Friends list; live online status. | Ahmad |
+| **Friends, online status and Direct Messages** | Friend requests, accepting, declining and ending; the Friends list; live online status. One-to-one messages of up to 500 characters, delivered live, on `/messages` and from a profile, with unread counts; a conversation shows when the other Student is typing and whether a Friend is online. | Ahmad |
 | **Blocks** | Block a Student from their profile, and lift it from the Blocks list. A Block ends a Friendship, stops new friend requests and Direct Messages, and keeps the pair from being matched. | Hussein |
-| **Direct Messages** | One-to-one messages, delivered live, on `/messages` and from a profile, with unread counts. | Ahmad |
-| **Live updates** | The socket gateway, its rooms and the online-status registry; the pages react live to a new Post, a Round opening or closing, a new Match, friend requests, a partner's Match answer or Review, and like counts. | Ahmad (gateway), Hussein (live reactions), Kamel (friend, Match and Like events) |
+| **Live updates** | The socket gateway, its rooms and the online-status registry. Pages change without a reload on a new or removed Post, a Round opening or closing, a new Match, a partner's Match answer or Review, a friend request, a like count, a new Prompt or Prompt answer, a change in the report queue, and a role change. | Ahmad (gateway), Hussein (new Posts, Rounds and Matches), Kamel (the other events) |
 | **New dots** | A red dot on each header link where something waits: an unread Direct Message or Private Feedback, a Match to answer or a Review to write, a friend request, the live Prompt unanswered, a Report to act on, another Student's Like on your Post. The menu buttons and the tab's icon show one too; opening the page clears it for that sign-in. | Kamel |
-| **Rounds and Matches** | An Admin opens and closes Rounds. Opening one pairs Students by the Compatibility Score with a Mission; each side accepts or declines. | Kamel (Rounds and Matches), Ahmad (the matcher and its tests) |
-| **Hand-made Matches** | An Admin pairs two Students the matcher left unmatched. | Ahmad |
+| **Rounds and Matches** | An Admin opens and closes Rounds. Opening one pairs Students by the Compatibility Score with a Mission; each side accepts or declines. An Admin can also pair two Students the matcher left unmatched. | Kamel (Rounds and Matches), Ahmad (the matcher, hand-made Matches) |
 | **Reviews and Private Feedback** | The Mentee's three-part Review closes the Match: the Learning Outcome, Private Feedback to the Mentor with an optional rating, and a Public Takeaway. | Ahmad |
 | **Evidence** | An optional PDF, PNG or JPEG on a Review, seen only by the pair and Admins. | Kamel |
 | **Feed and Likes** | The feed of Public Takeaways and Prompt answers, with Likes and who liked, on `/`, on profiles and under each Prompt, in pages of 20. | Hussein (feed and Likes), Kamel (pages) |
 | **Reflection Prompts** | An Admin publishes a question; each Student answers it once, as a Post. | Ahmad |
-| **XP, Levels, Badges and Streaks** | XP for a Review and for a Prompt answer; ten Levels with a progress bar; three Badges; a Streak counted at each Round close; earn panels and a `/rules` page. | Ahmad |
-| **Leaderboard** | The top ten by XP, with the viewer's own rank pinned below. | Ahmad |
+| **XP, Levels, Badges, Streaks and the Leaderboard** | XP for a Review and for a Prompt answer; ten Levels with a progress bar; three Badges; a Streak counted at each Round close; the top ten by XP, with the viewer's own rank pinned below; earn panels and a `/rules` page. | Ahmad |
 | **Reports** | Report a Post or a Student, with a reason. | Hussein |
-| **Moderation** | Reports grouped by what they target, in a queue: a Peer Moderator sees the reported Posts, an Admin every group. A Post's group is resolved by removing the Post or dismissing the Reports; a Student's group is actioned or dismissed by an Admin, who applies any sanction from the Users table. Admins also read the audit of resolved Reports. | Ahmad |
+| **Moderation, Suspension and Removal** | Reports grouped by what they target, newest first, in a queue: a Peer Moderator sees the reported Posts, an Admin every group. A Post's group is resolved by removing the Post or dismissing the Reports; a Student's group is actioned or dismissed by an Admin, who can suspend, reinstate or remove the Student from the Users table. Admins also read the audit of resolved Reports. | Ahmad |
 | **Users table and roles** | The Admin's table of every account: view, edit, and change a role. | Kamel |
-| **Suspension and Removal** | From the Users table, an Admin suspends, reinstates or removes a Student. | Ahmad |
 | **Learning Analytics** | `/admin/analytics`: the most wanted and most offered Skills, the gaps between them, completion per Round and how Matches ended, with charts and plain sentences. | Ahmad |
 | **Three languages, right to left** | English, French and Arabic everywhere, chosen in the header; Arabic laid out right to left. | Hussein, and every member for their own slices' text |
 | **Light and dark themes** | A dark theme beside the light one. It follows the computer's setting until a person picks one with the header's moon or sun button. | Hussein |
-| **Design system** | The palette, type scale, icons and reusable components every page is built from, in all three languages. | Ahmad, Hussein (French, Arabic and right to left) |
-| **App shell** | Routes and their guards, the layout, the header with its bar, account menu and Admin tools page, and the API client. | Ahmad (shell), Kamel (header) |
-| **Landing page and name** | What a signed-out visitor sees at `/`, and the name 21 Beirut with its logo. | Ahmad |
+| **Design system** | The palette, type scale, icons and reusable components every page is built from, with one list design for every dropdown and search on long lists, in all three languages. | Ahmad, Hussein (French, Arabic and right to left) |
+| **App shell and landing page** | Routes and their guards, the layout, the header with its bar, account menu, phone Menu and Admin tools page, and the API client; what a signed-out visitor sees at `/`, and the name 21 Beirut with its logo. | Ahmad (shell, landing page, name), Kamel (header) |
 | **Privacy Policy and Terms of Service** | Both pages, linked from every page's footer, in three languages. | Ahmad (pages and sign-off), Hussein (corrections and translations), Kamel (technical check) |
 | **Seed and demo data** | Each first boot creates the Admin, the Peer Moderator, thirty Students, four closed Rounds with their Matches and Reviews, Prompts, Friends, messages, Reports, a Suspension and a Removal, then checks the result. | Kamel, Ahmad, Hussein |
 | **One-command boot** | `make up` on the team project or the local fallback; the boot check; HTTPS through the proxy; the two resets; opening `make up` to the local network. | Kamel, Ahmad (the local fallback, the network access) |
@@ -667,10 +663,14 @@ joined on 2026-10-15 ([ADR-0020](docs/adr/0020-peerconnect-speaks-english-french
 and the matching engine joined as a Module of choice on 2026-10-27, the fallback issue #7 had named
 on 2026-09-18. The margin is deliberate: if two Majors failed at evaluation, 18 points would remain.
 
+Two more Minors are offered as extra Modules of choice: the light and the dark theme, and the New
+dots ([*Extra modules*](#extra-modules-two-minors-beyond-the-22), at the end of this section). They
+are not part of the 22: if the evaluator refuses them, the count above stands.
+
 | Module | Type | Points | Built by |
 | --- | --- | --- | --- |
 | Use a framework for both the frontend and backend (`:478`) | Major | 2 | Kamel, Ahmad |
-| Implement real-time features using WebSockets (`:490`) | Major | 2 | Ahmad, Hussein |
+| Implement real-time features using WebSockets (`:490`) | Major | 2 | Ahmad, Hussein, Kamel |
 | Allow users to interact with other users (`:498`) | Major | 2 | Ahmad, Hussein |
 | Standard user management and authentication (`:592`) | Major | 2 | Hussein, Ahmad |
 | Advanced permissions system (`:622`) | Major | 2 | Kamel, Ahmad |
@@ -681,7 +681,7 @@ on 2026-09-18. The margin is deliberate: if two Majors failed at evaluation, 18 
 | Custom-made design system with reusable components (`:526`) | Minor | 1 | Ahmad, Hussein |
 | File upload and management system (`:536`) | Minor | 1 | Hussein, Kamel |
 | Remote authentication with OAuth 2.0, through 42 (`:620`) | Minor | 1 | Ahmad, Kamel |
-| Support for additional browsers (`:574`) | Minor | 1 | Ahmad (the browser pass, open on 2026-10-27) |
+| Support for additional browsers (`:574`) | Minor | 1 | Ahmad (the browser pass, still open on 2026-11-03) |
 | User activity analytics and insights dashboard (`:642`) | Minor | 1 | Ahmad |
 | Support for multiple languages (`:554`) | Minor | 1 | Hussein, and every member for their own slices' text |
 | Right-to-left (RTL) language support (`:564`) | Minor | 1 | Hussein |
@@ -689,7 +689,8 @@ on 2026-09-18. The margin is deliberate: if two Majors failed at evaluation, 18 
 
 **Point calculation:** 6 Majors × 2 = 12, plus 10 Minors × 1 = 10, so **22 points**. The subject
 requires 14 and counts at most 5 bonus points above them, so 19 is the most that can count; the
-three points above it are margin, not score.
+three points above it are margin, not score. With the two extra Minors accepted, 24 points are
+claimed, and 19 is still the most that counts.
 
 Each module, why it was chosen and how it was built:
 
@@ -709,9 +710,9 @@ Match's Mentor and Mentee, `post:likes` to every signed-in Student in `feed`,
 about, and `session:changed` to a Student whose role changed, so their open page follows it.
 `new-dots:changed` goes to one sign-in's own sockets after it opens a page, and to a Student's
 own room after another Student's Like on their Post or after something they handled on one sign-in,
-so the header's New dots read again. A
-reconnecting client is admitted again by its session cookie, a short grace window keeps a reload
-from flickering the online status, and a Suspension or a password change disconnects the socket.
+so the header's New dots read again. A reconnecting client is admitted again by its session cookie,
+a short grace window keeps a reload from flickering the online status, and a Suspension or a
+password change disconnects the socket.
 
 **User interaction (Major).** *Why:* meeting a Match needs a way to talk, and a peer-learning
 platform needs profiles and Friends. *How:* one-to-one Direct Messages, persisted and delivered
@@ -796,9 +797,9 @@ Prompt answer, and a `/rules` page show them.
 
 **Design system (Minor).** *Why:* three developers building pages in parallel need the same parts.
 *How:* the project's own palette, type scale and icon set, and more than ten reusable components,
-in three languages, both directions and a light and a dark theme. They are in
-[`web/src/design/`](web/src/design/), and [`docs/spec.md`](docs/spec.md) section 3.5.3 describes
-them.
+in three languages and both directions. They are in [`web/src/design/`](web/src/design/), and
+[`docs/spec.md`](docs/spec.md) section 3.5.3 describes them. The dark theme's values are an extra
+module of their own (*Extra modules*, below), so they are not counted here.
 
 **File upload (Minor).** *Why:* avatars, and Evidence of what was learned. *How:* avatars (PNG or
 JPEG) and Evidence (PDF, PNG or JPEG), checked in the browser and again on the server by decoding
@@ -813,7 +814,7 @@ Admin's included, can steer a 42 login to another account.
 **Additional browsers (Minor).** *Why:* students use Firefox and Brave as well as Chrome. *How:* the
 browser pass runs the platform in Firefox and Brave as in Chrome, with a clean console in each, and
 adds the limitations it finds to this README. It is Ahmad's ([issue
-#72](https://github.com/ahmadmnsur/ft_transcendence/issues/72)), and still open on 2026-10-27.
+#72](https://github.com/ahmadmnsur/ft_transcendence/issues/72)), and still open on 2026-11-03.
 
 **User activity analytics (Minor).** *Why:* an Admin running Rounds needs to see whether the loop
 works. *How:* `/admin/analytics` reads the live data in one read-only transaction: the most wanted
@@ -832,6 +833,101 @@ layout, not only translating it. *How:* the page's `dir` is set before the first
 changes with the language without a reload. The layout mirrors through flow-relative classes only,
 and a build check refuses a left or right class. The progress bar, the arrow keys, the tables and
 the chart are mirrored as well.
+
+### Extra modules: two Minors beyond the 22
+
+Two Minor Modules of choice (`:957`) are offered on top of the 22 points above. The subject asks
+the same justification of a Minor as of a Major (`:941`–`:949`), for one point, so each one follows
+it below. Neither is a module the subject lists: no listed module asks for a theme, and the New dots
+are not the notification system (`:518`), as their paragraph says. The 22 do not depend on them.
+
+| Module | Type | Points | Built by |
+| --- | --- | --- | --- |
+| Module of choice: the light and the dark theme (`:957`) | Minor | 1 | Hussein |
+| Module of choice: New dots (`:957`) | Minor | 1 | Kamel |
+| **Total, if both are accepted** | 6 Majors, 12 Minors | **24** | |
+
+**Module of choice: the light and the dark theme (Minor, `:957`).** This module is the dark theme
+and what chooses between the two themes. It is not the design system counted again: the design
+system Minor (`:526`) counts the palette, the type scale, the icons and the components; this module
+counts a second, complete set of colour values and how the platform picks one.
+
+- *Why we chose it.* 42 students often work late, and many keep their computer in dark mode, where a
+  light-only page is the brightest thing on the screen. The subject lists no theme module, so it
+  can only be claimed as a Module of choice.
+- *What technical challenges it addresses.*
+  - **Contrast in both themes.** Every colour role (the page, the surfaces, text, borders, links,
+    the focus ring) needed a dark value, and every tint had to keep its text readable. In dark, each
+    colour scale's light steps become dark tints and its darkest step a light text, while the strong
+    fills keep their values, so white text on them keeps its ratio. Every text on 13 pages, signed
+    in and out, was measured in both themes: none is under WCAG AA (4.5:1), and the borders, the
+    focus ring, the progress fill and the chart marks are 3:1 or more.
+  - **No flash of the wrong theme.** A React app draws after its JavaScript loads, so a stored dark
+    choice would first show a white page. A small script at the top of `index.html` sets the theme
+    on `<html>` before anything is drawn. The Content Security Policy refuses inline scripts, so it
+    is a file served from the platform's own origin, which `script-src 'self'` allows.
+  - **The computer first, then the person.** A first visit follows the computer's setting and
+    changes with it live, until the person picks a theme with the header's moon or sun button. The
+    choice is kept in the browser, reaches the browser's other open tabs at once, and an unknown
+    stored value is ignored.
+  - **Everything follows.** `color-scheme: dark` turns the browser's own scroll bars and form
+    controls dark, and the chart, the progress bar and the default avatar have dark versions.
+- *How it adds value.* Reading the feed, a Match or a long conversation at night is easier on the
+  eyes, and a Student whose computer is in dark mode gets it with no setting to find.
+- *Why it deserves Minor status.* It reaches every page, with contrast measured in both themes and
+  a start-up order that holds under the CSP, but it adds no server work and no data: smaller in
+  scope than a Major, as `:957` asks.
+- *How it was implemented.* The dark values sit beside the light ones in
+  [`web/src/design/tokens.css`](web/src/design/tokens.css), under `:root[data-theme='dark']`.
+  [`web/public/theme.js`](web/public/theme.js) sets the theme before the first draw, and
+  [`web/src/design/theme/`](web/src/design/theme/) keeps it in step with the computer's setting,
+  the button and the other tabs. [`docs/spec.md`](docs/spec.md) section 3.5.3 describes it.
+- *Who.* Hussein built it (2026-11-01).
+
+**Module of choice: New dots (Minor, `:957`).** This module is the New dots: a red dot after a
+header link when something waits for the Student on that page, cleared per sign-in. It is not the
+notification system (`:518`), which asks for a notification on *every* creation, update and
+deletion. A New dot says only that something waits on a page, never what or how many, and a Block,
+a Report's parties and a sanction stay silent on purpose
+([ADR-0021](docs/adr/0021-new-dots-and-live-updates.md)). The live events that make the dots read
+again are counted by the WebSockets Major, not here.
+
+- *Why we chose it.* Before, a Student learned that something changed only on the page where it
+  shows: a friend request, a partner's answer to a Match, a Review about them, a Prompt they had not
+  answered, a new Report. Every step of the loop waits on someone acting, so a Student who does not
+  see what waits for them slows the whole Round.
+- *What technical challenges it addresses.*
+  - **Per sign-in, not per Student.** Each sign-in keeps when it last opened each page, on its own
+    `Session` row, in six columns. A dot shows only when something waits *and* it is newer than that
+    opening. Two devices signed in at once each clear their own dots, and a new sign-in shows again
+    what still waits.
+  - **"Waits" is computed, never stored.** There are no notification rows. Each read asks, in one
+    read-only transaction, the questions the pages themselves ask: the newest unread message, a
+    Match to answer or the Mentee's Review to write, the newest friend request, the live Prompt not
+    yet answered, unread Private Feedback, the newest Report in the viewer's own moderation queue,
+    and the newest Like by someone else on their Posts. A handled thing stops waiting by itself, on
+    every device.
+  - **Roles and privacy.** The Reports dot reads only the queue the viewer's role may see, and never
+    counts a Report they filed. Private Feedback gains a `read_at` that feeds only the Mentor's dot
+    and is sent to nobody, so the Mentee never learns it was read.
+  - **The opening race.** Something can arrive while a page is opening. The opening is stored as the
+    later of the request's time and the newest waiting thing it read, in the same transaction, so a
+    Student's own answer on that page cannot leave its dot on.
+  - **Never colour alone.** The dot is hidden from screen readers, and the link's name gains "new" in
+    English, French and Arabic. The account and phone menu buttons show a dot when a link inside has
+    one, and the tab's icon swaps for a copy with a dot, which Chrome, Firefox and Brave all show.
+- *How it adds value.* From any page, a Student sees that a Match needs an answer or a Review is
+  due, so the loop moves faster, with nothing to read and no inbox to clear.
+- *Why it deserves Minor status.* It adds a schema change, a server read with role and privacy
+  rules, a race closed inside a transaction and two test assertions, but it reuses the platform's
+  own queries and socket: smaller than a Major.
+- *How it was implemented.* [`src/new-dots/`](src/new-dots/) reads the dots
+  (`GET /api/me/new-dots`) and records an opening (`POST /api/me/new-dots/opened`), and
+  `new-dots:changed` tells a sign-in to read them again. In the SPA, one component, `NewDot`, draws
+  every dot, and one hook gives each link its value. Test category 12 checks that an opening clears
+  only that sign-in's dot, that a newer message shows it again, and that a new sign-in shows what
+  still waits; category 9 checks that only the Mentor's reading sets `read_at`.
+- *Who.* Kamel settled it in ADR-0021 (2026-11-02) and built it (2026-11-03).
 
 ## Individual Contributions
 
@@ -870,8 +966,13 @@ made straight to `main` before pull requests were required on 2026-09-27.
 - **Seed**: the Block fixture and four closed Rounds (2026-10-20).
 - **Landing and access**: the landing page, opening `make up` to the local network, and the name
   21 Beirut (2026-10-25).
+- **Later work, 2026-10-31 → 11-03**: one list design for every dropdown, with search on long lists
+  (2026-10-31); the profile page's redesign, typing and a Friend's online status on a conversation,
+  newest Reports first, every text limit held in the browser, the API and the database with a
+  Direct Message capped at 500 characters, each Skill on one list only, and the signed-out phone
+  Menu (2026-11-02); gentler Report and Block texts (2026-11-03).
 - **This README's sections** other than the Instructions and the browser limitations: written on
-  2026-10-27, not yet merged on that date.
+  2026-10-27, merged on 2026-10-28.
 
 *Challenges.* Fadel left on 2026-10-01 with the week-2 tickets due that day; Ahmad took them and
 both merged that day. In the socket gateway, Socket.IO reports a reconnect before the socket has
@@ -899,6 +1000,11 @@ included, until the cache was keyed by role.
 - **Features**: recovery through Confirm with 42, and Rounds and Matches with their pages
   (2026-10-20); Evidence (2026-10-22); the Users table and role changes (2026-10-23); the feed in
   pages of 20, and the header's bar, account menu and Admin tools page (2026-10-24).
+- **New dots and live updates, 2026-11-02 → 11-03**: settled them question by question and wrote
+  ADR-0021 (2026-11-02); friend requests, Match answers, Reviews and like counts live; removed
+  Posts, new Prompts and their answers and the report queue live, with a `staff` room that follows
+  role changes; and the New dots, with each sign-in's openings and Private Feedback's read state
+  (2026-11-03).
 - **Fixes**: the account menu's label (2026-10-15); the Confirm with 42 test moved onto the
   harness clock (2026-10-20); the legal pages waiting for the session, and Remove Post's red border
   (2026-10-27).
@@ -925,11 +1031,14 @@ Round's number.
 - **Features**: profiles, Skill lists and the Learning Goal (2026-10-17); Blocks (2026-10-19);
   avatars and the Storage buckets, and the Post table (2026-10-20); the feed and Likes
   (2026-10-21); Reports (2026-10-22); live reactions to new Posts, Rounds and Matches (2026-10-24);
-  the dark theme (2026-10-31).
+  refusing emoji in a display name or a new password, with password fields stopped at 72 bytes, and
+  the dark theme (2026-11-01).
 - **Seed**: the four Prompts and their answers, and the demo Student and Badge checks (2026-10-23).
 - **Legal pages**: corrected against the merged code for the sign-off (2026-10-25).
 - **Fixes**: the health checks' start period, the password hint, the header kept at the top while
-  the page scrolls, and the profile and Block buttons (2026-10-19 → 10-27).
+  the page scrolls, and the profile and Block buttons (2026-10-19 → 10-27); Report's green outline
+  (2026-10-28); the source and configuration comments cleaned up (2026-11-01); and the language
+  switcher's height (2026-11-02).
 
 *Challenges.* Hussein joined in week 3, with the specification locked and the code started: the
 first ticket Hussein took fixed Windows checkouts, whose CRLF line endings broke the gateway's start script.
