@@ -73,12 +73,12 @@ export default {
     blockedNote: 'You blocked this Student.',
     confirmTitle: 'Block {name}?',
     confirmBody:
-      "Neither of you will be able to send the other a friend request or a Direct Message, and you won't be matched together. If you are Friends, or a friend request is waiting, that ends too. A Match already in progress stays. {name} is not told.",
+      "Neither of you will be able to send the other a friend request or a Direct Message, and you won't be matched together. If you are Friends, or a friend request is waiting, that ends too. A Match already in progress stays. {name} won't be informed.",
     confirm: 'Block',
   },
   blocks: {
     title: 'Blocks',
-    subtitle: 'Only you see this list. A Student you block is not told.',
+    subtitle: "Only you see this list. A Student you block won't be informed.",
     loading: 'Loading your Blocks…',
     emptyTitle: "You haven't blocked anyone.",
     emptyDescription: 'You can block a Student from their profile.',
