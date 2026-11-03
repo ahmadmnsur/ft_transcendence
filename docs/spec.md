@@ -933,6 +933,11 @@ dictionary (§3.5.5).
 > New dot, a red `danger-500` dot of 8 px after the link's text, hidden from screen readers, while
 > the link's name gains "new", in three languages. `web/public/favicon-dot.svg` is the favicon
 > with that dot, visible on a light and a dark tab bar.
+>
+> **2026-11-03** *(uncommitted, on branch `fix/new-dot-size`)*: the dot is 10 px and `danger-600`,
+> a little larger and a deeper red, on Kamel's call after seeing it in the header. `danger-500`
+> turns a light coral in the dark theme; `danger-600` keeps one red in both, at 5.1:1 on the light
+> header and 3.2:1 on the dark one. The favicon's dot is unchanged.
 
 #### 3.5.4 Legal pages (M22)
 

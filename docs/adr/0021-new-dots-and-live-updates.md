@@ -73,6 +73,11 @@ Unaffected:
    Firefox and Brave all show a changed icon. One component, `NewDot`, draws every dot, and one
    hook gives each place its value, so a later change of look touches one file.
 
+   > **2026-11-03** *(uncommitted, on branch `fix/new-dot-size`)*: the dot is now 10 px and
+   > `danger-600`, a little larger and a deeper red, on Kamel's call after seeing it in the header.
+   > `danger-500` turns a light coral in the dark theme; `danger-600` keeps one red in both
+   > (`docs/spec.md` §3.5.3's note of this day). The favicon's dot is unchanged.
+
 2. **A link has a dot when something waits on its page and it is newer than the last time this
    sign-in opened that page.** Being on the page counts as opening it, so what arrives while the
    Student is there shows no dot. Every sign-in, on every device, starts with no page opened, so
