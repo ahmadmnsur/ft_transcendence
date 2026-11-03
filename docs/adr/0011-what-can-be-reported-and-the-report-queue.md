@@ -28,6 +28,9 @@ every place they could do social damage.**
   covers a report *concerning* a moderator's own Post, but a Peer Moderator is a full
   participating Student who may also **file** reports, and nothing stopped them actioning their
   own complaint. The guard now covers reports they filed as well.
+
+  > **Narrowed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: for a report they filed, the guard now
+  > stops the moderator resolving the group, not seeing it. Decision 9's note of the same day.
 - **ADR-0008 decision 3.** "The report queue" is **sharpened** to the *Post*-report queue. The
   sanctions for a Student report are Suspend and Remove, which the same decision reserves to
   Admins, so a Student report a Peer Moderator can neither action nor escalate has no business
@@ -205,6 +208,10 @@ every place they could do social damage.**
    > may commit and the later Block does not rewrite its attribution. Role changes retain ADR-0003's
    > existing “next request” boundary rather than gaining a new mid-request rule here.
 
+   > **Changed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: "if they filed any open report in it"
+   > no longer hides the group. It shows in that moderator's queue, read-only, and they still cannot
+   > resolve it. Their own Post or a Block still hides it. Decision 9's note of the same day.
+
 8. **A Peer Moderator may dismiss as well as remove, and every moderation action records who
    took it.** ADR-0008 decision 10 guarded *acting on* reports but never split the two, and
    dismissal is the cheaper power to abuse: a removal is visible, since the Post vanishes and
@@ -237,6 +244,21 @@ every place they could do social damage.**
    > read and the group-resolution endpoints; it does not carve rows out of decision 10's Removal
    > side effect. What the removing Admin's own report then suffers, and who sees it, is settled in
    > decision 10's annotation.
+   >
+   > **A staff member sees the Report they filed, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*. A
+   > manual test found the case this guard leaves stuck: when the only Peer Moderator and the only
+   > Admin both report one Post, the group shows on no screen and nobody can resolve it, and neither
+   > can report it again (decision 5). Changed:
+   > - **An Admin** now sees a group or a resolved batch that holds a Report they filed, in the open
+   >   queue and the resolved audit, and may resolve it. A group about that Admin or their Post is
+   >   still hidden from them, and only such a group waits for another Admin.
+   > - **A Peer Moderator** now sees, read-only, a group that holds their own open Report, with a
+   >   line saying another Peer Moderator or an Admin decides it. Resolving it still answers
+   >   `conflict_of_interest`, and their own Post or a Block still hides the group (decision 7).
+   >
+   > "Promotion cannot become a status surface for an earlier complaint" no longer holds: a Student
+   > promoted after filing sees that Report's group while it is open. The reporter's identity stays
+   > withheld from Peer Moderators. `docs/spec.md` §12.4 to §12.7.
 
 10. **Removing a Post auto-resolves its open reports; a Suspension does not.** Remove Post sets
     every open report on that Post to `ACTIONED` in the same transaction, with the remover as
@@ -264,6 +286,9 @@ every place they could do social damage.**
     > Admin. Removal takes no action on the group, so the guard bars neither half of it: the sanction
     > is deterministic, the guard governs queue reads and group resolutions. `docs/spec.md` §12.5,
     > §12.7; §16.3 category 10 carries the test.
+    >
+    > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: the resolved audit no longer hides that batch
+    > from the removing Admin (decision 9's note of the same day).
 
 11. **Any signed-in Student may file a report, never against themselves or their own Post.**
     Including a Peer Moderator, who is a full participating Student (ADR-0008 decision 2) — hence
@@ -320,6 +345,12 @@ every place they could do social damage.**
     > no push channel". The server now sends events after more commits, `reports:changed` among
     > them, but that one goes only to Peer Moderators and Admins and carries nothing, and no event
     > reaches the reporter or the reported Student. The reporter still learns nothing.
+
+    > **Staff reporters, 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: a Peer Moderator or an
+    > Admin who files a Report now sees its open group in their own queue (decision 9's note of the
+    > same day), and hears `reports:changed` like any staff member. For them "the reporter learns
+    > nothing" no longer holds; for every other Student it still does. `reports:changed` skips the
+    > Student a Report is about, staff or not, so the reported Student still hears nothing.
 
 13. **Reporting and Block stay separate in the model, and are offered together in the UI.**
     `CONTEXT.md` says a Block is "always a Student's own act"; a report is a request for staff

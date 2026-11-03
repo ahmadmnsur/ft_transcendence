@@ -176,10 +176,17 @@ export function applyPostRemoved(client: QueryClient, postId: string): void {
   for (const queryKey of POST_LIST_QUERY_KEYS) {
     const queries = client.getQueryCache().findAll({ queryKey });
     for (const query of queries) {
-      const data = query.state.data as PostPage | undefined;
-      if (query.state.fetchStatus !== 'fetching' && !data?.items.some((post) => post.id === postId)) continue;
-      void dropPostFromPage(client, query.queryKey, postId);
+      dropLoadedPost(client, query, postId);
     }
+  }
+}
+
+function dropLoadedPost(client: QueryClient, query: Query, postId: string): void {
+  const data = query.state.data as PostPage | undefined;
+  if (data?.items.some((post) => post.id === postId)) {
+    void dropPostFromPage(client, query.queryKey, postId);
+  } else if (query.state.fetchStatus === 'fetching') {
+    afterRead(client, query, () => dropLoadedPost(client, query, postId));
   }
 }
 

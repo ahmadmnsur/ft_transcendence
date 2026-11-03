@@ -9,6 +9,7 @@ import { useI18n } from './i18n/context';
 import { languageNames, languages } from './i18n/language';
 import { AlertIcon, Button, ChevronDownIcon, EmptyState, IconButton, MenuIcon, MoonIcon, PersonName, SearchIcon, Select, SunIcon, buttonClasses, useTheme } from './design';
 import { RealtimeConnection } from './realtime/connection';
+import { SessionUpdates } from './realtime/SessionUpdates';
 import { MessageUpdates } from './messages/MessageUpdates';
 import { RoundUpdates } from './matching/RoundUpdates';
 import { FeedUpdates } from './feed/FeedUpdates';
@@ -411,6 +412,7 @@ export function RootLayout(): React.JSX.Element {
       <main id="main-content" ref={mainRef} tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
         <div className="mx-auto w-full max-w-6xl px-4 py-8">
           <RealtimeConnection brand={BRAND} />
+          <SessionUpdates />
           <PresenceUpdates />
           <FriendUpdates />
           <MessageUpdates />

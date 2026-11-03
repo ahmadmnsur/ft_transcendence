@@ -49,7 +49,7 @@ function LikersDialog({
   );
 }
 
-function LikeControls({ post }: { post: PostView }): React.JSX.Element {
+function LikeControls({ post, onDialogChange }: { post: PostView; onDialogChange: (open: boolean) => void }): React.JSX.Element {
   const { t, formatText, errorText } = useI18n();
   const copy = t.feed.post;
   const queryClient = useQueryClient();
@@ -63,6 +63,11 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
   const wasUnavailable = useRef(false);
   const unavailable = failure?.code === 'post_unavailable' || failureCode(likers.error) === 'post_unavailable';
   const count = formatText(copy.likeCount, { count: post.likeCount });
+
+  function showLikers(open: boolean): void {
+    setLikersOpen(open);
+    onDialogChange(open);
+  }
 
   useEffect(() => {
     const closed = wasOpen.current && !likersOpen;
@@ -99,7 +104,7 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
           {post.likeCount === 0 ? (
             <span className="text-sm text-ink-muted">{count}</span>
           ) : (
-            <Button variant="ghost" size="sm" aria-haspopup="dialog" onClick={() => setLikersOpen(true)}>
+            <Button variant="ghost" size="sm" aria-haspopup="dialog" onClick={() => showLikers(true)}>
               {count}
             </Button>
           )}
@@ -110,14 +115,26 @@ function LikeControls({ post }: { post: PostView }): React.JSX.Element {
           {errorText(unavailable ? 'post_unavailable' : failure?.code)}
         </p>
       ) : null}
-      <LikersDialog likers={likers} open={likersOpen} onClose={() => setLikersOpen(false)} />
+      <LikersDialog likers={likers} open={likersOpen} onClose={() => showLikers(false)} />
     </div>
   );
 }
 
-export function PostCard({ post, showPrompt = true }: { post: PostView; showPrompt?: boolean }): React.JSX.Element {
+export function PostCard({ post, showPrompt = true, onDialogChange }: {
+  post: PostView;
+  showPrompt?: boolean;
+  onDialogChange: (open: boolean) => void;
+}): React.JSX.Element {
   const { t, format, formatDateTime } = useI18n();
   const copy = t.feed.post;
+  const dialogs = useRef(new Set<string>());
+
+  function dialogChanged(name: string, open: boolean): void {
+    if (open) dialogs.current.add(name);
+    else dialogs.current.delete(name);
+    onDialogChange(dialogs.current.size > 0);
+  }
+
   return (
     <article className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -147,8 +164,8 @@ export function PostCard({ post, showPrompt = true }: { post: PostView; showProm
         {post.body}
       </p>
       <div className="flex items-start justify-between gap-2">
-        <LikeControls post={post} />
-        <ReportControl target={{ postId: post.id }} student={post.author} />
+        <LikeControls post={post} onDialogChange={(open) => dialogChanged('likers', open)} />
+        <ReportControl target={{ postId: post.id }} student={post.author} onOpenChange={(open) => dialogChanged('report', open)} />
       </div>
     </article>
   );

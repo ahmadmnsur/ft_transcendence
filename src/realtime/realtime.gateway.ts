@@ -30,7 +30,7 @@ function joinsStaff(role: Role): boolean {
 
 type SocketSession = { studentId: string; sessionHash: string };
 
-type HeldEvent = { rooms: readonly string[]; event: string; payload: object };
+type HeldEvent = { rooms: readonly string[]; event: string; payload: object; exceptStudentIds: readonly string[] };
 
 type DmSendAck =
   | { ok: true; data: DirectMessageView }
@@ -59,7 +59,7 @@ function dmTypingPayload(payload: unknown): { recipientId: string; typing: boole
   return { recipientId: recipientId.toLowerCase(), typing };
 }
 
-type WaitingSocket = { rooms: string[]; held: HeldEvent[]; staffAfterMove?: boolean };
+type WaitingSocket = { studentId: string; rooms: string[]; held: HeldEvent[]; staffAfterMove?: boolean };
 
 function socketSession(socket: Socket): SocketSession | null {
   const data = socket.data as Partial<SocketSession>;
@@ -131,6 +131,7 @@ export class RealtimeGateway
     }
     this.registry.register(socket.id, session.studentId, session.sessionHash);
     this.waiting.set(socket.id, {
+      studentId: session.studentId,
       rooms: [FEED_ROOM, ROUNDS_ROOM, studentRoom(session.studentId)],
       held: [],
     });
@@ -151,6 +152,7 @@ export class RealtimeGateway
       const joined = socket.join(waiting.rooms);
       this.waiting.delete(socket.id);
       for (const held of waiting.held) {
+        if (held.exceptStudentIds.includes(waiting.studentId)) continue;
         if (held.rooms.some((room) => waiting.rooms.includes(room))) socket.emit(held.event, held.payload);
       }
       await joined;
@@ -282,12 +284,12 @@ export class RealtimeGateway
     this.presenceUpdate(recipients, transition.studentId, transition.online);
   }
 
-  private publish(rooms: readonly string[], event: string, payload: object): void {
+  private publish(rooms: readonly string[], event: string, payload: object, exceptStudentIds: readonly string[] = []): void {
     const server = this.server;
     if (server === null) return;
-    server.to([...rooms]).emit(event, payload);
+    server.to([...rooms]).except(exceptStudentIds.map(studentRoom)).emit(event, payload);
     for (const waiting of this.waiting.values()) {
-      waiting.held.push({ rooms, event, payload });
+      waiting.held.push({ rooms, event, payload, exceptStudentIds });
     }
   }
 
@@ -307,8 +309,8 @@ export class RealtimeGateway
     this.publish([FEED_ROOM], 'prompt:published', {});
   }
 
-  override reportsChanged(): void {
-    this.publish([STAFF_ROOM], 'reports:changed', {});
+  override reportsChanged(exceptStudentIds: readonly string[]): void {
+    this.publish([STAFF_ROOM], 'reports:changed', {}, exceptStudentIds);
   }
 
   override roleChanged(studentId: string, role: Role): void {
@@ -325,6 +327,7 @@ export class RealtimeGateway
       if (staff) void socket?.join(STAFF_ROOM);
       else void socket?.leave(STAFF_ROOM);
     }
+    this.publish([studentRoom(studentId)], 'session:changed', {});
   }
 
   override roundOpened(): void {

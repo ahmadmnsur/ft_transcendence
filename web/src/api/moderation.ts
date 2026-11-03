@@ -32,6 +32,7 @@ export interface QueueReport {
 export interface QueueGroup {
   target: GroupTarget;
   count: number;
+  filedByMe: boolean;
   reports: QueueReport[];
 }
 
@@ -59,6 +60,9 @@ export function moderationQueueQueryOptions(admin: boolean) {
     queryKey: [...MODERATION_QUERY_KEY, 'queue', admin ? 'admin' : 'peer'] as const,
     queryFn: async () => {
       const queue = await apiFetch<{ items: QueueGroup[] }>('/moderation/queue');
+      if (queue.items.some((group) => typeof group.filedByMe !== 'boolean')) {
+        throw new ApiProtocolError(200, 'internal_error', 'The server returned an unexpected response.');
+      }
       if (!admin && queue.items.some((group) => group.reports.some((report) => report.reporter !== undefined))) {
         throw new ApiProtocolError(403, 'forbidden', 'The queue answered as to an Admin.');
       }

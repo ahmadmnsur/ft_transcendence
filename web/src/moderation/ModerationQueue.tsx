@@ -13,6 +13,7 @@ import {
 import { AlertIcon, Banner, Button, Card, EmptyState, FlagIcon, Modal } from '../design';
 import { useI18n } from '../i18n/context';
 import { failureCode } from '../profile/failure';
+import { useRetainedItems } from '../shell/useRetainedItems';
 import { MetaLine, OpenInUsers, ReportedTarget, ReportRows, TargetHeading } from './ReportedTarget';
 
 type Notice =
@@ -23,10 +24,12 @@ function QueueGroupCard({
   group,
   admin,
   onDone,
+  onConfirmChange,
 }: {
   group: QueueGroup;
   admin: boolean;
   onDone: (notice: Notice) => void;
+  onConfirmChange: (open: boolean) => void;
 }): React.JSX.Element {
   const { t, formatText, personNameValue } = useI18n();
   const copy = t.moderation;
@@ -41,6 +44,11 @@ function QueueGroupCard({
   const { target, count } = group;
   const person = target.kind === 'STUDENT' ? target.student : target.post.author;
   const name = personNameValue(person.displayName, person.removed);
+
+  function confirm(open: boolean): void {
+    setConfirming(open);
+    onConfirmChange(open);
+  }
 
   function description(action: GroupAction): string {
     return target.kind === 'POST'
@@ -62,7 +70,7 @@ function QueueGroupCard({
     try {
       resolution = await resolveGroup(queryClient, target, action);
     } catch (error) {
-      setConfirming(false);
+      confirm(false);
       onDone({ kind: 'failed', code: failureCode(error), target, count });
       return;
     } finally {
@@ -70,7 +78,7 @@ function QueueGroupCard({
       setPending(false);
     }
     if (resolution === null) return;
-    setConfirming(false);
+    confirm(false);
     onDone({ kind: 'resolved', action, resolution, target });
   }
 
@@ -93,23 +101,27 @@ function QueueGroupCard({
       <div className="flex min-w-0 flex-col gap-4">
         {target.kind === 'POST' ? <ReportedTarget post={target.post} /> : null}
         <ReportRows reports={group.reports} />
-        <div className="flex flex-wrap gap-2">
-          {actions.map((action) => (
-            <Button
-              key={action}
-              size="sm"
-              variant={action === 'REMOVE_POST' ? 'danger-secondary' : 'secondary'}
-              aria-haspopup="dialog"
-              aria-describedby={headingId}
-              onClick={() => {
-                setChosen(action);
-                setConfirming(true);
-              }}
-            >
-              {copy.actions.label[action]}
-            </Button>
-          ))}
-        </div>
+        {!admin && group.filedByMe ? (
+          <p className="text-sm text-ink-muted">{copy.queue.filedByMe}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {actions.map((action) => (
+              <Button
+                key={action}
+                size="sm"
+                variant={action === 'REMOVE_POST' ? 'danger-secondary' : 'secondary'}
+                aria-haspopup="dialog"
+                aria-describedby={headingId}
+                onClick={() => {
+                  setChosen(action);
+                  confirm(true);
+                }}
+              >
+                {copy.actions.label[action]}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
       <Modal
         open={confirming}
@@ -118,11 +130,11 @@ function QueueGroupCard({
         description={description(chosen)}
         initialFocusRef={cancelRef}
         onClose={() => {
-          if (!pendingRef.current) setConfirming(false);
+          if (!pendingRef.current) confirm(false);
         }}
         footer={
           <>
-            <Button ref={cancelRef} variant="secondary" disabled={pending} onClick={() => setConfirming(false)}>
+            <Button ref={cancelRef} variant="secondary" disabled={pending} onClick={() => confirm(false)}>
               {copy.actions.cancel}
             </Button>
             <Button
@@ -181,6 +193,7 @@ export function ModerationQueue({ admin }: { admin: boolean }): React.JSX.Elemen
   const { t, errorText } = useI18n();
   const copy = t.moderation;
   const queue = useQuery(moderationQueueQueryOptions(admin));
+  const { items: groups, retain, retaining } = useRetainedItems(queue.data?.items ?? [], (group) => targetKey(group.target));
   const [notice, setNotice] = useState<Notice | null>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -200,7 +213,7 @@ export function ModerationQueue({ admin }: { admin: boolean }): React.JSX.Elemen
         {notice !== null ? <NoticeBanner notice={notice} admin={admin} onDismiss={dismissNotice} /> : null}
       </div>
       <div ref={bodyRef} tabIndex={-1} className="min-w-0 rounded-lg focus-ring">
-        {queue.isError ? (
+        {queue.isError && !retaining ? (
           <div role="alert">
             <EmptyState
               icon={<AlertIcon size={24} />}
@@ -212,11 +225,11 @@ export function ModerationQueue({ admin }: { admin: boolean }): React.JSX.Elemen
               }
             />
           </div>
-        ) : queue.data === undefined ? (
+        ) : queue.data === undefined && !retaining ? (
           <p role="status" aria-busy="true" className="text-sm text-ink-muted">
             {copy.loading}
           </p>
-        ) : queue.data.items.length === 0 ? (
+        ) : groups.length === 0 ? (
           <EmptyState
             icon={<FlagIcon size={24} />}
             title={copy.queue.emptyTitle}
@@ -224,9 +237,16 @@ export function ModerationQueue({ admin }: { admin: boolean }): React.JSX.Elemen
           />
         ) : (
           <ul className="flex min-w-0 flex-col gap-4">
-            {queue.data.items.map((group) => (
+            {groups.map((group) => (
               <li key={targetKey(group.target)} className="min-w-0">
-                <QueueGroupCard group={group} admin={admin} onDone={setNotice} />
+                <QueueGroupCard group={group} admin={admin} onDone={setNotice} onConfirmChange={(open) => {
+                  retain(group, open);
+                  if (!open && !queue.data?.items.some((item) => targetKey(item.target) === targetKey(group.target))) {
+                    requestAnimationFrame(() => {
+                      if (document.activeElement === document.body) bodyRef.current?.focus();
+                    });
+                  }
+                }} />
               </li>
             ))}
           </ul>

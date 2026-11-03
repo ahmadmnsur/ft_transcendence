@@ -87,7 +87,7 @@ describe('the resolved audit', () => {
     expect(await auditOf(viewer, '?page=3&pageSize=2')).toEqual({ items: [], total: 3 });
   });
 
-  it('hides a batch about the viewing Admin or holding their Report, and shows it to another Admin', async () => {
+  it('hides batches about the viewing Admin and shows batches holding their Report', async () => {
     const moderation = harness.app.get(ModerationService);
     const admin = await createTestStaff(harness.app, 'ADMIN');
     const other = await createTestStaff(harness.app, 'ADMIN');
@@ -118,8 +118,12 @@ describe('the resolved audit', () => {
         return target.post?.id ?? target.student?.id;
       });
     const own = await auditOf(admin);
-    expect(own.total).toBe(1);
-    expect(seen(own.items)).toEqual([unrelated]);
+    expect(own.total).toBe(2);
+    expect(seen(own.items)).toEqual([unrelated, filedIn]);
+    expect(own.items[1]).toMatchObject({
+      resolvedBy: ref(other, true),
+      reports: [{ reporter: ref(admin, true) }, { reporter: ref(reporter) }],
+    });
     const others = await auditOf(other);
     expect(others.total).toBe(4);
     expect(seen(others.items)).toEqual([unrelated, filedIn, admin.id, ownPost]);

@@ -703,10 +703,11 @@ Student must reload to see them. *How:* one Socket.IO gateway with rooms (`feed`
 and one per Student) broadcasts `post:created`, `post:removed`, `prompt:published`,
 `round:opened`, `round:closed`, `match:ready` and `dm:message` after the database commits.
 `friends:changed` goes to both Students of the request or Friendship, `match:changed` to the
-Match's Mentor and Mentee, `post:likes` to every signed-in Student in `feed`, and
-`reports:changed` to the Peer Moderators and Admins in `staff`. A reconnecting client is admitted
-again by its session cookie, a short grace window keeps a reload from flickering the online status,
-and a Suspension or a password change disconnects the socket.
+Match's Mentor and Mentee, `post:likes` to every signed-in Student in `feed`,
+`reports:changed` to the Peer Moderators and Admins in `staff` except the Student a Report is
+about, and `session:changed` to a Student whose role changed, so their open page follows it. A
+reconnecting client is admitted again by its session cookie, a short grace window keeps a reload
+from flickering the online status, and a Suspension or a password change disconnects the socket.
 
 **User interaction (Major).** *Why:* meeting a Match needs a way to talk, and a peer-learning
 platform needs profiles and Friends. *How:* one-to-one Direct Messages, persisted and delivered

@@ -91,9 +91,9 @@ const studentResolvedBy = {
 
 export default {
   peerTitle: 'Moderation',
-  peerIntro: "Reported Posts waiting for a decision. You never see who filed a Report. A Post you wrote or reported goes to someone else, and so does a Post when you've blocked its author or one of its reporters, or one of them has blocked you.",
+  peerIntro: "Reported Posts waiting for a decision. You never see who filed a Report. A Post you wrote goes to someone else, and so does a Post when you've blocked its author or one of its reporters, or one of them has blocked you. A Post you reported shows here, but someone else decides it.",
   adminTitle: 'Reports',
-  adminIntro: "Reports about Posts and Students, with who filed each. A Report about you or your Post, or one you filed, goes to another Admin.",
+  adminIntro: "Reports about Posts and Students, with who filed each. A Report about you or your Post goes to another Admin.",
   tabsLabel: 'Reports',
   openTab: 'Open',
   resolvedTab: 'Resolved',
@@ -102,6 +102,7 @@ export default {
   queue: {
     emptyTitle: 'No Reports to review.',
     peerEmpty: 'Reported Posts you may review appear here.',
+    filedByMe: 'You reported this Post. Another Peer Moderator or an Admin decides.',
     adminEmpty: 'Reports about Posts and Students appear here.',
     postGroup: 'Reported Post',
     studentGroup: 'Reported Student',

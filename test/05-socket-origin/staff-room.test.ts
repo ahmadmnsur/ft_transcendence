@@ -19,7 +19,7 @@ const harness = useHarness({
 
 const opened: Socket[] = [];
 
-async function connect(account: TestAccount, reports: unknown[]): Promise<Socket> {
+async function connect(account: TestAccount, reports: unknown[], sessions: unknown[] = []): Promise<Socket> {
   const socket = io(harness.baseUrl, {
     path: SOCKET_PATH,
     transports: ['websocket'],
@@ -31,6 +31,7 @@ async function connect(account: TestAccount, reports: unknown[]): Promise<Socket
   });
   opened.push(socket);
   socket.on('reports:changed', (payload: unknown) => reports.push(payload));
+  socket.on('session:changed', (payload: unknown) => sessions.push(payload));
   await new Promise<void>((resolve, reject) => {
     socket.once('connect', resolve);
     socket.once('connect_error', reject);
@@ -53,8 +54,10 @@ it('sends reports:changed to staff only, and a demoted Peer Moderator stops hear
   const studentReports: unknown[] = [];
   const moderatorReports: unknown[] = [];
   const adminReports: unknown[] = [];
-  const studentSocket = await connect(student, studentReports);
-  const moderatorSocket = await connect(moderator, moderatorReports);
+  const studentSessions: unknown[] = [];
+  const moderatorSessions: unknown[] = [];
+  const studentSocket = await connect(student, studentReports, studentSessions);
+  const moderatorSocket = await connect(moderator, moderatorReports, moderatorSessions);
   const adminSocket = await connect(admin, adminReports);
   const moderatorSocketId = moderatorSocket.id;
   expect(harness.app.get(RealtimePublisher)).toBe(harness.app.get(RealtimeGateway));
@@ -80,6 +83,37 @@ it('sends reports:changed to staff only, and a demoted Peer Moderator stops hear
   expect(moderatorReports).toEqual([{}]);
   expect(moderatorSocket.connected).toBe(true);
   expect(moderatorSocket.id).toBe(moderatorSocketId);
+  expect(moderatorSessions).toEqual([{}]);
+  expect(studentSessions).toEqual([]);
+});
+
+it.each([
+  ['Student', 'PEER_MODERATOR'],
+  ['Post', 'PEER_MODERATOR'],
+  ['Student', 'ADMIN'],
+  ['Post', 'ADMIN'],
+] as const)('sends no reports:changed to the subject of a %s Report with role %s', async (kind, role) => {
+  const student = await createTestAccount(harness.app);
+  const subject = await createTestStaff(harness.app, role);
+  const admin = await createTestStaff(harness.app, 'ADMIN');
+  const studentReports: unknown[] = [];
+  const subjectReports: unknown[] = [];
+  const adminReports: unknown[] = [];
+  const studentSocket = await connect(student, studentReports);
+  const subjectSocket = await connect(subject, subjectReports);
+  const adminSocket = await connect(admin, adminReports);
+  const target = kind === 'Student'
+    ? { studentId: subject.id }
+    : { postId: await createTestPost(harness.app, subject.id) };
+  const received = new Promise<unknown>((resolve) => adminSocket.once('reports:changed', resolve));
+  await fileTestReport(harness.app, student.id, target);
+  expect(await received).toEqual({});
+  await roundTrip(subjectSocket);
+  await roundTrip(studentSocket);
+  await roundTrip(adminSocket);
+  expect(adminReports).toEqual([{}]);
+  expect(subjectReports).toEqual([]);
+  expect(studentReports).toEqual([]);
 });
 
 afterEach(() => {

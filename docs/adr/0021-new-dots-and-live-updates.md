@@ -128,16 +128,30 @@ Unaffected:
    > sees its count change. The payload names no one. Counts were already readable by every
    > signed-in Student. The cost is one small message to every signed-in socket per Like.
 
+   > **Changed 2026-11-03 by Kamel ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: one more event, `session:changed {}`,
+   > goes to a Student's own `student:<id>` room after a role change that changes their role
+   > commits. Their open pages read the session again, a page the new role cannot open goes to the
+   > feed, and the header's links follow. It carries no role. `reports:changed` skips the Student a
+   > Report is about (the reported Student, or the reported Post's author), staff or not.
+
 6. **Peer Moderators and Admins share a fourth room, `staff`, and a role change moves a Student's
    connections at once.** A socket joins `staff` at admission when its Student's role is
    `PEER_MODERATOR` or `ADMIN`. A role change does not end a session (ADR-0003 d6), so after it
    commits the server moves that Student's open sockets into or out of `staff`. A demoted Peer
    Moderator stops hearing the queue without reconnecting.
 
+   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: the demoted person's open page also follows at once,
+   > through `session:changed` (decision 5's note of the same day).
+
 7. **What stays silent.** A Block, including the Friendship it deletes (`docs/spec.md` §11.2); the
    reported Student (ADR-0011 d7); the reporter's outcome (ADR-0011 d12); and a sanction, beyond
    the sign-out it already causes, including a Match it ends. Each would tell someone what the
    records promise they are not told.
+
+   > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: the reported Student is kept silent by
+   > `reports:changed` skipping them. A reporter who is staff hears it and sees their own Report's
+   > group (ADR-0011 decision 9's note of that day); the outcome stays silent for every other
+   > reporter.
 
 8. **Out:** numbers on the dots, popups, operating-system notifications, an inbox or any list of
    what happened, and the notification system module.
@@ -184,10 +198,17 @@ Unaffected:
   again on every event that can change one. A page not on screen reads on its next visit.
 - **Staff members learn when the queue changes**, a Peer Moderator included when a Report names
   them, though never what changed and never a Report about themselves (ADR-0011 d7).
+
+  > **Changed 2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: a staff member a Report names, as the reported
+  > Student or the reported Post's author, no longer hears it (decision 5's note of the same day).
 - **Three assertions join the suite** (ADR-0016 d1): in category 5, a `STUDENT` socket never hears
   `reports:changed` and a demoted Peer Moderator stops hearing it; in category 12, the dot rule
   across an opening, a new Direct Message and a new sign-in; in category 9, the Mentee is never
   shown `read_at`. Everything else shows on screen when it goes wrong.
+
+  > **2026-11-03 ([#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261))** *(uncommitted)*: category 5's assertion also covers the demoted
+  > socket's one `session:changed` and a Report about a staff member sending them no
+  > `reports:changed`. Category 10's filer assertions follow ADR-0011 decision 9's note of that day.
 - **The seed does not change.** The demo Student already has two unread Direct Messages and two
   pending friend requests (`docs/spec.md` §14.6), so the Messages and Friends dots show at the
   defense.

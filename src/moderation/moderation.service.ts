@@ -52,8 +52,7 @@ function visibleBatches(viewerId: string): Prisma.Sql {
      WHERE r.state <> 'OPEN'
        AND r.reported_student_id IS DISTINCT FROM ${viewerId}::uuid
        AND p.author_id IS DISTINCT FROM ${viewerId}::uuid
-     GROUP BY r.post_id, r.reported_student_id, r.resolved_by_id, r.resolved_at, r.state
-    HAVING NOT bool_or(r.reporter_id = ${viewerId}::uuid)`;
+     GROUP BY r.post_id, r.reported_student_id, r.resolved_by_id, r.resolved_at, r.state`;
 }
 
 @Injectable()
@@ -70,6 +69,7 @@ export class ModerationService {
     }, async (tx, ctx) => {
       await readActiveActor(tx, actor.studentId);
       const target = input.target;
+      let subjectId: string;
       let columns: { postId: string | null; reportedStudentId: string | null };
       if ('postId' in target) {
         const post = await tx.post.findUnique({
@@ -80,6 +80,7 @@ export class ModerationService {
           throw reportTargetInvalid();
         }
         columns = { postId: target.postId, reportedStudentId: null };
+        subjectId = post.authorId;
       } else {
         const student = await tx.student.findUnique({
           where: { id: target.studentId },
@@ -89,6 +90,7 @@ export class ModerationService {
           throw reportTargetInvalid();
         }
         columns = { postId: null, reportedStudentId: target.studentId };
+        subjectId = student.id;
       }
       await ctx.checkpoint('report.file');
       await tx.report.create({
@@ -100,7 +102,7 @@ export class ModerationService {
           createdAt: ctx.now,
         },
       });
-      ctx.afterCommit(() => this.publisher.reportsChanged());
+      ctx.afterCommit(() => this.publisher.reportsChanged([subjectId]));
       return { received: true };
     });
   }
@@ -133,13 +135,14 @@ export class ModerationService {
       const visible = [...groups].filter(([key, group]) => {
         const target = targetOf(targets, key);
         const parties = [target.subjectId, ...group.map((row) => row.reporterId)];
-        return !target.postRemoved && !parties.includes(me) && !parties.some((id) => blocked.has(id));
+        return !target.postRemoved && target.subjectId !== me && !parties.some((id) => blocked.has(id));
       });
       const reporters = admin ? await readRefs(tx, visible.flatMap(([, group]) => group.map((row) => row.reporterId))) : null;
       return {
         items: visible.map(([key, group]): QueueGroup => ({
           target: targetOf(targets, key).view,
           count: group.length,
+          filedByMe: group.some((row) => row.reporterId === me),
           reports: group.map((row) =>
             reporters === null ? toQueueReport(row) : { ...toQueueReport(row), reporter: refOf(reporters, row.reporterId) },
           ),
@@ -155,8 +158,9 @@ export class ModerationService {
       const open = post === null || post.removedAt !== null ? [] : await openRows(tx, { postId: post.id });
       if (post === null || open.length === 0) throw alreadyResolved();
       const parties = [post.authorId, ...open.map((row) => row.reporterId)];
-      if (parties.includes(actor.studentId)) throw conflictOfInterest();
+      if (post.authorId === actor.studentId) throw conflictOfInterest();
       if (role === 'PEER_MODERATOR') {
+        if (open.some((row) => row.reporterId === actor.studentId)) throw conflictOfInterest();
         const block = await tx.block.findFirst({
           where: { OR: parties.map((id) => blockPair(actor.studentId, id)) },
           select: { id: true },
@@ -164,7 +168,7 @@ export class ModerationService {
         if (block !== null) throw conflictOfInterest();
       }
       await ctx.checkpoint('moderation.resolve');
-      ctx.afterCommit(() => this.publisher.reportsChanged());
+      ctx.afterCommit(() => this.publisher.reportsChanged([post.authorId]));
       if (action === 'REMOVE_POST') {
         await tx.post.update({ where: { id: post.id }, data: { removedAt: ctx.now } });
         ctx.afterCommit(() => this.publisher.postRemoved(post.id));
@@ -180,9 +184,9 @@ export class ModerationService {
       const student = await tx.student.findUnique({ where: { id: studentId }, select: { id: true } });
       const open = student === null ? [] : await openRows(tx, { reportedStudentId: student.id });
       if (student === null || open.length === 0) throw alreadyResolved();
-      if ([student.id, ...open.map((row) => row.reporterId)].includes(actor.studentId)) throw conflictOfInterest();
+      if (student.id === actor.studentId) throw conflictOfInterest();
       await ctx.checkpoint('moderation.resolve');
-      ctx.afterCommit(() => this.publisher.reportsChanged());
+      ctx.afterCommit(() => this.publisher.reportsChanged([student.id]));
       return closeGroup(tx, ctx, actor.studentId, open, action === 'ACTION' ? 'ACTIONED' : 'DISMISSED');
     });
   }

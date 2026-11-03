@@ -343,7 +343,9 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
    > [#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261)). With real sessions and
    > sockets, the category also asserts that a `STUDENT` socket never receives `reports:changed`
    > when a Report is filed, a Peer Moderator's does, and after that Peer Moderator is demoted the
-   > same connected socket stops receiving it.
+   > same connected socket stops receiving it and receives one `session:changed {}`, while the
+   > `STUDENT` socket receives none. A Report about a Peer Moderator or an Admin, of a Student or of
+   > their Post, sends that staff member no `reports:changed` while another Admin's socket gets one.
 
 6. **Reflection Prompt serialization** — exercises publication versus answer, two publications
    with equal timestamps, answer versus Round close, and duplicate/retried answers. It asserts one
@@ -420,6 +422,14 @@ Storage in `make test`'s throwaway copy. No unit/integration/e2e pyramid, and no
     > removing Admin filed included, attributed to that Admin; the batch is then hidden from that
     > Admin's resolved audit and shown to another Admin with its reporters. The test asserts that
     > case.
+
+    > **Own Reports, 2026-11-03** ([`docs/spec.md`](docs/spec.md) §12.4 to §12.7; ADR-0011 d9's note
+    > of that day; [#261](https://github.com/ahmadmnsur/ft_transcendence/issues/261)). A Report an Admin filed no longer hides or blocks its group: the
+    > category asserts that an Admin sees, with `filedByMe: true`, and may resolve a Post or Student
+    > group holding their own Report, and that their resolved audit shows the batch, the Removal's
+    > included. A group or batch about that Admin or their Post stays hidden from them and refused.
+    > A Peer Moderator sees a group holding their own Report with `filedByMe: true` and no reporter,
+    > and resolving it answers `conflict_of_interest`; their own Post or a Block still hides it.
 
 11. **Name search** — `display_name_search`, the folded copy of the display name, agrees with
     `display_name` only because every path that writes a name saves both through `nameFields`. A

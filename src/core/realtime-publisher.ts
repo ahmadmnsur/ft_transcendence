@@ -12,7 +12,7 @@ export abstract class RealtimePublisher {
 
   abstract promptPublished(): void;
 
-  abstract reportsChanged(): void;
+  abstract reportsChanged(exceptStudentIds: readonly string[]): void;
 
   abstract roleChanged(studentId: string, role: Role): void;
 

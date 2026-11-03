@@ -26,8 +26,8 @@ export class RecordingRealtimePublisher extends RealtimePublisher {
     this.record('promptPublished');
   }
 
-  reportsChanged(): void {
-    this.record('reportsChanged');
+  reportsChanged(exceptStudentIds: readonly string[]): void {
+    this.record('reportsChanged', exceptStudentIds);
   }
 
   roleChanged(studentId: string, role: Role): void {

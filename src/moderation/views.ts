@@ -22,7 +22,7 @@ export type QueueReport = { reason: ReportReason; text: string | null; createdAt
 
 export type NamedReport = QueueReport & { reporter: StudentRef };
 
-export type QueueGroup = { target: GroupTarget; count: number; reports: Array<QueueReport | NamedReport> };
+export type QueueGroup = { target: GroupTarget; count: number; filedByMe: boolean; reports: Array<QueueReport | NamedReport> };
 
 export type ModerationQueue = { items: QueueGroup[] };
 
